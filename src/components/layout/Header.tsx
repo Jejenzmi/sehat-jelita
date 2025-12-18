@@ -1,4 +1,4 @@
-import { Bell, Search, User, Calendar, Clock } from "lucide-react";
+import { Bell, Search, User, Calendar, Clock, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -10,9 +10,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useState, useEffect } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
+import { Badge } from "@/components/ui/badge";
 
 export function Header() {
   const [currentTime, setCurrentTime] = useState(new Date());
+  const { user, roles, signOut } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -30,6 +35,22 @@ export function Header() {
     hour: "2-digit",
     minute: "2-digit",
   });
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/auth");
+  };
+
+  const roleLabels: Record<string, string> = {
+    admin: "Administrator",
+    dokter: "Dokter",
+    perawat: "Perawat",
+    kasir: "Kasir",
+    farmasi: "Farmasi",
+    laboratorium: "Laboratorium",
+    radiologi: "Radiologi",
+    pendaftaran: "Pendaftaran",
+  };
 
   return (
     <header className="sticky top-0 z-30 h-16 bg-card/80 backdrop-blur-xl border-b border-border flex items-center justify-between px-4 lg:px-6">
@@ -95,8 +116,18 @@ export function Header() {
                 <User className="h-4 w-4 text-primary-foreground" />
               </div>
               <div className="hidden lg:block text-left">
-                <p className="text-sm font-medium">Admin SIMRS</p>
-                <p className="text-xs text-muted-foreground">Administrator</p>
+                <p className="text-sm font-medium">{user?.email?.split("@")[0] || "User"}</p>
+                <div className="flex gap-1">
+                  {roles.length > 0 ? (
+                    roles.slice(0, 2).map((role) => (
+                      <Badge key={role} variant="secondary" className="text-[10px] px-1.5 py-0">
+                        {roleLabels[role] || role}
+                      </Badge>
+                    ))
+                  ) : (
+                    <p className="text-xs text-muted-foreground">Staff</p>
+                  )}
+                </div>
               </div>
             </Button>
           </DropdownMenuTrigger>
@@ -106,7 +137,10 @@ export function Header() {
             <DropdownMenuItem>Profil</DropdownMenuItem>
             <DropdownMenuItem>Pengaturan</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive">Keluar</DropdownMenuItem>
+            <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
+              <LogOut className="h-4 w-4 mr-2" />
+              Keluar
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
