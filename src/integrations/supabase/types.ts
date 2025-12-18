@@ -2092,6 +2092,153 @@ export type Database = {
           },
         ]
       }
+      satusehat_config: {
+        Row: {
+          auto_sync_enabled: boolean | null
+          created_at: string
+          environment: string
+          id: string
+          last_token_refresh: string | null
+          organization_id: string
+          sync_interval_minutes: number | null
+          token_expires_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          auto_sync_enabled?: boolean | null
+          created_at?: string
+          environment?: string
+          id?: string
+          last_token_refresh?: string | null
+          organization_id: string
+          sync_interval_minutes?: number | null
+          token_expires_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          auto_sync_enabled?: boolean | null
+          created_at?: string
+          environment?: string
+          id?: string
+          last_token_refresh?: string | null
+          organization_id?: string
+          sync_interval_minutes?: number | null
+          token_expires_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      satusehat_resource_mappings: {
+        Row: {
+          created_at: string
+          id: string
+          local_id: string
+          resource_type: string
+          satusehat_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          local_id: string
+          resource_type: string
+          satusehat_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          local_id?: string
+          resource_type?: string
+          satusehat_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      satusehat_sync_logs: {
+        Row: {
+          action: string
+          created_at: string
+          error_message: string | null
+          id: string
+          local_table: string
+          request_payload: Json | null
+          resource_id: string
+          resource_type: string
+          response_payload: Json | null
+          retry_count: number | null
+          satusehat_id: string | null
+          status: string
+          synced_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          local_table: string
+          request_payload?: Json | null
+          resource_id: string
+          resource_type: string
+          response_payload?: Json | null
+          retry_count?: number | null
+          satusehat_id?: string | null
+          status?: string
+          synced_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          local_table?: string
+          request_payload?: Json | null
+          resource_id?: string
+          resource_type?: string
+          response_payload?: Json | null
+          retry_count?: number | null
+          satusehat_id?: string | null
+          status?: string
+          synced_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      satusehat_sync_stats: {
+        Row: {
+          created_at: string
+          failed_count: number | null
+          id: string
+          pending_count: number | null
+          resource_type: string
+          sync_date: string
+          synced_count: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          failed_count?: number | null
+          id?: string
+          pending_count?: number | null
+          resource_type: string
+          sync_date?: string
+          synced_count?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          failed_count?: number | null
+          id?: string
+          pending_count?: number | null
+          resource_type?: string
+          sync_date?: string
+          synced_count?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       telemedicine_sessions: {
         Row: {
           actual_end: string | null
