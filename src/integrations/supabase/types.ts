@@ -14,6 +14,85 @@ export type Database = {
   }
   public: {
     Tables: {
+      appointments: {
+        Row: {
+          appointment_date: string
+          appointment_time: string
+          appointment_type: string
+          booking_source: string | null
+          chief_complaint: string | null
+          created_at: string
+          created_by: string | null
+          department_id: string | null
+          doctor_id: string
+          end_time: string | null
+          id: string
+          notes: string | null
+          patient_id: string
+          reminder_sent: boolean | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          appointment_date: string
+          appointment_time: string
+          appointment_type?: string
+          booking_source?: string | null
+          chief_complaint?: string | null
+          created_at?: string
+          created_by?: string | null
+          department_id?: string | null
+          doctor_id: string
+          end_time?: string | null
+          id?: string
+          notes?: string | null
+          patient_id: string
+          reminder_sent?: boolean | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          appointment_date?: string
+          appointment_time?: string
+          appointment_type?: string
+          booking_source?: string | null
+          chief_complaint?: string | null
+          created_at?: string
+          created_by?: string | null
+          department_id?: string | null
+          doctor_id?: string
+          end_time?: string | null
+          id?: string
+          notes?: string | null
+          patient_id?: string
+          reminder_sent?: boolean | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointments_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_doctor_id_fkey"
+            columns: ["doctor_id"]
+            isOneToOne: false
+            referencedRelation: "doctors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           action: string
@@ -489,6 +568,100 @@ export type Database = {
             columns: ["medical_record_id"]
             isOneToOne: false
             referencedRelation: "medical_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      doctor_schedule_exceptions: {
+        Row: {
+          alternative_end_time: string | null
+          alternative_start_time: string | null
+          created_at: string
+          doctor_id: string
+          exception_date: string
+          exception_type: string
+          id: string
+          is_available: boolean
+          reason: string | null
+        }
+        Insert: {
+          alternative_end_time?: string | null
+          alternative_start_time?: string | null
+          created_at?: string
+          doctor_id: string
+          exception_date: string
+          exception_type: string
+          id?: string
+          is_available?: boolean
+          reason?: string | null
+        }
+        Update: {
+          alternative_end_time?: string | null
+          alternative_start_time?: string | null
+          created_at?: string
+          doctor_id?: string
+          exception_date?: string
+          exception_type?: string
+          id?: string
+          is_available?: boolean
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "doctor_schedule_exceptions_doctor_id_fkey"
+            columns: ["doctor_id"]
+            isOneToOne: false
+            referencedRelation: "doctors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      doctor_schedules: {
+        Row: {
+          created_at: string
+          day_of_week: number
+          doctor_id: string
+          end_time: string
+          id: string
+          is_active: boolean
+          max_patients: number | null
+          notes: string | null
+          room_number: string | null
+          slot_duration: number
+          start_time: string
+        }
+        Insert: {
+          created_at?: string
+          day_of_week: number
+          doctor_id: string
+          end_time: string
+          id?: string
+          is_active?: boolean
+          max_patients?: number | null
+          notes?: string | null
+          room_number?: string | null
+          slot_duration?: number
+          start_time: string
+        }
+        Update: {
+          created_at?: string
+          day_of_week?: number
+          doctor_id?: string
+          end_time?: string
+          id?: string
+          is_active?: boolean
+          max_patients?: number | null
+          notes?: string | null
+          room_number?: string | null
+          slot_duration?: number
+          start_time?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "doctor_schedules_doctor_id_fkey"
+            columns: ["doctor_id"]
+            isOneToOne: false
+            referencedRelation: "doctors"
             referencedColumns: ["id"]
           },
         ]
@@ -1579,6 +1752,91 @@ export type Database = {
             columns: ["department_id"]
             isOneToOne: false
             referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      telemedicine_sessions: {
+        Row: {
+          actual_end: string | null
+          actual_start: string | null
+          appointment_id: string
+          created_at: string
+          doctor_id: string
+          doctor_joined_at: string | null
+          duration_minutes: number | null
+          id: string
+          notes: string | null
+          patient_id: string
+          patient_joined_at: string | null
+          recording_url: string | null
+          room_name: string
+          scheduled_start: string
+          session_token: string | null
+          status: string
+          technical_issues: string | null
+          updated_at: string
+        }
+        Insert: {
+          actual_end?: string | null
+          actual_start?: string | null
+          appointment_id: string
+          created_at?: string
+          doctor_id: string
+          doctor_joined_at?: string | null
+          duration_minutes?: number | null
+          id?: string
+          notes?: string | null
+          patient_id: string
+          patient_joined_at?: string | null
+          recording_url?: string | null
+          room_name: string
+          scheduled_start: string
+          session_token?: string | null
+          status?: string
+          technical_issues?: string | null
+          updated_at?: string
+        }
+        Update: {
+          actual_end?: string | null
+          actual_start?: string | null
+          appointment_id?: string
+          created_at?: string
+          doctor_id?: string
+          doctor_joined_at?: string | null
+          duration_minutes?: number | null
+          id?: string
+          notes?: string | null
+          patient_id?: string
+          patient_joined_at?: string | null
+          recording_url?: string | null
+          room_name?: string
+          scheduled_start?: string
+          session_token?: string | null
+          status?: string
+          technical_issues?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "telemedicine_sessions_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "telemedicine_sessions_doctor_id_fkey"
+            columns: ["doctor_id"]
+            isOneToOne: false
+            referencedRelation: "doctors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "telemedicine_sessions_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
             referencedColumns: ["id"]
           },
         ]

@@ -23,6 +23,9 @@ import {
   Building2,
   Menu,
   ListOrdered,
+  CalendarDays,
+  Video,
+  BarChart3,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -43,9 +46,11 @@ const navigationGroups: NavGroup[] = [
     title: "Utama",
     items: [
       { icon: LayoutDashboard, label: "Dashboard", path: "/" },
+      { icon: BarChart3, label: "Executive", path: "/dashboard-executive" },
       { icon: UserPlus, label: "Pendaftaran", path: "/pendaftaran" },
       { icon: Users, label: "Pasien", path: "/pasien" },
       { icon: ListOrdered, label: "Antrian", path: "/antrian" },
+      { icon: CalendarDays, label: "Booking", path: "/jadwal-dokter" },
     ],
   },
   {
@@ -54,6 +59,7 @@ const navigationGroups: NavGroup[] = [
       { icon: Stethoscope, label: "Rawat Jalan", path: "/rawat-jalan" },
       { icon: BedDouble, label: "Rawat Inap", path: "/rawat-inap" },
       { icon: Ambulance, label: "IGD", path: "/igd", badge: "24H" },
+      { icon: Video, label: "Telemedicine", path: "/telemedicine" },
       { icon: HeartPulse, label: "Rekam Medis", path: "/rekam-medis" },
     ],
   },
