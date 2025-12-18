@@ -942,6 +942,122 @@ export type Database = {
           },
         ]
       }
+      inventory_settings: {
+        Row: {
+          auto_reorder_enabled: boolean | null
+          created_at: string | null
+          id: string
+          last_auto_order_date: string | null
+          lead_time_days: number | null
+          max_stock: number | null
+          medicine_id: string
+          preferred_supplier: string | null
+          reorder_point: number
+          reorder_quantity: number
+          updated_at: string | null
+        }
+        Insert: {
+          auto_reorder_enabled?: boolean | null
+          created_at?: string | null
+          id?: string
+          last_auto_order_date?: string | null
+          lead_time_days?: number | null
+          max_stock?: number | null
+          medicine_id: string
+          preferred_supplier?: string | null
+          reorder_point: number
+          reorder_quantity: number
+          updated_at?: string | null
+        }
+        Update: {
+          auto_reorder_enabled?: boolean | null
+          created_at?: string | null
+          id?: string
+          last_auto_order_date?: string | null
+          lead_time_days?: number | null
+          max_stock?: number | null
+          medicine_id?: string
+          preferred_supplier?: string | null
+          reorder_point?: number
+          reorder_quantity?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_settings_medicine_id_fkey"
+            columns: ["medicine_id"]
+            isOneToOne: true
+            referencedRelation: "medicines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_transactions: {
+        Row: {
+          batch_id: string | null
+          created_at: string | null
+          id: string
+          medicine_id: string
+          new_stock: number
+          notes: string | null
+          performed_by: string | null
+          previous_stock: number
+          quantity: number
+          reference_id: string | null
+          reference_type: string | null
+          total_price: number | null
+          transaction_type: string
+          unit_price: number | null
+        }
+        Insert: {
+          batch_id?: string | null
+          created_at?: string | null
+          id?: string
+          medicine_id: string
+          new_stock: number
+          notes?: string | null
+          performed_by?: string | null
+          previous_stock: number
+          quantity: number
+          reference_id?: string | null
+          reference_type?: string | null
+          total_price?: number | null
+          transaction_type: string
+          unit_price?: number | null
+        }
+        Update: {
+          batch_id?: string | null
+          created_at?: string | null
+          id?: string
+          medicine_id?: string
+          new_stock?: number
+          notes?: string | null
+          performed_by?: string | null
+          previous_stock?: number
+          quantity?: number
+          reference_id?: string | null
+          reference_type?: string | null
+          total_price?: number | null
+          transaction_type?: string
+          unit_price?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_transactions_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "medicine_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_transactions_medicine_id_fkey"
+            columns: ["medicine_id"]
+            isOneToOne: false
+            referencedRelation: "medicines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lab_results: {
         Row: {
           created_at: string
@@ -1157,6 +1273,65 @@ export type Database = {
             columns: ["visit_id"]
             isOneToOne: false
             referencedRelation: "visits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      medicine_batches: {
+        Row: {
+          batch_number: string
+          created_at: string | null
+          expiry_date: string
+          id: string
+          initial_quantity: number
+          manufacture_date: string | null
+          medicine_id: string
+          notes: string | null
+          quantity: number
+          received_date: string | null
+          status: string
+          supplier_name: string | null
+          unit_price: number
+          updated_at: string | null
+        }
+        Insert: {
+          batch_number: string
+          created_at?: string | null
+          expiry_date: string
+          id?: string
+          initial_quantity: number
+          manufacture_date?: string | null
+          medicine_id: string
+          notes?: string | null
+          quantity?: number
+          received_date?: string | null
+          status?: string
+          supplier_name?: string | null
+          unit_price?: number
+          updated_at?: string | null
+        }
+        Update: {
+          batch_number?: string
+          created_at?: string | null
+          expiry_date?: string
+          id?: string
+          initial_quantity?: number
+          manufacture_date?: string | null
+          medicine_id?: string
+          notes?: string | null
+          quantity?: number
+          received_date?: string | null
+          status?: string
+          supplier_name?: string | null
+          unit_price?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medicine_batches_medicine_id_fkey"
+            columns: ["medicine_id"]
+            isOneToOne: false
+            referencedRelation: "medicines"
             referencedColumns: ["id"]
           },
         ]
@@ -1572,6 +1747,120 @@ export type Database = {
           specialization?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      purchase_order_items: {
+        Row: {
+          created_at: string | null
+          id: string
+          medicine_id: string
+          notes: string | null
+          purchase_order_id: string
+          quantity: number
+          received_quantity: number | null
+          total_price: number
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          medicine_id: string
+          notes?: string | null
+          purchase_order_id: string
+          quantity: number
+          received_quantity?: number | null
+          total_price: number
+          unit_price: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          medicine_id?: string
+          notes?: string | null
+          purchase_order_id?: string
+          quantity?: number
+          received_quantity?: number | null
+          total_price?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_order_items_medicine_id_fkey"
+            columns: ["medicine_id"]
+            isOneToOne: false
+            referencedRelation: "medicines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_order_items_purchase_order_id_fkey"
+            columns: ["purchase_order_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_orders: {
+        Row: {
+          actual_delivery_date: string | null
+          approved_at: string | null
+          approved_by: string | null
+          auto_generated: boolean | null
+          created_at: string | null
+          created_by: string | null
+          discount: number | null
+          expected_delivery_date: string | null
+          id: string
+          notes: string | null
+          order_date: string | null
+          order_number: string
+          status: string
+          subtotal: number | null
+          supplier_name: string
+          tax: number | null
+          total: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          actual_delivery_date?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          auto_generated?: boolean | null
+          created_at?: string | null
+          created_by?: string | null
+          discount?: number | null
+          expected_delivery_date?: string | null
+          id?: string
+          notes?: string | null
+          order_date?: string | null
+          order_number: string
+          status?: string
+          subtotal?: number | null
+          supplier_name: string
+          tax?: number | null
+          total?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          actual_delivery_date?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          auto_generated?: boolean | null
+          created_at?: string | null
+          created_by?: string | null
+          discount?: number | null
+          expected_delivery_date?: string | null
+          id?: string
+          notes?: string | null
+          order_date?: string | null
+          order_number?: string
+          status?: string
+          subtotal?: number | null
+          supplier_name?: string
+          tax?: number | null
+          total?: number | null
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -2013,6 +2302,7 @@ export type Database = {
     }
     Functions: {
       generate_medical_record_number: { Args: never; Returns: string }
+      generate_po_number: { Args: never; Returns: string }
       generate_visit_number: { Args: never; Returns: string }
       get_user_roles: {
         Args: { _user_id: string }
