@@ -8,6 +8,8 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AppLayout } from "@/components/layout/AppLayout";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
+import PatientAuth from "./pages/PatientAuth";
+import PatientPortal from "./pages/PatientPortal";
 import Pendaftaran from "./pages/Pendaftaran";
 import Pasien from "./pages/Pasien";
 import RawatJalan from "./pages/RawatJalan";
@@ -44,8 +46,10 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
-            {/* Public route */}
+            {/* Public routes */}
             <Route path="/auth" element={<Auth />} />
+            <Route path="/patient-auth" element={<PatientAuth />} />
+            <Route path="/patient-portal" element={<PatientPortal />} />
             
             {/* Protected routes */}
             <Route
