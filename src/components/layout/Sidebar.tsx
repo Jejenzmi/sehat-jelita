@@ -22,6 +22,7 @@ import {
   ChevronRight,
   Building2,
   Menu,
+  ListOrdered,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -44,6 +45,7 @@ const navigationGroups: NavGroup[] = [
       { icon: LayoutDashboard, label: "Dashboard", path: "/" },
       { icon: UserPlus, label: "Pendaftaran", path: "/pendaftaran" },
       { icon: Users, label: "Pasien", path: "/pasien" },
+      { icon: ListOrdered, label: "Antrian", path: "/antrian" },
     ],
   },
   {
