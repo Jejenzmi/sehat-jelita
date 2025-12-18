@@ -22,6 +22,9 @@ import Laboratorium from "./pages/Laboratorium";
 import RawatInap from "./pages/RawatInap";
 import Radiologi from "./pages/Radiologi";
 import Antrian from "./pages/Antrian";
+import DashboardExecutive from "./pages/DashboardExecutive";
+import Booking from "./pages/Booking";
+import Telemedicine from "./pages/Telemedicine";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -202,7 +205,23 @@ const App = () => (
               path="/jadwal-dokter"
               element={
                 <ProtectedPageWithLayout>
-                  <div className="p-8 text-center"><h1 className="text-2xl font-bold">Jadwal Dokter</h1><p className="text-muted-foreground mt-2">Coming soon...</p></div>
+                  <Booking />
+                </ProtectedPageWithLayout>
+              }
+            />
+            <Route
+              path="/dashboard-executive"
+              element={
+                <ProtectedPageWithLayout>
+                  <DashboardExecutive />
+                </ProtectedPageWithLayout>
+              }
+            />
+            <Route
+              path="/telemedicine"
+              element={
+                <ProtectedPageWithLayout>
+                  <Telemedicine />
                 </ProtectedPageWithLayout>
               }
             />
