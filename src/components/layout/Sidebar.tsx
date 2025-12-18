@@ -28,6 +28,7 @@ import {
   BarChart3,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import zenLogo from "@/assets/zen-logo.webp";
 
 interface NavItem {
   icon: React.ElementType;
@@ -127,13 +128,7 @@ export function Sidebar() {
         <div className="flex items-center justify-between h-16 px-4 border-b border-sidebar-border">
           {!collapsed && (
             <div className="flex items-center gap-3 animate-fade-in">
-              <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center shadow-glow">
-                <HeartPulse className="h-6 w-6 text-primary-foreground" />
-              </div>
-              <div>
-                <h1 className="font-bold text-sidebar-foreground text-lg">SIMRS</h1>
-                <p className="text-xs text-sidebar-foreground/60">Hospital System</p>
-              </div>
+              <img src={zenLogo} alt="PT. Zen Multimedia Indonesia" className="h-10" />
             </div>
           )}
           {collapsed && (
