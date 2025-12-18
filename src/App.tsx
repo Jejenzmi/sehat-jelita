@@ -18,6 +18,8 @@ import Billing from "./pages/Billing";
 import IGD from "./pages/IGD";
 import RekamMedis from "./pages/RekamMedis";
 import Laporan from "./pages/Laporan";
+import Laboratorium from "./pages/Laboratorium";
+import RawatInap from "./pages/RawatInap";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -134,7 +136,7 @@ const App = () => (
               path="/rawat-inap"
               element={
                 <ProtectedPageWithLayout>
-                  <div className="p-8 text-center"><h1 className="text-2xl font-bold">Modul Rawat Inap</h1><p className="text-muted-foreground mt-2">Coming soon...</p></div>
+                  <RawatInap />
                 </ProtectedPageWithLayout>
               }
             />
@@ -142,7 +144,7 @@ const App = () => (
               path="/laboratorium"
               element={
                 <ProtectedPageWithLayout>
-                  <div className="p-8 text-center"><h1 className="text-2xl font-bold">Modul Laboratorium</h1><p className="text-muted-foreground mt-2">Coming soon...</p></div>
+                  <Laboratorium />
                 </ProtectedPageWithLayout>
               }
             />

@@ -565,6 +565,218 @@ export type Database = {
         }
         Relationships: []
       }
+      inpatient_admissions: {
+        Row: {
+          actual_discharge_date: string | null
+          admission_date: string
+          attending_doctor_id: string | null
+          bed_id: string | null
+          created_at: string
+          discharge_summary: string | null
+          discharge_type: string | null
+          id: string
+          nursing_notes: string | null
+          patient_id: string
+          planned_discharge_date: string | null
+          room_id: string
+          status: string
+          updated_at: string
+          visit_id: string
+        }
+        Insert: {
+          actual_discharge_date?: string | null
+          admission_date?: string
+          attending_doctor_id?: string | null
+          bed_id?: string | null
+          created_at?: string
+          discharge_summary?: string | null
+          discharge_type?: string | null
+          id?: string
+          nursing_notes?: string | null
+          patient_id: string
+          planned_discharge_date?: string | null
+          room_id: string
+          status?: string
+          updated_at?: string
+          visit_id: string
+        }
+        Update: {
+          actual_discharge_date?: string | null
+          admission_date?: string
+          attending_doctor_id?: string | null
+          bed_id?: string | null
+          created_at?: string
+          discharge_summary?: string | null
+          discharge_type?: string | null
+          id?: string
+          nursing_notes?: string | null
+          patient_id?: string
+          planned_discharge_date?: string | null
+          room_id?: string
+          status?: string
+          updated_at?: string
+          visit_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inpatient_admissions_attending_doctor_id_fkey"
+            columns: ["attending_doctor_id"]
+            isOneToOne: false
+            referencedRelation: "doctors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inpatient_admissions_bed_id_fkey"
+            columns: ["bed_id"]
+            isOneToOne: false
+            referencedRelation: "beds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inpatient_admissions_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inpatient_admissions_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inpatient_admissions_visit_id_fkey"
+            columns: ["visit_id"]
+            isOneToOne: false
+            referencedRelation: "visits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lab_results: {
+        Row: {
+          created_at: string
+          id: string
+          lab_number: string
+          medical_record_id: string | null
+          notes: string | null
+          patient_id: string
+          processed_by: string | null
+          request_date: string
+          requested_by: string | null
+          result_date: string | null
+          results: Json
+          sample_date: string | null
+          status: string
+          template_id: string
+          updated_at: string
+          visit_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lab_number: string
+          medical_record_id?: string | null
+          notes?: string | null
+          patient_id: string
+          processed_by?: string | null
+          request_date?: string
+          requested_by?: string | null
+          result_date?: string | null
+          results?: Json
+          sample_date?: string | null
+          status?: string
+          template_id: string
+          updated_at?: string
+          visit_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lab_number?: string
+          medical_record_id?: string | null
+          notes?: string | null
+          patient_id?: string
+          processed_by?: string | null
+          request_date?: string
+          requested_by?: string | null
+          result_date?: string | null
+          results?: Json
+          sample_date?: string | null
+          status?: string
+          template_id?: string
+          updated_at?: string
+          visit_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lab_results_medical_record_id_fkey"
+            columns: ["medical_record_id"]
+            isOneToOne: false
+            referencedRelation: "medical_records"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lab_results_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lab_results_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "lab_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lab_results_visit_id_fkey"
+            columns: ["visit_id"]
+            isOneToOne: false
+            referencedRelation: "visits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lab_templates: {
+        Row: {
+          category: string | null
+          code: string
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          normal_values: Json | null
+          parameters: Json
+          price: number | null
+        }
+        Insert: {
+          category?: string | null
+          code: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          normal_values?: Json | null
+          parameters?: Json
+          price?: number | null
+        }
+        Update: {
+          category?: string | null
+          code?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          normal_values?: Json | null
+          parameters?: Json
+          price?: number | null
+        }
+        Relationships: []
+      }
       medical_records: {
         Row: {
           additional_notes: string | null
@@ -704,6 +916,42 @@ export type Database = {
           stock?: number
           unit?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          data: Json | null
+          id: string
+          is_read: boolean
+          message: string
+          target_roles: string[] | null
+          target_user_id: string | null
+          title: string
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          data?: Json | null
+          id?: string
+          is_read?: boolean
+          message: string
+          target_roles?: string[] | null
+          target_user_id?: string | null
+          title: string
+          type: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json | null
+          id?: string
+          is_read?: boolean
+          message?: string
+          target_roles?: string[] | null
+          target_user_id?: string | null
+          title?: string
+          type?: string
         }
         Relationships: []
       }

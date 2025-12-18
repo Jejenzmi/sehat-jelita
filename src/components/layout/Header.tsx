@@ -1,4 +1,4 @@
-import { Bell, Search, User, Calendar, Clock, LogOut } from "lucide-react";
+import { Search, User, Calendar, Clock, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -13,11 +13,17 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { useMedicineStockAlerts, useQueueUpdates } from "@/hooks/useNotifications";
 
 export function Header() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const { user, roles, signOut } = useAuth();
   const navigate = useNavigate();
+
+  // Enable real-time alerts
+  useMedicineStockAlerts();
+  useQueueUpdates();
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -79,34 +85,8 @@ export function Header() {
 
       {/* Right Section - Actions */}
       <div className="flex items-center gap-2">
-        {/* Notifications */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="relative">
-              <Bell className="h-5 w-5" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full animate-pulse" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-80">
-            <DropdownMenuLabel>Notifikasi</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="flex flex-col items-start gap-1 cursor-pointer">
-              <span className="font-medium">Pasien Baru Terdaftar</span>
-              <span className="text-xs text-muted-foreground">Ahmad Hidayat - Poli Umum</span>
-              <span className="text-xs text-muted-foreground">2 menit yang lalu</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem className="flex flex-col items-start gap-1 cursor-pointer">
-              <span className="font-medium">Stok Obat Menipis</span>
-              <span className="text-xs text-muted-foreground">Paracetamol 500mg - Sisa 50 unit</span>
-              <span className="text-xs text-muted-foreground">10 menit yang lalu</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem className="flex flex-col items-start gap-1 cursor-pointer">
-              <span className="font-medium">BPJS Claim Approved</span>
-              <span className="text-xs text-muted-foreground">Claim #BP-2024-001234</span>
-              <span className="text-xs text-muted-foreground">1 jam yang lalu</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {/* Notifications - Real-time */}
+        <NotificationBell />
 
         {/* User Menu */}
         <DropdownMenu>
