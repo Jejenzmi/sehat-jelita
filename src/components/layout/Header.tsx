@@ -14,6 +14,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { StaffChat } from "@/components/chat/StaffChat";
 import { useMedicineStockAlerts, useQueueUpdates } from "@/hooks/useNotifications";
 
 export function Header() {
@@ -85,6 +86,9 @@ export function Header() {
 
       {/* Right Section - Actions */}
       <div className="flex items-center gap-2">
+        {/* Staff Chat */}
+        <StaffChat />
+        
         {/* Notifications - Real-time */}
         <NotificationBell />
 

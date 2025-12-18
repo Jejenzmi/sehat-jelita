@@ -304,6 +304,120 @@ export type Database = {
           },
         ]
       }
+      chat_messages: {
+        Row: {
+          content: string
+          created_at: string
+          file_url: string | null
+          id: string
+          is_edited: boolean
+          message_type: string
+          room_id: string
+          sender_id: string
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          file_url?: string | null
+          id?: string
+          is_edited?: boolean
+          message_type?: string
+          room_id: string
+          sender_id: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          file_url?: string | null
+          id?: string
+          is_edited?: boolean
+          message_type?: string
+          room_id?: string
+          sender_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "chat_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_participants: {
+        Row: {
+          id: string
+          joined_at: string
+          last_read_at: string | null
+          room_id: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          joined_at?: string
+          last_read_at?: string | null
+          room_id: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          joined_at?: string
+          last_read_at?: string | null
+          room_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_participants_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "chat_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_rooms: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          department_id: string | null
+          id: string
+          name: string | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          department_id?: string | null
+          id?: string
+          name?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          department_id?: string | null
+          id?: string
+          name?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_rooms_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       departments: {
         Row: {
           code: string
@@ -1238,6 +1352,190 @@ export type Database = {
           specialization?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      queue_display: {
+        Row: {
+          called_at: string | null
+          counter_number: number | null
+          current_number: number | null
+          department_id: string
+          id: string
+          last_called_number: number | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          called_at?: string | null
+          counter_number?: number | null
+          current_number?: number | null
+          department_id: string
+          id?: string
+          last_called_number?: number | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          called_at?: string | null
+          counter_number?: number | null
+          current_number?: number | null
+          department_id?: string
+          id?: string
+          last_called_number?: number | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "queue_display_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      radiology_results: {
+        Row: {
+          contrast_type: string | null
+          contrast_used: boolean | null
+          created_at: string
+          exam_date: string | null
+          findings: string | null
+          id: string
+          image_urls: Json | null
+          impression: string | null
+          medical_record_id: string | null
+          notes: string | null
+          patient_id: string
+          performed_by: string | null
+          radiation_dose: string | null
+          radiology_number: string
+          recommendation: string | null
+          reported_by: string | null
+          request_date: string
+          requested_by: string | null
+          result_date: string | null
+          status: string
+          template_id: string
+          updated_at: string
+          visit_id: string
+        }
+        Insert: {
+          contrast_type?: string | null
+          contrast_used?: boolean | null
+          created_at?: string
+          exam_date?: string | null
+          findings?: string | null
+          id?: string
+          image_urls?: Json | null
+          impression?: string | null
+          medical_record_id?: string | null
+          notes?: string | null
+          patient_id: string
+          performed_by?: string | null
+          radiation_dose?: string | null
+          radiology_number: string
+          recommendation?: string | null
+          reported_by?: string | null
+          request_date?: string
+          requested_by?: string | null
+          result_date?: string | null
+          status?: string
+          template_id: string
+          updated_at?: string
+          visit_id: string
+        }
+        Update: {
+          contrast_type?: string | null
+          contrast_used?: boolean | null
+          created_at?: string
+          exam_date?: string | null
+          findings?: string | null
+          id?: string
+          image_urls?: Json | null
+          impression?: string | null
+          medical_record_id?: string | null
+          notes?: string | null
+          patient_id?: string
+          performed_by?: string | null
+          radiation_dose?: string | null
+          radiology_number?: string
+          recommendation?: string | null
+          reported_by?: string | null
+          request_date?: string
+          requested_by?: string | null
+          result_date?: string | null
+          status?: string
+          template_id?: string
+          updated_at?: string
+          visit_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "radiology_results_medical_record_id_fkey"
+            columns: ["medical_record_id"]
+            isOneToOne: false
+            referencedRelation: "medical_records"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "radiology_results_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "radiology_results_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "radiology_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "radiology_results_visit_id_fkey"
+            columns: ["visit_id"]
+            isOneToOne: false
+            referencedRelation: "visits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      radiology_templates: {
+        Row: {
+          body_part: string | null
+          code: string
+          created_at: string
+          id: string
+          is_active: boolean
+          modality: string
+          name: string
+          price: number | null
+          protocol: string | null
+        }
+        Insert: {
+          body_part?: string | null
+          code: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          modality: string
+          name: string
+          price?: number | null
+          protocol?: string | null
+        }
+        Update: {
+          body_part?: string | null
+          code?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          modality?: string
+          name?: string
+          price?: number | null
+          protocol?: string | null
         }
         Relationships: []
       }
