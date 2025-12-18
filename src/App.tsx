@@ -27,6 +27,7 @@ import Antrian from "./pages/Antrian";
 import DashboardExecutive from "./pages/DashboardExecutive";
 import Booking from "./pages/Booking";
 import Telemedicine from "./pages/Telemedicine";
+import Inventory from "./pages/Inventory";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -177,7 +178,7 @@ const App = () => (
               path="/inventory"
               element={
                 <ProtectedPageWithLayout>
-                  <div className="p-8 text-center"><h1 className="text-2xl font-bold">Inventory Management</h1><p className="text-muted-foreground mt-2">Coming soon...</p></div>
+                  <Inventory />
                 </ProtectedPageWithLayout>
               }
             />
