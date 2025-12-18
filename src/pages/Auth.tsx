@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { HeartPulse, Mail, Lock, User, Eye, EyeOff, Loader2 } from "lucide-react";
+import { Mail, Lock, User, Eye, EyeOff, Loader2 } from "lucide-react";
+import zenLogo from "@/assets/zen-logo.png";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -129,8 +130,8 @@ export default function Auth() {
       {/* Left Panel - Branding */}
       <div className="hidden lg:flex lg:w-1/2 gradient-hero items-center justify-center p-12">
         <div className="max-w-md text-center text-primary-foreground">
-          <div className="w-20 h-20 mx-auto mb-8 rounded-2xl bg-white/10 backdrop-blur flex items-center justify-center shadow-glow">
-            <HeartPulse className="h-12 w-12" />
+          <div className="mb-8">
+            <img src={zenLogo} alt="PT. Zen Multimedia Indonesia" className="h-16 mx-auto" />
           </div>
           <h1 className="text-4xl font-bold mb-4">SIMRS</h1>
           <p className="text-xl mb-6 opacity-90">Sistem Informasi Manajemen Rumah Sakit</p>
@@ -159,11 +160,8 @@ export default function Auth() {
       {/* Right Panel - Auth Forms */}
       <div className="flex-1 flex items-center justify-center p-8 bg-background">
         <div className="w-full max-w-md">
-          {/* Mobile Logo */}
           <div className="lg:hidden text-center mb-8">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-xl gradient-primary flex items-center justify-center shadow-glow">
-              <HeartPulse className="h-10 w-10 text-primary-foreground" />
-            </div>
+            <img src={zenLogo} alt="PT. Zen Multimedia Indonesia" className="h-12 mx-auto mb-4" />
             <h1 className="text-2xl font-bold">SIMRS</h1>
           </div>
 
