@@ -1242,6 +1242,41 @@ export type Database = {
         }
         Relationships: []
       }
+      patient_portal_sessions: {
+        Row: {
+          id: string
+          ip_address: string | null
+          login_at: string | null
+          patient_id: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          ip_address?: string | null
+          login_at?: string | null
+          patient_id: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          id?: string
+          ip_address?: string | null
+          login_at?: string | null
+          patient_id?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_portal_sessions_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       patients: {
         Row: {
           address: string | null
@@ -1267,6 +1302,7 @@ export type Database = {
           province: string | null
           status: Database["public"]["Enums"]["patient_status"]
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           address?: string | null
@@ -1292,6 +1328,7 @@ export type Database = {
           province?: string | null
           status?: Database["public"]["Enums"]["patient_status"]
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           address?: string | null
@@ -1317,6 +1354,7 @@ export type Database = {
           province?: string | null
           status?: Database["public"]["Enums"]["patient_status"]
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -1381,10 +1419,13 @@ export type Database = {
           id: string
           notes: string | null
           patient_id: string
+          pickup_code: string | null
           prescription_date: string
           prescription_number: string
           processed_at: string | null
           processed_by: string | null
+          qr_generated_at: string | null
+          qr_token: string | null
           status: Database["public"]["Enums"]["prescription_status"]
           updated_at: string
           visit_id: string
@@ -1395,10 +1436,13 @@ export type Database = {
           id?: string
           notes?: string | null
           patient_id: string
+          pickup_code?: string | null
           prescription_date?: string
           prescription_number: string
           processed_at?: string | null
           processed_by?: string | null
+          qr_generated_at?: string | null
+          qr_token?: string | null
           status?: Database["public"]["Enums"]["prescription_status"]
           updated_at?: string
           visit_id: string
@@ -1409,10 +1453,13 @@ export type Database = {
           id?: string
           notes?: string | null
           patient_id?: string
+          pickup_code?: string | null
           prescription_date?: string
           prescription_number?: string
           processed_at?: string | null
           processed_by?: string | null
+          qr_generated_at?: string | null
+          qr_token?: string | null
           status?: Database["public"]["Enums"]["prescription_status"]
           updated_at?: string
           visit_id?: string

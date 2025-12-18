@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Search, Filter, Pill, Package, AlertTriangle, TrendingUp, Plus, CheckCircle } from "lucide-react";
+import { Search, Filter, Pill, Package, AlertTriangle, TrendingUp, Plus, CheckCircle, QrCode } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
+import PharmacyScanner from "@/components/pharmacy/PharmacyScanner";
 
 const prescriptions = [
   { id: "RX-001", patient: "Ahmad H.", doctor: "dr. Sari", items: 3, status: "Menunggu", time: "09:30", type: "BPJS" },
@@ -89,8 +90,16 @@ export default function Farmasi() {
           <Tabs defaultValue="queue" className="space-y-4">
             <TabsList>
               <TabsTrigger value="queue">Antrian Resep</TabsTrigger>
+              <TabsTrigger value="scanner" className="flex items-center gap-2">
+                <QrCode className="h-4 w-4" />
+                E-Prescription
+              </TabsTrigger>
               <TabsTrigger value="history">Riwayat</TabsTrigger>
             </TabsList>
+
+            <TabsContent value="scanner">
+              <PharmacyScanner />
+            </TabsContent>
 
             <TabsContent value="queue">
               <div className="module-card">
