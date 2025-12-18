@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Mail, Lock, User, Eye, EyeOff, Loader2 } from "lucide-react";
-import zenLogo from "@/assets/zen-logo.png";
+import zenLogo from "@/assets/zen-logo.webp";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
