@@ -1,31 +1,211 @@
-import { Building2, CheckCircle, RefreshCw, Upload, Download, Activity, FileText, AlertCircle } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Building2, CheckCircle, RefreshCw, Upload, Download, Activity, FileText, AlertCircle, Settings, Loader2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
-const resourceStats = [
-  { name: "Patient", synced: 12450, total: 12500, percentage: 99.6 },
-  { name: "Practitioner", synced: 85, total: 85, percentage: 100 },
-  { name: "Organization", synced: 1, total: 1, percentage: 100 },
-  { name: "Location", synced: 45, total: 45, percentage: 100 },
-  { name: "Encounter", synced: 45680, total: 46000, percentage: 99.3 },
-  { name: "Condition", synced: 38500, total: 39000, percentage: 98.7 },
-  { name: "Observation", synced: 125000, total: 128000, percentage: 97.7 },
-  { name: "Procedure", synced: 18900, total: 19200, percentage: 98.4 },
-  { name: "MedicationRequest", synced: 52000, total: 53000, percentage: 98.1 },
-  { name: "ServiceRequest", synced: 28000, total: 28500, percentage: 98.2 },
-];
+interface SyncStat {
+  name: string;
+  synced: number;
+  total: number;
+  percentage: number;
+}
 
-const recentLogs = [
-  { time: "09:45:23", type: "success", message: "Patient resource synced successfully", count: 15 },
-  { time: "09:44:12", type: "success", message: "Encounter bundle uploaded", count: 8 },
-  { time: "09:43:05", type: "warning", message: "Observation validation warning", count: 2 },
-  { time: "09:42:30", type: "success", message: "MedicationRequest synced", count: 12 },
-  { time: "09:41:15", type: "error", message: "Condition resource validation failed", count: 1 },
-];
+interface SyncLog {
+  id: string;
+  resource_type: string;
+  status: string;
+  error_message: string | null;
+  created_at: string;
+}
+
+interface Config {
+  organization_id: string;
+  environment: string;
+  auto_sync_enabled: boolean;
+}
 
 export default function SatuSehat() {
+  const [isConnected, setIsConnected] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [isTesting, setIsTesting] = useState(false);
+  const [stats, setStats] = useState<SyncStat[]>([]);
+  const [todayStats, setTodayStats] = useState({ total: 0, synced: 0, failed: 0, pending: 0 });
+  const [successRate, setSuccessRate] = useState(100);
+  const [logs, setLogs] = useState<SyncLog[]>([]);
+  const [config, setConfig] = useState<Config>({
+    organization_id: '',
+    environment: 'staging',
+    auto_sync_enabled: false,
+  });
+  const [lastSync, setLastSync] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    setIsLoading(true);
+    try {
+      await Promise.all([loadStats(), loadLogs(), loadConfig()]);
+    } catch (error) {
+      console.error('Error loading data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loadStats = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('satusehat', {
+        body: { action: 'get-sync-stats' },
+      });
+
+      if (error) throw error;
+
+      setStats(data.stats || []);
+      setTodayStats(data.todayStats || { total: 0, synced: 0, failed: 0, pending: 0 });
+      setSuccessRate(data.successRate || 100);
+    } catch (error) {
+      console.error('Error loading stats:', error);
+    }
+  };
+
+  const loadLogs = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('satusehat', {
+        body: { action: 'get-sync-logs', data: { limit: 10 } },
+      });
+
+      if (error) throw error;
+
+      setLogs(data.logs || []);
+      if (data.logs?.length > 0) {
+        setLastSync(data.logs[0].created_at);
+      }
+    } catch (error) {
+      console.error('Error loading logs:', error);
+    }
+  };
+
+  const loadConfig = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('satusehat', {
+        body: { action: 'get-config' },
+      });
+
+      if (error) throw error;
+
+      if (data.config) {
+        setConfig({
+          organization_id: data.config.organization_id || '',
+          environment: data.config.environment || 'staging',
+          auto_sync_enabled: data.config.auto_sync_enabled || false,
+        });
+      }
+    } catch (error) {
+      console.error('Error loading config:', error);
+    }
+  };
+
+  const testConnection = async () => {
+    setIsTesting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('satusehat', {
+        body: { action: 'test-connection' },
+      });
+
+      if (error) throw error;
+
+      if (data.success) {
+        setIsConnected(true);
+        toast.success('Koneksi ke SATU SEHAT berhasil!');
+      } else {
+        setIsConnected(false);
+        toast.error('Koneksi gagal: ' + data.error);
+      }
+    } catch (error: any) {
+      setIsConnected(false);
+      toast.error('Gagal terhubung: ' + error.message);
+    } finally {
+      setIsTesting(false);
+    }
+  };
+
+  const saveConfig = async () => {
+    try {
+      const { error } = await supabase.functions.invoke('satusehat', {
+        body: {
+          action: 'save-config',
+          data: {
+            organizationId: config.organization_id,
+            environment: config.environment,
+            autoSyncEnabled: config.auto_sync_enabled,
+          },
+        },
+      });
+
+      if (error) throw error;
+
+      toast.success('Konfigurasi berhasil disimpan');
+    } catch (error: any) {
+      toast.error('Gagal menyimpan: ' + error.message);
+    }
+  };
+
+  const bulkSyncPatients = async () => {
+    setIsSyncing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('satusehat', {
+        body: { action: 'bulk-sync-patients' },
+      });
+
+      if (error) throw error;
+
+      toast.success(`Sync selesai: ${data.synced} berhasil, ${data.failed} gagal`);
+      await loadData();
+    } catch (error: any) {
+      toast.error('Sync gagal: ' + error.message);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const formatTime = (dateString: string) => {
+    return new Date(dateString).toLocaleTimeString('id-ID', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    });
+  };
+
+  const formatRelativeTime = (dateString: string | null) => {
+    if (!dateString) return 'Belum pernah sync';
+    const diff = Date.now() - new Date(dateString).getTime();
+    const minutes = Math.floor(diff / 60000);
+    if (minutes < 1) return 'Baru saja';
+    if (minutes < 60) return `${minutes} menit yang lalu`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours} jam yang lalu`;
+    return new Date(dateString).toLocaleDateString('id-ID');
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -35,19 +215,27 @@ export default function SatuSehat() {
           <p className="text-muted-foreground">Integrasi Data Kesehatan Nasional - Kemenkes RI</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline">
-            <Download className="h-4 w-4 mr-2" />
-            Pull Data
+          <Button variant="outline" onClick={loadData} disabled={isLoading}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+            Refresh
           </Button>
-          <Button className="gradient-primary shadow-glow">
-            <Upload className="h-4 w-4 mr-2" />
+          <Button 
+            className="gradient-primary shadow-glow" 
+            onClick={bulkSyncPatients}
+            disabled={isSyncing}
+          >
+            {isSyncing ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <Upload className="h-4 w-4 mr-2" />
+            )}
             Push All Data
           </Button>
         </div>
       </div>
 
       {/* Connection Status */}
-      <div className="module-card border-success/20">
+      <div className={`module-card ${isConnected ? 'border-success/20' : 'border-warning/20'}`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="p-3 rounded-xl gradient-hero">
@@ -56,18 +244,47 @@ export default function SatuSehat() {
             <div>
               <h3 className="text-lg font-semibold">FHIR R4 API Connection</h3>
               <p className="text-sm text-muted-foreground">
-                Endpoint: api-satusehat.kemkes.go.id • OAuth2 Active
+                Endpoint: api-satusehat{config.environment === 'production' ? '' : '-stg'}.dto.kemkes.go.id
               </p>
             </div>
           </div>
           <div className="flex items-center gap-4">
             <div className="text-right">
               <p className="text-sm text-muted-foreground">Last Sync</p>
-              <p className="font-medium">2 menit yang lalu</p>
+              <p className="font-medium">{formatRelativeTime(lastSync)}</p>
             </div>
-            <Badge variant="outline" className="bg-success/10 text-success border-success/20 text-base px-4 py-2">
-              <CheckCircle className="h-4 w-4 mr-2" />
-              Connected
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={testConnection}
+              disabled={isTesting}
+            >
+              {isTesting ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4 mr-2" />
+              )}
+              Test
+            </Button>
+            <Badge 
+              variant="outline" 
+              className={`text-base px-4 py-2 ${
+                isConnected 
+                  ? 'bg-success/10 text-success border-success/20' 
+                  : 'bg-muted text-muted-foreground'
+              }`}
+            >
+              {isConnected ? (
+                <>
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Connected
+                </>
+              ) : (
+                <>
+                  <AlertCircle className="h-4 w-4 mr-2" />
+                  Not Tested
+                </>
+              )}
             </Badge>
           </div>
         </div>
@@ -80,7 +297,7 @@ export default function SatuSehat() {
             <Upload className="h-5 w-5 text-primary" />
             <span className="text-sm text-muted-foreground">Data Terkirim Hari Ini</span>
           </div>
-          <p className="text-3xl font-bold">1,234</p>
+          <p className="text-3xl font-bold">{todayStats.synced.toLocaleString()}</p>
           <p className="text-sm text-muted-foreground mt-1">Resources</p>
         </div>
         <div className="module-card">
@@ -88,7 +305,7 @@ export default function SatuSehat() {
             <Activity className="h-5 w-5 text-success" />
             <span className="text-sm text-muted-foreground">Success Rate</span>
           </div>
-          <p className="text-3xl font-bold text-success">98.5%</p>
+          <p className="text-3xl font-bold text-success">{successRate}%</p>
           <p className="text-sm text-muted-foreground mt-1">Sync accuracy</p>
         </div>
         <div className="module-card">
@@ -96,16 +313,20 @@ export default function SatuSehat() {
             <FileText className="h-5 w-5 text-info" />
             <span className="text-sm text-muted-foreground">Total Resources</span>
           </div>
-          <p className="text-3xl font-bold">324,330</p>
+          <p className="text-3xl font-bold">
+            {stats.reduce((acc, s) => acc + s.synced, 0).toLocaleString()}
+          </p>
           <p className="text-sm text-muted-foreground mt-1">All time synced</p>
         </div>
         <div className="module-card">
           <div className="flex items-center gap-3 mb-2">
             <AlertCircle className="h-5 w-5 text-warning" />
-            <span className="text-sm text-muted-foreground">Pending Validation</span>
+            <span className="text-sm text-muted-foreground">Pending</span>
           </div>
-          <p className="text-3xl font-bold text-warning">45</p>
-          <p className="text-sm text-muted-foreground mt-1">Need attention</p>
+          <p className="text-3xl font-bold text-warning">
+            {stats.reduce((acc, s) => acc + (s.total - s.synced), 0).toLocaleString()}
+          </p>
+          <p className="text-sm text-muted-foreground mt-1">Need sync</p>
         </div>
       </div>
 
@@ -119,14 +340,14 @@ export default function SatuSehat() {
                 <h3 className="text-lg font-semibold">FHIR Resource Status</h3>
                 <p className="text-sm text-muted-foreground">Status sinkronisasi per resource type</p>
               </div>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" onClick={loadStats}>
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Refresh
               </Button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {resourceStats.map((resource) => (
+              {stats.map((resource) => (
                 <div key={resource.name} className="p-4 rounded-xl bg-muted/30">
                   <div className="flex items-center justify-between mb-2">
                     <span className="font-medium">{resource.name}</span>
@@ -153,44 +374,55 @@ export default function SatuSehat() {
         <div className="module-card">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold">Sync Logs</h3>
-            <Button variant="ghost" size="sm">
-              View All
+            <Button variant="ghost" size="sm" onClick={loadLogs}>
+              Refresh
             </Button>
           </div>
 
           <div className="space-y-3">
-            {recentLogs.map((log, index) => (
-              <div
-                key={index}
-                className="flex items-start gap-3 p-3 rounded-lg bg-muted/30"
-              >
+            {logs.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                Belum ada log sync
+              </p>
+            ) : (
+              logs.map((log) => (
                 <div
-                  className={`w-2 h-2 rounded-full mt-2 ${
-                    log.type === "success"
-                      ? "bg-success"
-                      : log.type === "warning"
-                      ? "bg-warning"
-                      : "bg-destructive"
-                  }`}
-                />
-                <div className="flex-1">
-                  <p className="text-sm">{log.message}</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-xs text-muted-foreground">{log.time}</span>
-                    {log.count > 0 && (
+                  key={log.id}
+                  className="flex items-start gap-3 p-3 rounded-lg bg-muted/30"
+                >
+                  <div
+                    className={`w-2 h-2 rounded-full mt-2 ${
+                      log.status === 'synced'
+                        ? 'bg-success'
+                        : log.status === 'pending'
+                        ? 'bg-warning'
+                        : 'bg-destructive'
+                    }`}
+                  />
+                  <div className="flex-1">
+                    <p className="text-sm">
+                      {log.resource_type} {log.status === 'synced' ? 'synced' : log.status === 'failed' ? 'failed' : 'pending'}
+                    </p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-xs text-muted-foreground">
+                        {formatTime(log.created_at)}
+                      </span>
                       <Badge variant="secondary" className="text-xs">
-                        {log.count} items
+                        {log.status}
                       </Badge>
+                    </div>
+                    {log.error_message && (
+                      <p className="text-xs text-destructive mt-1">{log.error_message}</p>
                     )}
                   </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       </div>
 
-      {/* Compliance Info */}
+      {/* Tabs */}
       <div className="module-card">
         <Tabs defaultValue="compliance">
           <TabsList>
@@ -232,15 +464,100 @@ export default function SatuSehat() {
           </TabsContent>
 
           <TabsContent value="mapping" className="mt-4">
-            <p className="text-center text-muted-foreground py-8">
-              Data mapping configuration
-            </p>
+            <div className="space-y-4">
+              <h4 className="font-medium">Resource Mapping Configuration</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 rounded-xl bg-muted/30">
+                  <h5 className="font-medium mb-2">Patient → FHIR Patient</h5>
+                  <ul className="text-sm text-muted-foreground space-y-1">
+                    <li>• NIK → identifier (nik system)</li>
+                    <li>• BPJS Number → identifier (bpjs system)</li>
+                    <li>• full_name → name.text</li>
+                    <li>• gender → gender (L=male, P=female)</li>
+                    <li>• birth_date → birthDate</li>
+                  </ul>
+                </div>
+                <div className="p-4 rounded-xl bg-muted/30">
+                  <h5 className="font-medium mb-2">Visit → FHIR Encounter</h5>
+                  <ul className="text-sm text-muted-foreground space-y-1">
+                    <li>• visit_number → identifier</li>
+                    <li>• visit_type → class (AMB/IMP/EMER)</li>
+                    <li>• status → status mapping</li>
+                    <li>• visit_date + visit_time → period.start</li>
+                  </ul>
+                </div>
+                <div className="p-4 rounded-xl bg-muted/30">
+                  <h5 className="font-medium mb-2">Diagnosis → FHIR Condition</h5>
+                  <ul className="text-sm text-muted-foreground space-y-1">
+                    <li>• icd10_code → code.coding (ICD-10)</li>
+                    <li>• description → code.coding.display</li>
+                    <li>• diagnosis_type → category</li>
+                  </ul>
+                </div>
+                <div className="p-4 rounded-xl bg-muted/30">
+                  <h5 className="font-medium mb-2">Prescription → FHIR MedicationRequest</h5>
+                  <ul className="text-sm text-muted-foreground space-y-1">
+                    <li>• medicine → medication</li>
+                    <li>• dosage → dosageInstruction</li>
+                    <li>• frequency → dosageInstruction.timing</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
           </TabsContent>
 
           <TabsContent value="settings" className="mt-4">
-            <p className="text-center text-muted-foreground py-8">
-              SATU SEHAT integration settings
-            </p>
+            <div className="space-y-6 max-w-xl">
+              <div className="space-y-2">
+                <Label htmlFor="org-id">Organization ID (SATU SEHAT)</Label>
+                <Input
+                  id="org-id"
+                  placeholder="Masukkan Organization ID dari SATU SEHAT"
+                  value={config.organization_id}
+                  onChange={(e) => setConfig({ ...config, organization_id: e.target.value })}
+                />
+                <p className="text-xs text-muted-foreground">
+                  ID organisasi yang terdaftar di platform SATU SEHAT
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Environment</Label>
+                <Select
+                  value={config.environment}
+                  onValueChange={(value) => setConfig({ ...config, environment: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="staging">Staging (Sandbox)</SelectItem>
+                    <SelectItem value="production">Production</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Gunakan Staging untuk testing, Production untuk data riil
+                </p>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>Auto Sync</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Otomatis sinkronisasi data baru ke SATU SEHAT
+                  </p>
+                </div>
+                <Switch
+                  checked={config.auto_sync_enabled}
+                  onCheckedChange={(checked) => setConfig({ ...config, auto_sync_enabled: checked })}
+                />
+              </div>
+
+              <Button onClick={saveConfig}>
+                <Settings className="h-4 w-4 mr-2" />
+                Simpan Konfigurasi
+              </Button>
+            </div>
           </TabsContent>
         </Tabs>
       </div>

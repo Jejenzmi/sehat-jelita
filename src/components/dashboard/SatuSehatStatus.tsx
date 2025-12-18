@@ -1,8 +1,67 @@
-import { Building2, CheckCircle, RefreshCw, AlertCircle, Upload } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Building2, CheckCircle, RefreshCw, AlertCircle, Upload, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { supabase } from "@/integrations/supabase/client";
+
+interface SyncStat {
+  name: string;
+  synced: number;
+  total: number;
+  percentage: number;
+}
 
 export function SatuSehatStatus() {
+  const [isLoading, setIsLoading] = useState(true);
+  const [stats, setStats] = useState<SyncStat[]>([]);
+  const [todayCount, setTodayCount] = useState(0);
+  const [successRate, setSuccessRate] = useState(100);
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  useEffect(() => {
+    loadStats();
+  }, []);
+
+  const loadStats = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('satusehat', {
+        body: { action: 'get-sync-stats' },
+      });
+
+      if (!error && data) {
+        setStats(data.stats?.slice(0, 4) || []);
+        setTodayCount(data.todayStats?.synced || 0);
+        setSuccessRate(data.successRate || 100);
+      }
+    } catch (error) {
+      console.error('Error loading SATU SEHAT stats:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSync = async () => {
+    setIsSyncing(true);
+    try {
+      await supabase.functions.invoke('satusehat', {
+        body: { action: 'bulk-sync-patients' },
+      });
+      await loadStats();
+    } catch (error) {
+      console.error('Sync error:', error);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="module-card flex items-center justify-center h-48">
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <div className="module-card">
       <div className="flex items-center gap-3 mb-6">
@@ -32,7 +91,7 @@ export function SatuSehatStatus() {
               <Upload className="h-4 w-4 text-primary" />
               <span className="text-xs text-muted-foreground">Data Dikirim</span>
             </div>
-            <p className="text-xl font-bold">1,234</p>
+            <p className="text-xl font-bold">{todayCount.toLocaleString()}</p>
             <p className="text-xs text-muted-foreground">Hari ini</p>
           </div>
           <div className="p-3 rounded-lg bg-muted/50">
@@ -40,7 +99,7 @@ export function SatuSehatStatus() {
               <RefreshCw className="h-4 w-4 text-success" />
               <span className="text-xs text-muted-foreground">Sync Rate</span>
             </div>
-            <p className="text-xl font-bold">98.5%</p>
+            <p className="text-xl font-bold">{successRate}%</p>
             <p className="text-xs text-muted-foreground">Sukses</p>
           </div>
         </div>
@@ -48,12 +107,7 @@ export function SatuSehatStatus() {
         {/* Resources */}
         <div className="space-y-3">
           <p className="text-sm font-medium">Resource Status</p>
-          {[
-            { name: "Patient", synced: 2450, total: 2500, percentage: 98 },
-            { name: "Encounter", synced: 1180, total: 1200, percentage: 98 },
-            { name: "Observation", synced: 3800, total: 4000, percentage: 95 },
-            { name: "Medication", synced: 890, total: 900, percentage: 99 },
-          ].map((resource) => (
+          {stats.map((resource) => (
             <div key={resource.name} className="space-y-1">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">{resource.name}</span>
@@ -68,12 +122,22 @@ export function SatuSehatStatus() {
 
         {/* Actions */}
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" className="flex-1">
-            <RefreshCw className="h-4 w-4 mr-2" />
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="flex-1"
+            onClick={handleSync}
+            disabled={isSyncing}
+          >
+            {isSyncing ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4 mr-2" />
+            )}
             Sync Now
           </Button>
-          <Button variant="outline" size="sm" className="flex-1">
-            View Logs
+          <Button variant="outline" size="sm" className="flex-1" asChild>
+            <a href="/satu-sehat">View Logs</a>
           </Button>
         </div>
       </div>
