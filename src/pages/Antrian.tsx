@@ -7,32 +7,83 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Users, ChevronRight, Volume2, Pause, Play, SkipForward, RefreshCw, Monitor } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
-// Sample data for demo
-const departments = [
-  { id: "poli-umum", name: "Poli Umum", code: "A" },
-  { id: "poli-gigi", name: "Poli Gigi", code: "B" },
-  { id: "poli-anak", name: "Poli Anak", code: "C" },
-  { id: "farmasi", name: "Farmasi", code: "F" },
-  { id: "kasir", name: "Kasir", code: "K" },
-];
+interface Department {
+  id: string;
+  name: string;
+  code: string;
+}
 
-const initialQueue = [
-  { number: 1, patient: "Ahmad Sulaiman", status: "selesai", calledAt: "08:15" },
-  { number: 2, patient: "Siti Rahmah", status: "selesai", calledAt: "08:32" },
-  { number: 3, patient: "Bambang Hermanto", status: "dilayani", calledAt: "08:45" },
-  { number: 4, patient: "Dewi Lestari", status: "menunggu", calledAt: null },
-  { number: 5, patient: "Eko Prasetyo", status: "menunggu", calledAt: null },
-  { number: 6, patient: "Fitri Handayani", status: "menunggu", calledAt: null },
-];
+interface QueueTicket {
+  id: string;
+  ticket_number: string;
+  patient_id: string | null;
+  visit_id: string | null;
+  department_id: string | null;
+  doctor_id: string | null;
+  service_type: string;
+  queue_date: string;
+  called_at: string | null;
+  served_at: string | null;
+  completed_at: string | null;
+  counter_number: string | null;
+  status: string;
+  priority: number;
+  notes: string | null;
+  patients?: {
+    full_name: string;
+    medical_record_number: string;
+  } | null;
+}
 
 export default function Antrian() {
-  const [selectedDept, setSelectedDept] = useState(departments[0]);
-  const [currentNumber, setCurrentNumber] = useState(3);
-  const [queue, setQueue] = useState(initialQueue);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [selectedDeptId, setSelectedDeptId] = useState<string>("");
+  const [selectedServiceType, setSelectedServiceType] = useState<string>("rawat_jalan");
   const [isPaused, setIsPaused] = useState(false);
   const [isDisplayMode, setIsDisplayMode] = useState(false);
-  const { toast } = useToast();
+
+  // Fetch departments
+  const { data: departments = [] } = useQuery({
+    queryKey: ["departments"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("departments")
+        .select("id, name, code")
+        .eq("is_active", true)
+        .order("name");
+      if (error) throw error;
+      return data as Department[];
+    },
+  });
+
+  // Fetch queue tickets for today
+  const { data: queueTickets = [], isLoading } = useQuery({
+    queryKey: ["queue-tickets", selectedServiceType, selectedDeptId],
+    queryFn: async () => {
+      const today = new Date().toISOString().split("T")[0];
+      let query = supabase
+        .from("queue_tickets")
+        .select(`
+          *,
+          patients (full_name, medical_record_number)
+        `)
+        .eq("queue_date", today)
+        .eq("service_type", selectedServiceType)
+        .order("priority", { ascending: false })
+        .order("created_at", { ascending: true });
+
+      if (selectedDeptId) {
+        query = query.eq("department_id", selectedDeptId);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return data as QueueTicket[];
+    },
+  });
 
   // Real-time subscription for queue updates
   useEffect(() => {
@@ -43,11 +94,10 @@ export default function Antrian() {
         {
           event: "*",
           schema: "public",
-          table: "queue_display",
+          table: "queue_tickets",
         },
-        (payload) => {
-          console.log("Queue update:", payload);
-          // Handle real-time updates
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["queue-tickets"] });
         }
       )
       .subscribe();
@@ -55,67 +105,161 @@ export default function Antrian() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [queryClient]);
+
+  // Update queue status mutation
+  const updateQueueStatus = useMutation({
+    mutationFn: async ({ ticketId, status, calledAt, servedAt, completedAt }: {
+      ticketId: string;
+      status: string;
+      calledAt?: string;
+      servedAt?: string;
+      completedAt?: string;
+    }) => {
+      const updates: any = { status };
+      if (calledAt) updates.called_at = calledAt;
+      if (servedAt) updates.served_at = servedAt;
+      if (completedAt) updates.completed_at = completedAt;
+
+      const { error } = await supabase
+        .from("queue_tickets")
+        .update(updates)
+        .eq("id", ticketId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["queue-tickets"] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const currentServing = queueTickets.find(t => t.status === "serving");
+  const waitingQueue = queueTickets.filter(t => t.status === "waiting");
+  const completedQueue = queueTickets.filter(t => t.status === "completed");
+  const calledQueue = queueTickets.filter(t => t.status === "called");
 
   const callNext = () => {
-    const nextInQueue = queue.find(q => q.status === "menunggu");
-    if (nextInQueue) {
-      // Update current serving to completed
-      setQueue(prev => prev.map(q => 
-        q.number === currentNumber ? { ...q, status: "selesai" } : q
-      ));
-      
-      // Call next number
-      setCurrentNumber(nextInQueue.number);
-      setQueue(prev => prev.map(q => 
-        q.number === nextInQueue.number 
-          ? { ...q, status: "dilayani", calledAt: new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }) } 
-          : q
-      ));
+    const nextTicket = waitingQueue[0];
+    if (!nextTicket) return;
 
-      // Announce
-      speakNumber(nextInQueue.number);
-      
+    // If there's a current serving, mark as completed
+    if (currentServing) {
+      updateQueueStatus.mutate({
+        ticketId: currentServing.id,
+        status: "completed",
+        completedAt: new Date().toISOString(),
+      });
+    }
+
+    // Call the next ticket
+    updateQueueStatus.mutate({
+      ticketId: nextTicket.id,
+      status: "serving",
+      calledAt: new Date().toISOString(),
+      servedAt: new Date().toISOString(),
+    });
+
+    speakNumber(nextTicket.ticket_number);
+    
+    toast({
+      title: "Nomor Antrian Dipanggil",
+      description: `Nomor ${nextTicket.ticket_number} - ${nextTicket.patients?.full_name || "Pasien"}`,
+    });
+  };
+
+  const recallCurrent = () => {
+    if (currentServing) {
+      speakNumber(currentServing.ticket_number);
       toast({
-        title: "Nomor Antrian Dipanggil",
-        description: `Nomor ${selectedDept.code}${nextInQueue.number.toString().padStart(3, "0")} - ${nextInQueue.patient}`,
+        title: "Memanggil Ulang",
+        description: `Nomor ${currentServing.ticket_number}`,
       });
     }
   };
 
-  const recallCurrent = () => {
-    speakNumber(currentNumber);
-    toast({
-      title: "Memanggil Ulang",
-      description: `Nomor ${selectedDept.code}${currentNumber.toString().padStart(3, "0")}`,
-    });
-  };
-
   const skipCurrent = () => {
-    setQueue(prev => prev.map(q => 
-      q.number === currentNumber ? { ...q, status: "skip" } : q
-    ));
-    callNext();
+    if (currentServing) {
+      updateQueueStatus.mutate({
+        ticketId: currentServing.id,
+        status: "skipped",
+      });
+      callNext();
+    }
   };
 
-  const speakNumber = (number: number) => {
-    const text = `Nomor antrian ${selectedDept.code} ${number}, silakan menuju ${selectedDept.name}`;
+  const callSpecific = (ticket: QueueTicket) => {
+    // If there's a current serving, mark as completed
+    if (currentServing) {
+      updateQueueStatus.mutate({
+        ticketId: currentServing.id,
+        status: "completed",
+        completedAt: new Date().toISOString(),
+      });
+    }
+
+    updateQueueStatus.mutate({
+      ticketId: ticket.id,
+      status: "serving",
+      calledAt: new Date().toISOString(),
+      servedAt: new Date().toISOString(),
+    });
+
+    speakNumber(ticket.ticket_number);
+  };
+
+  const speakNumber = (ticketNumber: string) => {
+    const serviceNames: Record<string, string> = {
+      rawat_jalan: "Poli Rawat Jalan",
+      farmasi: "Farmasi",
+      laboratorium: "Laboratorium",
+      radiologi: "Radiologi",
+      kasir: "Kasir",
+    };
+    const serviceName = serviceNames[selectedServiceType] || selectedServiceType;
+    const text = `Nomor antrian ${ticketNumber}, silakan menuju ${serviceName}`;
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = "id-ID";
     utterance.rate = 0.9;
     speechSynthesis.speak(utterance);
   };
 
-  const waitingCount = queue.filter(q => q.status === "menunggu").length;
-  const servedCount = queue.filter(q => q.status === "selesai").length;
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "waiting":
+        return <Badge variant="secondary">Menunggu</Badge>;
+      case "called":
+        return <Badge className="bg-yellow-500">Dipanggil</Badge>;
+      case "serving":
+        return <Badge className="bg-blue-500">Dilayani</Badge>;
+      case "completed":
+        return <Badge className="bg-green-500">Selesai</Badge>;
+      case "skipped":
+        return <Badge variant="destructive">Dilewati</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
+  };
 
+  // Display mode view
   if (isDisplayMode) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary/20 to-primary/5 p-8">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-8">
             <h1 className="text-4xl font-bold mb-2">Sistem Antrian</h1>
-            <p className="text-xl text-muted-foreground">{selectedDept.name}</p>
+            <p className="text-xl text-muted-foreground">
+              {selectedServiceType === "rawat_jalan" ? "Rawat Jalan" :
+               selectedServiceType === "farmasi" ? "Farmasi" :
+               selectedServiceType === "laboratorium" ? "Laboratorium" :
+               selectedServiceType === "radiologi" ? "Radiologi" : "Kasir"}
+            </p>
           </div>
 
           <div className="grid grid-cols-3 gap-8">
@@ -127,10 +271,10 @@ export default function Antrian() {
                 </CardHeader>
                 <CardContent className="flex flex-col items-center justify-center py-12">
                   <div className="text-[12rem] font-bold leading-none text-primary animate-pulse">
-                    {selectedDept.code}{currentNumber.toString().padStart(3, "0")}
+                    {currentServing?.ticket_number || "---"}
                   </div>
                   <p className="text-3xl mt-4 text-muted-foreground">
-                    Silakan Menuju {selectedDept.name}
+                    {currentServing?.patients?.full_name || "Silakan Menunggu"}
                   </p>
                 </CardContent>
               </Card>
@@ -144,17 +288,17 @@ export default function Antrian() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
-                    {queue
-                      .filter(q => q.status === "menunggu")
-                      .slice(0, 5)
-                      .map((q, idx) => (
-                        <div 
-                          key={q.number} 
-                          className={`p-3 rounded-lg text-center ${idx === 0 ? "bg-primary/10 text-primary font-bold" : "bg-muted"}`}
-                        >
-                          {selectedDept.code}{q.number.toString().padStart(3, "0")}
-                        </div>
-                      ))}
+                    {waitingQueue.slice(0, 5).map((ticket, idx) => (
+                      <div 
+                        key={ticket.id} 
+                        className={`p-3 rounded-lg text-center ${idx === 0 ? "bg-primary/10 text-primary font-bold" : "bg-muted"}`}
+                      >
+                        {ticket.ticket_number}
+                      </div>
+                    ))}
+                    {waitingQueue.length === 0 && (
+                      <p className="text-center text-muted-foreground py-4">Tidak ada antrian</p>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -163,11 +307,11 @@ export default function Antrian() {
                 <CardContent className="pt-6">
                   <div className="grid grid-cols-2 gap-4 text-center">
                     <div>
-                      <p className="text-4xl font-bold text-primary">{waitingCount}</p>
+                      <p className="text-4xl font-bold text-primary">{waitingQueue.length}</p>
                       <p className="text-sm text-muted-foreground">Menunggu</p>
                     </div>
                     <div>
-                      <p className="text-4xl font-bold text-green-600">{servedCount}</p>
+                      <p className="text-4xl font-bold text-green-600">{completedQueue.length}</p>
                       <p className="text-sm text-muted-foreground">Selesai</p>
                     </div>
                   </div>
@@ -197,14 +341,16 @@ export default function Antrian() {
           <p className="text-muted-foreground">Kelola antrian pasien secara real-time</p>
         </div>
         <div className="flex gap-2">
-          <Select value={selectedDept.id} onValueChange={(v) => setSelectedDept(departments.find(d => d.id === v) || departments[0])}>
+          <Select value={selectedServiceType} onValueChange={setSelectedServiceType}>
             <SelectTrigger className="w-48">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {departments.map(dept => (
-                <SelectItem key={dept.id} value={dept.id}>{dept.name}</SelectItem>
-              ))}
+              <SelectItem value="rawat_jalan">Rawat Jalan</SelectItem>
+              <SelectItem value="farmasi">Farmasi</SelectItem>
+              <SelectItem value="laboratorium">Laboratorium</SelectItem>
+              <SelectItem value="radiologi">Radiologi</SelectItem>
+              <SelectItem value="kasir">Kasir</SelectItem>
             </SelectContent>
           </Select>
           <Button variant="outline" onClick={() => setIsDisplayMode(true)}>
@@ -222,8 +368,11 @@ export default function Antrian() {
           </CardHeader>
           <CardContent>
             <div className="text-4xl font-bold text-primary">
-              {selectedDept.code}{currentNumber.toString().padStart(3, "0")}
+              {currentServing?.ticket_number || "---"}
             </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {currentServing?.patients?.full_name || "Tidak ada"}
+            </p>
           </CardContent>
         </Card>
         <Card>
@@ -232,7 +381,7 @@ export default function Antrian() {
             <Users className="w-4 h-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{waitingCount}</div>
+            <div className="text-2xl font-bold">{waitingQueue.length}</div>
             <p className="text-xs text-muted-foreground">pasien</p>
           </CardContent>
         </Card>
@@ -241,7 +390,7 @@ export default function Antrian() {
             <CardTitle className="text-sm font-medium">Sudah Dilayani</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{servedCount}</div>
+            <div className="text-2xl font-bold text-green-600">{completedQueue.length}</div>
             <p className="text-xs text-muted-foreground">pasien</p>
           </CardContent>
         </Card>
@@ -265,15 +414,15 @@ export default function Antrian() {
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-4">
-            <Button size="lg" onClick={callNext} disabled={isPaused || waitingCount === 0}>
+            <Button size="lg" onClick={callNext} disabled={isPaused || waitingQueue.length === 0}>
               <ChevronRight className="w-5 h-5 mr-2" />
               Panggil Berikutnya
             </Button>
-            <Button size="lg" variant="outline" onClick={recallCurrent}>
+            <Button size="lg" variant="outline" onClick={recallCurrent} disabled={!currentServing}>
               <Volume2 className="w-5 h-5 mr-2" />
               Panggil Ulang
             </Button>
-            <Button size="lg" variant="outline" onClick={skipCurrent}>
+            <Button size="lg" variant="outline" onClick={skipCurrent} disabled={!currentServing}>
               <SkipForward className="w-5 h-5 mr-2" />
               Lewati
             </Button>
@@ -285,9 +434,13 @@ export default function Antrian() {
               {isPaused ? <Play className="w-5 h-5 mr-2" /> : <Pause className="w-5 h-5 mr-2" />}
               {isPaused ? "Lanjutkan" : "Jeda"}
             </Button>
-            <Button size="lg" variant="ghost">
+            <Button 
+              size="lg" 
+              variant="ghost"
+              onClick={() => queryClient.invalidateQueries({ queryKey: ["queue-tickets"] })}
+            >
               <RefreshCw className="w-5 h-5 mr-2" />
-              Reset
+              Refresh
             </Button>
           </div>
         </CardContent>
@@ -296,56 +449,55 @@ export default function Antrian() {
       {/* Queue List */}
       <Card>
         <CardHeader>
-          <CardTitle>Daftar Antrian - {selectedDept.name}</CardTitle>
+          <CardTitle>Daftar Antrian Hari Ini</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>No. Antrian</TableHead>
-                <TableHead>Nama Pasien</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Waktu Panggil</TableHead>
-                <TableHead>Aksi</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {queue.map((item) => (
-                <TableRow key={item.number} className={item.number === currentNumber ? "bg-primary/5" : ""}>
-                  <TableCell className="font-bold text-lg">
-                    {selectedDept.code}{item.number.toString().padStart(3, "0")}
-                  </TableCell>
-                  <TableCell>{item.patient}</TableCell>
-                  <TableCell>
-                    {item.status === "menunggu" && <Badge variant="secondary">Menunggu</Badge>}
-                    {item.status === "dilayani" && <Badge className="bg-blue-500">Dilayani</Badge>}
-                    {item.status === "selesai" && <Badge className="bg-green-500">Selesai</Badge>}
-                    {item.status === "skip" && <Badge variant="destructive">Dilewati</Badge>}
-                  </TableCell>
-                  <TableCell>{item.calledAt || "-"}</TableCell>
-                  <TableCell>
-                    {item.status === "menunggu" && (
-                      <Button 
-                        size="sm" 
-                        variant="ghost"
-                        onClick={() => {
-                          setCurrentNumber(item.number);
-                          setQueue(prev => prev.map(q => 
-                            q.number === item.number 
-                              ? { ...q, status: "dilayani", calledAt: new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }) } 
-                              : q
-                          ));
-                          speakNumber(item.number);
-                        }}
-                      >
-                        <Volume2 className="w-4 h-4" />
-                      </Button>
-                    )}
-                  </TableCell>
+          {isLoading ? (
+            <div className="text-center py-8 text-muted-foreground">Memuat data...</div>
+          ) : queueTickets.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">Tidak ada antrian hari ini</div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>No. Antrian</TableHead>
+                  <TableHead>Nama Pasien</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Waktu Panggil</TableHead>
+                  <TableHead>Aksi</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {queueTickets.map((ticket) => (
+                  <TableRow 
+                    key={ticket.id} 
+                    className={ticket.status === "serving" ? "bg-primary/5" : ""}
+                  >
+                    <TableCell className="font-bold text-lg">{ticket.ticket_number}</TableCell>
+                    <TableCell>{ticket.patients?.full_name || "Pasien"}</TableCell>
+                    <TableCell>{getStatusBadge(ticket.status)}</TableCell>
+                    <TableCell>
+                      {ticket.called_at 
+                        ? new Date(ticket.called_at).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })
+                        : "-"
+                      }
+                    </TableCell>
+                    <TableCell>
+                      {ticket.status === "waiting" && (
+                        <Button 
+                          size="sm" 
+                          variant="ghost"
+                          onClick={() => callSpecific(ticket)}
+                        >
+                          <Volume2 className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </div>

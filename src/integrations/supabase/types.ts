@@ -798,6 +798,107 @@ export type Database = {
           },
         ]
       }
+      employees: {
+        Row: {
+          address: string | null
+          bank_account: string | null
+          bank_name: string | null
+          birth_date: string | null
+          birth_place: string | null
+          bpjs_kesehatan: string | null
+          bpjs_ketenagakerjaan: string | null
+          created_at: string
+          department_id: string | null
+          email: string | null
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
+          employee_number: string
+          employment_type: string
+          end_date: string | null
+          full_name: string
+          gender: string | null
+          id: string
+          join_date: string
+          nik: string | null
+          notes: string | null
+          npwp: string | null
+          phone: string | null
+          position: string
+          salary: number | null
+          status: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          address?: string | null
+          bank_account?: string | null
+          bank_name?: string | null
+          birth_date?: string | null
+          birth_place?: string | null
+          bpjs_kesehatan?: string | null
+          bpjs_ketenagakerjaan?: string | null
+          created_at?: string
+          department_id?: string | null
+          email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          employee_number: string
+          employment_type?: string
+          end_date?: string | null
+          full_name: string
+          gender?: string | null
+          id?: string
+          join_date: string
+          nik?: string | null
+          notes?: string | null
+          npwp?: string | null
+          phone?: string | null
+          position: string
+          salary?: number | null
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          address?: string | null
+          bank_account?: string | null
+          bank_name?: string | null
+          birth_date?: string | null
+          birth_place?: string | null
+          bpjs_kesehatan?: string | null
+          bpjs_ketenagakerjaan?: string | null
+          created_at?: string
+          department_id?: string | null
+          email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          employee_number?: string
+          employment_type?: string
+          end_date?: string | null
+          full_name?: string
+          gender?: string | null
+          id?: string
+          join_date?: string
+          nik?: string | null
+          notes?: string | null
+          npwp?: string | null
+          phone?: string | null
+          position?: string
+          salary?: number | null
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employees_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       icd10_codes: {
         Row: {
           category: string | null
@@ -1905,6 +2006,95 @@ export type Database = {
           },
         ]
       }
+      queue_tickets: {
+        Row: {
+          called_at: string | null
+          completed_at: string | null
+          counter_number: string | null
+          created_at: string
+          department_id: string | null
+          doctor_id: string | null
+          id: string
+          notes: string | null
+          patient_id: string | null
+          priority: number | null
+          queue_date: string
+          served_at: string | null
+          service_type: string
+          status: string
+          ticket_number: string
+          updated_at: string
+          visit_id: string | null
+        }
+        Insert: {
+          called_at?: string | null
+          completed_at?: string | null
+          counter_number?: string | null
+          created_at?: string
+          department_id?: string | null
+          doctor_id?: string | null
+          id?: string
+          notes?: string | null
+          patient_id?: string | null
+          priority?: number | null
+          queue_date?: string
+          served_at?: string | null
+          service_type: string
+          status?: string
+          ticket_number: string
+          updated_at?: string
+          visit_id?: string | null
+        }
+        Update: {
+          called_at?: string | null
+          completed_at?: string | null
+          counter_number?: string | null
+          created_at?: string
+          department_id?: string | null
+          doctor_id?: string | null
+          id?: string
+          notes?: string | null
+          patient_id?: string | null
+          priority?: number | null
+          queue_date?: string
+          served_at?: string | null
+          service_type?: string
+          status?: string
+          ticket_number?: string
+          updated_at?: string
+          visit_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "queue_tickets_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "queue_tickets_doctor_id_fkey"
+            columns: ["doctor_id"]
+            isOneToOne: false
+            referencedRelation: "doctors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "queue_tickets_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "queue_tickets_visit_id_fkey"
+            columns: ["visit_id"]
+            isOneToOne: false
+            referencedRelation: "visits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       radiology_results: {
         Row: {
           contrast_type: string | null
@@ -2239,6 +2429,42 @@ export type Database = {
         }
         Relationships: []
       }
+      system_settings: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_public: boolean | null
+          setting_key: string
+          setting_type: string
+          setting_value: Json
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          setting_key: string
+          setting_type?: string
+          setting_value: Json
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          setting_key?: string
+          setting_type?: string
+          setting_value?: Json
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       telemedicine_sessions: {
         Row: {
           actual_end: string | null
@@ -2448,8 +2674,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_claim_number: { Args: never; Returns: string }
+      generate_employee_number: { Args: never; Returns: string }
+      generate_invoice_number: { Args: never; Returns: string }
+      generate_lab_number: { Args: never; Returns: string }
       generate_medical_record_number: { Args: never; Returns: string }
       generate_po_number: { Args: never; Returns: string }
+      generate_queue_number: {
+        Args: { p_service_type: string }
+        Returns: string
+      }
       generate_visit_number: { Args: never; Returns: string }
       get_user_roles: {
         Args: { _user_id: string }
