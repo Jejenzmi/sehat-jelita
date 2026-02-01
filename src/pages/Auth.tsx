@@ -85,10 +85,10 @@ export default function Auth() {
           : error.message,
       });
     } else {
-      toast({
-        title: "Login Berhasil",
-        description: "Selamat datang di SIMRS",
-      });
+          toast({
+            title: "Login Berhasil",
+            description: "Selamat datang di SIMRS ZEN⁺",
+          });
     }
   };
 
@@ -100,7 +100,7 @@ export default function Auth() {
           <div className="mb-8">
             <img src={zenLogo} alt="PT. Zen Multimedia Indonesia" className="h-16 mx-auto" />
           </div>
-          <h1 className="text-4xl font-bold mb-4">SIMRS</h1>
+          <h1 className="text-4xl font-bold mb-4">SIMRS ZEN⁺</h1>
           <p className="text-xl mb-6 opacity-90">Sistem Informasi Manajemen Rumah Sakit</p>
           <p className="text-sm opacity-75">
             Platform terintegrasi untuk pengelolaan rumah sakit modern. 
@@ -129,13 +129,13 @@ export default function Auth() {
         <div className="w-full max-w-md">
           <div className="lg:hidden text-center mb-8">
             <img src={zenLogo} alt="PT. Zen Multimedia Indonesia" className="h-12 mx-auto mb-4" />
-            <h1 className="text-2xl font-bold">SIMRS</h1>
+            <h1 className="text-2xl font-bold">SIMRS ZEN⁺</h1>
           </div>
 
           <div className="space-y-6">
             <div>
               <h2 className="text-2xl font-bold">Selamat Datang</h2>
-              <p className="text-muted-foreground">Masuk ke akun SIMRS Anda</p>
+              <p className="text-muted-foreground">Masuk ke akun SIMRS ZEN⁺ Anda</p>
             </div>
 
             <form onSubmit={handleLogin} className="space-y-4">
@@ -192,7 +192,7 @@ export default function Auth() {
           </div>
 
           <p className="mt-8 text-center text-sm text-muted-foreground">
-            Dengan masuk, Anda menyetujui Syarat & Ketentuan dan Kebijakan Privasi SIMRS.
+            Dengan masuk, Anda menyetujui Syarat & Ketentuan dan Kebijakan Privasi SIMRS ZEN⁺.
           </p>
         </div>
       </div>
