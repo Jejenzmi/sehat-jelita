@@ -35,6 +35,7 @@ import {
   Skull,
   Wrench,
   Award,
+  KeyRound,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import zenLogo from "@/assets/zen-logo.webp";
@@ -109,6 +110,7 @@ const allNavigationGroups: NavGroup[] = [
       { icon: UserCog, label: "SDM / HRD", path: "/sdm" },
       { icon: FileBarChart, label: "Laporan", path: "/laporan" },
       { icon: Database, label: "Master Data", path: "/master-data" },
+      { icon: Shield, label: "Manajemen User", path: "/manajemen-user", badge: "RBAC" },
       { icon: Settings, label: "Pengaturan", path: "/pengaturan" },
     ],
   },
