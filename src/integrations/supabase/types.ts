@@ -283,6 +283,108 @@ export type Database = {
         }
         Relationships: []
       }
+      autopsy_records: {
+        Row: {
+          assistant_names: string[] | null
+          autopsy_date: string | null
+          autopsy_number: string
+          autopsy_type: string | null
+          case_id: string
+          cause_of_death_primary: string | null
+          cause_of_death_secondary: string | null
+          completed_date: string | null
+          contributing_factors: string[] | null
+          created_at: string
+          external_examination: Json | null
+          id: string
+          internal_examination: Json | null
+          manner_of_death: string | null
+          microscopic_findings: string | null
+          notes: string | null
+          opinion: string | null
+          organ_weights: Json | null
+          pathologist_id: string | null
+          pathologist_name: string | null
+          report_finalized: boolean | null
+          request_date: string | null
+          requested_by: string | null
+          status: string | null
+          toxicology_results: string | null
+          updated_at: string
+        }
+        Insert: {
+          assistant_names?: string[] | null
+          autopsy_date?: string | null
+          autopsy_number: string
+          autopsy_type?: string | null
+          case_id: string
+          cause_of_death_primary?: string | null
+          cause_of_death_secondary?: string | null
+          completed_date?: string | null
+          contributing_factors?: string[] | null
+          created_at?: string
+          external_examination?: Json | null
+          id?: string
+          internal_examination?: Json | null
+          manner_of_death?: string | null
+          microscopic_findings?: string | null
+          notes?: string | null
+          opinion?: string | null
+          organ_weights?: Json | null
+          pathologist_id?: string | null
+          pathologist_name?: string | null
+          report_finalized?: boolean | null
+          request_date?: string | null
+          requested_by?: string | null
+          status?: string | null
+          toxicology_results?: string | null
+          updated_at?: string
+        }
+        Update: {
+          assistant_names?: string[] | null
+          autopsy_date?: string | null
+          autopsy_number?: string
+          autopsy_type?: string | null
+          case_id?: string
+          cause_of_death_primary?: string | null
+          cause_of_death_secondary?: string | null
+          completed_date?: string | null
+          contributing_factors?: string[] | null
+          created_at?: string
+          external_examination?: Json | null
+          id?: string
+          internal_examination?: Json | null
+          manner_of_death?: string | null
+          microscopic_findings?: string | null
+          notes?: string | null
+          opinion?: string | null
+          organ_weights?: Json | null
+          pathologist_id?: string | null
+          pathologist_name?: string | null
+          report_finalized?: boolean | null
+          request_date?: string | null
+          requested_by?: string | null
+          status?: string | null
+          toxicology_results?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "autopsy_records_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "mortuary_cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "autopsy_records_pathologist_id_fkey"
+            columns: ["pathologist_id"]
+            isOneToOne: false
+            referencedRelation: "doctors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       beds: {
         Row: {
           bed_number: string
@@ -740,6 +842,63 @@ export type Database = {
           },
         ]
       }
+      corporate_clients: {
+        Row: {
+          address: string | null
+          company_code: string | null
+          company_name: string
+          contract_end: string | null
+          contract_start: string | null
+          created_at: string
+          discount_percentage: number | null
+          email: string | null
+          id: string
+          is_active: boolean | null
+          notes: string | null
+          payment_terms: string | null
+          phone: string | null
+          pic_name: string | null
+          pic_phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          company_code?: string | null
+          company_name: string
+          contract_end?: string | null
+          contract_start?: string | null
+          created_at?: string
+          discount_percentage?: number | null
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          notes?: string | null
+          payment_terms?: string | null
+          phone?: string | null
+          pic_name?: string | null
+          pic_phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          company_code?: string | null
+          company_name?: string
+          contract_end?: string | null
+          contract_start?: string | null
+          created_at?: string
+          discount_percentage?: number | null
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          notes?: string | null
+          payment_terms?: string | null
+          phone?: string | null
+          pic_name?: string | null
+          pic_phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       crossmatch_tests: {
         Row: {
           antibody_screen: string | null
@@ -824,6 +983,133 @@ export type Database = {
             columns: ["request_id"]
             isOneToOne: false
             referencedRelation: "transfusion_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      death_certificates: {
+        Row: {
+          address: string | null
+          antecedent_cause: string | null
+          autopsy_performed: boolean | null
+          burial_permit_issued: boolean | null
+          burial_permit_number: string | null
+          case_id: string | null
+          certificate_number: string
+          certification_date: string
+          certifying_doctor_id: string | null
+          certifying_doctor_name: string
+          contributing_conditions: string | null
+          created_at: string
+          date_of_birth: string | null
+          date_of_death: string
+          deceased_name: string
+          gender: string | null
+          id: string
+          immediate_cause: string | null
+          issued_date: string | null
+          manner_of_death: string | null
+          marital_status: string | null
+          nationality: string | null
+          nik: string | null
+          notes: string | null
+          occupation: string | null
+          patient_id: string | null
+          place_of_birth: string | null
+          place_of_death: string | null
+          religion: string | null
+          status: string | null
+          underlying_cause: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          antecedent_cause?: string | null
+          autopsy_performed?: boolean | null
+          burial_permit_issued?: boolean | null
+          burial_permit_number?: string | null
+          case_id?: string | null
+          certificate_number: string
+          certification_date?: string
+          certifying_doctor_id?: string | null
+          certifying_doctor_name: string
+          contributing_conditions?: string | null
+          created_at?: string
+          date_of_birth?: string | null
+          date_of_death: string
+          deceased_name: string
+          gender?: string | null
+          id?: string
+          immediate_cause?: string | null
+          issued_date?: string | null
+          manner_of_death?: string | null
+          marital_status?: string | null
+          nationality?: string | null
+          nik?: string | null
+          notes?: string | null
+          occupation?: string | null
+          patient_id?: string | null
+          place_of_birth?: string | null
+          place_of_death?: string | null
+          religion?: string | null
+          status?: string | null
+          underlying_cause?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          antecedent_cause?: string | null
+          autopsy_performed?: boolean | null
+          burial_permit_issued?: boolean | null
+          burial_permit_number?: string | null
+          case_id?: string | null
+          certificate_number?: string
+          certification_date?: string
+          certifying_doctor_id?: string | null
+          certifying_doctor_name?: string
+          contributing_conditions?: string | null
+          created_at?: string
+          date_of_birth?: string | null
+          date_of_death?: string
+          deceased_name?: string
+          gender?: string | null
+          id?: string
+          immediate_cause?: string | null
+          issued_date?: string | null
+          manner_of_death?: string | null
+          marital_status?: string | null
+          nationality?: string | null
+          nik?: string | null
+          notes?: string | null
+          occupation?: string | null
+          patient_id?: string | null
+          place_of_birth?: string | null
+          place_of_death?: string | null
+          religion?: string | null
+          status?: string | null
+          underlying_cause?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "death_certificates_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "mortuary_cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "death_certificates_certifying_doctor_id_fkey"
+            columns: ["certifying_doctor_id"]
+            isOneToOne: false
+            referencedRelation: "doctors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "death_certificates_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
             referencedColumns: ["id"]
           },
         ]
@@ -1190,6 +1476,48 @@ export type Database = {
           },
         ]
       }
+      diet_types: {
+        Row: {
+          calories_target: number | null
+          carbs_target: number | null
+          category: Database["public"]["Enums"]["diet_category"]
+          created_at: string
+          description: string | null
+          fat_target: number | null
+          id: string
+          is_active: boolean | null
+          name: string
+          protein_target: number | null
+          restrictions: string[] | null
+        }
+        Insert: {
+          calories_target?: number | null
+          carbs_target?: number | null
+          category?: Database["public"]["Enums"]["diet_category"]
+          created_at?: string
+          description?: string | null
+          fat_target?: number | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          protein_target?: number | null
+          restrictions?: string[] | null
+        }
+        Update: {
+          calories_target?: number | null
+          carbs_target?: number | null
+          category?: Database["public"]["Enums"]["diet_category"]
+          created_at?: string
+          description?: string | null
+          fat_target?: number | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          protein_target?: number | null
+          restrictions?: string[] | null
+        }
+        Relationships: []
+      }
       doctor_schedule_exceptions: {
         Row: {
           alternative_end_time: string | null
@@ -1513,6 +1841,50 @@ export type Database = {
             columns: ["department_id"]
             isOneToOne: false
             referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      food_allergies: {
+        Row: {
+          allergen: string
+          created_at: string
+          diagnosed_date: string | null
+          id: string
+          notes: string | null
+          patient_id: string
+          reaction_description: string | null
+          severity: string | null
+          updated_at: string
+        }
+        Insert: {
+          allergen: string
+          created_at?: string
+          diagnosed_date?: string | null
+          id?: string
+          notes?: string | null
+          patient_id: string
+          reaction_description?: string | null
+          severity?: string | null
+          updated_at?: string
+        }
+        Update: {
+          allergen?: string
+          created_at?: string
+          diagnosed_date?: string | null
+          id?: string
+          notes?: string | null
+          patient_id?: string
+          reaction_description?: string | null
+          severity?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "food_allergies_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
             referencedColumns: ["id"]
           },
         ]
@@ -2484,6 +2856,427 @@ export type Database = {
           },
         ]
       }
+      mcu_package_items: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_mandatory: boolean | null
+          item_code: string | null
+          item_name: string
+          item_type: string | null
+          package_id: string
+          sort_order: number | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_mandatory?: boolean | null
+          item_code?: string | null
+          item_name: string
+          item_type?: string | null
+          package_id: string
+          sort_order?: number | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_mandatory?: boolean | null
+          item_code?: string | null
+          item_name?: string
+          item_type?: string | null
+          package_id?: string
+          sort_order?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mcu_package_items_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "mcu_packages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mcu_packages: {
+        Row: {
+          base_price: number
+          category: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean | null
+          package_code: string
+          package_name: string
+          target_age_max: number | null
+          target_age_min: number | null
+          target_gender: string | null
+          updated_at: string
+        }
+        Insert: {
+          base_price: number
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          package_code: string
+          package_name: string
+          target_age_max?: number | null
+          target_age_min?: number | null
+          target_gender?: string | null
+          updated_at?: string
+        }
+        Update: {
+          base_price?: number
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          package_code?: string
+          package_name?: string
+          target_age_max?: number | null
+          target_age_min?: number | null
+          target_gender?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      mcu_registrations: {
+        Row: {
+          corporate_client_id: string | null
+          created_at: string
+          discount: number | null
+          examination_date: string | null
+          final_price: number | null
+          id: string
+          notes: string | null
+          package_id: string
+          patient_id: string
+          payment_type: string | null
+          registered_by: string | null
+          registration_date: string
+          registration_number: string
+          status: string | null
+          total_price: number | null
+          updated_at: string
+        }
+        Insert: {
+          corporate_client_id?: string | null
+          created_at?: string
+          discount?: number | null
+          examination_date?: string | null
+          final_price?: number | null
+          id?: string
+          notes?: string | null
+          package_id: string
+          patient_id: string
+          payment_type?: string | null
+          registered_by?: string | null
+          registration_date?: string
+          registration_number: string
+          status?: string | null
+          total_price?: number | null
+          updated_at?: string
+        }
+        Update: {
+          corporate_client_id?: string | null
+          created_at?: string
+          discount?: number | null
+          examination_date?: string | null
+          final_price?: number | null
+          id?: string
+          notes?: string | null
+          package_id?: string
+          patient_id?: string
+          payment_type?: string | null
+          registered_by?: string | null
+          registration_date?: string
+          registration_number?: string
+          status?: string | null
+          total_price?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mcu_registrations_corporate_client_id_fkey"
+            columns: ["corporate_client_id"]
+            isOneToOne: false
+            referencedRelation: "corporate_clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mcu_registrations_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "mcu_packages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mcu_registrations_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mcu_results: {
+        Row: {
+          created_at: string
+          id: string
+          interpretation: string | null
+          item_name: string
+          item_type: string | null
+          normal_range: string | null
+          notes: string | null
+          performed_by: string | null
+          performed_date: string | null
+          registration_id: string
+          result_unit: string | null
+          result_value: string | null
+          verified_by: string | null
+          verified_date: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          interpretation?: string | null
+          item_name: string
+          item_type?: string | null
+          normal_range?: string | null
+          notes?: string | null
+          performed_by?: string | null
+          performed_date?: string | null
+          registration_id: string
+          result_unit?: string | null
+          result_value?: string | null
+          verified_by?: string | null
+          verified_date?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          interpretation?: string | null
+          item_name?: string
+          item_type?: string | null
+          normal_range?: string | null
+          notes?: string | null
+          performed_by?: string | null
+          performed_date?: string | null
+          registration_id?: string
+          result_unit?: string | null
+          result_value?: string | null
+          verified_by?: string | null
+          verified_date?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mcu_results_registration_id_fkey"
+            columns: ["registration_id"]
+            isOneToOne: false
+            referencedRelation: "mcu_registrations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mcu_summary_reports: {
+        Row: {
+          blood_pressure_status: string | null
+          bmi: number | null
+          cardiovascular_status: string | null
+          created_at: string
+          doctor_id: string | null
+          doctor_name: string | null
+          fitness_for_work: string | null
+          follow_up_needed: boolean | null
+          follow_up_notes: string | null
+          id: string
+          key_findings: string[] | null
+          metabolic_status: string | null
+          notes: string | null
+          overall_health_status: string | null
+          recommendations: string[] | null
+          registration_id: string
+          report_date: string
+          updated_at: string
+        }
+        Insert: {
+          blood_pressure_status?: string | null
+          bmi?: number | null
+          cardiovascular_status?: string | null
+          created_at?: string
+          doctor_id?: string | null
+          doctor_name?: string | null
+          fitness_for_work?: string | null
+          follow_up_needed?: boolean | null
+          follow_up_notes?: string | null
+          id?: string
+          key_findings?: string[] | null
+          metabolic_status?: string | null
+          notes?: string | null
+          overall_health_status?: string | null
+          recommendations?: string[] | null
+          registration_id: string
+          report_date?: string
+          updated_at?: string
+        }
+        Update: {
+          blood_pressure_status?: string | null
+          bmi?: number | null
+          cardiovascular_status?: string | null
+          created_at?: string
+          doctor_id?: string | null
+          doctor_name?: string | null
+          fitness_for_work?: string | null
+          follow_up_needed?: boolean | null
+          follow_up_notes?: string | null
+          id?: string
+          key_findings?: string[] | null
+          metabolic_status?: string | null
+          notes?: string | null
+          overall_health_status?: string | null
+          recommendations?: string[] | null
+          registration_id?: string
+          report_date?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mcu_summary_reports_doctor_id_fkey"
+            columns: ["doctor_id"]
+            isOneToOne: false
+            referencedRelation: "doctors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mcu_summary_reports_registration_id_fkey"
+            columns: ["registration_id"]
+            isOneToOne: false
+            referencedRelation: "mcu_registrations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meal_plans: {
+        Row: {
+          calories_planned: number | null
+          carbs_planned: number | null
+          created_at: string
+          fat_planned: number | null
+          id: string
+          meal_date: string
+          meal_type: string
+          menu_items: Json | null
+          notes: string | null
+          patient_diet_id: string | null
+          prepared_by: string | null
+          protein_planned: number | null
+        }
+        Insert: {
+          calories_planned?: number | null
+          carbs_planned?: number | null
+          created_at?: string
+          fat_planned?: number | null
+          id?: string
+          meal_date: string
+          meal_type: string
+          menu_items?: Json | null
+          notes?: string | null
+          patient_diet_id?: string | null
+          prepared_by?: string | null
+          protein_planned?: number | null
+        }
+        Update: {
+          calories_planned?: number | null
+          carbs_planned?: number | null
+          created_at?: string
+          fat_planned?: number | null
+          id?: string
+          meal_date?: string
+          meal_type?: string
+          menu_items?: Json | null
+          notes?: string | null
+          patient_diet_id?: string | null
+          prepared_by?: string | null
+          protein_planned?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meal_plans_patient_diet_id_fkey"
+            columns: ["patient_diet_id"]
+            isOneToOne: false
+            referencedRelation: "patient_diets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meal_records: {
+        Row: {
+          appetite_level: string | null
+          assistance_needed: boolean | null
+          calories_consumed: number | null
+          consumption_percentage: number | null
+          created_at: string
+          id: string
+          items_consumed: Json | null
+          meal_date: string
+          meal_plan_id: string | null
+          meal_type: string
+          notes: string | null
+          patient_id: string
+          recorded_by: string | null
+        }
+        Insert: {
+          appetite_level?: string | null
+          assistance_needed?: boolean | null
+          calories_consumed?: number | null
+          consumption_percentage?: number | null
+          created_at?: string
+          id?: string
+          items_consumed?: Json | null
+          meal_date: string
+          meal_plan_id?: string | null
+          meal_type: string
+          notes?: string | null
+          patient_id: string
+          recorded_by?: string | null
+        }
+        Update: {
+          appetite_level?: string | null
+          assistance_needed?: boolean | null
+          calories_consumed?: number | null
+          consumption_percentage?: number | null
+          created_at?: string
+          id?: string
+          items_consumed?: Json | null
+          meal_date?: string
+          meal_plan_id?: string | null
+          meal_type?: string
+          notes?: string | null
+          patient_id?: string
+          recorded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meal_records_meal_plan_id_fkey"
+            columns: ["meal_plan_id"]
+            isOneToOne: false
+            referencedRelation: "meal_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meal_records_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       medical_records: {
         Row: {
           additional_notes: string | null
@@ -2718,6 +3511,125 @@ export type Database = {
         }
         Relationships: []
       }
+      mortuary_cases: {
+        Row: {
+          admission_date: string
+          age: number | null
+          autopsy_required: boolean | null
+          body_condition: string | null
+          brought_by: string | null
+          brought_from: string | null
+          case_number: string
+          case_type: Database["public"]["Enums"]["mortuary_case_type"] | null
+          cause_of_death: string | null
+          created_at: string
+          date_of_birth: string | null
+          date_of_death: string | null
+          deceased_id: string | null
+          deceased_name: string
+          family_contact_name: string | null
+          family_contact_phone: string | null
+          family_notified: boolean | null
+          gender: string | null
+          id: string
+          manner_of_death: string | null
+          notes: string | null
+          notification_time: string | null
+          personal_belongings: Json | null
+          place_of_death: string | null
+          police_case: boolean | null
+          police_report_number: string | null
+          release_authorized: boolean | null
+          release_date: string | null
+          released_by: string | null
+          released_to: string | null
+          status: string | null
+          storage_location: string | null
+          time_of_death_estimated: boolean | null
+          updated_at: string
+        }
+        Insert: {
+          admission_date?: string
+          age?: number | null
+          autopsy_required?: boolean | null
+          body_condition?: string | null
+          brought_by?: string | null
+          brought_from?: string | null
+          case_number: string
+          case_type?: Database["public"]["Enums"]["mortuary_case_type"] | null
+          cause_of_death?: string | null
+          created_at?: string
+          date_of_birth?: string | null
+          date_of_death?: string | null
+          deceased_id?: string | null
+          deceased_name: string
+          family_contact_name?: string | null
+          family_contact_phone?: string | null
+          family_notified?: boolean | null
+          gender?: string | null
+          id?: string
+          manner_of_death?: string | null
+          notes?: string | null
+          notification_time?: string | null
+          personal_belongings?: Json | null
+          place_of_death?: string | null
+          police_case?: boolean | null
+          police_report_number?: string | null
+          release_authorized?: boolean | null
+          release_date?: string | null
+          released_by?: string | null
+          released_to?: string | null
+          status?: string | null
+          storage_location?: string | null
+          time_of_death_estimated?: boolean | null
+          updated_at?: string
+        }
+        Update: {
+          admission_date?: string
+          age?: number | null
+          autopsy_required?: boolean | null
+          body_condition?: string | null
+          brought_by?: string | null
+          brought_from?: string | null
+          case_number?: string
+          case_type?: Database["public"]["Enums"]["mortuary_case_type"] | null
+          cause_of_death?: string | null
+          created_at?: string
+          date_of_birth?: string | null
+          date_of_death?: string | null
+          deceased_id?: string | null
+          deceased_name?: string
+          family_contact_name?: string | null
+          family_contact_phone?: string | null
+          family_notified?: boolean | null
+          gender?: string | null
+          id?: string
+          manner_of_death?: string | null
+          notes?: string | null
+          notification_time?: string | null
+          personal_belongings?: Json | null
+          place_of_death?: string | null
+          police_case?: boolean | null
+          police_report_number?: string | null
+          release_authorized?: boolean | null
+          release_date?: string | null
+          released_by?: string | null
+          released_to?: string | null
+          status?: string | null
+          storage_location?: string | null
+          time_of_death_estimated?: boolean | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mortuary_cases_deceased_id_fkey"
+            columns: ["deceased_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           created_at: string
@@ -2865,6 +3777,82 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      patient_diets: {
+        Row: {
+          created_at: string
+          diet_name: string
+          diet_type_id: string | null
+          end_date: string | null
+          fluid_restriction: number | null
+          id: string
+          notes: string | null
+          patient_id: string
+          prescribed_by: string | null
+          special_instructions: string | null
+          start_date: string
+          status: string | null
+          texture_modification: string | null
+          updated_at: string
+          visit_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          diet_name: string
+          diet_type_id?: string | null
+          end_date?: string | null
+          fluid_restriction?: number | null
+          id?: string
+          notes?: string | null
+          patient_id: string
+          prescribed_by?: string | null
+          special_instructions?: string | null
+          start_date?: string
+          status?: string | null
+          texture_modification?: string | null
+          updated_at?: string
+          visit_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          diet_name?: string
+          diet_type_id?: string | null
+          end_date?: string | null
+          fluid_restriction?: number | null
+          id?: string
+          notes?: string | null
+          patient_id?: string
+          prescribed_by?: string | null
+          special_instructions?: string | null
+          start_date?: string
+          status?: string | null
+          texture_modification?: string | null
+          updated_at?: string
+          visit_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_diets_diet_type_id_fkey"
+            columns: ["diet_type_id"]
+            isOneToOne: false
+            referencedRelation: "diet_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_diets_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_diets_visit_id_fkey"
+            columns: ["visit_id"]
+            isOneToOne: false
+            referencedRelation: "visits"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       patient_insurances: {
         Row: {
@@ -3738,6 +4726,156 @@ export type Database = {
         }
         Relationships: []
       }
+      rehabilitation_assessments: {
+        Row: {
+          adl_score: number | null
+          assessment_date: string
+          balance_assessment: string | null
+          created_at: string
+          diagnosis: string | null
+          estimated_sessions: number | null
+          functional_status: string | null
+          goals: string[] | null
+          id: string
+          mobility_score: number | null
+          notes: string | null
+          pain_scale: number | null
+          patient_id: string
+          precautions: string | null
+          range_of_motion: Json | null
+          strength_assessment: Json | null
+          therapist_id: string | null
+          therapist_name: string | null
+          treatment_plan: string | null
+          updated_at: string
+          visit_id: string | null
+        }
+        Insert: {
+          adl_score?: number | null
+          assessment_date?: string
+          balance_assessment?: string | null
+          created_at?: string
+          diagnosis?: string | null
+          estimated_sessions?: number | null
+          functional_status?: string | null
+          goals?: string[] | null
+          id?: string
+          mobility_score?: number | null
+          notes?: string | null
+          pain_scale?: number | null
+          patient_id: string
+          precautions?: string | null
+          range_of_motion?: Json | null
+          strength_assessment?: Json | null
+          therapist_id?: string | null
+          therapist_name?: string | null
+          treatment_plan?: string | null
+          updated_at?: string
+          visit_id?: string | null
+        }
+        Update: {
+          adl_score?: number | null
+          assessment_date?: string
+          balance_assessment?: string | null
+          created_at?: string
+          diagnosis?: string | null
+          estimated_sessions?: number | null
+          functional_status?: string | null
+          goals?: string[] | null
+          id?: string
+          mobility_score?: number | null
+          notes?: string | null
+          pain_scale?: number | null
+          patient_id?: string
+          precautions?: string | null
+          range_of_motion?: Json | null
+          strength_assessment?: Json | null
+          therapist_id?: string | null
+          therapist_name?: string | null
+          treatment_plan?: string | null
+          updated_at?: string
+          visit_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rehabilitation_assessments_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rehabilitation_assessments_therapist_id_fkey"
+            columns: ["therapist_id"]
+            isOneToOne: false
+            referencedRelation: "doctors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rehabilitation_assessments_visit_id_fkey"
+            columns: ["visit_id"]
+            isOneToOne: false
+            referencedRelation: "visits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rehabilitation_goals: {
+        Row: {
+          achievement_date: string | null
+          assessment_id: string | null
+          baseline_measurement: string | null
+          created_at: string
+          current_measurement: string | null
+          goal_description: string
+          goal_type: string | null
+          id: string
+          notes: string | null
+          status: string | null
+          target_date: string | null
+          target_measurement: string | null
+          updated_at: string
+        }
+        Insert: {
+          achievement_date?: string | null
+          assessment_id?: string | null
+          baseline_measurement?: string | null
+          created_at?: string
+          current_measurement?: string | null
+          goal_description: string
+          goal_type?: string | null
+          id?: string
+          notes?: string | null
+          status?: string | null
+          target_date?: string | null
+          target_measurement?: string | null
+          updated_at?: string
+        }
+        Update: {
+          achievement_date?: string | null
+          assessment_id?: string | null
+          baseline_measurement?: string | null
+          created_at?: string
+          current_measurement?: string | null
+          goal_description?: string
+          goal_type?: string | null
+          id?: string
+          notes?: string | null
+          status?: string | null
+          target_date?: string | null
+          target_measurement?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rehabilitation_goals_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "rehabilitation_assessments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rooms: {
         Row: {
           code: string
@@ -4447,6 +5585,152 @@ export type Database = {
           },
         ]
       }
+      therapy_sessions: {
+        Row: {
+          actual_end_time: string | null
+          actual_start_time: string | null
+          assessment_id: string | null
+          billing_status: string | null
+          created_at: string
+          duration_minutes: number | null
+          home_exercise_program: string | null
+          id: string
+          next_session_plan: string | null
+          notes: string | null
+          pain_after: number | null
+          pain_before: number | null
+          patient_id: string
+          patient_response: string | null
+          progress_notes: string | null
+          scheduled_date: string
+          scheduled_time: string | null
+          session_number: string
+          status: string | null
+          therapist_id: string | null
+          therapist_name: string | null
+          therapy_name: string
+          therapy_type_id: string | null
+          treatment_given: string | null
+          updated_at: string
+        }
+        Insert: {
+          actual_end_time?: string | null
+          actual_start_time?: string | null
+          assessment_id?: string | null
+          billing_status?: string | null
+          created_at?: string
+          duration_minutes?: number | null
+          home_exercise_program?: string | null
+          id?: string
+          next_session_plan?: string | null
+          notes?: string | null
+          pain_after?: number | null
+          pain_before?: number | null
+          patient_id: string
+          patient_response?: string | null
+          progress_notes?: string | null
+          scheduled_date: string
+          scheduled_time?: string | null
+          session_number: string
+          status?: string | null
+          therapist_id?: string | null
+          therapist_name?: string | null
+          therapy_name: string
+          therapy_type_id?: string | null
+          treatment_given?: string | null
+          updated_at?: string
+        }
+        Update: {
+          actual_end_time?: string | null
+          actual_start_time?: string | null
+          assessment_id?: string | null
+          billing_status?: string | null
+          created_at?: string
+          duration_minutes?: number | null
+          home_exercise_program?: string | null
+          id?: string
+          next_session_plan?: string | null
+          notes?: string | null
+          pain_after?: number | null
+          pain_before?: number | null
+          patient_id?: string
+          patient_response?: string | null
+          progress_notes?: string | null
+          scheduled_date?: string
+          scheduled_time?: string | null
+          session_number?: string
+          status?: string | null
+          therapist_id?: string | null
+          therapist_name?: string | null
+          therapy_name?: string
+          therapy_type_id?: string | null
+          treatment_given?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "therapy_sessions_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "rehabilitation_assessments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "therapy_sessions_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "therapy_sessions_therapist_id_fkey"
+            columns: ["therapist_id"]
+            isOneToOne: false
+            referencedRelation: "doctors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "therapy_sessions_therapy_type_id_fkey"
+            columns: ["therapy_type_id"]
+            isOneToOne: false
+            referencedRelation: "therapy_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      therapy_types: {
+        Row: {
+          created_at: string
+          description: string | null
+          duration_minutes: number | null
+          id: string
+          is_active: boolean | null
+          name: string
+          type: Database["public"]["Enums"]["therapy_type"]
+          unit_price: number | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          duration_minutes?: number | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          type: Database["public"]["Enums"]["therapy_type"]
+          unit_price?: number | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          duration_minutes?: number | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          type?: Database["public"]["Enums"]["therapy_type"]
+          unit_price?: number | null
+        }
+        Relationships: []
+      }
       transfusion_reactions: {
         Row: {
           blood_bag_id: string
@@ -4998,6 +6282,118 @@ export type Database = {
           },
         ]
       }
+      visum_reports: {
+        Row: {
+          age_of_injury: string | null
+          case_id: string | null
+          cause_of_injury: string | null
+          created_at: string
+          examination_date: string | null
+          examiner_id: string | null
+          examiner_name: string
+          finalized_date: string | null
+          id: string
+          injury_description: Json | null
+          kesimpulan: string | null
+          notes: string | null
+          patient_id: string | null
+          pemberitaan: string | null
+          pendahuluan: string | null
+          pro_justitia: string | null
+          request_date: string | null
+          request_number: string | null
+          requesting_authority: string | null
+          status: string | null
+          submitted_date: string | null
+          submitted_to: string | null
+          updated_at: string
+          victim_identity: Json | null
+          visum_number: string
+          visum_type: string
+          weapon_type: string | null
+        }
+        Insert: {
+          age_of_injury?: string | null
+          case_id?: string | null
+          cause_of_injury?: string | null
+          created_at?: string
+          examination_date?: string | null
+          examiner_id?: string | null
+          examiner_name: string
+          finalized_date?: string | null
+          id?: string
+          injury_description?: Json | null
+          kesimpulan?: string | null
+          notes?: string | null
+          patient_id?: string | null
+          pemberitaan?: string | null
+          pendahuluan?: string | null
+          pro_justitia?: string | null
+          request_date?: string | null
+          request_number?: string | null
+          requesting_authority?: string | null
+          status?: string | null
+          submitted_date?: string | null
+          submitted_to?: string | null
+          updated_at?: string
+          victim_identity?: Json | null
+          visum_number: string
+          visum_type: string
+          weapon_type?: string | null
+        }
+        Update: {
+          age_of_injury?: string | null
+          case_id?: string | null
+          cause_of_injury?: string | null
+          created_at?: string
+          examination_date?: string | null
+          examiner_id?: string | null
+          examiner_name?: string
+          finalized_date?: string | null
+          id?: string
+          injury_description?: Json | null
+          kesimpulan?: string | null
+          notes?: string | null
+          patient_id?: string | null
+          pemberitaan?: string | null
+          pendahuluan?: string | null
+          pro_justitia?: string | null
+          request_date?: string | null
+          request_number?: string | null
+          requesting_authority?: string | null
+          status?: string | null
+          submitted_date?: string | null
+          submitted_to?: string | null
+          updated_at?: string
+          victim_identity?: Json | null
+          visum_number?: string
+          visum_type?: string
+          weapon_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "visum_reports_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "mortuary_cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "visum_reports_examiner_id_fkey"
+            columns: ["examiner_id"]
+            isOneToOne: false
+            referencedRelation: "doctors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "visum_reports_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vital_signs: {
         Row: {
           blood_glucose: number | null
@@ -5095,15 +6491,19 @@ export type Database = {
       generate_insurance_claim_number: { Args: never; Returns: string }
       generate_invoice_number: { Args: never; Returns: string }
       generate_lab_number: { Args: never; Returns: string }
+      generate_mcu_registration_number: { Args: never; Returns: string }
       generate_medical_record_number: { Args: never; Returns: string }
+      generate_mortuary_case_number: { Args: never; Returns: string }
       generate_po_number: { Args: never; Returns: string }
       generate_queue_number: {
         Args: { p_service_type: string }
         Returns: string
       }
       generate_surgery_number: { Args: never; Returns: string }
+      generate_therapy_session_number: { Args: never; Returns: string }
       generate_transfusion_request_number: { Args: never; Returns: string }
       generate_visit_number: { Args: never; Returns: string }
+      generate_visum_number: { Args: never; Returns: string }
       get_user_menu_access: {
         Args: { _user_id: string }
         Returns: {
@@ -5170,6 +6570,18 @@ export type Database = {
       claim_status: "draft" | "submitted" | "approved" | "rejected" | "paid"
       crossmatch_result: "compatible" | "incompatible" | "pending"
       dialysis_type: "hemodialysis" | "peritoneal" | "crrt" | "sled"
+      diet_category:
+        | "regular"
+        | "diabetes"
+        | "renal"
+        | "cardiac"
+        | "low_sodium"
+        | "high_protein"
+        | "soft"
+        | "liquid"
+        | "enteral"
+        | "parenteral"
+        | "other"
       gender_type: "L" | "P"
       icu_admission_status: "active" | "transferred" | "discharged" | "deceased"
       icu_type: "icu" | "nicu" | "picu" | "iccu" | "hcu"
@@ -5182,6 +6594,13 @@ export type Database = {
         | "rejected"
         | "paid"
       insurance_type: "bpjs" | "jasa_raharja" | "private" | "corporate"
+      mortuary_case_type:
+        | "natural"
+        | "accident"
+        | "suicide"
+        | "homicide"
+        | "undetermined"
+        | "pending"
       patient_status: "aktif" | "non_aktif" | "meninggal"
       payment_type: "bpjs" | "umum" | "asuransi"
       prescription_status:
@@ -5203,6 +6622,12 @@ export type Database = {
         | "completed"
         | "cancelled"
         | "postponed"
+      therapy_type:
+        | "physiotherapy"
+        | "occupational_therapy"
+        | "speech_therapy"
+        | "hydrotherapy"
+        | "other"
       transfusion_reaction_severity: "mild" | "moderate" | "severe" | "fatal"
       triage_level: "merah" | "kuning" | "hijau" | "hitam"
       vascular_access_type:
@@ -5390,6 +6815,19 @@ export const Constants = {
       claim_status: ["draft", "submitted", "approved", "rejected", "paid"],
       crossmatch_result: ["compatible", "incompatible", "pending"],
       dialysis_type: ["hemodialysis", "peritoneal", "crrt", "sled"],
+      diet_category: [
+        "regular",
+        "diabetes",
+        "renal",
+        "cardiac",
+        "low_sodium",
+        "high_protein",
+        "soft",
+        "liquid",
+        "enteral",
+        "parenteral",
+        "other",
+      ],
       gender_type: ["L", "P"],
       icu_admission_status: ["active", "transferred", "discharged", "deceased"],
       icu_type: ["icu", "nicu", "picu", "iccu", "hcu"],
@@ -5403,6 +6841,14 @@ export const Constants = {
         "paid",
       ],
       insurance_type: ["bpjs", "jasa_raharja", "private", "corporate"],
+      mortuary_case_type: [
+        "natural",
+        "accident",
+        "suicide",
+        "homicide",
+        "undetermined",
+        "pending",
+      ],
       patient_status: ["aktif", "non_aktif", "meninggal"],
       payment_type: ["bpjs", "umum", "asuransi"],
       prescription_status: [
@@ -5426,6 +6872,13 @@ export const Constants = {
         "completed",
         "cancelled",
         "postponed",
+      ],
+      therapy_type: [
+        "physiotherapy",
+        "occupational_therapy",
+        "speech_therapy",
+        "hydrotherapy",
+        "other",
       ],
       transfusion_reaction_severity: ["mild", "moderate", "severe", "fatal"],
       triage_level: ["merah", "kuning", "hijau", "hitam"],
