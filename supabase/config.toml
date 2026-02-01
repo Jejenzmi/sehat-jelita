@@ -1,1 +1,13 @@
 project_id = "wrklxbeptvtiqxxjatrx"
+
+[functions.bpjs-vclaim]
+verify_jwt = false
+
+[functions.bpjs-icare]
+verify_jwt = false
+
+[functions.satusehat]
+verify_jwt = false
+
+[functions.bpjs-antrean]
+verify_jwt = false
