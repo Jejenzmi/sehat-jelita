@@ -14,6 +14,155 @@ export type Database = {
   }
   public: {
     Tables: {
+      accreditation_assessments: {
+        Row: {
+          action_required: string | null
+          assessment_date: string
+          assessor_id: string | null
+          completed_date: string | null
+          created_at: string
+          due_date: string | null
+          element_id: string | null
+          evidence: string[] | null
+          findings: string | null
+          id: string
+          notes: string | null
+          score: number | null
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          action_required?: string | null
+          assessment_date: string
+          assessor_id?: string | null
+          completed_date?: string | null
+          created_at?: string
+          due_date?: string | null
+          element_id?: string | null
+          evidence?: string[] | null
+          findings?: string | null
+          id?: string
+          notes?: string | null
+          score?: number | null
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          action_required?: string | null
+          assessment_date?: string
+          assessor_id?: string | null
+          completed_date?: string | null
+          created_at?: string
+          due_date?: string | null
+          element_id?: string | null
+          evidence?: string[] | null
+          findings?: string | null
+          id?: string
+          notes?: string | null
+          score?: number | null
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accreditation_assessments_assessor_id_fkey"
+            columns: ["assessor_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accreditation_assessments_element_id_fkey"
+            columns: ["element_id"]
+            isOneToOne: false
+            referencedRelation: "accreditation_elements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      accreditation_elements: {
+        Row: {
+          created_at: string
+          description: string | null
+          document_requirements: string[] | null
+          element_code: string
+          element_name: string
+          id: string
+          max_score: number | null
+          scoring_criteria: string | null
+          standard_id: string | null
+          weight: number | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          document_requirements?: string[] | null
+          element_code: string
+          element_name: string
+          id?: string
+          max_score?: number | null
+          scoring_criteria?: string | null
+          standard_id?: string | null
+          weight?: number | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          document_requirements?: string[] | null
+          element_code?: string
+          element_name?: string
+          id?: string
+          max_score?: number | null
+          scoring_criteria?: string | null
+          standard_id?: string | null
+          weight?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accreditation_elements_standard_id_fkey"
+            columns: ["standard_id"]
+            isOneToOne: false
+            referencedRelation: "accreditation_standards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      accreditation_standards: {
+        Row: {
+          accreditation_body: string
+          chapter: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean | null
+          standard_code: string
+          standard_name: string
+          version: string | null
+        }
+        Insert: {
+          accreditation_body: string
+          chapter?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          standard_code: string
+          standard_name: string
+          version?: string | null
+        }
+        Update: {
+          accreditation_body?: string
+          chapter?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          standard_code?: string
+          standard_name?: string
+          version?: string | null
+        }
+        Relationships: []
+      }
       anesthesia_records: {
         Row: {
           airway_assessment: Json | null
@@ -842,6 +991,51 @@ export type Database = {
           },
         ]
       }
+      consent_templates: {
+        Row: {
+          alternatives_explanation: string | null
+          category: string
+          content_template: string
+          created_at: string
+          id: string
+          is_active: boolean | null
+          language: string | null
+          risks_explanation: string | null
+          template_code: string
+          template_name: string
+          updated_at: string
+          version: string | null
+        }
+        Insert: {
+          alternatives_explanation?: string | null
+          category: string
+          content_template: string
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          language?: string | null
+          risks_explanation?: string | null
+          template_code: string
+          template_name: string
+          updated_at?: string
+          version?: string | null
+        }
+        Update: {
+          alternatives_explanation?: string | null
+          category?: string
+          content_template?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          language?: string | null
+          risks_explanation?: string | null
+          template_code?: string
+          template_name?: string
+          updated_at?: string
+          version?: string | null
+        }
+        Relationships: []
+      }
       corporate_clients: {
         Row: {
           address: string | null
@@ -1122,6 +1316,7 @@ export type Database = {
           id: string
           is_active: boolean
           name: string
+          satusehat_location_id: string | null
         }
         Insert: {
           code: string
@@ -1130,6 +1325,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           name: string
+          satusehat_location_id?: string | null
         }
         Update: {
           code?: string
@@ -1138,6 +1334,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           name?: string
+          satusehat_location_id?: string | null
         }
         Relationships: []
       }
@@ -1185,6 +1382,47 @@ export type Database = {
             columns: ["medical_record_id"]
             isOneToOne: false
             referencedRelation: "medical_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      diagnosis_drg_mapping: {
+        Row: {
+          created_at: string
+          drg_id: string | null
+          icd10_code: string
+          icd9cm_code: string | null
+          id: string
+          los_max: number | null
+          los_min: number | null
+          notes: string | null
+        }
+        Insert: {
+          created_at?: string
+          drg_id?: string | null
+          icd10_code: string
+          icd9cm_code?: string | null
+          id?: string
+          los_max?: number | null
+          los_min?: number | null
+          notes?: string | null
+        }
+        Update: {
+          created_at?: string
+          drg_id?: string | null
+          icd10_code?: string
+          icd9cm_code?: string | null
+          id?: string
+          los_max?: number | null
+          los_min?: number | null
+          notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "diagnosis_drg_mapping_drg_id_fkey"
+            columns: ["drg_id"]
+            isOneToOne: false
+            referencedRelation: "inadrg_codes"
             referencedColumns: ["id"]
           },
         ]
@@ -1620,7 +1858,9 @@ export type Database = {
           full_name: string
           id: string
           is_active: boolean
+          nik: string | null
           profile_id: string | null
+          satusehat_practitioner_id: string | null
           sip_number: string
           specialization: string | null
           updated_at: string
@@ -1633,7 +1873,9 @@ export type Database = {
           full_name: string
           id?: string
           is_active?: boolean
+          nik?: string | null
           profile_id?: string | null
+          satusehat_practitioner_id?: string | null
           sip_number: string
           specialization?: string | null
           updated_at?: string
@@ -1646,7 +1888,9 @@ export type Database = {
           full_name?: string
           id?: string
           is_active?: boolean
+          nik?: string | null
           profile_id?: string | null
+          satusehat_practitioner_id?: string | null
           sip_number?: string
           specialization?: string | null
           updated_at?: string
@@ -2287,6 +2531,51 @@ export type Database = {
           },
         ]
       }
+      inadrg_codes: {
+        Row: {
+          created_at: string
+          drg_code: string
+          drg_name: string
+          effective_date: string | null
+          hospital_class: string | null
+          id: string
+          is_active: boolean | null
+          mdc_code: string | null
+          mdc_name: string | null
+          national_tariff: number | null
+          regional_tariff: number | null
+          severity_level: number | null
+        }
+        Insert: {
+          created_at?: string
+          drg_code: string
+          drg_name: string
+          effective_date?: string | null
+          hospital_class?: string | null
+          id?: string
+          is_active?: boolean | null
+          mdc_code?: string | null
+          mdc_name?: string | null
+          national_tariff?: number | null
+          regional_tariff?: number | null
+          severity_level?: number | null
+        }
+        Update: {
+          created_at?: string
+          drg_code?: string
+          drg_name?: string
+          effective_date?: string | null
+          hospital_class?: string | null
+          id?: string
+          is_active?: boolean | null
+          mdc_code?: string | null
+          mdc_name?: string | null
+          national_tariff?: number | null
+          regional_tariff?: number | null
+          severity_level?: number | null
+        }
+        Relationships: []
+      }
       inpatient_admissions: {
         Row: {
           actual_discharge_date: string | null
@@ -2373,6 +2662,57 @@ export type Database = {
             columns: ["visit_id"]
             isOneToOne: false
             referencedRelation: "visits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      insurance_api_logs: {
+        Row: {
+          claim_id: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          provider_id: string | null
+          request_payload: Json | null
+          request_type: string
+          response_payload: Json | null
+          response_status: number | null
+        }
+        Insert: {
+          claim_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          provider_id?: string | null
+          request_payload?: Json | null
+          request_type: string
+          response_payload?: Json | null
+          response_status?: number | null
+        }
+        Update: {
+          claim_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          provider_id?: string | null
+          request_payload?: Json | null
+          request_type?: string
+          response_payload?: Json | null
+          response_status?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "insurance_api_logs_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "insurance_claims"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "insurance_api_logs_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "insurance_providers"
             referencedColumns: ["id"]
           },
         ]
@@ -2504,6 +2844,9 @@ export type Database = {
       insurance_providers: {
         Row: {
           address: string | null
+          api_endpoint: string | null
+          api_key_setting: string | null
+          claim_submission_method: string | null
           code: string
           created_at: string | null
           email: string | null
@@ -2519,6 +2862,9 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          api_endpoint?: string | null
+          api_key_setting?: string | null
+          claim_submission_method?: string | null
           code: string
           created_at?: string | null
           email?: string | null
@@ -2534,6 +2880,9 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          api_endpoint?: string | null
+          api_key_setting?: string | null
+          claim_submission_method?: string | null
           code?: string
           created_at?: string | null
           email?: string | null
@@ -2793,6 +3142,114 @@ export type Database = {
         }
         Relationships: []
       }
+      laundry_batches: {
+        Row: {
+          batch_number: string
+          collected_by: string | null
+          collection_date: string
+          completion_date: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          processed_by: string | null
+          status: string | null
+          total_items: number | null
+          total_weight: number | null
+          updated_at: string
+        }
+        Insert: {
+          batch_number: string
+          collected_by?: string | null
+          collection_date: string
+          completion_date?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          processed_by?: string | null
+          status?: string | null
+          total_items?: number | null
+          total_weight?: number | null
+          updated_at?: string
+        }
+        Update: {
+          batch_number?: string
+          collected_by?: string | null
+          collection_date?: string
+          completion_date?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          processed_by?: string | null
+          status?: string | null
+          total_items?: number | null
+          total_weight?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "laundry_batches_collected_by_fkey"
+            columns: ["collected_by"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "laundry_batches_processed_by_fkey"
+            columns: ["processed_by"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      laundry_items: {
+        Row: {
+          batch_id: string | null
+          condition_after: string | null
+          condition_before: string | null
+          created_at: string
+          damage_notes: string | null
+          id: string
+          is_damaged: boolean | null
+          linen_id: string | null
+        }
+        Insert: {
+          batch_id?: string | null
+          condition_after?: string | null
+          condition_before?: string | null
+          created_at?: string
+          damage_notes?: string | null
+          id?: string
+          is_damaged?: boolean | null
+          linen_id?: string | null
+        }
+        Update: {
+          batch_id?: string | null
+          condition_after?: string | null
+          condition_before?: string | null
+          created_at?: string
+          damage_notes?: string | null
+          id?: string
+          is_damaged?: boolean | null
+          linen_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "laundry_items_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "laundry_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "laundry_items_linen_id_fkey"
+            columns: ["linen_id"]
+            isOneToOne: false
+            referencedRelation: "linen_inventory"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leave_requests: {
         Row: {
           approved_at: string | null
@@ -2850,6 +3307,291 @@ export type Database = {
           {
             foreignKeyName: "leave_requests_employee_id_fkey"
             columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      linen_inventory: {
+        Row: {
+          color: string | null
+          created_at: string
+          department_id: string | null
+          id: string
+          last_wash_date: string | null
+          linen_code: string
+          linen_type: string
+          max_wash_cycles: number | null
+          notes: string | null
+          purchase_date: string | null
+          size: string | null
+          status: Database["public"]["Enums"]["linen_status"] | null
+          updated_at: string
+          wash_count: number | null
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          department_id?: string | null
+          id?: string
+          last_wash_date?: string | null
+          linen_code: string
+          linen_type: string
+          max_wash_cycles?: number | null
+          notes?: string | null
+          purchase_date?: string | null
+          size?: string | null
+          status?: Database["public"]["Enums"]["linen_status"] | null
+          updated_at?: string
+          wash_count?: number | null
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          department_id?: string | null
+          id?: string
+          last_wash_date?: string | null
+          linen_code?: string
+          linen_type?: string
+          max_wash_cycles?: number | null
+          notes?: string | null
+          purchase_date?: string | null
+          size?: string | null
+          status?: Database["public"]["Enums"]["linen_status"] | null
+          updated_at?: string
+          wash_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "linen_inventory_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      maintenance_assets: {
+        Row: {
+          asset_code: string
+          asset_name: string
+          brand: string | null
+          category: string
+          created_at: string
+          current_value: number | null
+          department_id: string | null
+          depreciation_rate: number | null
+          id: string
+          last_maintenance_date: string | null
+          location: string | null
+          maintenance_interval_days: number | null
+          model: string | null
+          next_maintenance_date: string | null
+          notes: string | null
+          purchase_date: string | null
+          purchase_price: number | null
+          serial_number: string | null
+          status: Database["public"]["Enums"]["asset_status"] | null
+          updated_at: string
+          warranty_expiry: string | null
+        }
+        Insert: {
+          asset_code: string
+          asset_name: string
+          brand?: string | null
+          category: string
+          created_at?: string
+          current_value?: number | null
+          department_id?: string | null
+          depreciation_rate?: number | null
+          id?: string
+          last_maintenance_date?: string | null
+          location?: string | null
+          maintenance_interval_days?: number | null
+          model?: string | null
+          next_maintenance_date?: string | null
+          notes?: string | null
+          purchase_date?: string | null
+          purchase_price?: number | null
+          serial_number?: string | null
+          status?: Database["public"]["Enums"]["asset_status"] | null
+          updated_at?: string
+          warranty_expiry?: string | null
+        }
+        Update: {
+          asset_code?: string
+          asset_name?: string
+          brand?: string | null
+          category?: string
+          created_at?: string
+          current_value?: number | null
+          department_id?: string | null
+          depreciation_rate?: number | null
+          id?: string
+          last_maintenance_date?: string | null
+          location?: string | null
+          maintenance_interval_days?: number | null
+          model?: string | null
+          next_maintenance_date?: string | null
+          notes?: string | null
+          purchase_date?: string | null
+          purchase_price?: number | null
+          serial_number?: string | null
+          status?: Database["public"]["Enums"]["asset_status"] | null
+          updated_at?: string
+          warranty_expiry?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_assets_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      maintenance_logs: {
+        Row: {
+          action_date: string
+          action_type: string
+          asset_id: string | null
+          cost: number | null
+          created_at: string
+          description: string | null
+          id: string
+          labor_hours: number | null
+          parts_used: Json | null
+          performed_by: string | null
+          request_id: string | null
+        }
+        Insert: {
+          action_date?: string
+          action_type: string
+          asset_id?: string | null
+          cost?: number | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          labor_hours?: number | null
+          parts_used?: Json | null
+          performed_by?: string | null
+          request_id?: string | null
+        }
+        Update: {
+          action_date?: string
+          action_type?: string
+          asset_id?: string | null
+          cost?: number | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          labor_hours?: number | null
+          parts_used?: Json | null
+          performed_by?: string | null
+          request_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_logs_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_logs_performed_by_fkey"
+            columns: ["performed_by"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_logs_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      maintenance_requests: {
+        Row: {
+          asset_id: string | null
+          assigned_to: string | null
+          completed_date: string | null
+          cost: number | null
+          created_at: string
+          description: string
+          id: string
+          maintenance_type: string
+          priority: string | null
+          request_date: string
+          request_number: string
+          requested_by: string | null
+          resolution_notes: string | null
+          scheduled_date: string | null
+          status: Database["public"]["Enums"]["maintenance_status"] | null
+          updated_at: string
+          vendor_id: string | null
+        }
+        Insert: {
+          asset_id?: string | null
+          assigned_to?: string | null
+          completed_date?: string | null
+          cost?: number | null
+          created_at?: string
+          description: string
+          id?: string
+          maintenance_type: string
+          priority?: string | null
+          request_date?: string
+          request_number: string
+          requested_by?: string | null
+          resolution_notes?: string | null
+          scheduled_date?: string | null
+          status?: Database["public"]["Enums"]["maintenance_status"] | null
+          updated_at?: string
+          vendor_id?: string | null
+        }
+        Update: {
+          asset_id?: string | null
+          assigned_to?: string | null
+          completed_date?: string | null
+          cost?: number | null
+          created_at?: string
+          description?: string
+          id?: string
+          maintenance_type?: string
+          priority?: string | null
+          request_date?: string
+          request_number?: string
+          requested_by?: string | null
+          resolution_notes?: string | null
+          scheduled_date?: string | null
+          status?: Database["public"]["Enums"]["maintenance_status"] | null
+          updated_at?: string
+          vendor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_requests_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_requests_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_requests_requested_by_fkey"
+            columns: ["requested_by"]
             isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
@@ -3778,6 +4520,129 @@ export type Database = {
         }
         Relationships: []
       }
+      patient_consents: {
+        Row: {
+          consent_date: string | null
+          consent_given: boolean | null
+          consent_number: string
+          consent_type: string
+          created_at: string
+          digital_signature: string | null
+          doctor_id: string | null
+          explanation_date: string | null
+          explanation_given_by: string | null
+          id: string
+          notes: string | null
+          patient_id: string
+          patient_questions: string | null
+          patient_understands: boolean | null
+          procedure_date: string | null
+          procedure_name: string | null
+          refusal_reason: string | null
+          relationship_to_patient: string | null
+          signature_image_url: string | null
+          signed_by: string | null
+          status: Database["public"]["Enums"]["consent_status"] | null
+          template_id: string | null
+          updated_at: string
+          visit_id: string | null
+          witness_name: string | null
+          witness_signature_date: string | null
+        }
+        Insert: {
+          consent_date?: string | null
+          consent_given?: boolean | null
+          consent_number: string
+          consent_type: string
+          created_at?: string
+          digital_signature?: string | null
+          doctor_id?: string | null
+          explanation_date?: string | null
+          explanation_given_by?: string | null
+          id?: string
+          notes?: string | null
+          patient_id: string
+          patient_questions?: string | null
+          patient_understands?: boolean | null
+          procedure_date?: string | null
+          procedure_name?: string | null
+          refusal_reason?: string | null
+          relationship_to_patient?: string | null
+          signature_image_url?: string | null
+          signed_by?: string | null
+          status?: Database["public"]["Enums"]["consent_status"] | null
+          template_id?: string | null
+          updated_at?: string
+          visit_id?: string | null
+          witness_name?: string | null
+          witness_signature_date?: string | null
+        }
+        Update: {
+          consent_date?: string | null
+          consent_given?: boolean | null
+          consent_number?: string
+          consent_type?: string
+          created_at?: string
+          digital_signature?: string | null
+          doctor_id?: string | null
+          explanation_date?: string | null
+          explanation_given_by?: string | null
+          id?: string
+          notes?: string | null
+          patient_id?: string
+          patient_questions?: string | null
+          patient_understands?: boolean | null
+          procedure_date?: string | null
+          procedure_name?: string | null
+          refusal_reason?: string | null
+          relationship_to_patient?: string | null
+          signature_image_url?: string | null
+          signed_by?: string | null
+          status?: Database["public"]["Enums"]["consent_status"] | null
+          template_id?: string | null
+          updated_at?: string
+          visit_id?: string | null
+          witness_name?: string | null
+          witness_signature_date?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_consents_doctor_id_fkey"
+            columns: ["doctor_id"]
+            isOneToOne: false
+            referencedRelation: "doctors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_consents_explanation_given_by_fkey"
+            columns: ["explanation_given_by"]
+            isOneToOne: false
+            referencedRelation: "doctors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_consents_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_consents_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "consent_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_consents_visit_id_fkey"
+            columns: ["visit_id"]
+            isOneToOne: false
+            referencedRelation: "visits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       patient_diets: {
         Row: {
           created_at: string
@@ -4447,6 +5312,227 @@ export type Database = {
         }
         Relationships: []
       }
+      quality_improvement_actions: {
+        Row: {
+          action_plan: string | null
+          action_type: string
+          completed_date: string | null
+          created_at: string
+          description: string
+          effectiveness_evaluation: string | null
+          id: string
+          indicator_id: string | null
+          measurement_id: string | null
+          responsible_person: string | null
+          root_cause: string | null
+          start_date: string | null
+          status: string | null
+          target_date: string | null
+          updated_at: string
+        }
+        Insert: {
+          action_plan?: string | null
+          action_type: string
+          completed_date?: string | null
+          created_at?: string
+          description: string
+          effectiveness_evaluation?: string | null
+          id?: string
+          indicator_id?: string | null
+          measurement_id?: string | null
+          responsible_person?: string | null
+          root_cause?: string | null
+          start_date?: string | null
+          status?: string | null
+          target_date?: string | null
+          updated_at?: string
+        }
+        Update: {
+          action_plan?: string | null
+          action_type?: string
+          completed_date?: string | null
+          created_at?: string
+          description?: string
+          effectiveness_evaluation?: string | null
+          id?: string
+          indicator_id?: string | null
+          measurement_id?: string | null
+          responsible_person?: string | null
+          root_cause?: string | null
+          start_date?: string | null
+          status?: string | null
+          target_date?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quality_improvement_actions_indicator_id_fkey"
+            columns: ["indicator_id"]
+            isOneToOne: false
+            referencedRelation: "quality_indicators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quality_improvement_actions_measurement_id_fkey"
+            columns: ["measurement_id"]
+            isOneToOne: false
+            referencedRelation: "quality_measurements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quality_improvement_actions_responsible_person_fkey"
+            columns: ["responsible_person"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quality_indicators: {
+        Row: {
+          category: string
+          created_at: string
+          data_source: string | null
+          denominator_definition: string | null
+          dimension: string | null
+          frequency: string | null
+          id: string
+          indicator_code: string
+          indicator_name: string
+          is_active: boolean | null
+          is_national_indicator: boolean | null
+          numerator_definition: string | null
+          responsible_department: string | null
+          target_direction: string | null
+          target_value: number | null
+          unit_name: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          data_source?: string | null
+          denominator_definition?: string | null
+          dimension?: string | null
+          frequency?: string | null
+          id?: string
+          indicator_code: string
+          indicator_name: string
+          is_active?: boolean | null
+          is_national_indicator?: boolean | null
+          numerator_definition?: string | null
+          responsible_department?: string | null
+          target_direction?: string | null
+          target_value?: number | null
+          unit_name: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          data_source?: string | null
+          denominator_definition?: string | null
+          dimension?: string | null
+          frequency?: string | null
+          id?: string
+          indicator_code?: string
+          indicator_name?: string
+          is_active?: boolean | null
+          is_national_indicator?: boolean | null
+          numerator_definition?: string | null
+          responsible_department?: string | null
+          target_direction?: string | null
+          target_value?: number | null
+          unit_name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quality_indicators_responsible_department_fkey"
+            columns: ["responsible_department"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quality_measurements: {
+        Row: {
+          collected_by: string | null
+          created_at: string
+          denominator: number | null
+          department_id: string | null
+          id: string
+          indicator_id: string | null
+          measurement_period: string
+          notes: string | null
+          numerator: number | null
+          target_met: boolean | null
+          validated_by: string | null
+          validation_date: string | null
+          value: number | null
+        }
+        Insert: {
+          collected_by?: string | null
+          created_at?: string
+          denominator?: number | null
+          department_id?: string | null
+          id?: string
+          indicator_id?: string | null
+          measurement_period: string
+          notes?: string | null
+          numerator?: number | null
+          target_met?: boolean | null
+          validated_by?: string | null
+          validation_date?: string | null
+          value?: number | null
+        }
+        Update: {
+          collected_by?: string | null
+          created_at?: string
+          denominator?: number | null
+          department_id?: string | null
+          id?: string
+          indicator_id?: string | null
+          measurement_period?: string
+          notes?: string | null
+          numerator?: number | null
+          target_met?: boolean | null
+          validated_by?: string | null
+          validation_date?: string | null
+          value?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quality_measurements_collected_by_fkey"
+            columns: ["collected_by"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quality_measurements_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quality_measurements_indicator_id_fkey"
+            columns: ["indicator_id"]
+            isOneToOne: false
+            referencedRelation: "quality_indicators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quality_measurements_validated_by_fkey"
+            columns: ["validated_by"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       queue_display: {
         Row: {
           called_at: string | null
@@ -4886,6 +5972,7 @@ export type Database = {
           is_active: boolean
           name: string
           room_class: string
+          satusehat_location_id: string | null
           total_beds: number
         }
         Insert: {
@@ -4897,6 +5984,7 @@ export type Database = {
           is_active?: boolean
           name: string
           room_class: string
+          satusehat_location_id?: string | null
           total_beds?: number
         }
         Update: {
@@ -4908,6 +5996,7 @@ export type Database = {
           is_active?: boolean
           name?: string
           room_class?: string
+          satusehat_location_id?: string | null
           total_beds?: number
         }
         Relationships: [
@@ -4916,6 +6005,129 @@ export type Database = {
             columns: ["department_id"]
             isOneToOne: false
             referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      safety_incidents: {
+        Row: {
+          closed_by: string | null
+          closed_date: string | null
+          contributing_factors: string[] | null
+          corrective_actions: Json | null
+          created_at: string
+          department_id: string | null
+          description: string
+          followup_date: string | null
+          id: string
+          immediate_action: string | null
+          incident_date: string
+          incident_number: string
+          incident_type: string
+          investigated_by: string | null
+          investigation_date: string | null
+          location: string | null
+          patient_id: string | null
+          patient_involved: boolean | null
+          recommendations: string | null
+          reported_date: string
+          reporter_id: string | null
+          root_cause: string | null
+          severity: Database["public"]["Enums"]["incident_severity"]
+          status: string | null
+          updated_at: string
+          witnesses: string[] | null
+        }
+        Insert: {
+          closed_by?: string | null
+          closed_date?: string | null
+          contributing_factors?: string[] | null
+          corrective_actions?: Json | null
+          created_at?: string
+          department_id?: string | null
+          description: string
+          followup_date?: string | null
+          id?: string
+          immediate_action?: string | null
+          incident_date: string
+          incident_number: string
+          incident_type: string
+          investigated_by?: string | null
+          investigation_date?: string | null
+          location?: string | null
+          patient_id?: string | null
+          patient_involved?: boolean | null
+          recommendations?: string | null
+          reported_date?: string
+          reporter_id?: string | null
+          root_cause?: string | null
+          severity: Database["public"]["Enums"]["incident_severity"]
+          status?: string | null
+          updated_at?: string
+          witnesses?: string[] | null
+        }
+        Update: {
+          closed_by?: string | null
+          closed_date?: string | null
+          contributing_factors?: string[] | null
+          corrective_actions?: Json | null
+          created_at?: string
+          department_id?: string | null
+          description?: string
+          followup_date?: string | null
+          id?: string
+          immediate_action?: string | null
+          incident_date?: string
+          incident_number?: string
+          incident_type?: string
+          investigated_by?: string | null
+          investigation_date?: string | null
+          location?: string | null
+          patient_id?: string | null
+          patient_involved?: boolean | null
+          recommendations?: string | null
+          reported_date?: string
+          reporter_id?: string | null
+          root_cause?: string | null
+          severity?: Database["public"]["Enums"]["incident_severity"]
+          status?: string | null
+          updated_at?: string
+          witnesses?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "safety_incidents_closed_by_fkey"
+            columns: ["closed_by"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "safety_incidents_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "safety_incidents_investigated_by_fkey"
+            columns: ["investigated_by"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "safety_incidents_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "safety_incidents_reporter_id_fkey"
+            columns: ["reporter_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
             referencedColumns: ["id"]
           },
         ]
@@ -4953,6 +6165,33 @@ export type Database = {
           sync_interval_minutes?: number | null
           token_expires_at?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      satusehat_organization_roles: {
+        Row: {
+          created_at: string
+          id: string
+          organization_id: string
+          part_of: string | null
+          role_code: string
+          role_display: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          organization_id: string
+          part_of?: string | null
+          role_code: string
+          role_display?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          organization_id?: string
+          part_of?: string | null
+          role_code?: string
+          role_display?: string | null
         }
         Relationships: []
       }
@@ -5116,6 +6355,164 @@ export type Database = {
             columns: ["department_id"]
             isOneToOne: false
             referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sterilization_batches: {
+        Row: {
+          batch_number: string
+          biological_indicator_result: string | null
+          chemical_indicator_result: string | null
+          created_at: string
+          end_time: string | null
+          exposure_time: number | null
+          id: string
+          notes: string | null
+          operator_id: string | null
+          pressure: number | null
+          start_time: string
+          status: Database["public"]["Enums"]["sterilization_status"] | null
+          sterilization_method: string
+          sterilizer_id: string | null
+          temperature: number | null
+          updated_at: string
+        }
+        Insert: {
+          batch_number: string
+          biological_indicator_result?: string | null
+          chemical_indicator_result?: string | null
+          created_at?: string
+          end_time?: string | null
+          exposure_time?: number | null
+          id?: string
+          notes?: string | null
+          operator_id?: string | null
+          pressure?: number | null
+          start_time: string
+          status?: Database["public"]["Enums"]["sterilization_status"] | null
+          sterilization_method: string
+          sterilizer_id?: string | null
+          temperature?: number | null
+          updated_at?: string
+        }
+        Update: {
+          batch_number?: string
+          biological_indicator_result?: string | null
+          chemical_indicator_result?: string | null
+          created_at?: string
+          end_time?: string | null
+          exposure_time?: number | null
+          id?: string
+          notes?: string | null
+          operator_id?: string | null
+          pressure?: number | null
+          start_time?: string
+          status?: Database["public"]["Enums"]["sterilization_status"] | null
+          sterilization_method?: string
+          sterilizer_id?: string | null
+          temperature?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sterilization_batches_operator_id_fkey"
+            columns: ["operator_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sterilization_items: {
+        Row: {
+          category: string
+          created_at: string
+          current_cycles: number | null
+          cycle_life: number | null
+          id: string
+          is_active: boolean | null
+          item_code: string
+          item_name: string
+          sterilization_method: string
+          storage_location: string | null
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          current_cycles?: number | null
+          cycle_life?: number | null
+          id?: string
+          is_active?: boolean | null
+          item_code: string
+          item_name: string
+          sterilization_method: string
+          storage_location?: string | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          current_cycles?: number | null
+          cycle_life?: number | null
+          id?: string
+          is_active?: boolean | null
+          item_code?: string
+          item_name?: string
+          sterilization_method?: string
+          storage_location?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      sterilization_records: {
+        Row: {
+          batch_id: string | null
+          created_at: string
+          expiry_date: string | null
+          id: string
+          issued_date: string | null
+          issued_to_department: string | null
+          item_id: string | null
+          quantity: number | null
+          status: Database["public"]["Enums"]["sterilization_status"] | null
+        }
+        Insert: {
+          batch_id?: string | null
+          created_at?: string
+          expiry_date?: string | null
+          id?: string
+          issued_date?: string | null
+          issued_to_department?: string | null
+          item_id?: string | null
+          quantity?: number | null
+          status?: Database["public"]["Enums"]["sterilization_status"] | null
+        }
+        Update: {
+          batch_id?: string | null
+          created_at?: string
+          expiry_date?: string | null
+          id?: string
+          issued_date?: string | null
+          issued_to_department?: string | null
+          item_id?: string | null
+          quantity?: number | null
+          status?: Database["public"]["Enums"]["sterilization_status"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sterilization_records_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "sterilization_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sterilization_records_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "sterilization_items"
             referencedColumns: ["id"]
           },
         ]
@@ -6091,6 +7488,206 @@ export type Database = {
           },
         ]
       }
+      vendor_contracts: {
+        Row: {
+          attachments: Json | null
+          contract_number: string
+          contract_type: string
+          created_at: string
+          end_date: string
+          id: string
+          start_date: string
+          status: string | null
+          terms: string | null
+          updated_at: string
+          value: number | null
+          vendor_id: string | null
+        }
+        Insert: {
+          attachments?: Json | null
+          contract_number: string
+          contract_type: string
+          created_at?: string
+          end_date: string
+          id?: string
+          start_date: string
+          status?: string | null
+          terms?: string | null
+          updated_at?: string
+          value?: number | null
+          vendor_id?: string | null
+        }
+        Update: {
+          attachments?: Json | null
+          contract_number?: string
+          contract_type?: string
+          created_at?: string
+          end_date?: string
+          id?: string
+          start_date?: string
+          status?: string | null
+          terms?: string | null
+          updated_at?: string
+          value?: number | null
+          vendor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_contracts_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vendor_evaluations: {
+        Row: {
+          comments: string | null
+          created_at: string
+          delivery_score: number | null
+          evaluation_date: string
+          evaluator_id: string | null
+          id: string
+          overall_score: number | null
+          period_end: string | null
+          period_start: string | null
+          price_score: number | null
+          quality_score: number | null
+          recommendations: string | null
+          service_score: number | null
+          vendor_id: string | null
+        }
+        Insert: {
+          comments?: string | null
+          created_at?: string
+          delivery_score?: number | null
+          evaluation_date: string
+          evaluator_id?: string | null
+          id?: string
+          overall_score?: number | null
+          period_end?: string | null
+          period_start?: string | null
+          price_score?: number | null
+          quality_score?: number | null
+          recommendations?: string | null
+          service_score?: number | null
+          vendor_id?: string | null
+        }
+        Update: {
+          comments?: string | null
+          created_at?: string
+          delivery_score?: number | null
+          evaluation_date?: string
+          evaluator_id?: string | null
+          id?: string
+          overall_score?: number | null
+          period_end?: string | null
+          period_start?: string | null
+          price_score?: number | null
+          quality_score?: number | null
+          recommendations?: string | null
+          service_score?: number | null
+          vendor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_evaluations_evaluator_id_fkey"
+            columns: ["evaluator_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_evaluations_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vendors: {
+        Row: {
+          address: string | null
+          bank_account: string | null
+          bank_name: string | null
+          blacklist_reason: string | null
+          blacklisted: boolean | null
+          category: string[] | null
+          city: string | null
+          contact_person: string | null
+          contact_phone: string | null
+          created_at: string
+          credit_limit: number | null
+          email: string | null
+          id: string
+          is_active: boolean | null
+          notes: string | null
+          npwp: string | null
+          payment_terms: number | null
+          phone: string | null
+          rating: number | null
+          updated_at: string
+          vendor_code: string
+          vendor_name: string
+          vendor_type: string
+          website: string | null
+        }
+        Insert: {
+          address?: string | null
+          bank_account?: string | null
+          bank_name?: string | null
+          blacklist_reason?: string | null
+          blacklisted?: boolean | null
+          category?: string[] | null
+          city?: string | null
+          contact_person?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          credit_limit?: number | null
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          notes?: string | null
+          npwp?: string | null
+          payment_terms?: number | null
+          phone?: string | null
+          rating?: number | null
+          updated_at?: string
+          vendor_code: string
+          vendor_name: string
+          vendor_type: string
+          website?: string | null
+        }
+        Update: {
+          address?: string | null
+          bank_account?: string | null
+          bank_name?: string | null
+          blacklist_reason?: string | null
+          blacklisted?: boolean | null
+          category?: string[] | null
+          city?: string | null
+          contact_person?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          credit_limit?: number | null
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          notes?: string | null
+          npwp?: string | null
+          payment_terms?: number | null
+          phone?: string | null
+          rating?: number | null
+          updated_at?: string
+          vendor_code?: string
+          vendor_name?: string
+          vendor_type?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
       ventilator_settings: {
         Row: {
           admission_id: string
@@ -6479,18 +8076,187 @@ export type Database = {
           },
         ]
       }
+      waste_categories: {
+        Row: {
+          code: string
+          color_code: string | null
+          created_at: string
+          disposal_method: string | null
+          handling_instructions: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          waste_type: string
+        }
+        Insert: {
+          code: string
+          color_code?: string | null
+          created_at?: string
+          disposal_method?: string | null
+          handling_instructions?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          waste_type: string
+        }
+        Update: {
+          code?: string
+          color_code?: string | null
+          created_at?: string
+          disposal_method?: string | null
+          handling_instructions?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          waste_type?: string
+        }
+        Relationships: []
+      }
+      waste_collections: {
+        Row: {
+          category_id: string | null
+          collected_by: string | null
+          collection_date: string
+          collection_number: string
+          container_count: number | null
+          created_at: string
+          department_id: string | null
+          id: string
+          notes: string | null
+          quantity: number | null
+          unit: string | null
+        }
+        Insert: {
+          category_id?: string | null
+          collected_by?: string | null
+          collection_date: string
+          collection_number: string
+          container_count?: number | null
+          created_at?: string
+          department_id?: string | null
+          id?: string
+          notes?: string | null
+          quantity?: number | null
+          unit?: string | null
+        }
+        Update: {
+          category_id?: string | null
+          collected_by?: string | null
+          collection_date?: string
+          collection_number?: string
+          container_count?: number | null
+          created_at?: string
+          department_id?: string | null
+          id?: string
+          notes?: string | null
+          quantity?: number | null
+          unit?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "waste_collections_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "waste_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "waste_collections_collected_by_fkey"
+            columns: ["collected_by"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "waste_collections_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      waste_disposals: {
+        Row: {
+          category_id: string | null
+          cost: number | null
+          created_at: string
+          destination: string | null
+          disposal_date: string
+          disposal_method: string | null
+          disposal_number: string
+          id: string
+          manifest_number: string | null
+          notes: string | null
+          total_weight: number | null
+          transported_by: string | null
+          vendor_name: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          category_id?: string | null
+          cost?: number | null
+          created_at?: string
+          destination?: string | null
+          disposal_date: string
+          disposal_method?: string | null
+          disposal_number: string
+          id?: string
+          manifest_number?: string | null
+          notes?: string | null
+          total_weight?: number | null
+          transported_by?: string | null
+          vendor_name?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          category_id?: string | null
+          cost?: number | null
+          created_at?: string
+          destination?: string | null
+          disposal_date?: string
+          disposal_method?: string | null
+          disposal_number?: string
+          id?: string
+          manifest_number?: string | null
+          notes?: string | null
+          total_weight?: number | null
+          transported_by?: string | null
+          vendor_name?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "waste_disposals_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "waste_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "waste_disposals_verified_by_fkey"
+            columns: ["verified_by"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
       generate_claim_number: { Args: never; Returns: string }
+      generate_consent_number: { Args: never; Returns: string }
       generate_dialysis_session_number: { Args: never; Returns: string }
       generate_employee_number: { Args: never; Returns: string }
       generate_icu_admission_number: { Args: never; Returns: string }
+      generate_incident_number: { Args: never; Returns: string }
       generate_insurance_claim_number: { Args: never; Returns: string }
       generate_invoice_number: { Args: never; Returns: string }
       generate_lab_number: { Args: never; Returns: string }
+      generate_maintenance_request_number: { Args: never; Returns: string }
       generate_mcu_registration_number: { Args: never; Returns: string }
       generate_medical_record_number: { Args: never; Returns: string }
       generate_mortuary_case_number: { Args: never; Returns: string }
@@ -6549,6 +8315,7 @@ export type Database = {
         | "ASA_IV"
         | "ASA_V"
         | "ASA_VI"
+      asset_status: "active" | "inactive" | "maintenance" | "disposed" | "lost"
       bed_status: "tersedia" | "terisi" | "maintenance" | "reserved"
       billing_status: "pending" | "lunas" | "batal"
       blood_product_type:
@@ -6568,6 +8335,7 @@ export type Database = {
         | "discarded"
       blood_type: "A+" | "A-" | "B+" | "B-" | "AB+" | "AB-" | "O+" | "O-"
       claim_status: "draft" | "submitted" | "approved" | "rejected" | "paid"
+      consent_status: "pending" | "signed" | "refused" | "revoked" | "expired"
       crossmatch_result: "compatible" | "incompatible" | "pending"
       dialysis_type: "hemodialysis" | "peritoneal" | "crrt" | "sled"
       diet_category:
@@ -6585,6 +8353,12 @@ export type Database = {
       gender_type: "L" | "P"
       icu_admission_status: "active" | "transferred" | "discharged" | "deceased"
       icu_type: "icu" | "nicu" | "picu" | "iccu" | "hcu"
+      incident_severity:
+        | "near_miss"
+        | "minor"
+        | "moderate"
+        | "major"
+        | "sentinel"
       insurance_claim_status:
         | "draft"
         | "submitted"
@@ -6594,6 +8368,13 @@ export type Database = {
         | "rejected"
         | "paid"
       insurance_type: "bpjs" | "jasa_raharja" | "private" | "corporate"
+      linen_status: "clean" | "dirty" | "in_laundry" | "damaged" | "disposed"
+      maintenance_status:
+        | "pending"
+        | "in_progress"
+        | "completed"
+        | "cancelled"
+        | "overdue"
       mortuary_case_type:
         | "natural"
         | "accident"
@@ -6615,6 +8396,12 @@ export type Database = {
         | "completed"
         | "cancelled"
         | "missed"
+      sterilization_status:
+        | "pending"
+        | "in_progress"
+        | "sterilized"
+        | "failed"
+        | "expired"
       surgery_status:
         | "scheduled"
         | "preparation"
@@ -6792,6 +8579,7 @@ export const Constants = {
         "ASA_V",
         "ASA_VI",
       ],
+      asset_status: ["active", "inactive", "maintenance", "disposed", "lost"],
       bed_status: ["tersedia", "terisi", "maintenance", "reserved"],
       billing_status: ["pending", "lunas", "batal"],
       blood_product_type: [
@@ -6813,6 +8601,7 @@ export const Constants = {
       ],
       blood_type: ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"],
       claim_status: ["draft", "submitted", "approved", "rejected", "paid"],
+      consent_status: ["pending", "signed", "refused", "revoked", "expired"],
       crossmatch_result: ["compatible", "incompatible", "pending"],
       dialysis_type: ["hemodialysis", "peritoneal", "crrt", "sled"],
       diet_category: [
@@ -6831,6 +8620,13 @@ export const Constants = {
       gender_type: ["L", "P"],
       icu_admission_status: ["active", "transferred", "discharged", "deceased"],
       icu_type: ["icu", "nicu", "picu", "iccu", "hcu"],
+      incident_severity: [
+        "near_miss",
+        "minor",
+        "moderate",
+        "major",
+        "sentinel",
+      ],
       insurance_claim_status: [
         "draft",
         "submitted",
@@ -6841,6 +8637,14 @@ export const Constants = {
         "paid",
       ],
       insurance_type: ["bpjs", "jasa_raharja", "private", "corporate"],
+      linen_status: ["clean", "dirty", "in_laundry", "damaged", "disposed"],
+      maintenance_status: [
+        "pending",
+        "in_progress",
+        "completed",
+        "cancelled",
+        "overdue",
+      ],
       mortuary_case_type: [
         "natural",
         "accident",
@@ -6864,6 +8668,13 @@ export const Constants = {
         "completed",
         "cancelled",
         "missed",
+      ],
+      sterilization_status: [
+        "pending",
+        "in_progress",
+        "sterilized",
+        "failed",
+        "expired",
       ],
       surgery_status: [
         "scheduled",

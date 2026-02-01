@@ -96,8 +96,86 @@ function patientToFHIR(patient: any, organizationId: string): any {
   };
 }
 
+// Convert doctor to FHIR Practitioner resource
+function doctorToFHIRPractitioner(doctor: any): any {
+  return {
+    resourceType: 'Practitioner',
+    identifier: [
+      {
+        use: 'official',
+        system: 'https://fhir.kemkes.go.id/id/nik',
+        value: doctor.nik || '',
+      },
+      {
+        use: 'official',
+        system: 'https://fhir.kemkes.go.id/id/sip',
+        value: doctor.sip_number,
+      },
+    ],
+    name: [
+      {
+        use: 'official',
+        text: doctor.full_name,
+      },
+    ],
+    qualification: doctor.specialization ? [
+      {
+        code: {
+          coding: [
+            {
+              system: 'http://terminology.kemkes.go.id/CodeSystem/practitioner-qualification',
+              code: doctor.specialization,
+              display: doctor.specialization,
+            },
+          ],
+        },
+      },
+    ] : undefined,
+  };
+}
+
+// Convert department/room to FHIR Location resource
+function locationToFHIR(location: any, organizationId: string, locationType: string): any {
+  return {
+    resourceType: 'Location',
+    identifier: [
+      {
+        system: `https://fhir.kemkes.go.id/id/location/${organizationId}`,
+        value: location.code || location.room_number,
+      },
+    ],
+    status: 'active',
+    name: location.name || location.room_number,
+    description: location.description || location.room_type,
+    mode: 'instance',
+    type: [
+      {
+        coding: [
+          {
+            system: 'http://terminology.hl7.org/CodeSystem/v3-RoleCode',
+            code: locationType,
+            display: locationType,
+          },
+        ],
+      },
+    ],
+    physicalType: {
+      coding: [
+        {
+          system: 'http://terminology.hl7.org/CodeSystem/location-physical-type',
+          code: locationType === 'HOSP' ? 'bu' : 'ro',
+          display: locationType === 'HOSP' ? 'Building' : 'Room',
+        },
+      ],
+    },
+    managingOrganization: {
+      reference: `Organization/${organizationId}`,
+    },
+  };
+}
+
 // Convert local encounter/visit to FHIR Encounter resource
-function visitToFHIREncounter(visit: any, patientSatuSehatId: string, organizationId: string): any {
+function visitToFHIREncounter(visit: any, patientSatuSehatId: string, organizationId: string, practitionerId?: string, locationId?: string): any {
   const statusMap: Record<string, string> = {
     'menunggu': 'planned',
     'dipanggil': 'arrived',
@@ -119,6 +197,7 @@ function visitToFHIREncounter(visit: any, patientSatuSehatId: string, organizati
     },
     period: {
       start: `${visit.visit_date}T${visit.visit_time}`,
+      ...(visit.end_time ? { end: `${visit.visit_date}T${visit.end_time}` } : {}),
     },
     serviceProvider: {
       reference: `Organization/${organizationId}`,
@@ -129,6 +208,35 @@ function visitToFHIREncounter(visit: any, patientSatuSehatId: string, organizati
         value: visit.visit_number,
       },
     ],
+    ...(practitionerId ? {
+      participant: [
+        {
+          type: [
+            {
+              coding: [
+                {
+                  system: 'http://terminology.hl7.org/CodeSystem/v3-ParticipationType',
+                  code: 'ATND',
+                  display: 'attender',
+                },
+              ],
+            },
+          ],
+          individual: {
+            reference: `Practitioner/${practitionerId}`,
+          },
+        },
+      ],
+    } : {}),
+    ...(locationId ? {
+      location: [
+        {
+          location: {
+            reference: `Location/${locationId}`,
+          },
+        },
+      ],
+    } : {}),
   };
 }
 
@@ -174,6 +282,195 @@ function diagnosisToFHIRCondition(diagnosis: any, patientSatuSehatId: string, en
   };
 }
 
+// Convert lab result to FHIR Observation resource
+function labResultToFHIRObservation(labResult: any, patientSatuSehatId: string, encounterSatuSehatId?: string): any {
+  return {
+    resourceType: 'Observation',
+    status: labResult.status === 'selesai' ? 'final' : 'preliminary',
+    category: [
+      {
+        coding: [
+          {
+            system: 'http://terminology.hl7.org/CodeSystem/observation-category',
+            code: 'laboratory',
+            display: 'Laboratory',
+          },
+        ],
+      },
+    ],
+    code: {
+      coding: [
+        {
+          system: 'http://loinc.org',
+          code: labResult.loinc_code || 'unknown',
+          display: labResult.test_name,
+        },
+      ],
+      text: labResult.test_name,
+    },
+    subject: {
+      reference: `Patient/${patientSatuSehatId}`,
+    },
+    ...(encounterSatuSehatId ? {
+      encounter: {
+        reference: `Encounter/${encounterSatuSehatId}`,
+      },
+    } : {}),
+    effectiveDateTime: labResult.result_date || labResult.created_at,
+    valueString: labResult.result_value,
+    referenceRange: labResult.normal_range ? [
+      {
+        text: labResult.normal_range,
+      },
+    ] : undefined,
+  };
+}
+
+// Convert prescription to FHIR MedicationRequest resource
+function prescriptionToFHIRMedicationRequest(prescription: any, patientSatuSehatId: string, encounterSatuSehatId?: string, practitionerId?: string): any {
+  return {
+    resourceType: 'MedicationRequest',
+    status: prescription.status === 'selesai' ? 'completed' : prescription.status === 'batal' ? 'cancelled' : 'active',
+    intent: 'order',
+    medicationCodeableConcept: {
+      coding: [
+        {
+          system: 'http://sys-ids.kemkes.go.id/kfa',
+          code: prescription.medicine_code || 'unknown',
+          display: prescription.medicine_name,
+        },
+      ],
+      text: prescription.medicine_name,
+    },
+    subject: {
+      reference: `Patient/${patientSatuSehatId}`,
+    },
+    ...(encounterSatuSehatId ? {
+      encounter: {
+        reference: `Encounter/${encounterSatuSehatId}`,
+      },
+    } : {}),
+    authoredOn: prescription.created_at,
+    ...(practitionerId ? {
+      requester: {
+        reference: `Practitioner/${practitionerId}`,
+      },
+    } : {}),
+    dosageInstruction: [
+      {
+        text: prescription.dosage || '',
+        timing: {
+          code: {
+            text: prescription.frequency || '',
+          },
+        },
+        doseAndRate: [
+          {
+            doseQuantity: {
+              value: prescription.quantity || 1,
+              unit: prescription.unit || 'unit',
+            },
+          },
+        ],
+      },
+    ],
+  };
+}
+
+// Convert procedure to FHIR Procedure resource
+function procedureToFHIR(procedure: any, patientSatuSehatId: string, encounterSatuSehatId?: string): any {
+  return {
+    resourceType: 'Procedure',
+    status: procedure.status === 'selesai' ? 'completed' : 'in-progress',
+    category: {
+      coding: [
+        {
+          system: 'http://snomed.info/sct',
+          code: '387713003',
+          display: 'Surgical procedure',
+        },
+      ],
+    },
+    code: {
+      coding: [
+        {
+          system: 'http://hl7.org/fhir/sid/icd-9-cm',
+          code: procedure.icd9cm_code || 'unknown',
+          display: procedure.procedure_name,
+        },
+      ],
+      text: procedure.procedure_name,
+    },
+    subject: {
+      reference: `Patient/${patientSatuSehatId}`,
+    },
+    ...(encounterSatuSehatId ? {
+      encounter: {
+        reference: `Encounter/${encounterSatuSehatId}`,
+      },
+    } : {}),
+    performedPeriod: {
+      start: procedure.start_time,
+      end: procedure.end_time,
+    },
+  };
+}
+
+// Convert allergy to FHIR AllergyIntolerance resource
+function allergyToFHIRAllergyIntolerance(allergy: any, patientSatuSehatId: string): any {
+  return {
+    resourceType: 'AllergyIntolerance',
+    clinicalStatus: {
+      coding: [
+        {
+          system: 'http://terminology.hl7.org/CodeSystem/allergyintolerance-clinical',
+          code: 'active',
+          display: 'Active',
+        },
+      ],
+    },
+    verificationStatus: {
+      coding: [
+        {
+          system: 'http://terminology.hl7.org/CodeSystem/allergyintolerance-verification',
+          code: 'confirmed',
+          display: 'Confirmed',
+        },
+      ],
+    },
+    type: allergy.allergy_type === 'obat' ? 'allergy' : 'intolerance',
+    category: [allergy.allergy_type === 'obat' ? 'medication' : 'food'],
+    code: {
+      coding: [
+        {
+          system: 'http://snomed.info/sct',
+          display: allergy.allergen,
+        },
+      ],
+      text: allergy.allergen,
+    },
+    patient: {
+      reference: `Patient/${patientSatuSehatId}`,
+    },
+    recordedDate: allergy.created_at,
+    reaction: allergy.reaction ? [
+      {
+        manifestation: [
+          {
+            coding: [
+              {
+                system: 'http://snomed.info/sct',
+                display: allergy.reaction,
+              },
+            ],
+          },
+        ],
+        severity: allergy.severity || 'moderate',
+      },
+    ] : undefined,
+  };
+}
+
 // Send FHIR resource to SATU SEHAT
 async function sendFHIRResource(
   accessToken: string,
@@ -208,6 +505,65 @@ async function sendFHIRResource(
 
   console.log(`${resourceType} sent successfully:`, responseData.id);
   return responseData;
+}
+
+// Fetch FHIR resource from SATU SEHAT
+async function fetchFHIRResource(
+  accessToken: string,
+  resourceType: string,
+  resourceId: string,
+  environment: string = 'staging'
+): Promise<any> {
+  const fhirUrl = environment === 'production' ? PRODUCTION_FHIR_URL : STAGING_FHIR_URL;
+  const url = `${fhirUrl}/${resourceType}/${resourceId}`;
+
+  console.log(`Fetching ${resourceType} from ${url}`);
+
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Accept': 'application/fhir+json',
+    },
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('FHIR API error:', errorText);
+    throw new Error(`FHIR API error: ${response.status} - ${errorText}`);
+  }
+
+  return await response.json();
+}
+
+// Search FHIR resources from SATU SEHAT
+async function searchFHIRResources(
+  accessToken: string,
+  resourceType: string,
+  searchParams: Record<string, string>,
+  environment: string = 'staging'
+): Promise<any> {
+  const fhirUrl = environment === 'production' ? PRODUCTION_FHIR_URL : STAGING_FHIR_URL;
+  const queryString = new URLSearchParams(searchParams).toString();
+  const url = `${fhirUrl}/${resourceType}?${queryString}`;
+
+  console.log(`Searching ${resourceType} at ${url}`);
+
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Accept': 'application/fhir+json',
+    },
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('FHIR API error:', errorText);
+    throw new Error(`FHIR API error: ${response.status} - ${errorText}`);
+  }
+
+  return await response.json();
 }
 
 serve(async (req) => {
@@ -270,7 +626,6 @@ serve(async (req) => {
         let result;
 
         if (existingMapping) {
-          // Update existing
           result = await sendFHIRResource(
             token.access_token,
             'Patient',
@@ -280,7 +635,6 @@ serve(async (req) => {
             existingMapping.satusehat_id
           );
         } else {
-          // Create new
           result = await sendFHIRResource(
             token.access_token,
             'Patient',
@@ -288,7 +642,6 @@ serve(async (req) => {
             environment
           );
 
-          // Save mapping
           await supabase.from('satusehat_resource_mappings').insert({
             resource_type: 'Patient',
             local_id: patientId,
@@ -296,7 +649,6 @@ serve(async (req) => {
           });
         }
 
-        // Log sync
         await supabase.from('satusehat_sync_logs').insert({
           resource_type: 'Patient',
           resource_id: patientId,
@@ -317,11 +669,154 @@ serve(async (req) => {
         });
       }
 
+      case 'sync-practitioner': {
+        const { doctorId } = data;
+        const token = await getAccessToken(environment);
+
+        const { data: doctor, error } = await supabase
+          .from('doctors')
+          .select('*')
+          .eq('id', doctorId)
+          .single();
+
+        if (error || !doctor) {
+          throw new Error(`Doctor not found: ${doctorId}`);
+        }
+
+        const { data: existingMapping } = await supabase
+          .from('satusehat_resource_mappings')
+          .select('satusehat_id')
+          .eq('resource_type', 'Practitioner')
+          .eq('local_id', doctorId)
+          .single();
+
+        const fhirPractitioner = doctorToFHIRPractitioner(doctor);
+        let result;
+
+        if (existingMapping) {
+          result = await sendFHIRResource(
+            token.access_token,
+            'Practitioner',
+            fhirPractitioner,
+            environment,
+            'PUT',
+            existingMapping.satusehat_id
+          );
+        } else {
+          result = await sendFHIRResource(
+            token.access_token,
+            'Practitioner',
+            fhirPractitioner,
+            environment
+          );
+
+          await supabase.from('satusehat_resource_mappings').insert({
+            resource_type: 'Practitioner',
+            local_id: doctorId,
+            satusehat_id: result.id,
+          });
+
+          // Update doctor with SATU SEHAT ID
+          await supabase
+            .from('doctors')
+            .update({ satusehat_practitioner_id: result.id })
+            .eq('id', doctorId);
+        }
+
+        await supabase.from('satusehat_sync_logs').insert({
+          resource_type: 'Practitioner',
+          resource_id: doctorId,
+          local_table: 'doctors',
+          satusehat_id: result.id,
+          action: existingMapping ? 'update' : 'create',
+          status: 'synced',
+          synced_at: new Date().toISOString(),
+        });
+
+        return new Response(JSON.stringify({
+          success: true,
+          satusehat_id: result.id,
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      case 'sync-location': {
+        const { locationId, locationType } = data; // locationType: 'department' or 'room'
+        const token = await getAccessToken(environment);
+
+        const tableName = locationType === 'department' ? 'departments' : 'rooms';
+        const { data: location, error } = await supabase
+          .from(tableName)
+          .select('*')
+          .eq('id', locationId)
+          .single();
+
+        if (error || !location) {
+          throw new Error(`Location not found: ${locationId}`);
+        }
+
+        const { data: existingMapping } = await supabase
+          .from('satusehat_resource_mappings')
+          .select('satusehat_id')
+          .eq('resource_type', 'Location')
+          .eq('local_id', locationId)
+          .single();
+
+        const fhirLocation = locationToFHIR(location, organizationId, locationType === 'department' ? 'HOSP' : 'RO');
+        let result;
+
+        if (existingMapping) {
+          result = await sendFHIRResource(
+            token.access_token,
+            'Location',
+            fhirLocation,
+            environment,
+            'PUT',
+            existingMapping.satusehat_id
+          );
+        } else {
+          result = await sendFHIRResource(
+            token.access_token,
+            'Location',
+            fhirLocation,
+            environment
+          );
+
+          await supabase.from('satusehat_resource_mappings').insert({
+            resource_type: 'Location',
+            local_id: locationId,
+            satusehat_id: result.id,
+          });
+
+          await supabase
+            .from(tableName)
+            .update({ satusehat_location_id: result.id })
+            .eq('id', locationId);
+        }
+
+        await supabase.from('satusehat_sync_logs').insert({
+          resource_type: 'Location',
+          resource_id: locationId,
+          local_table: tableName,
+          satusehat_id: result.id,
+          action: existingMapping ? 'update' : 'create',
+          status: 'synced',
+          synced_at: new Date().toISOString(),
+        });
+
+        return new Response(JSON.stringify({
+          success: true,
+          satusehat_id: result.id,
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
       case 'sync-encounter': {
         const { visitId } = data;
         const token = await getAccessToken(environment);
 
-        // Get visit data with patient
         const { data: visit, error } = await supabase
           .from('visits')
           .select('*, patients!inner(*)')
@@ -344,9 +839,20 @@ serve(async (req) => {
           throw new Error(`Patient not synced to SATU SEHAT: ${visit.patient_id}`);
         }
 
-        const fhirEncounter = visitToFHIREncounter(visit, patientMapping.satusehat_id, organizationId);
+        // Get practitioner ID if available
+        let practitionerId;
+        if (visit.doctor_id) {
+          const { data: practitionerMapping } = await supabase
+            .from('satusehat_resource_mappings')
+            .select('satusehat_id')
+            .eq('resource_type', 'Practitioner')
+            .eq('local_id', visit.doctor_id)
+            .single();
+          practitionerId = practitionerMapping?.satusehat_id;
+        }
 
-        // Check if already synced
+        const fhirEncounter = visitToFHIREncounter(visit, patientMapping.satusehat_id, organizationId, practitionerId);
+
         const { data: existingMapping } = await supabase
           .from('satusehat_resource_mappings')
           .select('satusehat_id')
@@ -399,16 +905,130 @@ serve(async (req) => {
         });
       }
 
+      case 'sync-condition': {
+        const { diagnosisId } = data;
+        const token = await getAccessToken(environment);
+
+        const { data: diagnosis, error } = await supabase
+          .from('diagnoses')
+          .select('*, medical_records!inner(visit_id, visits!inner(patient_id))')
+          .eq('id', diagnosisId)
+          .single();
+
+        if (error || !diagnosis) {
+          throw new Error(`Diagnosis not found: ${diagnosisId}`);
+        }
+
+        const patientId = diagnosis.medical_records.visits.patient_id;
+        const visitId = diagnosis.medical_records.visit_id;
+
+        const { data: patientMapping } = await supabase
+          .from('satusehat_resource_mappings')
+          .select('satusehat_id')
+          .eq('resource_type', 'Patient')
+          .eq('local_id', patientId)
+          .single();
+
+        const { data: encounterMapping } = await supabase
+          .from('satusehat_resource_mappings')
+          .select('satusehat_id')
+          .eq('resource_type', 'Encounter')
+          .eq('local_id', visitId)
+          .single();
+
+        if (!patientMapping || !encounterMapping) {
+          throw new Error('Patient or Encounter not synced');
+        }
+
+        const fhirCondition = diagnosisToFHIRCondition(
+          diagnosis,
+          patientMapping.satusehat_id,
+          encounterMapping.satusehat_id
+        );
+
+        const result = await sendFHIRResource(
+          token.access_token,
+          'Condition',
+          fhirCondition,
+          environment
+        );
+
+        await supabase.from('satusehat_resource_mappings').insert({
+          resource_type: 'Condition',
+          local_id: diagnosisId,
+          satusehat_id: result.id,
+        });
+
+        await supabase.from('satusehat_sync_logs').insert({
+          resource_type: 'Condition',
+          resource_id: diagnosisId,
+          local_table: 'diagnoses',
+          satusehat_id: result.id,
+          action: 'create',
+          status: 'synced',
+          synced_at: new Date().toISOString(),
+        });
+
+        return new Response(JSON.stringify({
+          success: true,
+          satusehat_id: result.id,
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      case 'search-patient-by-nik': {
+        const { nik } = data;
+        const token = await getAccessToken(environment);
+
+        const result = await searchFHIRResources(
+          token.access_token,
+          'Patient',
+          { identifier: `https://fhir.kemkes.go.id/id/nik|${nik}` },
+          environment
+        );
+
+        return new Response(JSON.stringify({
+          success: true,
+          data: result,
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      case 'get-patient-ihs': {
+        const { nik } = data;
+        const token = await getAccessToken(environment);
+
+        // Search for patient by NIK to get IHS Number
+        const result = await searchFHIRResources(
+          token.access_token,
+          'Patient',
+          { identifier: `https://fhir.kemkes.go.id/id/nik|${nik}` },
+          environment
+        );
+
+        const ihsNumber = result.entry?.[0]?.resource?.id;
+
+        return new Response(JSON.stringify({
+          success: true,
+          ihs_number: ihsNumber,
+          data: result,
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
       case 'get-sync-stats': {
-        // Get total counts from local tables
-        const [patients, visits, diagnoses, prescriptions] = await Promise.all([
+        const [patients, visits, diagnoses, prescriptions, doctors, labResults] = await Promise.all([
           supabase.from('patients').select('id', { count: 'exact', head: true }),
           supabase.from('visits').select('id', { count: 'exact', head: true }),
           supabase.from('diagnoses').select('id', { count: 'exact', head: true }),
           supabase.from('prescriptions').select('id', { count: 'exact', head: true }),
+          supabase.from('doctors').select('id', { count: 'exact', head: true }),
+          supabase.from('lab_results').select('id', { count: 'exact', head: true }),
         ]);
 
-        // Get synced counts
         const { data: mappings } = await supabase
           .from('satusehat_resource_mappings')
           .select('resource_type');
@@ -418,7 +1038,6 @@ serve(async (req) => {
           syncedCounts[m.resource_type] = (syncedCounts[m.resource_type] || 0) + 1;
         });
 
-        // Get today's sync logs
         const today = new Date().toISOString().split('T')[0];
         const { data: todayLogs } = await supabase
           .from('satusehat_sync_logs')
@@ -435,9 +1054,11 @@ serve(async (req) => {
 
         const stats = [
           { name: 'Patient', synced: syncedCounts['Patient'] || 0, total: patients.count || 0 },
+          { name: 'Practitioner', synced: syncedCounts['Practitioner'] || 0, total: doctors.count || 0 },
           { name: 'Encounter', synced: syncedCounts['Encounter'] || 0, total: visits.count || 0 },
           { name: 'Condition', synced: syncedCounts['Condition'] || 0, total: diagnoses.count || 0 },
           { name: 'MedicationRequest', synced: syncedCounts['MedicationRequest'] || 0, total: prescriptions.count || 0 },
+          { name: 'Observation', synced: syncedCounts['Observation'] || 0, total: labResults.count || 0 },
         ].map(s => ({
           ...s,
           percentage: s.total > 0 ? Math.round((s.synced / s.total) * 100 * 10) / 10 : 0,
@@ -514,7 +1135,6 @@ serve(async (req) => {
       case 'bulk-sync-patients': {
         const token = await getAccessToken(environment);
         
-        // Get unsynced patients
         const { data: allPatients } = await supabase.from('patients').select('id');
         const { data: syncedPatients } = await supabase
           .from('satusehat_resource_mappings')
@@ -527,7 +1147,7 @@ serve(async (req) => {
         let synced = 0;
         let failed = 0;
 
-        for (const patientId of unsyncedIds.slice(0, 50)) { // Limit to 50 per request
+        for (const patientId of unsyncedIds.slice(0, 50)) {
           try {
             const { data: patient } = await supabase
               .from('patients')
@@ -570,6 +1190,86 @@ serve(async (req) => {
               resource_type: 'Patient',
               resource_id: patientId,
               local_table: 'patients',
+              action: 'create',
+              status: 'failed',
+              error_message: error instanceof Error ? error.message : String(error),
+            });
+          }
+        }
+
+        return new Response(JSON.stringify({
+          success: true,
+          synced,
+          failed,
+          remaining: unsyncedIds.length - 50,
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      case 'bulk-sync-practitioners': {
+        const token = await getAccessToken(environment);
+        
+        const { data: allDoctors } = await supabase.from('doctors').select('id');
+        const { data: syncedDoctors } = await supabase
+          .from('satusehat_resource_mappings')
+          .select('local_id')
+          .eq('resource_type', 'Practitioner');
+
+        const syncedIds = new Set(syncedDoctors?.map(d => d.local_id));
+        const unsyncedIds = allDoctors?.filter(d => !syncedIds.has(d.id)).map(d => d.id) || [];
+
+        let synced = 0;
+        let failed = 0;
+
+        for (const doctorId of unsyncedIds.slice(0, 50)) {
+          try {
+            const { data: doctor } = await supabase
+              .from('doctors')
+              .select('*')
+              .eq('id', doctorId)
+              .single();
+
+            if (doctor) {
+              const fhirPractitioner = doctorToFHIRPractitioner(doctor);
+              const result = await sendFHIRResource(
+                token.access_token,
+                'Practitioner',
+                fhirPractitioner,
+                environment
+              );
+
+              await supabase.from('satusehat_resource_mappings').insert({
+                resource_type: 'Practitioner',
+                local_id: doctorId,
+                satusehat_id: result.id,
+              });
+
+              await supabase
+                .from('doctors')
+                .update({ satusehat_practitioner_id: result.id })
+                .eq('id', doctorId);
+
+              await supabase.from('satusehat_sync_logs').insert({
+                resource_type: 'Practitioner',
+                resource_id: doctorId,
+                local_table: 'doctors',
+                satusehat_id: result.id,
+                action: 'create',
+                status: 'synced',
+                synced_at: new Date().toISOString(),
+              });
+
+              synced++;
+            }
+          } catch (error) {
+            console.error(`Failed to sync doctor ${doctorId}:`, error);
+            failed++;
+
+            await supabase.from('satusehat_sync_logs').insert({
+              resource_type: 'Practitioner',
+              resource_id: doctorId,
+              local_table: 'doctors',
               action: 'create',
               status: 'failed',
               error_message: error instanceof Error ? error.message : String(error),
