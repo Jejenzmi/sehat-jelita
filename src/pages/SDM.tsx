@@ -1,7 +1,7 @@
 import { useEmployeeStats } from "@/hooks/useHRData";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, Clock, CalendarDays, Wallet, TrendingUp, GraduationCap } from "lucide-react";
+import { Users, Clock, CalendarDays, Wallet, TrendingUp, GraduationCap, Settings, Calendar } from "lucide-react";
 import { EmployeeList } from "@/components/hr/EmployeeList";
 import { AttendanceTab } from "@/components/hr/AttendanceTab";
 import { LeaveRequestsTab } from "@/components/hr/LeaveRequestsTab";
@@ -9,6 +9,8 @@ import { PayrollTab } from "@/components/hr/PayrollTab";
 import { OvertimeTab } from "@/components/hr/OvertimeTab";
 import { PerformanceTab } from "@/components/hr/PerformanceTab";
 import { TrainingTab } from "@/components/hr/TrainingTab";
+import { ShiftManagementTab } from "@/components/hr/ShiftManagementTab";
+import { ScheduleRosterTab } from "@/components/hr/ScheduleRosterTab";
 
 export default function SDM() {
   const { data: stats } = useEmployeeStats();
@@ -110,6 +112,14 @@ export default function SDM() {
             <GraduationCap className="h-4 w-4" />
             Pelatihan
           </TabsTrigger>
+          <TabsTrigger value="schedule" className="gap-2">
+            <Calendar className="h-4 w-4" />
+            Jadwal Kerja
+          </TabsTrigger>
+          <TabsTrigger value="shifts" className="gap-2">
+            <Settings className="h-4 w-4" />
+            Shift Kerja
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="employees">
@@ -138,6 +148,14 @@ export default function SDM() {
 
         <TabsContent value="training">
           <TrainingTab />
+        </TabsContent>
+
+        <TabsContent value="schedule">
+          <ScheduleRosterTab />
+        </TabsContent>
+
+        <TabsContent value="shifts">
+          <ShiftManagementTab />
         </TabsContent>
       </Tabs>
     </div>
