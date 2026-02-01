@@ -456,6 +456,98 @@ export type Database = {
           },
         ]
       }
+      blood_inventory: {
+        Row: {
+          bag_number: string
+          blood_type: Database["public"]["Enums"]["blood_type"]
+          collection_date: string
+          created_at: string
+          donor_id: string | null
+          expiry_date: string
+          hbsag_status: string | null
+          hcv_status: string | null
+          hiv_status: string | null
+          id: string
+          issued_by: string | null
+          issued_date: string | null
+          issued_to_department: string | null
+          malaria_status: string | null
+          notes: string | null
+          product_type: Database["public"]["Enums"]["blood_product_type"]
+          reserved_for_patient_id: string | null
+          screened_by: string | null
+          screening_date: string | null
+          source_blood_bank: string | null
+          status: Database["public"]["Enums"]["blood_status"] | null
+          storage_location: string | null
+          updated_at: string
+          vdrl_status: string | null
+          volume: number | null
+        }
+        Insert: {
+          bag_number: string
+          blood_type: Database["public"]["Enums"]["blood_type"]
+          collection_date: string
+          created_at?: string
+          donor_id?: string | null
+          expiry_date: string
+          hbsag_status?: string | null
+          hcv_status?: string | null
+          hiv_status?: string | null
+          id?: string
+          issued_by?: string | null
+          issued_date?: string | null
+          issued_to_department?: string | null
+          malaria_status?: string | null
+          notes?: string | null
+          product_type: Database["public"]["Enums"]["blood_product_type"]
+          reserved_for_patient_id?: string | null
+          screened_by?: string | null
+          screening_date?: string | null
+          source_blood_bank?: string | null
+          status?: Database["public"]["Enums"]["blood_status"] | null
+          storage_location?: string | null
+          updated_at?: string
+          vdrl_status?: string | null
+          volume?: number | null
+        }
+        Update: {
+          bag_number?: string
+          blood_type?: Database["public"]["Enums"]["blood_type"]
+          collection_date?: string
+          created_at?: string
+          donor_id?: string | null
+          expiry_date?: string
+          hbsag_status?: string | null
+          hcv_status?: string | null
+          hiv_status?: string | null
+          id?: string
+          issued_by?: string | null
+          issued_date?: string | null
+          issued_to_department?: string | null
+          malaria_status?: string | null
+          notes?: string | null
+          product_type?: Database["public"]["Enums"]["blood_product_type"]
+          reserved_for_patient_id?: string | null
+          screened_by?: string | null
+          screening_date?: string | null
+          source_blood_bank?: string | null
+          status?: Database["public"]["Enums"]["blood_status"] | null
+          storage_location?: string | null
+          updated_at?: string
+          vdrl_status?: string | null
+          volume?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blood_inventory_reserved_for_patient_id_fkey"
+            columns: ["reserved_for_patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bpjs_claims: {
         Row: {
           approved_amount: number | null
@@ -648,6 +740,94 @@ export type Database = {
           },
         ]
       }
+      crossmatch_tests: {
+        Row: {
+          antibody_screen: string | null
+          blood_bag_id: string
+          created_at: string
+          dat_result: string | null
+          iat_result: string | null
+          id: string
+          is_compatible: boolean | null
+          major_crossmatch:
+            | Database["public"]["Enums"]["crossmatch_result"]
+            | null
+          minor_crossmatch:
+            | Database["public"]["Enums"]["crossmatch_result"]
+            | null
+          notes: string | null
+          patient_id: string
+          request_id: string | null
+          test_date: string
+          tested_by: string | null
+          valid_until: string | null
+        }
+        Insert: {
+          antibody_screen?: string | null
+          blood_bag_id: string
+          created_at?: string
+          dat_result?: string | null
+          iat_result?: string | null
+          id?: string
+          is_compatible?: boolean | null
+          major_crossmatch?:
+            | Database["public"]["Enums"]["crossmatch_result"]
+            | null
+          minor_crossmatch?:
+            | Database["public"]["Enums"]["crossmatch_result"]
+            | null
+          notes?: string | null
+          patient_id: string
+          request_id?: string | null
+          test_date?: string
+          tested_by?: string | null
+          valid_until?: string | null
+        }
+        Update: {
+          antibody_screen?: string | null
+          blood_bag_id?: string
+          created_at?: string
+          dat_result?: string | null
+          iat_result?: string | null
+          id?: string
+          is_compatible?: boolean | null
+          major_crossmatch?:
+            | Database["public"]["Enums"]["crossmatch_result"]
+            | null
+          minor_crossmatch?:
+            | Database["public"]["Enums"]["crossmatch_result"]
+            | null
+          notes?: string | null
+          patient_id?: string
+          request_id?: string | null
+          test_date?: string
+          tested_by?: string | null
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crossmatch_tests_blood_bag_id_fkey"
+            columns: ["blood_bag_id"]
+            isOneToOne: false
+            referencedRelation: "blood_inventory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crossmatch_tests_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crossmatch_tests_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "transfusion_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       departments: {
         Row: {
           code: string
@@ -719,6 +899,293 @@ export type Database = {
             columns: ["medical_record_id"]
             isOneToOne: false
             referencedRelation: "medical_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dialysis_machines: {
+        Row: {
+          brand: string | null
+          created_at: string
+          id: string
+          is_available: boolean | null
+          last_maintenance_date: string | null
+          machine_number: string
+          model: string | null
+          next_maintenance_date: string | null
+          notes: string | null
+          serial_number: string | null
+          updated_at: string
+        }
+        Insert: {
+          brand?: string | null
+          created_at?: string
+          id?: string
+          is_available?: boolean | null
+          last_maintenance_date?: string | null
+          machine_number: string
+          model?: string | null
+          next_maintenance_date?: string | null
+          notes?: string | null
+          serial_number?: string | null
+          updated_at?: string
+        }
+        Update: {
+          brand?: string | null
+          created_at?: string
+          id?: string
+          is_available?: boolean | null
+          last_maintenance_date?: string | null
+          machine_number?: string
+          model?: string | null
+          next_maintenance_date?: string | null
+          notes?: string | null
+          serial_number?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      dialysis_monitoring: {
+        Row: {
+          arterial_pressure: number | null
+          blood_flow_rate: number | null
+          blood_pressure_diastolic: number | null
+          blood_pressure_systolic: number | null
+          conductivity: number | null
+          created_at: string
+          heart_rate: number | null
+          id: string
+          interventions: string | null
+          recorded_at: string
+          recorded_by: string | null
+          session_id: string
+          symptoms: string | null
+          temperature: number | null
+          time_elapsed: number | null
+          tmp: number | null
+          uf_rate: number | null
+          uf_total: number | null
+          venous_pressure: number | null
+        }
+        Insert: {
+          arterial_pressure?: number | null
+          blood_flow_rate?: number | null
+          blood_pressure_diastolic?: number | null
+          blood_pressure_systolic?: number | null
+          conductivity?: number | null
+          created_at?: string
+          heart_rate?: number | null
+          id?: string
+          interventions?: string | null
+          recorded_at?: string
+          recorded_by?: string | null
+          session_id: string
+          symptoms?: string | null
+          temperature?: number | null
+          time_elapsed?: number | null
+          tmp?: number | null
+          uf_rate?: number | null
+          uf_total?: number | null
+          venous_pressure?: number | null
+        }
+        Update: {
+          arterial_pressure?: number | null
+          blood_flow_rate?: number | null
+          blood_pressure_diastolic?: number | null
+          blood_pressure_systolic?: number | null
+          conductivity?: number | null
+          created_at?: string
+          heart_rate?: number | null
+          id?: string
+          interventions?: string | null
+          recorded_at?: string
+          recorded_by?: string | null
+          session_id?: string
+          symptoms?: string | null
+          temperature?: number | null
+          time_elapsed?: number | null
+          tmp?: number | null
+          uf_rate?: number | null
+          uf_total?: number | null
+          venous_pressure?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dialysis_monitoring_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "dialysis_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dialysis_sessions: {
+        Row: {
+          actual_end_time: string | null
+          actual_start_time: string | null
+          actual_uf: number | null
+          attending_doctor_id: string | null
+          blood_flow_rate: number | null
+          created_at: string
+          dialysate_composition: string | null
+          dialysate_flow_rate: number | null
+          dialysis_type: Database["public"]["Enums"]["dialysis_type"] | null
+          dialyzer_type: string | null
+          dry_weight: number | null
+          duration_actual: number | null
+          duration_planned: number | null
+          heparin_dose: string | null
+          id: string
+          interventions: string | null
+          intradialytic_complications: Json | null
+          kt_v: number | null
+          machine_id: string | null
+          notes: string | null
+          nurse_id: string | null
+          patient_id: string
+          post_bp_diastolic: number | null
+          post_bp_systolic: number | null
+          post_heart_rate: number | null
+          post_weight: number | null
+          pre_bp_diastolic: number | null
+          pre_bp_systolic: number | null
+          pre_heart_rate: number | null
+          pre_temperature: number | null
+          pre_weight: number | null
+          scheduled_time: string | null
+          session_date: string
+          session_number: string
+          sodium_profile: string | null
+          status: Database["public"]["Enums"]["session_status"] | null
+          target_uf: number | null
+          uf_profile: string | null
+          updated_at: string
+          urr: number | null
+          vascular_access_id: string | null
+          visit_id: string | null
+        }
+        Insert: {
+          actual_end_time?: string | null
+          actual_start_time?: string | null
+          actual_uf?: number | null
+          attending_doctor_id?: string | null
+          blood_flow_rate?: number | null
+          created_at?: string
+          dialysate_composition?: string | null
+          dialysate_flow_rate?: number | null
+          dialysis_type?: Database["public"]["Enums"]["dialysis_type"] | null
+          dialyzer_type?: string | null
+          dry_weight?: number | null
+          duration_actual?: number | null
+          duration_planned?: number | null
+          heparin_dose?: string | null
+          id?: string
+          interventions?: string | null
+          intradialytic_complications?: Json | null
+          kt_v?: number | null
+          machine_id?: string | null
+          notes?: string | null
+          nurse_id?: string | null
+          patient_id: string
+          post_bp_diastolic?: number | null
+          post_bp_systolic?: number | null
+          post_heart_rate?: number | null
+          post_weight?: number | null
+          pre_bp_diastolic?: number | null
+          pre_bp_systolic?: number | null
+          pre_heart_rate?: number | null
+          pre_temperature?: number | null
+          pre_weight?: number | null
+          scheduled_time?: string | null
+          session_date: string
+          session_number: string
+          sodium_profile?: string | null
+          status?: Database["public"]["Enums"]["session_status"] | null
+          target_uf?: number | null
+          uf_profile?: string | null
+          updated_at?: string
+          urr?: number | null
+          vascular_access_id?: string | null
+          visit_id?: string | null
+        }
+        Update: {
+          actual_end_time?: string | null
+          actual_start_time?: string | null
+          actual_uf?: number | null
+          attending_doctor_id?: string | null
+          blood_flow_rate?: number | null
+          created_at?: string
+          dialysate_composition?: string | null
+          dialysate_flow_rate?: number | null
+          dialysis_type?: Database["public"]["Enums"]["dialysis_type"] | null
+          dialyzer_type?: string | null
+          dry_weight?: number | null
+          duration_actual?: number | null
+          duration_planned?: number | null
+          heparin_dose?: string | null
+          id?: string
+          interventions?: string | null
+          intradialytic_complications?: Json | null
+          kt_v?: number | null
+          machine_id?: string | null
+          notes?: string | null
+          nurse_id?: string | null
+          patient_id?: string
+          post_bp_diastolic?: number | null
+          post_bp_systolic?: number | null
+          post_heart_rate?: number | null
+          post_weight?: number | null
+          pre_bp_diastolic?: number | null
+          pre_bp_systolic?: number | null
+          pre_heart_rate?: number | null
+          pre_temperature?: number | null
+          pre_weight?: number | null
+          scheduled_time?: string | null
+          session_date?: string
+          session_number?: string
+          sodium_profile?: string | null
+          status?: Database["public"]["Enums"]["session_status"] | null
+          target_uf?: number | null
+          uf_profile?: string | null
+          updated_at?: string
+          urr?: number | null
+          vascular_access_id?: string | null
+          visit_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dialysis_sessions_attending_doctor_id_fkey"
+            columns: ["attending_doctor_id"]
+            isOneToOne: false
+            referencedRelation: "doctors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dialysis_sessions_machine_id_fkey"
+            columns: ["machine_id"]
+            isOneToOne: false
+            referencedRelation: "dialysis_machines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dialysis_sessions_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dialysis_sessions_vascular_access_id_fkey"
+            columns: ["vascular_access_id"]
+            isOneToOne: false
+            referencedRelation: "vascular_access"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dialysis_sessions_visit_id_fkey"
+            columns: ["visit_id"]
+            isOneToOne: false
+            referencedRelation: "visits"
             referencedColumns: ["id"]
           },
         ]
@@ -1103,6 +1570,350 @@ export type Database = {
           is_active?: boolean
         }
         Relationships: []
+      }
+      icu_admissions: {
+        Row: {
+          admission_date: string
+          admission_diagnosis: string | null
+          admission_number: string
+          admission_reason: string
+          apache_ii_score: number | null
+          attending_doctor_id: string | null
+          created_at: string
+          discharge_date: string | null
+          discharge_destination: string | null
+          discharge_reason: string | null
+          icu_bed_id: string | null
+          icu_type: Database["public"]["Enums"]["icu_type"]
+          id: string
+          notes: string | null
+          patient_id: string
+          sofa_score: number | null
+          status: Database["public"]["Enums"]["icu_admission_status"] | null
+          total_icu_days: number | null
+          updated_at: string
+          visit_id: string
+        }
+        Insert: {
+          admission_date?: string
+          admission_diagnosis?: string | null
+          admission_number: string
+          admission_reason: string
+          apache_ii_score?: number | null
+          attending_doctor_id?: string | null
+          created_at?: string
+          discharge_date?: string | null
+          discharge_destination?: string | null
+          discharge_reason?: string | null
+          icu_bed_id?: string | null
+          icu_type: Database["public"]["Enums"]["icu_type"]
+          id?: string
+          notes?: string | null
+          patient_id: string
+          sofa_score?: number | null
+          status?: Database["public"]["Enums"]["icu_admission_status"] | null
+          total_icu_days?: number | null
+          updated_at?: string
+          visit_id: string
+        }
+        Update: {
+          admission_date?: string
+          admission_diagnosis?: string | null
+          admission_number?: string
+          admission_reason?: string
+          apache_ii_score?: number | null
+          attending_doctor_id?: string | null
+          created_at?: string
+          discharge_date?: string | null
+          discharge_destination?: string | null
+          discharge_reason?: string | null
+          icu_bed_id?: string | null
+          icu_type?: Database["public"]["Enums"]["icu_type"]
+          id?: string
+          notes?: string | null
+          patient_id?: string
+          sofa_score?: number | null
+          status?: Database["public"]["Enums"]["icu_admission_status"] | null
+          total_icu_days?: number | null
+          updated_at?: string
+          visit_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "icu_admissions_attending_doctor_id_fkey"
+            columns: ["attending_doctor_id"]
+            isOneToOne: false
+            referencedRelation: "doctors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "icu_admissions_icu_bed_id_fkey"
+            columns: ["icu_bed_id"]
+            isOneToOne: false
+            referencedRelation: "icu_beds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "icu_admissions_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "icu_admissions_visit_id_fkey"
+            columns: ["visit_id"]
+            isOneToOne: false
+            referencedRelation: "visits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      icu_beds: {
+        Row: {
+          bed_number: string
+          created_at: string
+          equipment_notes: string | null
+          has_monitor: boolean | null
+          has_ventilator: boolean | null
+          icu_type: Database["public"]["Enums"]["icu_type"]
+          id: string
+          is_available: boolean | null
+          updated_at: string
+        }
+        Insert: {
+          bed_number: string
+          created_at?: string
+          equipment_notes?: string | null
+          has_monitor?: boolean | null
+          has_ventilator?: boolean | null
+          icu_type: Database["public"]["Enums"]["icu_type"]
+          id?: string
+          is_available?: boolean | null
+          updated_at?: string
+        }
+        Update: {
+          bed_number?: string
+          created_at?: string
+          equipment_notes?: string | null
+          has_monitor?: boolean | null
+          has_ventilator?: boolean | null
+          icu_type?: Database["public"]["Enums"]["icu_type"]
+          id?: string
+          is_available?: boolean | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      icu_monitoring: {
+        Row: {
+          admission_id: string
+          blood_glucose: number | null
+          blood_pressure_diastolic: number | null
+          blood_pressure_systolic: number | null
+          cardiac_output: number | null
+          created_at: string
+          cvp: number | null
+          etco2: number | null
+          fluid_balance: number | null
+          gcs_eye: number | null
+          gcs_motor: number | null
+          gcs_total: number | null
+          gcs_verbal: number | null
+          heart_rate: number | null
+          id: string
+          intake_total: number | null
+          map: number | null
+          notes: string | null
+          output_total: number | null
+          pain_score: number | null
+          pupil_left: string | null
+          pupil_right: string | null
+          recorded_at: string
+          recorded_by: string | null
+          respiratory_rate: number | null
+          sedation_score: number | null
+          spo2: number | null
+          temperature: number | null
+          urine_output: number | null
+        }
+        Insert: {
+          admission_id: string
+          blood_glucose?: number | null
+          blood_pressure_diastolic?: number | null
+          blood_pressure_systolic?: number | null
+          cardiac_output?: number | null
+          created_at?: string
+          cvp?: number | null
+          etco2?: number | null
+          fluid_balance?: number | null
+          gcs_eye?: number | null
+          gcs_motor?: number | null
+          gcs_total?: number | null
+          gcs_verbal?: number | null
+          heart_rate?: number | null
+          id?: string
+          intake_total?: number | null
+          map?: number | null
+          notes?: string | null
+          output_total?: number | null
+          pain_score?: number | null
+          pupil_left?: string | null
+          pupil_right?: string | null
+          recorded_at?: string
+          recorded_by?: string | null
+          respiratory_rate?: number | null
+          sedation_score?: number | null
+          spo2?: number | null
+          temperature?: number | null
+          urine_output?: number | null
+        }
+        Update: {
+          admission_id?: string
+          blood_glucose?: number | null
+          blood_pressure_diastolic?: number | null
+          blood_pressure_systolic?: number | null
+          cardiac_output?: number | null
+          created_at?: string
+          cvp?: number | null
+          etco2?: number | null
+          fluid_balance?: number | null
+          gcs_eye?: number | null
+          gcs_motor?: number | null
+          gcs_total?: number | null
+          gcs_verbal?: number | null
+          heart_rate?: number | null
+          id?: string
+          intake_total?: number | null
+          map?: number | null
+          notes?: string | null
+          output_total?: number | null
+          pain_score?: number | null
+          pupil_left?: string | null
+          pupil_right?: string | null
+          recorded_at?: string
+          recorded_by?: string | null
+          respiratory_rate?: number | null
+          sedation_score?: number | null
+          spo2?: number | null
+          temperature?: number | null
+          urine_output?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "icu_monitoring_admission_id_fkey"
+            columns: ["admission_id"]
+            isOneToOne: false
+            referencedRelation: "icu_admissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      icu_nursing_charts: {
+        Row: {
+          admission_id: string
+          assessment: string | null
+          chart_date: string
+          created_at: string
+          handover_notes: string | null
+          id: string
+          interventions: Json | null
+          lines_and_tubes: Json | null
+          medications_given: Json | null
+          nurse_id: string | null
+          patient_response: string | null
+          shift: string
+          updated_at: string
+          wounds_care: Json | null
+        }
+        Insert: {
+          admission_id: string
+          assessment?: string | null
+          chart_date?: string
+          created_at?: string
+          handover_notes?: string | null
+          id?: string
+          interventions?: Json | null
+          lines_and_tubes?: Json | null
+          medications_given?: Json | null
+          nurse_id?: string | null
+          patient_response?: string | null
+          shift: string
+          updated_at?: string
+          wounds_care?: Json | null
+        }
+        Update: {
+          admission_id?: string
+          assessment?: string | null
+          chart_date?: string
+          created_at?: string
+          handover_notes?: string | null
+          id?: string
+          interventions?: Json | null
+          lines_and_tubes?: Json | null
+          medications_given?: Json | null
+          nurse_id?: string | null
+          patient_response?: string | null
+          shift?: string
+          updated_at?: string
+          wounds_care?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "icu_nursing_charts_admission_id_fkey"
+            columns: ["admission_id"]
+            isOneToOne: false
+            referencedRelation: "icu_admissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      icu_scores: {
+        Row: {
+          admission_id: string
+          calculated_by: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          predicted_mortality: number | null
+          score_components: Json | null
+          score_date: string
+          score_type: string
+          total_score: number
+        }
+        Insert: {
+          admission_id: string
+          calculated_by?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          predicted_mortality?: number | null
+          score_components?: Json | null
+          score_date?: string
+          score_type: string
+          total_score: number
+        }
+        Update: {
+          admission_id?: string
+          calculated_by?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          predicted_mortality?: number | null
+          score_components?: Json | null
+          score_date?: string
+          score_type?: string
+          total_score?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "icu_scores_admission_id_fkey"
+            columns: ["admission_id"]
+            isOneToOne: false
+            referencedRelation: "icu_admissions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       inpatient_admissions: {
         Row: {
@@ -3636,6 +4447,292 @@ export type Database = {
           },
         ]
       }
+      transfusion_reactions: {
+        Row: {
+          blood_bag_id: string
+          blood_bank_notified: boolean | null
+          created_at: string
+          id: string
+          interventions: Json | null
+          investigation_findings: string | null
+          investigation_status: string | null
+          medications_given: Json | null
+          notes: string | null
+          outcome: string | null
+          patient_id: string
+          reaction_time: string
+          reaction_type: string
+          reported_by: string | null
+          severity: Database["public"]["Enums"]["transfusion_reaction_severity"]
+          symptoms: Json | null
+          transfusion_id: string
+          transfusion_stopped: boolean | null
+          updated_at: string
+          vital_signs_at_reaction: Json | null
+        }
+        Insert: {
+          blood_bag_id: string
+          blood_bank_notified?: boolean | null
+          created_at?: string
+          id?: string
+          interventions?: Json | null
+          investigation_findings?: string | null
+          investigation_status?: string | null
+          medications_given?: Json | null
+          notes?: string | null
+          outcome?: string | null
+          patient_id: string
+          reaction_time?: string
+          reaction_type: string
+          reported_by?: string | null
+          severity: Database["public"]["Enums"]["transfusion_reaction_severity"]
+          symptoms?: Json | null
+          transfusion_id: string
+          transfusion_stopped?: boolean | null
+          updated_at?: string
+          vital_signs_at_reaction?: Json | null
+        }
+        Update: {
+          blood_bag_id?: string
+          blood_bank_notified?: boolean | null
+          created_at?: string
+          id?: string
+          interventions?: Json | null
+          investigation_findings?: string | null
+          investigation_status?: string | null
+          medications_given?: Json | null
+          notes?: string | null
+          outcome?: string | null
+          patient_id?: string
+          reaction_time?: string
+          reaction_type?: string
+          reported_by?: string | null
+          severity?: Database["public"]["Enums"]["transfusion_reaction_severity"]
+          symptoms?: Json | null
+          transfusion_id?: string
+          transfusion_stopped?: boolean | null
+          updated_at?: string
+          vital_signs_at_reaction?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transfusion_reactions_blood_bag_id_fkey"
+            columns: ["blood_bag_id"]
+            isOneToOne: false
+            referencedRelation: "blood_inventory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transfusion_reactions_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transfusion_reactions_transfusion_id_fkey"
+            columns: ["transfusion_id"]
+            isOneToOne: false
+            referencedRelation: "transfusion_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transfusion_records: {
+        Row: {
+          administered_by: string | null
+          blood_bag_id: string
+          blood_verified_by: Json | null
+          created_at: string
+          crossmatch_id: string | null
+          end_time: string | null
+          flow_rate: string | null
+          had_reaction: boolean | null
+          id: string
+          notes: string | null
+          patient_condition: string | null
+          patient_consent: boolean | null
+          patient_id: string
+          post_vital_signs: Json | null
+          pre_vital_signs: Json | null
+          reaction_id: string | null
+          request_id: string | null
+          start_time: string | null
+          supervised_by: string | null
+          total_volume_transfused: number | null
+          transfusion_date: string
+          updated_at: string
+        }
+        Insert: {
+          administered_by?: string | null
+          blood_bag_id: string
+          blood_verified_by?: Json | null
+          created_at?: string
+          crossmatch_id?: string | null
+          end_time?: string | null
+          flow_rate?: string | null
+          had_reaction?: boolean | null
+          id?: string
+          notes?: string | null
+          patient_condition?: string | null
+          patient_consent?: boolean | null
+          patient_id: string
+          post_vital_signs?: Json | null
+          pre_vital_signs?: Json | null
+          reaction_id?: string | null
+          request_id?: string | null
+          start_time?: string | null
+          supervised_by?: string | null
+          total_volume_transfused?: number | null
+          transfusion_date?: string
+          updated_at?: string
+        }
+        Update: {
+          administered_by?: string | null
+          blood_bag_id?: string
+          blood_verified_by?: Json | null
+          created_at?: string
+          crossmatch_id?: string | null
+          end_time?: string | null
+          flow_rate?: string | null
+          had_reaction?: boolean | null
+          id?: string
+          notes?: string | null
+          patient_condition?: string | null
+          patient_consent?: boolean | null
+          patient_id?: string
+          post_vital_signs?: Json | null
+          pre_vital_signs?: Json | null
+          reaction_id?: string | null
+          request_id?: string | null
+          start_time?: string | null
+          supervised_by?: string | null
+          total_volume_transfused?: number | null
+          transfusion_date?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transfusion_records_blood_bag_id_fkey"
+            columns: ["blood_bag_id"]
+            isOneToOne: false
+            referencedRelation: "blood_inventory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transfusion_records_crossmatch_id_fkey"
+            columns: ["crossmatch_id"]
+            isOneToOne: false
+            referencedRelation: "crossmatch_tests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transfusion_records_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transfusion_records_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "transfusion_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transfusion_requests: {
+        Row: {
+          approved_by: string | null
+          approved_date: string | null
+          created_at: string
+          department: string | null
+          id: string
+          indication: string
+          notes: string | null
+          patient_blood_type: Database["public"]["Enums"]["blood_type"] | null
+          patient_hemoglobin: number | null
+          patient_id: string
+          patient_platelet_count: number | null
+          product_type: Database["public"]["Enums"]["blood_product_type"]
+          request_date: string
+          request_number: string
+          requesting_doctor_id: string | null
+          status: string | null
+          units_requested: number
+          updated_at: string
+          urgency: string | null
+          visit_id: string | null
+        }
+        Insert: {
+          approved_by?: string | null
+          approved_date?: string | null
+          created_at?: string
+          department?: string | null
+          id?: string
+          indication: string
+          notes?: string | null
+          patient_blood_type?: Database["public"]["Enums"]["blood_type"] | null
+          patient_hemoglobin?: number | null
+          patient_id: string
+          patient_platelet_count?: number | null
+          product_type: Database["public"]["Enums"]["blood_product_type"]
+          request_date?: string
+          request_number: string
+          requesting_doctor_id?: string | null
+          status?: string | null
+          units_requested: number
+          updated_at?: string
+          urgency?: string | null
+          visit_id?: string | null
+        }
+        Update: {
+          approved_by?: string | null
+          approved_date?: string | null
+          created_at?: string
+          department?: string | null
+          id?: string
+          indication?: string
+          notes?: string | null
+          patient_blood_type?: Database["public"]["Enums"]["blood_type"] | null
+          patient_hemoglobin?: number | null
+          patient_id?: string
+          patient_platelet_count?: number | null
+          product_type?: Database["public"]["Enums"]["blood_product_type"]
+          request_date?: string
+          request_number?: string
+          requesting_doctor_id?: string | null
+          status?: string | null
+          units_requested?: number
+          updated_at?: string
+          urgency?: string | null
+          visit_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transfusion_requests_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transfusion_requests_requesting_doctor_id_fkey"
+            columns: ["requesting_doctor_id"]
+            isOneToOne: false
+            referencedRelation: "doctors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transfusion_requests_visit_id_fkey"
+            columns: ["visit_id"]
+            isOneToOne: false
+            referencedRelation: "visits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -3656,6 +4753,152 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      vascular_access: {
+        Row: {
+          access_type: Database["public"]["Enums"]["vascular_access_type"]
+          assessment_notes: string | null
+          complications: Json | null
+          created_at: string
+          creation_date: string | null
+          id: string
+          is_active: boolean | null
+          last_assessment_date: string | null
+          location: string | null
+          maturation_date: string | null
+          patient_id: string
+          updated_at: string
+        }
+        Insert: {
+          access_type: Database["public"]["Enums"]["vascular_access_type"]
+          assessment_notes?: string | null
+          complications?: Json | null
+          created_at?: string
+          creation_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_assessment_date?: string | null
+          location?: string | null
+          maturation_date?: string | null
+          patient_id: string
+          updated_at?: string
+        }
+        Update: {
+          access_type?: Database["public"]["Enums"]["vascular_access_type"]
+          assessment_notes?: string | null
+          complications?: Json | null
+          created_at?: string
+          creation_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_assessment_date?: string | null
+          location?: string | null
+          maturation_date?: string | null
+          patient_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vascular_access_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ventilator_settings: {
+        Row: {
+          admission_id: string
+          base_excess: number | null
+          created_at: string
+          fio2: number | null
+          hco3: number | null
+          i_e_ratio: string | null
+          id: string
+          minute_volume: number | null
+          notes: string | null
+          p_f_ratio: number | null
+          paco2: number | null
+          pao2: number | null
+          peep: number | null
+          ph: number | null
+          pip: number | null
+          plateau_pressure: number | null
+          pressure_support: number | null
+          recorded_at: string
+          recorded_by: string | null
+          respiratory_rate_actual: number | null
+          respiratory_rate_set: number | null
+          tidal_volume: number | null
+          trigger_sensitivity: number | null
+          ventilator_mode: Database["public"]["Enums"]["ventilator_mode"] | null
+        }
+        Insert: {
+          admission_id: string
+          base_excess?: number | null
+          created_at?: string
+          fio2?: number | null
+          hco3?: number | null
+          i_e_ratio?: string | null
+          id?: string
+          minute_volume?: number | null
+          notes?: string | null
+          p_f_ratio?: number | null
+          paco2?: number | null
+          pao2?: number | null
+          peep?: number | null
+          ph?: number | null
+          pip?: number | null
+          plateau_pressure?: number | null
+          pressure_support?: number | null
+          recorded_at?: string
+          recorded_by?: string | null
+          respiratory_rate_actual?: number | null
+          respiratory_rate_set?: number | null
+          tidal_volume?: number | null
+          trigger_sensitivity?: number | null
+          ventilator_mode?:
+            | Database["public"]["Enums"]["ventilator_mode"]
+            | null
+        }
+        Update: {
+          admission_id?: string
+          base_excess?: number | null
+          created_at?: string
+          fio2?: number | null
+          hco3?: number | null
+          i_e_ratio?: string | null
+          id?: string
+          minute_volume?: number | null
+          notes?: string | null
+          p_f_ratio?: number | null
+          paco2?: number | null
+          pao2?: number | null
+          peep?: number | null
+          ph?: number | null
+          pip?: number | null
+          plateau_pressure?: number | null
+          pressure_support?: number | null
+          recorded_at?: string
+          recorded_by?: string | null
+          respiratory_rate_actual?: number | null
+          respiratory_rate_set?: number | null
+          tidal_volume?: number | null
+          trigger_sensitivity?: number | null
+          ventilator_mode?:
+            | Database["public"]["Enums"]["ventilator_mode"]
+            | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ventilator_settings_admission_id_fkey"
+            columns: ["admission_id"]
+            isOneToOne: false
+            referencedRelation: "icu_admissions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       visits: {
         Row: {
@@ -3846,7 +5089,9 @@ export type Database = {
     }
     Functions: {
       generate_claim_number: { Args: never; Returns: string }
+      generate_dialysis_session_number: { Args: never; Returns: string }
       generate_employee_number: { Args: never; Returns: string }
+      generate_icu_admission_number: { Args: never; Returns: string }
       generate_insurance_claim_number: { Args: never; Returns: string }
       generate_invoice_number: { Args: never; Returns: string }
       generate_lab_number: { Args: never; Returns: string }
@@ -3857,6 +5102,7 @@ export type Database = {
         Returns: string
       }
       generate_surgery_number: { Args: never; Returns: string }
+      generate_transfusion_request_number: { Args: never; Returns: string }
       generate_visit_number: { Args: never; Returns: string }
       get_user_menu_access: {
         Args: { _user_id: string }
@@ -3905,8 +5151,28 @@ export type Database = {
         | "ASA_VI"
       bed_status: "tersedia" | "terisi" | "maintenance" | "reserved"
       billing_status: "pending" | "lunas" | "batal"
+      blood_product_type:
+        | "whole_blood"
+        | "prc"
+        | "ffp"
+        | "tc"
+        | "cryoprecipitate"
+        | "platelets"
+      blood_status:
+        | "available"
+        | "reserved"
+        | "crossmatched"
+        | "issued"
+        | "transfused"
+        | "expired"
+        | "discarded"
+      blood_type: "A+" | "A-" | "B+" | "B-" | "AB+" | "AB-" | "O+" | "O-"
       claim_status: "draft" | "submitted" | "approved" | "rejected" | "paid"
+      crossmatch_result: "compatible" | "incompatible" | "pending"
+      dialysis_type: "hemodialysis" | "peritoneal" | "crrt" | "sled"
       gender_type: "L" | "P"
+      icu_admission_status: "active" | "transferred" | "discharged" | "deceased"
+      icu_type: "icu" | "nicu" | "picu" | "iccu" | "hcu"
       insurance_claim_status:
         | "draft"
         | "submitted"
@@ -3924,6 +5190,12 @@ export type Database = {
         | "siap"
         | "diserahkan"
         | "batal"
+      session_status:
+        | "scheduled"
+        | "in_progress"
+        | "completed"
+        | "cancelled"
+        | "missed"
       surgery_status:
         | "scheduled"
         | "preparation"
@@ -3931,7 +5203,22 @@ export type Database = {
         | "completed"
         | "cancelled"
         | "postponed"
+      transfusion_reaction_severity: "mild" | "moderate" | "severe" | "fatal"
       triage_level: "merah" | "kuning" | "hijau" | "hitam"
+      vascular_access_type:
+        | "av_fistula"
+        | "av_graft"
+        | "tunneled_catheter"
+        | "non_tunneled_catheter"
+        | "peritoneal_catheter"
+      ventilator_mode:
+        | "CMV"
+        | "SIMV"
+        | "PSV"
+        | "CPAP"
+        | "BiPAP"
+        | "APRV"
+        | "HFOV"
       visit_status: "menunggu" | "dipanggil" | "dilayani" | "selesai" | "batal"
       visit_type: "rawat_jalan" | "rawat_inap" | "igd"
     }
@@ -4082,8 +5369,30 @@ export const Constants = {
       ],
       bed_status: ["tersedia", "terisi", "maintenance", "reserved"],
       billing_status: ["pending", "lunas", "batal"],
+      blood_product_type: [
+        "whole_blood",
+        "prc",
+        "ffp",
+        "tc",
+        "cryoprecipitate",
+        "platelets",
+      ],
+      blood_status: [
+        "available",
+        "reserved",
+        "crossmatched",
+        "issued",
+        "transfused",
+        "expired",
+        "discarded",
+      ],
+      blood_type: ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"],
       claim_status: ["draft", "submitted", "approved", "rejected", "paid"],
+      crossmatch_result: ["compatible", "incompatible", "pending"],
+      dialysis_type: ["hemodialysis", "peritoneal", "crrt", "sled"],
       gender_type: ["L", "P"],
+      icu_admission_status: ["active", "transferred", "discharged", "deceased"],
+      icu_type: ["icu", "nicu", "picu", "iccu", "hcu"],
       insurance_claim_status: [
         "draft",
         "submitted",
@@ -4103,6 +5412,13 @@ export const Constants = {
         "diserahkan",
         "batal",
       ],
+      session_status: [
+        "scheduled",
+        "in_progress",
+        "completed",
+        "cancelled",
+        "missed",
+      ],
       surgery_status: [
         "scheduled",
         "preparation",
@@ -4111,7 +5427,16 @@ export const Constants = {
         "cancelled",
         "postponed",
       ],
+      transfusion_reaction_severity: ["mild", "moderate", "severe", "fatal"],
       triage_level: ["merah", "kuning", "hijau", "hitam"],
+      vascular_access_type: [
+        "av_fistula",
+        "av_graft",
+        "tunneled_catheter",
+        "non_tunneled_catheter",
+        "peritoneal_catheter",
+      ],
+      ventilator_mode: ["CMV", "SIMV", "PSV", "CPAP", "BiPAP", "APRV", "HFOV"],
       visit_status: ["menunggu", "dipanggil", "dilayani", "selesai", "batal"],
       visit_type: ["rawat_jalan", "rawat_inap", "igd"],
     },

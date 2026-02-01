@@ -33,6 +33,9 @@ import SDM from "./pages/SDM";
 import MasterData from "./pages/MasterData";
 import Pengaturan from "./pages/Pengaturan";
 import KamarOperasi from "./pages/KamarOperasi";
+import ICU from "./pages/ICU";
+import Hemodialisa from "./pages/Hemodialisa";
+import BankDarah from "./pages/BankDarah";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -248,6 +251,30 @@ const App = () => (
               element={
                 <ProtectedPageWithLayout>
                   <KamarOperasi />
+                </ProtectedPageWithLayout>
+              }
+            />
+            <Route
+              path="/icu"
+              element={
+                <ProtectedPageWithLayout>
+                  <ICU />
+                </ProtectedPageWithLayout>
+              }
+            />
+            <Route
+              path="/hemodialisa"
+              element={
+                <ProtectedPageWithLayout>
+                  <Hemodialisa />
+                </ProtectedPageWithLayout>
+              }
+            />
+            <Route
+              path="/bank-darah"
+              element={
+                <ProtectedPageWithLayout>
+                  <BankDarah />
                 </ProtectedPageWithLayout>
               }
             />
