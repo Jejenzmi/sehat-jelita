@@ -93,6 +93,56 @@ export type Database = {
           },
         ]
       }
+      attendance: {
+        Row: {
+          attendance_date: string
+          check_in: string | null
+          check_out: string | null
+          created_at: string
+          employee_id: string
+          id: string
+          location_in: string | null
+          location_out: string | null
+          notes: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          attendance_date?: string
+          check_in?: string | null
+          check_out?: string | null
+          created_at?: string
+          employee_id: string
+          id?: string
+          location_in?: string | null
+          location_out?: string | null
+          notes?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          attendance_date?: string
+          check_in?: string | null
+          check_out?: string | null
+          created_at?: string
+          employee_id?: string
+          id?: string
+          location_in?: string | null
+          location_out?: string | null
+          notes?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           action: string
@@ -1453,6 +1503,69 @@ export type Database = {
         }
         Relationships: []
       }
+      leave_requests: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          employee_id: string
+          end_date: string
+          id: string
+          leave_type: string
+          reason: string | null
+          rejection_reason: string | null
+          start_date: string
+          status: string
+          total_days: number
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          employee_id: string
+          end_date: string
+          id?: string
+          leave_type: string
+          reason?: string | null
+          rejection_reason?: string | null
+          start_date: string
+          status?: string
+          total_days: number
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          employee_id?: string
+          end_date?: string
+          id?: string
+          leave_type?: string
+          reason?: string | null
+          rejection_reason?: string | null
+          start_date?: string
+          status?: string
+          total_days?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leave_requests_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "leave_requests_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       medical_records: {
         Row: {
           additional_notes: string | null
@@ -1690,6 +1803,79 @@ export type Database = {
         }
         Relationships: []
       }
+      nursing_notes: {
+        Row: {
+          admission_id: string | null
+          content: string
+          cosigned_at: string | null
+          cosigned_by: string | null
+          created_at: string
+          id: string
+          interventions: Json | null
+          note_datetime: string
+          note_type: string
+          nurse_id: string
+          patient_id: string
+          shift: string | null
+          updated_at: string
+          visit_id: string
+        }
+        Insert: {
+          admission_id?: string | null
+          content: string
+          cosigned_at?: string | null
+          cosigned_by?: string | null
+          created_at?: string
+          id?: string
+          interventions?: Json | null
+          note_datetime?: string
+          note_type: string
+          nurse_id: string
+          patient_id: string
+          shift?: string | null
+          updated_at?: string
+          visit_id: string
+        }
+        Update: {
+          admission_id?: string | null
+          content?: string
+          cosigned_at?: string | null
+          cosigned_by?: string | null
+          created_at?: string
+          id?: string
+          interventions?: Json | null
+          note_datetime?: string
+          note_type?: string
+          nurse_id?: string
+          patient_id?: string
+          shift?: string | null
+          updated_at?: string
+          visit_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nursing_notes_admission_id_fkey"
+            columns: ["admission_id"]
+            isOneToOne: false
+            referencedRelation: "inpatient_admissions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nursing_notes_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nursing_notes_visit_id_fkey"
+            columns: ["visit_id"]
+            isOneToOne: false
+            referencedRelation: "visits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       patient_insurances: {
         Row: {
           class: string | null
@@ -1874,6 +2060,83 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      payroll: {
+        Row: {
+          allowances: Json | null
+          approved_by: string | null
+          basic_salary: number
+          created_at: string
+          created_by: string | null
+          deductions: Json | null
+          employee_id: string
+          gross_salary: number
+          id: string
+          net_salary: number
+          notes: string | null
+          overtime_amount: number | null
+          overtime_hours: number | null
+          payment_date: string | null
+          payment_method: string | null
+          period_month: number
+          period_year: number
+          status: string
+          tax_amount: number | null
+          updated_at: string
+        }
+        Insert: {
+          allowances?: Json | null
+          approved_by?: string | null
+          basic_salary?: number
+          created_at?: string
+          created_by?: string | null
+          deductions?: Json | null
+          employee_id: string
+          gross_salary?: number
+          id?: string
+          net_salary?: number
+          notes?: string | null
+          overtime_amount?: number | null
+          overtime_hours?: number | null
+          payment_date?: string | null
+          payment_method?: string | null
+          period_month: number
+          period_year: number
+          status?: string
+          tax_amount?: number | null
+          updated_at?: string
+        }
+        Update: {
+          allowances?: Json | null
+          approved_by?: string | null
+          basic_salary?: number
+          created_at?: string
+          created_by?: string | null
+          deductions?: Json | null
+          employee_id?: string
+          gross_salary?: number
+          id?: string
+          net_salary?: number
+          notes?: string | null
+          overtime_amount?: number | null
+          overtime_hours?: number | null
+          payment_date?: string | null
+          payment_method?: string | null
+          period_month?: number
+          period_year?: number
+          status?: string
+          tax_amount?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payroll_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       prescription_items: {
         Row: {
@@ -2670,6 +2933,59 @@ export type Database = {
         }
         Relationships: []
       }
+      service_tariffs: {
+        Row: {
+          base_price: number
+          bpjs_price: number | null
+          category: string
+          code: string
+          created_at: string
+          department_id: string | null
+          id: string
+          insurance_price: number | null
+          is_active: boolean | null
+          name: string
+          notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          base_price?: number
+          bpjs_price?: number | null
+          category: string
+          code: string
+          created_at?: string
+          department_id?: string | null
+          id?: string
+          insurance_price?: number | null
+          is_active?: boolean | null
+          name: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          base_price?: number
+          bpjs_price?: number | null
+          category?: string
+          code?: string
+          created_at?: string
+          department_id?: string | null
+          id?: string
+          insurance_price?: number | null
+          is_active?: boolean | null
+          name?: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_tariffs_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       system_settings: {
         Row: {
           created_at: string
@@ -2906,6 +3222,91 @@ export type Database = {
             columns: ["patient_id"]
             isOneToOne: false
             referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vital_signs: {
+        Row: {
+          blood_glucose: number | null
+          blood_pressure_diastolic: number | null
+          blood_pressure_systolic: number | null
+          created_at: string
+          heart_rate: number | null
+          height: number | null
+          id: string
+          measured_at: string
+          measured_by: string | null
+          medical_record_id: string | null
+          notes: string | null
+          oxygen_saturation: number | null
+          pain_scale: number | null
+          patient_id: string
+          respiratory_rate: number | null
+          temperature: number | null
+          visit_id: string
+          weight: number | null
+        }
+        Insert: {
+          blood_glucose?: number | null
+          blood_pressure_diastolic?: number | null
+          blood_pressure_systolic?: number | null
+          created_at?: string
+          heart_rate?: number | null
+          height?: number | null
+          id?: string
+          measured_at?: string
+          measured_by?: string | null
+          medical_record_id?: string | null
+          notes?: string | null
+          oxygen_saturation?: number | null
+          pain_scale?: number | null
+          patient_id: string
+          respiratory_rate?: number | null
+          temperature?: number | null
+          visit_id: string
+          weight?: number | null
+        }
+        Update: {
+          blood_glucose?: number | null
+          blood_pressure_diastolic?: number | null
+          blood_pressure_systolic?: number | null
+          created_at?: string
+          heart_rate?: number | null
+          height?: number | null
+          id?: string
+          measured_at?: string
+          measured_by?: string | null
+          medical_record_id?: string | null
+          notes?: string | null
+          oxygen_saturation?: number | null
+          pain_scale?: number | null
+          patient_id?: string
+          respiratory_rate?: number | null
+          temperature?: number | null
+          visit_id?: string
+          weight?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vital_signs_medical_record_id_fkey"
+            columns: ["medical_record_id"]
+            isOneToOne: false
+            referencedRelation: "medical_records"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vital_signs_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vital_signs_visit_id_fkey"
+            columns: ["visit_id"]
+            isOneToOne: false
+            referencedRelation: "visits"
             referencedColumns: ["id"]
           },
         ]

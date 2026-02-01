@@ -1,4 +1,4 @@
-import { Users, Stethoscope, BedDouble, CreditCard, TrendingUp, Activity } from "lucide-react";
+import { Users, Stethoscope, BedDouble, CreditCard, TrendingUp, TrendingDown } from "lucide-react";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { RecentPatients } from "@/components/dashboard/RecentPatients";
 import { ServiceChart } from "@/components/dashboard/ServiceChart";
@@ -6,8 +6,22 @@ import { BPJSStatus } from "@/components/dashboard/BPJSStatus";
 import { SatuSehatStatus } from "@/components/dashboard/SatuSehatStatus";
 import { QuickActions } from "@/components/dashboard/QuickActions";
 import { BedOccupancy } from "@/components/dashboard/BedOccupancy";
+import { useDashboardStats } from "@/hooks/useDashboardData";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Dashboard() {
+  const { data: stats, isLoading } = useDashboardStats();
+
+  const formatCurrency = (amount: number) => {
+    if (amount >= 1000000000) {
+      return `Rp ${(amount / 1000000000).toFixed(1)}M`;
+    }
+    if (amount >= 1000000) {
+      return `Rp ${(amount / 1000000).toFixed(1)}jt`;
+    }
+    return `Rp ${amount.toLocaleString("id-ID")}`;
+  };
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -21,44 +35,56 @@ export default function Dashboard() {
       {/* Stats Overview */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="animate-slide-up delay-100">
-          <StatCard
-            title="Total Kunjungan Hari Ini"
-            value="247"
-            subtitle="Semua layanan"
-            icon={Users}
-            trend={{ value: 12, isPositive: true }}
-            variant="primary"
-          />
+          {isLoading ? (
+            <Skeleton className="h-32" />
+          ) : (
+            <StatCard
+              title="Total Kunjungan Hari Ini"
+              value={stats?.totalVisitsToday?.toString() || "0"}
+              subtitle="Semua layanan"
+              icon={Users}
+              variant="primary"
+            />
+          )}
         </div>
         <div className="animate-slide-up delay-200">
-          <StatCard
-            title="Rawat Jalan"
-            value="156"
-            subtitle="8 Poliklinik aktif"
-            icon={Stethoscope}
-            trend={{ value: 8, isPositive: true }}
-            variant="success"
-          />
+          {isLoading ? (
+            <Skeleton className="h-32" />
+          ) : (
+            <StatCard
+              title="Rawat Jalan"
+              value={stats?.outpatientToday?.toString() || "0"}
+              subtitle="Hari ini"
+              icon={Stethoscope}
+              variant="success"
+            />
+          )}
         </div>
         <div className="animate-slide-up delay-300">
-          <StatCard
-            title="Rawat Inap"
-            value="103"
-            subtitle="84% okupansi"
-            icon={BedDouble}
-            trend={{ value: 3, isPositive: false }}
-            variant="warning"
-          />
+          {isLoading ? (
+            <Skeleton className="h-32" />
+          ) : (
+            <StatCard
+              title="Rawat Inap"
+              value={stats?.inpatientCount?.toString() || "0"}
+              subtitle={`${stats?.occupancyRate || 0}% okupansi`}
+              icon={BedDouble}
+              variant="warning"
+            />
+          )}
         </div>
         <div className="animate-slide-up delay-400">
-          <StatCard
-            title="Pendapatan Hari Ini"
-            value="Rp 125.8jt"
-            subtitle="BPJS & Umum"
-            icon={CreditCard}
-            trend={{ value: 15, isPositive: true }}
-            variant="default"
-          />
+          {isLoading ? (
+            <Skeleton className="h-32" />
+          ) : (
+            <StatCard
+              title="Pendapatan Hari Ini"
+              value={formatCurrency(stats?.revenueToday || 0)}
+              subtitle="BPJS & Umum"
+              icon={CreditCard}
+              variant="default"
+            />
+          )}
         </div>
       </div>
 

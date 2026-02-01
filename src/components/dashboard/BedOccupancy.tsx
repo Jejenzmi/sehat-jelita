@@ -1,19 +1,32 @@
-import { BedDouble, Users } from "lucide-react";
+import { BedDouble } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
-
-const wardData = [
-  { name: "VIP", occupied: 8, total: 10, color: "bg-medical-purple" },
-  { name: "Kelas 1", occupied: 15, total: 20, color: "bg-primary" },
-  { name: "Kelas 2", occupied: 28, total: 30, color: "bg-medical-blue" },
-  { name: "Kelas 3", occupied: 42, total: 50, color: "bg-success" },
-  { name: "ICU", occupied: 6, total: 8, color: "bg-destructive" },
-  { name: "NICU", occupied: 4, total: 5, color: "bg-warning" },
-];
+import { useBedOccupancy } from "@/hooks/useDashboardData";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export function BedOccupancy() {
+  const { data: wardData = [], isLoading } = useBedOccupancy();
+
+  if (isLoading) {
+    return (
+      <div className="module-card">
+        <Skeleton className="h-6 w-48 mb-4" />
+        <div className="grid grid-cols-3 gap-3 mb-6">
+          <Skeleton className="h-16" />
+          <Skeleton className="h-16" />
+          <Skeleton className="h-16" />
+        </div>
+        <div className="space-y-3">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-8" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   const totalOccupied = wardData.reduce((acc, ward) => acc + ward.occupied, 0);
   const totalBeds = wardData.reduce((acc, ward) => acc + ward.total, 0);
-  const occupancyRate = Math.round((totalOccupied / totalBeds) * 100);
+  const occupancyRate = totalBeds > 0 ? Math.round((totalOccupied / totalBeds) * 100) : 0;
 
   return (
     <div className="module-card">
@@ -45,29 +58,35 @@ export function BedOccupancy() {
 
       {/* Ward Breakdown */}
       <div className="space-y-3">
-        {wardData.map((ward) => {
-          const percentage = Math.round((ward.occupied / ward.total) * 100);
-          return (
-            <div key={ward.name} className="space-y-1">
-              <div className="flex items-center justify-between text-sm">
-                <div className="flex items-center gap-2">
-                  <div className={`w-2 h-2 rounded-full ${ward.color}`} />
-                  <span>{ward.name}</span>
+        {wardData.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-4">
+            Belum ada data kamar
+          </p>
+        ) : (
+          wardData.map((ward) => {
+            const percentage = ward.total > 0 ? Math.round((ward.occupied / ward.total) * 100) : 0;
+            return (
+              <div key={ward.name} className="space-y-1">
+                <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center gap-2">
+                    <div className={`w-2 h-2 rounded-full ${ward.color}`} />
+                    <span>{ward.name}</span>
+                  </div>
+                  <span className="text-muted-foreground">
+                    {ward.occupied}/{ward.total}
+                  </span>
                 </div>
-                <span className="text-muted-foreground">
-                  {ward.occupied}/{ward.total}
-                </span>
+                <Progress
+                  value={percentage}
+                  className="h-2"
+                  style={{
+                    background: "hsl(var(--muted))",
+                  }}
+                />
               </div>
-              <Progress
-                value={percentage}
-                className="h-2"
-                style={{
-                  background: "hsl(var(--muted))",
-                }}
-              />
-            </div>
-          );
-        })}
+            );
+          })
+        )}
       </div>
     </div>
   );

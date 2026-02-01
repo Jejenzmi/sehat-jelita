@@ -7,96 +7,31 @@ import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MessageCircle, Send, Search, Users, Plus, X } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
 import { id } from "date-fns/locale";
-
-interface Message {
-  id: string;
-  sender_id: string;
-  sender_name: string;
-  content: string;
-  created_at: string;
-  is_own: boolean;
-}
-
-interface ChatRoom {
-  id: string;
-  name: string;
-  type: "direct" | "group" | "department";
-  last_message?: string;
-  last_message_time?: string;
-  unread_count: number;
-  participants: string[];
-}
-
-// Sample staff for demo
-const sampleStaff = [
-  { id: "1", name: "Dr. Budi Santoso", role: "Dokter", online: true },
-  { id: "2", name: "Dr. Ani Wijaya", role: "Dokter", online: true },
-  { id: "3", name: "Suster Maria", role: "Perawat", online: false },
-  { id: "4", name: "Apt. Dewi", role: "Farmasi", online: true },
-  { id: "5", name: "Admin Rina", role: "Pendaftaran", online: true },
-];
-
-// Sample chat rooms
-const sampleRooms: ChatRoom[] = [
-  { id: "1", name: "Dr. Budi Santoso", type: "direct", last_message: "Baik dok, akan saya siapkan", last_message_time: "10:30", unread_count: 2, participants: ["1"] },
-  { id: "2", name: "Grup IGD", type: "group", last_message: "Pasien baru masuk", last_message_time: "10:15", unread_count: 0, participants: ["1", "2", "3"] },
-  { id: "3", name: "Farmasi", type: "department", last_message: "Stok paracetamol menipis", last_message_time: "09:45", unread_count: 1, participants: ["4"] },
-];
-
-// Sample messages
-const sampleMessages: Message[] = [
-  { id: "1", sender_id: "1", sender_name: "Dr. Budi Santoso", content: "Tolong siapkan hasil lab untuk pasien Ahmad Sulaiman", created_at: new Date(Date.now() - 3600000).toISOString(), is_own: false },
-  { id: "2", sender_id: "me", sender_name: "Anda", content: "Baik dok, akan saya siapkan", created_at: new Date(Date.now() - 1800000).toISOString(), is_own: true },
-  { id: "3", sender_id: "1", sender_name: "Dr. Budi Santoso", content: "Terima kasih, mohon segera ya karena pasien sudah menunggu", created_at: new Date(Date.now() - 900000).toISOString(), is_own: false },
-];
+import { 
+  useChatRooms, 
+  useChatMessages, 
+  useSendMessage, 
+  useMarkRoomAsRead,
+  ChatRoom,
+  ChatMessage 
+} from "@/hooks/useChatData";
 
 export function StaffChat() {
-  const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
-  const [rooms, setRooms] = useState<ChatRoom[]>(sampleRooms);
   const [selectedRoom, setSelectedRoom] = useState<ChatRoom | null>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
-  const [unreadTotal, setUnreadTotal] = useState(3);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Subscribe to real-time messages
-  useEffect(() => {
-    if (!selectedRoom) return;
+  const { data: rooms = [], isLoading: roomsLoading } = useChatRooms();
+  const { data: messages = [] } = useChatMessages(selectedRoom?.id || null);
+  const sendMessage = useSendMessage();
+  const markAsRead = useMarkRoomAsRead();
 
-    const channel = supabase
-      .channel(`chat-${selectedRoom.id}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "chat_messages",
-          filter: `room_id=eq.${selectedRoom.id}`,
-        },
-        (payload) => {
-          const newMsg = payload.new as any;
-          setMessages(prev => [...prev, {
-            id: newMsg.id,
-            sender_id: newMsg.sender_id,
-            sender_name: newMsg.sender_id === user?.id ? "Anda" : "Staff",
-            content: newMsg.content,
-            created_at: newMsg.created_at,
-            is_own: newMsg.sender_id === user?.id,
-          }]);
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [selectedRoom, user]);
+  // Calculate total unread
+  const unreadTotal = rooms.reduce((sum, room) => sum + room.unread_count, 0);
 
   // Scroll to bottom on new messages
   useEffect(() => {
@@ -105,33 +40,21 @@ export function StaffChat() {
 
   const handleSelectRoom = (room: ChatRoom) => {
     setSelectedRoom(room);
-    setMessages(sampleMessages); // In real app, fetch messages from DB
-    // Mark as read
-    setRooms(prev => prev.map(r => r.id === room.id ? { ...r, unread_count: 0 } : r));
-    setUnreadTotal(prev => Math.max(0, prev - room.unread_count));
+    markAsRead.mutate(room.id);
   };
 
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !selectedRoom) return;
 
-    // Add message locally
-    const msg: Message = {
-      id: Date.now().toString(),
-      sender_id: user?.id || "me",
-      sender_name: "Anda",
-      content: newMessage,
-      created_at: new Date().toISOString(),
-      is_own: true,
-    };
-    setMessages(prev => [...prev, msg]);
+    sendMessage.mutate({
+      roomId: selectedRoom.id,
+      content: newMessage.trim(),
+    });
     setNewMessage("");
-
-    // In real app, send to DB
-    // await supabase.from("chat_messages").insert({ room_id: selectedRoom.id, sender_id: user?.id, content: newMessage });
   };
 
   const filteredRooms = rooms.filter(room =>
-    room.name.toLowerCase().includes(searchTerm.toLowerCase())
+    room.name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -178,67 +101,54 @@ export function StaffChat() {
 
                 <TabsContent value="chats" className="flex-1 m-0">
                   <ScrollArea className="h-[calc(100vh-220px)]">
-                    <div className="divide-y">
-                      {filteredRooms.map((room) => (
-                        <div
-                          key={room.id}
-                          className="p-4 hover:bg-muted/50 cursor-pointer transition-colors"
-                          onClick={() => handleSelectRoom(room)}
-                        >
-                          <div className="flex items-start gap-3">
-                            <Avatar className="h-10 w-10">
-                              <AvatarFallback className="bg-primary/10 text-primary">
-                                {room.type === "group" ? <Users className="h-5 w-5" /> : room.name.charAt(0)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between">
-                                <p className="font-medium truncate">{room.name}</p>
-                                <span className="text-xs text-muted-foreground">{room.last_message_time}</span>
-                              </div>
-                              <div className="flex items-center justify-between mt-1">
-                                <p className="text-sm text-muted-foreground truncate">{room.last_message}</p>
-                                {room.unread_count > 0 && (
-                                  <Badge variant="destructive" className="h-5 w-5 flex items-center justify-center p-0 text-xs">
-                                    {room.unread_count}
-                                  </Badge>
-                                )}
+                    {roomsLoading ? (
+                      <div className="p-4 text-center text-muted-foreground">
+                        Memuat chat...
+                      </div>
+                    ) : filteredRooms.length === 0 ? (
+                      <div className="p-4 text-center text-muted-foreground">
+                        Belum ada percakapan
+                      </div>
+                    ) : (
+                      <div className="divide-y">
+                        {filteredRooms.map((room) => (
+                          <div
+                            key={room.id}
+                            className="p-4 hover:bg-muted/50 cursor-pointer transition-colors"
+                            onClick={() => handleSelectRoom(room)}
+                          >
+                            <div className="flex items-start gap-3">
+                              <Avatar className="h-10 w-10">
+                                <AvatarFallback className="bg-primary/10 text-primary">
+                                  {room.type === "group" ? <Users className="h-5 w-5" /> : (room.name?.charAt(0) || "?")}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between">
+                                  <p className="font-medium truncate">{room.name || "Chat"}</p>
+                                  <span className="text-xs text-muted-foreground">{room.last_message_time}</span>
+                                </div>
+                                <div className="flex items-center justify-between mt-1">
+                                  <p className="text-sm text-muted-foreground truncate">{room.last_message}</p>
+                                  {room.unread_count > 0 && (
+                                    <Badge variant="destructive" className="h-5 w-5 flex items-center justify-center p-0 text-xs">
+                                      {room.unread_count}
+                                    </Badge>
+                                  )}
+                                </div>
                               </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    )}
                   </ScrollArea>
                 </TabsContent>
 
                 <TabsContent value="staff" className="flex-1 m-0">
                   <ScrollArea className="h-[calc(100vh-220px)]">
-                    <div className="divide-y">
-                      {sampleStaff.map((staff) => (
-                        <div
-                          key={staff.id}
-                          className="p-4 hover:bg-muted/50 cursor-pointer transition-colors"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="relative">
-                              <Avatar className="h-10 w-10">
-                                <AvatarFallback className="bg-primary/10 text-primary">
-                                  {staff.name.charAt(0)}
-                                </AvatarFallback>
-                              </Avatar>
-                              <span className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-background ${staff.online ? "bg-green-500" : "bg-gray-400"}`} />
-                            </div>
-                            <div className="flex-1">
-                              <p className="font-medium">{staff.name}</p>
-                              <p className="text-sm text-muted-foreground">{staff.role}</p>
-                            </div>
-                            <Button size="sm" variant="ghost">
-                              <MessageCircle className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
+                    <div className="p-4 text-center text-muted-foreground">
+                      Fitur daftar staff akan segera tersedia
                     </div>
                   </ScrollArea>
                 </TabsContent>
@@ -261,13 +171,13 @@ export function StaffChat() {
                 </Button>
                 <Avatar className="h-10 w-10">
                   <AvatarFallback className="bg-primary/10 text-primary">
-                    {selectedRoom.type === "group" ? <Users className="h-5 w-5" /> : selectedRoom.name.charAt(0)}
+                    {selectedRoom.type === "group" ? <Users className="h-5 w-5" /> : (selectedRoom.name?.charAt(0) || "?")}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
-                  <p className="font-medium">{selectedRoom.name}</p>
+                  <p className="font-medium">{selectedRoom.name || "Chat"}</p>
                   <p className="text-xs text-muted-foreground">
-                    {selectedRoom.type === "direct" ? "Online" : `${selectedRoom.participants.length} anggota`}
+                    {selectedRoom.type === "direct" ? "Online" : "Grup"}
                   </p>
                 </div>
               </div>
@@ -275,30 +185,36 @@ export function StaffChat() {
               {/* Messages */}
               <ScrollArea className="flex-1 p-4">
                 <div className="space-y-4">
-                  {messages.map((msg) => (
-                    <div
-                      key={msg.id}
-                      className={`flex ${msg.is_own ? "justify-end" : "justify-start"}`}
-                    >
-                      <div className={`max-w-[80%] ${msg.is_own ? "order-2" : ""}`}>
-                        {!msg.is_own && (
-                          <p className="text-xs text-muted-foreground mb-1">{msg.sender_name}</p>
-                        )}
-                        <div
-                          className={`rounded-lg px-4 py-2 ${
-                            msg.is_own
-                              ? "bg-primary text-primary-foreground"
-                              : "bg-muted"
-                          }`}
-                        >
-                          <p className="text-sm">{msg.content}</p>
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {formatDistanceToNow(new Date(msg.created_at), { addSuffix: true, locale: id })}
-                        </p>
-                      </div>
+                  {messages.length === 0 ? (
+                    <div className="text-center text-muted-foreground py-8">
+                      Belum ada pesan. Mulai percakapan!
                     </div>
-                  ))}
+                  ) : (
+                    messages.map((msg) => (
+                      <div
+                        key={msg.id}
+                        className={`flex ${msg.is_own ? "justify-end" : "justify-start"}`}
+                      >
+                        <div className={`max-w-[80%] ${msg.is_own ? "order-2" : ""}`}>
+                          {!msg.is_own && (
+                            <p className="text-xs text-muted-foreground mb-1">{msg.sender_name}</p>
+                          )}
+                          <div
+                            className={`rounded-lg px-4 py-2 ${
+                              msg.is_own
+                                ? "bg-primary text-primary-foreground"
+                                : "bg-muted"
+                            }`}
+                          >
+                            <p className="text-sm">{msg.content}</p>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {formatDistanceToNow(new Date(msg.created_at), { addSuffix: true, locale: id })}
+                          </p>
+                        </div>
+                      </div>
+                    ))
+                  )}
                   <div ref={messagesEndRef} />
                 </div>
               </ScrollArea>
@@ -311,8 +227,9 @@ export function StaffChat() {
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
                     onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
+                    disabled={sendMessage.isPending}
                   />
-                  <Button onClick={handleSendMessage}>
+                  <Button onClick={handleSendMessage} disabled={sendMessage.isPending}>
                     <Send className="h-4 w-4" />
                   </Button>
                 </div>
