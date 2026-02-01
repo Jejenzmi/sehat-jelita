@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,35 +9,20 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Calendar } from "@/components/ui/calendar";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
 import { 
   CalendarDays, Clock, Plus, Search, User, Video, Phone, 
   CheckCircle, XCircle, AlertCircle, ChevronLeft, ChevronRight 
 } from "lucide-react";
 import { format, addDays, startOfWeek, isSameDay } from "date-fns";
 import { id } from "date-fns/locale";
-
-// Sample data
-const doctors = [
-  { id: "1", name: "Dr. Budi Santoso", specialization: "Umum", schedule: ["08:00-12:00", "14:00-17:00"] },
-  { id: "2", name: "Dr. Ani Wijaya", specialization: "Anak", schedule: ["09:00-13:00"] },
-  { id: "3", name: "Dr. Cahyo Pratama", specialization: "Jantung", schedule: ["10:00-14:00"] },
-  { id: "4", name: "Dr. Dewi Sartika", specialization: "Kandungan", schedule: ["08:00-11:00", "15:00-18:00"] },
-];
+import { useBookingData } from "@/hooks/useBookingData";
 
 const timeSlots = [
   "08:00", "08:30", "09:00", "09:30", "10:00", "10:30", 
   "11:00", "11:30", "13:00", "13:30", "14:00", "14:30",
   "15:00", "15:30", "16:00", "16:30"
-];
-
-const appointments = [
-  { id: "1", patient: "Ahmad Sulaiman", doctor: "Dr. Budi Santoso", date: "2024-01-15", time: "09:00", type: "regular", status: "confirmed" },
-  { id: "2", patient: "Siti Rahmah", doctor: "Dr. Ani Wijaya", date: "2024-01-15", time: "10:00", type: "telemedicine", status: "scheduled" },
-  { id: "3", patient: "Bambang Hermanto", doctor: "Dr. Cahyo Pratama", date: "2024-01-15", time: "11:00", type: "follow_up", status: "in_progress" },
-  { id: "4", patient: "Dewi Lestari", doctor: "Dr. Dewi Sartika", date: "2024-01-16", time: "08:30", type: "regular", status: "scheduled" },
-  { id: "5", patient: "Eko Prasetyo", doctor: "Dr. Budi Santoso", date: "2024-01-16", time: "14:00", type: "telemedicine", status: "confirmed" },
 ];
 
 const getStatusBadge = (status: string) => {
@@ -71,24 +56,92 @@ const getTypeBadge = (type: string) => {
 };
 
 export default function Booking() {
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [selectedDoctor, setSelectedDoctor] = useState<string>("");
+  const {
+    appointments,
+    patients,
+    doctors,
+    schedules,
+    stats,
+    loading,
+    fetchAppointments,
+    searchPatients,
+    createAppointment,
+    confirmAppointment,
+    cancelAppointment,
+    getAvailableSlots,
+  } = useBookingData();
+
   const [searchTerm, setSearchTerm] = useState("");
+  const [patientSearchTerm, setPatientSearchTerm] = useState("");
   const [weekStart, setWeekStart] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }));
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [availableSlots, setAvailableSlots] = useState<string[]>([]);
+
+  const [newBooking, setNewBooking] = useState({
+    patient_id: "",
+    doctor_id: "",
+    appointment_type: "regular",
+    appointment_date: format(new Date(), "yyyy-MM-dd"),
+    appointment_time: "",
+    chief_complaint: "",
+  });
 
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
-  const filteredAppointments = appointments.filter(apt => 
-    apt.patient.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    apt.doctor.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredAppointments = appointments.filter(apt =>
+    (apt.patient?.full_name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (apt.doctor?.full_name || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Generate slot status for calendar view
-  const getSlotStatus = (doctor: string, date: Date, time: string) => {
-    const dateStr = format(date, "yyyy-MM-dd");
-    const apt = appointments.find(a => a.doctor === doctor && a.date === dateStr && a.time === time);
-    if (apt) return apt.status;
-    return "available";
+  // Search patients when typing
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (patientSearchTerm.length >= 2) {
+        searchPatients(patientSearchTerm);
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [patientSearchTerm]);
+
+  // Get available slots when doctor or date changes
+  useEffect(() => {
+    const loadSlots = async () => {
+      if (newBooking.doctor_id && newBooking.appointment_date) {
+        const slots = await getAvailableSlots(
+          newBooking.doctor_id, 
+          new Date(newBooking.appointment_date)
+        );
+        setAvailableSlots(slots);
+      }
+    };
+    loadSlots();
+  }, [newBooking.doctor_id, newBooking.appointment_date]);
+
+  const handleCreateBooking = async () => {
+    try {
+      await createAppointment({
+        patient_id: newBooking.patient_id,
+        doctor_id: newBooking.doctor_id,
+        appointment_type: newBooking.appointment_type,
+        appointment_date: newBooking.appointment_date,
+        appointment_time: newBooking.appointment_time + ":00",
+        chief_complaint: newBooking.chief_complaint || null,
+        status: "scheduled",
+        booking_source: "staff",
+      });
+      setIsDialogOpen(false);
+      setNewBooking({
+        patient_id: "",
+        doctor_id: "",
+        appointment_type: "regular",
+        appointment_date: format(new Date(), "yyyy-MM-dd"),
+        appointment_time: "",
+        chief_complaint: "",
+      });
+      setPatientSearchTerm("");
+    } catch (error) {
+      // Error handled in hook
+    }
   };
 
   return (
@@ -100,7 +153,7 @@ export default function Booking() {
           <p className="text-muted-foreground">Kelola jadwal dan booking pasien</p>
         </div>
         <div className="flex gap-2">
-          <Dialog>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button>
                 <Plus className="w-4 h-4 mr-2" />
@@ -115,23 +168,42 @@ export default function Booking() {
               <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Pasien</Label>
-                    <Select>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Pilih pasien" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="p1">Ahmad Sulaiman - RM-2024-000001</SelectItem>
-                        <SelectItem value="p2">Siti Rahmah - RM-2024-000002</SelectItem>
-                        <SelectItem value="p3">Bambang Hermanto - RM-2024-000003</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Label>Cari Pasien</Label>
+                    <Input
+                      placeholder="Cari nama/No.RM/NIK..."
+                      value={patientSearchTerm}
+                      onChange={(e) => setPatientSearchTerm(e.target.value)}
+                    />
+                    {patients.length > 0 && (
+                      <ScrollArea className="h-32 border rounded-md">
+                        {patients.map((patient) => (
+                          <div
+                            key={patient.id}
+                            className={`p-2 cursor-pointer hover:bg-muted ${
+                              newBooking.patient_id === patient.id ? "bg-primary/10" : ""
+                            }`}
+                            onClick={() => {
+                              setNewBooking({ ...newBooking, patient_id: patient.id });
+                              setPatientSearchTerm(patient.full_name);
+                            }}
+                          >
+                            <p className="font-medium text-sm">{patient.full_name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {patient.medical_record_number} • {patient.phone || "-"}
+                            </p>
+                          </div>
+                        ))}
+                      </ScrollArea>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label>Tipe Kunjungan</Label>
-                    <Select>
+                    <Select
+                      value={newBooking.appointment_type}
+                      onValueChange={(value) => setNewBooking({ ...newBooking, appointment_type: value })}
+                    >
                       <SelectTrigger>
-                        <SelectValue placeholder="Pilih tipe" />
+                        <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="regular">Reguler (Tatap Muka)</SelectItem>
@@ -144,40 +216,70 @@ export default function Booking() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Dokter</Label>
-                    <Select>
+                    <Select
+                      value={newBooking.doctor_id}
+                      onValueChange={(value) => setNewBooking({ ...newBooking, doctor_id: value })}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Pilih dokter" />
                       </SelectTrigger>
                       <SelectContent>
                         {doctors.map(doc => (
-                          <SelectItem key={doc.id} value={doc.id}>{doc.name} - {doc.specialization}</SelectItem>
+                          <SelectItem key={doc.id} value={doc.id}>
+                            {doc.full_name} - {doc.specialization || "Umum"}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
                     <Label>Tanggal</Label>
-                    <Input type="date" />
+                    <Input 
+                      type="date" 
+                      value={newBooking.appointment_date}
+                      onChange={(e) => setNewBooking({ ...newBooking, appointment_date: e.target.value })}
+                      min={format(new Date(), "yyyy-MM-dd")}
+                    />
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label>Pilih Jam</Label>
+                  <Label>Pilih Jam {availableSlots.length > 0 && `(${availableSlots.length} slot tersedia)`}</Label>
                   <div className="grid grid-cols-4 gap-2">
-                    {timeSlots.map(slot => (
-                      <Button key={slot} variant="outline" size="sm" className="text-xs">
+                    {(availableSlots.length > 0 ? availableSlots : timeSlots).map(slot => (
+                      <Button 
+                        key={slot} 
+                        variant={newBooking.appointment_time === slot ? "default" : "outline"} 
+                        size="sm" 
+                        className="text-xs"
+                        onClick={() => setNewBooking({ ...newBooking, appointment_time: slot })}
+                      >
                         {slot}
                       </Button>
                     ))}
                   </div>
+                  {availableSlots.length === 0 && newBooking.doctor_id && (
+                    <p className="text-xs text-muted-foreground">
+                      Dokter tidak memiliki jadwal pada hari ini. Pilih tanggal lain.
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label>Keluhan Utama</Label>
-                  <Textarea placeholder="Deskripsikan keluhan pasien..." />
+                  <Textarea 
+                    placeholder="Deskripsikan keluhan pasien..."
+                    value={newBooking.chief_complaint}
+                    onChange={(e) => setNewBooking({ ...newBooking, chief_complaint: e.target.value })}
+                  />
                 </div>
               </div>
               <DialogFooter>
-                <Button variant="outline">Batal</Button>
-                <Button>Simpan Booking</Button>
+                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Batal</Button>
+                <Button 
+                  onClick={handleCreateBooking}
+                  disabled={!newBooking.patient_id || !newBooking.doctor_id || !newBooking.appointment_time}
+                >
+                  Simpan Booking
+                </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -191,7 +293,7 @@ export default function Booking() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Hari Ini</p>
-                <p className="text-2xl font-bold">24</p>
+                <p className="text-2xl font-bold">{stats.today}</p>
               </div>
               <CalendarDays className="h-8 w-8 text-primary/20" />
             </div>
@@ -202,7 +304,7 @@ export default function Booking() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Menunggu Konfirmasi</p>
-                <p className="text-2xl font-bold text-yellow-600">8</p>
+                <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
               </div>
               <Clock className="h-8 w-8 text-yellow-600/20" />
             </div>
@@ -213,7 +315,7 @@ export default function Booking() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Telemedicine</p>
-                <p className="text-2xl font-bold text-purple-600">6</p>
+                <p className="text-2xl font-bold text-purple-600">{stats.telemedicine}</p>
               </div>
               <Video className="h-8 w-8 text-purple-600/20" />
             </div>
@@ -224,7 +326,7 @@ export default function Booking() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Selesai Hari Ini</p>
-                <p className="text-2xl font-bold text-green-600">18</p>
+                <p className="text-2xl font-bold text-green-600">{stats.completed}</p>
               </div>
               <CheckCircle className="h-8 w-8 text-green-600/20" />
             </div>
@@ -256,45 +358,69 @@ export default function Booking() {
               </div>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Pasien</TableHead>
-                    <TableHead>Dokter</TableHead>
-                    <TableHead>Tanggal</TableHead>
-                    <TableHead>Jam</TableHead>
-                    <TableHead>Tipe</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Aksi</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredAppointments.map((apt) => (
-                    <TableRow key={apt.id}>
-                      <TableCell className="font-medium">{apt.patient}</TableCell>
-                      <TableCell>{apt.doctor}</TableCell>
-                      <TableCell>{apt.date}</TableCell>
-                      <TableCell>{apt.time}</TableCell>
-                      <TableCell>{getTypeBadge(apt.type)}</TableCell>
-                      <TableCell>{getStatusBadge(apt.status)}</TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-                          {apt.status === "scheduled" && (
-                            <Button size="sm" variant="outline">Konfirmasi</Button>
-                          )}
-                          {apt.type === "telemedicine" && apt.status === "confirmed" && (
-                            <Button size="sm" className="bg-purple-600 hover:bg-purple-700">
-                              <Video className="w-4 h-4 mr-1" />
-                              Mulai
-                            </Button>
-                          )}
-                          <Button size="sm" variant="ghost">Detail</Button>
-                        </div>
-                      </TableCell>
+              {loading ? (
+                <div className="space-y-4">
+                  {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Pasien</TableHead>
+                      <TableHead>Dokter</TableHead>
+                      <TableHead>Tanggal</TableHead>
+                      <TableHead>Jam</TableHead>
+                      <TableHead>Tipe</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Aksi</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredAppointments.map((apt) => (
+                      <TableRow key={apt.id}>
+                        <TableCell>
+                          <div>
+                            <p className="font-medium">{apt.patient?.full_name}</p>
+                            <p className="text-xs text-muted-foreground">{apt.patient?.medical_record_number}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell>{apt.doctor?.full_name}</TableCell>
+                        <TableCell>{format(new Date(apt.appointment_date), "dd MMM yyyy", { locale: id })}</TableCell>
+                        <TableCell>{apt.appointment_time.substring(0, 5)}</TableCell>
+                        <TableCell>{getTypeBadge(apt.appointment_type)}</TableCell>
+                        <TableCell>{getStatusBadge(apt.status)}</TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            {apt.status === "scheduled" && (
+                              <>
+                                <Button size="sm" variant="outline" onClick={() => confirmAppointment(apt.id)}>
+                                  Konfirmasi
+                                </Button>
+                                <Button size="sm" variant="ghost" className="text-destructive" onClick={() => cancelAppointment(apt.id)}>
+                                  Batal
+                                </Button>
+                              </>
+                            )}
+                            {apt.appointment_type === "telemedicine" && apt.status === "confirmed" && (
+                              <Button size="sm" className="bg-purple-600 hover:bg-purple-700">
+                                <Video className="w-4 h-4 mr-1" />
+                                Mulai
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {filteredAppointments.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                          Tidak ada appointment
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -335,23 +461,23 @@ export default function Booking() {
                     {doctors.map(doctor => (
                       <tr key={doctor.id}>
                         <td className="border p-2">
-                          <div className="font-medium text-sm">{doctor.name}</div>
-                          <div className="text-xs text-muted-foreground">{doctor.specialization}</div>
+                          <div className="font-medium text-sm">{doctor.full_name}</div>
+                          <div className="text-xs text-muted-foreground">{doctor.specialization || "Umum"}</div>
                         </td>
                         {weekDays.map((day, idx) => (
                           <td key={idx} className="border p-1 align-top">
                             <div className="space-y-1">
                               {appointments
-                                .filter(apt => apt.doctor === doctor.name && apt.date === format(day, "yyyy-MM-dd"))
+                                .filter(apt => apt.doctor_id === doctor.id && apt.appointment_date === format(day, "yyyy-MM-dd"))
                                 .map(apt => (
                                   <div 
                                     key={apt.id} 
                                     className={`text-xs p-1 rounded cursor-pointer ${
-                                      apt.type === "telemedicine" ? "bg-purple-100 text-purple-700" : "bg-blue-100 text-blue-700"
+                                      apt.appointment_type === "telemedicine" ? "bg-purple-100 text-purple-700" : "bg-blue-100 text-blue-700"
                                     }`}
                                   >
-                                    <div className="font-medium">{apt.time}</div>
-                                    <div className="truncate">{apt.patient}</div>
+                                    <div className="font-medium">{apt.appointment_time.substring(0, 5)}</div>
+                                    <div className="truncate">{apt.patient?.full_name}</div>
                                   </div>
                                 ))}
                             </div>
@@ -368,29 +494,43 @@ export default function Booking() {
 
         <TabsContent value="schedule" className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
-            {doctors.map(doctor => (
-              <Card key={doctor.id}>
-                <CardHeader>
-                  <CardTitle className="text-lg">{doctor.name}</CardTitle>
-                  <CardDescription>{doctor.specialization}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"].map((day, idx) => (
-                      <div key={idx} className="flex items-center justify-between py-2 border-b last:border-0">
-                        <span className="text-sm font-medium w-20">{day}</span>
-                        <div className="flex gap-2">
-                          {doctor.schedule.map((time, tidx) => (
-                            <Badge key={tidx} variant="outline">{time}</Badge>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <Button variant="outline" className="w-full mt-4">Edit Jadwal</Button>
-                </CardContent>
-              </Card>
-            ))}
+            {doctors.map(doctor => {
+              const doctorSchedules = schedules.filter(s => s.doctor_id === doctor.id);
+              return (
+                <Card key={doctor.id}>
+                  <CardHeader>
+                    <CardTitle className="text-lg">{doctor.full_name}</CardTitle>
+                    <CardDescription>{doctor.specialization || "Umum"}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"].map((day, idx) => {
+                        const schedule = doctorSchedules.find(s => s.day_of_week === (idx + 1) % 7);
+                        return (
+                          <div key={idx} className="flex items-center justify-between py-2 border-b last:border-0">
+                            <span className="text-sm font-medium w-20">{day}</span>
+                            <div className="flex gap-2">
+                              {schedule ? (
+                                <Badge variant="outline">
+                                  {schedule.start_time.substring(0, 5)} - {schedule.end_time.substring(0, 5)}
+                                </Badge>
+                              ) : (
+                                <span className="text-xs text-muted-foreground">-</span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+            {doctors.length === 0 && (
+              <div className="col-span-2 text-center py-8 text-muted-foreground">
+                Tidak ada data dokter
+              </div>
+            )}
           </div>
         </TabsContent>
       </Tabs>

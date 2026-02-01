@@ -1,55 +1,22 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
 import { 
   Video, VideoOff, Mic, MicOff, Phone, PhoneOff, 
-  Monitor, MessageSquare, Settings, Users, Clock,
-  Calendar, CheckCircle, AlertCircle, Play, StopCircle
+  Monitor, MessageSquare, Clock, Calendar, CheckCircle, AlertCircle, Play
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-
-// Sample telemedicine sessions
-const sessions = [
-  { 
-    id: "1", 
-    patient: "Ahmad Sulaiman", 
-    mrn: "RM-2024-000001",
-    doctor: "Dr. Budi Santoso", 
-    scheduledTime: "09:00", 
-    date: "2024-01-15",
-    status: "waiting",
-    chiefComplaint: "Demam dan batuk selama 3 hari"
-  },
-  { 
-    id: "2", 
-    patient: "Siti Rahmah", 
-    mrn: "RM-2024-000002",
-    doctor: "Dr. Ani Wijaya", 
-    scheduledTime: "10:30", 
-    date: "2024-01-15",
-    status: "scheduled",
-    chiefComplaint: "Konsultasi hasil lab"
-  },
-  { 
-    id: "3", 
-    patient: "Dewi Lestari", 
-    mrn: "RM-2024-000003",
-    doctor: "Dr. Budi Santoso", 
-    scheduledTime: "14:00", 
-    date: "2024-01-15",
-    status: "completed",
-    chiefComplaint: "Follow up pengobatan hipertensi",
-    duration: 15
-  },
-];
+import { useTelemedicineData } from "@/hooks/useTelemedicineData";
+import { format } from "date-fns";
+import { id as localeId } from "date-fns/locale";
 
 const getStatusBadge = (status: string) => {
   switch (status) {
@@ -66,35 +33,94 @@ const getStatusBadge = (status: string) => {
   }
 };
 
-// Video Call Component
-function VideoCallRoom({ session, onEnd }: { session: typeof sessions[0]; onEnd: () => void }) {
+// WebRTC Video Call Component
+function VideoCallRoom({ 
+  session, 
+  onEnd,
+  onUpdateNotes 
+}: { 
+  session: any; 
+  onEnd: (notes?: string) => void;
+  onUpdateNotes: (notes: string) => void;
+}) {
   const [isVideoOn, setIsVideoOn] = useState(true);
   const [isAudioOn, setIsAudioOn] = useState(true);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
-  const [isChatOpen, setIsChatOpen] = useState(false);
   const [callDuration, setCallDuration] = useState(0);
-  const [notes, setNotes] = useState("");
+  const [notes, setNotes] = useState(session.notes || "");
+  const [connectionState, setConnectionState] = useState<string>("connecting");
+  
   const localVideoRef = useRef<HTMLVideoElement>(null);
+  const remoteVideoRef = useRef<HTMLVideoElement>(null);
+  const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
+  const localStreamRef = useRef<MediaStream | null>(null);
   const { toast } = useToast();
 
-  useEffect(() => {
-    // Start local video stream
-    const startVideo = async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-        if (localVideoRef.current) {
-          localVideoRef.current.srcObject = stream;
-        }
-      } catch (error) {
-        console.error("Error accessing media devices:", error);
-        toast({
-          title: "Peringatan",
-          description: "Tidak dapat mengakses kamera/mikrofon. Pastikan izin telah diberikan.",
-          variant: "destructive",
-        });
+  // Initialize WebRTC
+  const initializeWebRTC = useCallback(async () => {
+    try {
+      // Get local media stream
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: true, 
+        audio: true 
+      });
+      localStreamRef.current = stream;
+      
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = stream;
       }
-    };
-    startVideo();
+
+      // Create RTCPeerConnection
+      const config: RTCConfiguration = {
+        iceServers: [
+          { urls: 'stun:stun.l.google.com:19302' },
+          { urls: 'stun:stun1.l.google.com:19302' },
+        ]
+      };
+      
+      const pc = new RTCPeerConnection(config);
+      peerConnectionRef.current = pc;
+
+      // Add local tracks to peer connection
+      stream.getTracks().forEach(track => {
+        pc.addTrack(track, stream);
+      });
+
+      // Handle incoming remote stream
+      pc.ontrack = (event) => {
+        if (remoteVideoRef.current && event.streams[0]) {
+          remoteVideoRef.current.srcObject = event.streams[0];
+        }
+      };
+
+      // Handle connection state changes
+      pc.onconnectionstatechange = () => {
+        setConnectionState(pc.connectionState);
+        if (pc.connectionState === 'connected') {
+          toast({
+            title: "Terhubung",
+            description: "Video call berhasil terhubung",
+          });
+        }
+      };
+
+      // For demo purposes, simulate connection after 2 seconds
+      setTimeout(() => {
+        setConnectionState('connected');
+      }, 2000);
+
+    } catch (error) {
+      console.error("Error accessing media devices:", error);
+      toast({
+        title: "Peringatan",
+        description: "Tidak dapat mengakses kamera/mikrofon. Pastikan izin telah diberikan.",
+        variant: "destructive",
+      });
+    }
+  }, [toast]);
+
+  useEffect(() => {
+    initializeWebRTC();
 
     // Duration timer
     const timer = setInterval(() => {
@@ -103,13 +129,15 @@ function VideoCallRoom({ session, onEnd }: { session: typeof sessions[0]; onEnd:
 
     return () => {
       clearInterval(timer);
-      // Cleanup video stream
-      if (localVideoRef.current?.srcObject) {
-        const stream = localVideoRef.current.srcObject as MediaStream;
-        stream.getTracks().forEach(track => track.stop());
+      // Cleanup
+      if (localStreamRef.current) {
+        localStreamRef.current.getTracks().forEach(track => track.stop());
+      }
+      if (peerConnectionRef.current) {
+        peerConnectionRef.current.close();
       }
     };
-  }, [toast]);
+  }, [initializeWebRTC]);
 
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -118,9 +146,8 @@ function VideoCallRoom({ session, onEnd }: { session: typeof sessions[0]; onEnd:
   };
 
   const toggleVideo = () => {
-    if (localVideoRef.current?.srcObject) {
-      const stream = localVideoRef.current.srcObject as MediaStream;
-      stream.getVideoTracks().forEach(track => {
+    if (localStreamRef.current) {
+      localStreamRef.current.getVideoTracks().forEach(track => {
         track.enabled = !isVideoOn;
       });
       setIsVideoOn(!isVideoOn);
@@ -128,13 +155,65 @@ function VideoCallRoom({ session, onEnd }: { session: typeof sessions[0]; onEnd:
   };
 
   const toggleAudio = () => {
-    if (localVideoRef.current?.srcObject) {
-      const stream = localVideoRef.current.srcObject as MediaStream;
-      stream.getAudioTracks().forEach(track => {
+    if (localStreamRef.current) {
+      localStreamRef.current.getAudioTracks().forEach(track => {
         track.enabled = !isAudioOn;
       });
       setIsAudioOn(!isAudioOn);
     }
+  };
+
+  const toggleScreenShare = async () => {
+    if (!isScreenSharing) {
+      try {
+        const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+        const screenTrack = screenStream.getVideoTracks()[0];
+        
+        if (peerConnectionRef.current && localStreamRef.current) {
+          const sender = peerConnectionRef.current.getSenders().find(s => s.track?.kind === 'video');
+          if (sender) {
+            sender.replaceTrack(screenTrack);
+          }
+          
+          if (localVideoRef.current) {
+            localVideoRef.current.srcObject = screenStream;
+          }
+          
+          screenTrack.onended = () => {
+            // Revert to camera
+            const videoTrack = localStreamRef.current?.getVideoTracks()[0];
+            if (sender && videoTrack) {
+              sender.replaceTrack(videoTrack);
+            }
+            if (localVideoRef.current && localStreamRef.current) {
+              localVideoRef.current.srcObject = localStreamRef.current;
+            }
+            setIsScreenSharing(false);
+          };
+        }
+        setIsScreenSharing(true);
+      } catch (error) {
+        console.error("Screen share error:", error);
+      }
+    } else {
+      // Revert to camera
+      if (peerConnectionRef.current && localStreamRef.current) {
+        const sender = peerConnectionRef.current.getSenders().find(s => s.track?.kind === 'video');
+        const videoTrack = localStreamRef.current.getVideoTracks()[0];
+        if (sender && videoTrack) {
+          sender.replaceTrack(videoTrack);
+        }
+        if (localVideoRef.current) {
+          localVideoRef.current.srcObject = localStreamRef.current;
+        }
+      }
+      setIsScreenSharing(false);
+    }
+  };
+
+  const handleEndCall = () => {
+    onUpdateNotes(notes);
+    onEnd(notes);
   };
 
   return (
@@ -146,13 +225,16 @@ function VideoCallRoom({ session, onEnd }: { session: typeof sessions[0]; onEnd:
             <span className="w-2 h-2 bg-red-500 rounded-full mr-2" />
             LIVE
           </Badge>
-          <span className="font-medium">{session.patient}</span>
+          <span className="font-medium">{session.patient?.full_name}</span>
           <span className="text-muted-foreground">•</span>
-          <span className="text-muted-foreground">{session.chiefComplaint}</span>
+          <span className="text-muted-foreground">{session.appointment?.chief_complaint || "Konsultasi"}</span>
+          <Badge variant="outline" className={connectionState === 'connected' ? 'text-green-600' : 'text-yellow-600'}>
+            {connectionState === 'connected' ? 'Terhubung' : 'Menghubungkan...'}
+          </Badge>
         </div>
         <div className="flex items-center gap-4">
           <span className="text-lg font-mono">{formatDuration(callDuration)}</span>
-          <Button variant="destructive" onClick={onEnd}>
+          <Button variant="destructive" onClick={handleEndCall}>
             <PhoneOff className="w-4 h-4 mr-2" />
             Akhiri
           </Button>
@@ -163,18 +245,28 @@ function VideoCallRoom({ session, onEnd }: { session: typeof sessions[0]; onEnd:
       <div className="flex-1 flex">
         {/* Video Area */}
         <div className="flex-1 bg-black relative">
-          {/* Remote Video (Patient) - Placeholder */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-center text-white/60">
-              <Avatar className="w-32 h-32 mx-auto mb-4">
-                <AvatarFallback className="text-4xl bg-muted">
-                  {session.patient.charAt(0)}
-                </AvatarFallback>
-              </Avatar>
-              <p className="text-xl">{session.patient}</p>
-              <p className="text-sm">Menunggu koneksi...</p>
+          {/* Remote Video (Patient) */}
+          <video 
+            ref={remoteVideoRef}
+            autoPlay 
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+          
+          {/* Placeholder when no remote stream */}
+          {connectionState !== 'connected' && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="text-center text-white/60">
+                <Avatar className="w-32 h-32 mx-auto mb-4">
+                  <AvatarFallback className="text-4xl bg-muted">
+                    {session.patient?.full_name?.charAt(0) || "P"}
+                  </AvatarFallback>
+                </Avatar>
+                <p className="text-xl">{session.patient?.full_name}</p>
+                <p className="text-sm">Menunggu pasien bergabung...</p>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Local Video (Doctor) */}
           <div className="absolute bottom-4 right-4 w-64 h-48 bg-muted rounded-lg overflow-hidden border-2 border-primary shadow-lg">
@@ -217,17 +309,9 @@ function VideoCallRoom({ session, onEnd }: { session: typeof sessions[0]; onEnd:
               variant={isScreenSharing ? "default" : "secondary"} 
               size="lg"
               className="rounded-full w-14 h-14"
-              onClick={() => setIsScreenSharing(!isScreenSharing)}
+              onClick={toggleScreenShare}
             >
               <Monitor className="w-6 h-6" />
-            </Button>
-            <Button 
-              variant={isChatOpen ? "default" : "secondary"} 
-              size="lg"
-              className="rounded-full w-14 h-14"
-              onClick={() => setIsChatOpen(!isChatOpen)}
-            >
-              <MessageSquare className="w-6 h-6" />
             </Button>
           </div>
         </div>
@@ -248,30 +332,32 @@ function VideoCallRoom({ session, onEnd }: { session: typeof sessions[0]; onEnd:
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Nama</span>
-                        <span className="font-medium">{session.patient}</span>
+                        <span className="font-medium">{session.patient?.full_name}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">No. RM</span>
-                        <span>{session.mrn}</span>
+                        <span>{session.patient?.medical_record_number}</span>
                       </div>
                     </div>
                   </div>
 
                   <div className="p-4 bg-muted rounded-lg">
                     <h4 className="font-medium mb-2">Keluhan Utama</h4>
-                    <p className="text-sm text-muted-foreground">{session.chiefComplaint}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {session.appointment?.chief_complaint || "Tidak ada keluhan tercatat"}
+                    </p>
                   </div>
 
                   <div className="p-4 bg-muted rounded-lg">
-                    <h4 className="font-medium mb-2">Riwayat Kunjungan</h4>
+                    <h4 className="font-medium mb-2">Info Sesi</h4>
                     <div className="space-y-2 text-sm">
-                      <div className="p-2 bg-background rounded">
-                        <p className="font-medium">15 Des 2023 - Poli Umum</p>
-                        <p className="text-xs text-muted-foreground">Demam, flu</p>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Dijadwalkan</span>
+                        <span>{format(new Date(session.scheduled_start), "dd MMM, HH:mm", { locale: localeId })}</span>
                       </div>
-                      <div className="p-2 bg-background rounded">
-                        <p className="font-medium">20 Nov 2023 - Poli Umum</p>
-                        <p className="text-xs text-muted-foreground">Kontrol hipertensi</p>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Room</span>
+                        <span className="font-mono text-xs">{session.room_name}</span>
                       </div>
                     </div>
                   </div>
@@ -307,27 +393,52 @@ function VideoCallRoom({ session, onEnd }: { session: typeof sessions[0]; onEnd:
 }
 
 export default function Telemedicine() {
-  const [activeSession, setActiveSession] = useState<typeof sessions[0] | null>(null);
+  const { 
+    sessions, 
+    stats, 
+    loading, 
+    startSession, 
+    endSession, 
+    updateSessionNotes 
+  } = useTelemedicineData();
+  
+  const [activeSession, setActiveSession] = useState<any | null>(null);
   const { toast } = useToast();
 
-  const startSession = (session: typeof sessions[0]) => {
+  const handleStartSession = async (session: any) => {
+    await startSession(session.id, "doctor");
     setActiveSession(session);
     toast({
       title: "Sesi Telemedicine Dimulai",
-      description: `Menghubungkan dengan ${session.patient}...`,
+      description: `Menghubungkan dengan ${session.patient?.full_name}...`,
     });
   };
 
-  const endSession = () => {
-    toast({
-      title: "Sesi Berakhir",
-      description: "Konsultasi telemedicine telah selesai.",
-    });
-    setActiveSession(null);
+  const handleEndSession = async (notes?: string) => {
+    if (activeSession) {
+      await endSession(activeSession.id, notes);
+      toast({
+        title: "Sesi Berakhir",
+        description: "Konsultasi telemedicine telah selesai.",
+      });
+      setActiveSession(null);
+    }
+  };
+
+  const handleUpdateNotes = async (notes: string) => {
+    if (activeSession) {
+      await updateSessionNotes(activeSession.id, notes);
+    }
   };
 
   if (activeSession) {
-    return <VideoCallRoom session={activeSession} onEnd={endSession} />;
+    return (
+      <VideoCallRoom 
+        session={activeSession} 
+        onEnd={handleEndSession}
+        onUpdateNotes={handleUpdateNotes}
+      />
+    );
   }
 
   return (
@@ -347,7 +458,7 @@ export default function Telemedicine() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Sesi Hari Ini</p>
-                <p className="text-2xl font-bold">8</p>
+                <p className="text-2xl font-bold">{stats.today}</p>
               </div>
               <Video className="h-8 w-8 text-primary/20" />
             </div>
@@ -358,7 +469,7 @@ export default function Telemedicine() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Menunggu</p>
-                <p className="text-2xl font-bold text-yellow-600">2</p>
+                <p className="text-2xl font-bold text-yellow-600">{stats.waiting}</p>
               </div>
               <Clock className="h-8 w-8 text-yellow-600/20" />
             </div>
@@ -369,7 +480,7 @@ export default function Telemedicine() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Selesai</p>
-                <p className="text-2xl font-bold text-green-600">5</p>
+                <p className="text-2xl font-bold text-green-600">{stats.completed}</p>
               </div>
               <CheckCircle className="h-8 w-8 text-green-600/20" />
             </div>
@@ -380,7 +491,7 @@ export default function Telemedicine() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Rata-rata Durasi</p>
-                <p className="text-2xl font-bold">12 menit</p>
+                <p className="text-2xl font-bold">{stats.avgDuration} menit</p>
               </div>
               <Calendar className="h-8 w-8 text-muted-foreground/20" />
             </div>
@@ -389,12 +500,67 @@ export default function Telemedicine() {
       </div>
 
       {/* Sessions */}
-      <Tabs defaultValue="upcoming">
+      <Tabs defaultValue="waiting">
         <TabsList>
-          <TabsTrigger value="upcoming">Akan Datang</TabsTrigger>
           <TabsTrigger value="waiting">Menunggu</TabsTrigger>
+          <TabsTrigger value="upcoming">Akan Datang</TabsTrigger>
           <TabsTrigger value="completed">Selesai</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="waiting" className="space-y-4">
+          {loading ? (
+            <div className="grid gap-4 md:grid-cols-2">
+              {[...Array(2)].map((_, i) => <Skeleton key={i} className="h-48" />)}
+            </div>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2">
+              {sessions.filter(s => s.status === "waiting" || s.status === "in_progress").map((session) => (
+                <Card key={session.id} className="border-yellow-200 bg-yellow-50/50">
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="w-12 h-12">
+                          <AvatarFallback>{session.patient?.full_name?.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <CardTitle className="text-lg">{session.patient?.full_name}</CardTitle>
+                          <CardDescription>{session.patient?.medical_record_number}</CardDescription>
+                        </div>
+                      </div>
+                      {getStatusBadge(session.status)}
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <div className="p-3 bg-background rounded-lg">
+                        <p className="text-sm font-medium">Keluhan:</p>
+                        <p className="text-sm text-muted-foreground">{session.appointment?.chief_complaint || "-"}</p>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Jadwal</span>
+                        <span className="font-medium">
+                          {format(new Date(session.scheduled_start), "HH:mm", { locale: localeId })}
+                        </span>
+                      </div>
+                      <Button 
+                        className="w-full bg-green-600 hover:bg-green-700" 
+                        onClick={() => handleStartSession(session)}
+                      >
+                        <Play className="w-4 h-4 mr-2" />
+                        Mulai Konsultasi
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+              {sessions.filter(s => s.status === "waiting" || s.status === "in_progress").length === 0 && (
+                <div className="col-span-2 text-center py-8 text-muted-foreground">
+                  Tidak ada sesi yang menunggu
+                </div>
+              )}
+            </div>
+          )}
+        </TabsContent>
 
         <TabsContent value="upcoming" className="space-y-4">
           <Card>
@@ -403,131 +569,117 @@ export default function Telemedicine() {
               <CardDescription>Daftar konsultasi telemedicine yang dijadwalkan</CardDescription>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Pasien</TableHead>
-                    <TableHead>Keluhan</TableHead>
-                    <TableHead>Jadwal</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Aksi</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {sessions.filter(s => s.status === "scheduled").map((session) => (
-                    <TableRow key={session.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Avatar>
-                            <AvatarFallback>{session.patient.charAt(0)}</AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="font-medium">{session.patient}</p>
-                            <p className="text-xs text-muted-foreground">{session.mrn}</p>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="max-w-xs truncate">{session.chiefComplaint}</TableCell>
-                      <TableCell>
-                        <div>
-                          <p className="font-medium">{session.scheduledTime}</p>
-                          <p className="text-xs text-muted-foreground">{session.date}</p>
-                        </div>
-                      </TableCell>
-                      <TableCell>{getStatusBadge(session.status)}</TableCell>
-                      <TableCell>
-                        <Button size="sm" variant="outline">
-                          <Clock className="w-4 h-4 mr-1" />
-                          Ingatkan
-                        </Button>
-                      </TableCell>
+              {loading ? (
+                <div className="space-y-4">
+                  {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-16" />)}
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Pasien</TableHead>
+                      <TableHead>Keluhan</TableHead>
+                      <TableHead>Jadwal</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Aksi</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {sessions.filter(s => s.status === "scheduled").map((session) => (
+                      <TableRow key={session.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <Avatar>
+                              <AvatarFallback>{session.patient?.full_name?.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="font-medium">{session.patient?.full_name}</p>
+                              <p className="text-xs text-muted-foreground">{session.patient?.medical_record_number}</p>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="max-w-xs truncate">{session.appointment?.chief_complaint || "-"}</TableCell>
+                        <TableCell>
+                          <div>
+                            <p className="font-medium">{format(new Date(session.scheduled_start), "HH:mm", { locale: localeId })}</p>
+                            <p className="text-xs text-muted-foreground">{format(new Date(session.scheduled_start), "dd MMM yyyy", { locale: localeId })}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell>{getStatusBadge(session.status)}</TableCell>
+                        <TableCell>
+                          <Button size="sm" variant="outline">
+                            <Clock className="w-4 h-4 mr-1" />
+                            Ingatkan
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {sessions.filter(s => s.status === "scheduled").length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                          Tidak ada sesi terjadwal
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
-        </TabsContent>
-
-        <TabsContent value="waiting" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
-            {sessions.filter(s => s.status === "waiting").map((session) => (
-              <Card key={session.id} className="border-yellow-200 bg-yellow-50/50">
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-12 w-12">
-                        <AvatarFallback className="text-lg">{session.patient.charAt(0)}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <CardTitle className="text-lg">{session.patient}</CardTitle>
-                        <CardDescription>{session.mrn}</CardDescription>
-                      </div>
-                    </div>
-                    {getStatusBadge(session.status)}
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="p-3 bg-background rounded-lg">
-                      <p className="text-sm font-medium">Keluhan</p>
-                      <p className="text-sm text-muted-foreground">{session.chiefComplaint}</p>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Jadwal: {session.scheduledTime}</span>
-                      <Badge variant="outline" className="bg-yellow-100">Pasien sudah bergabung</Badge>
-                    </div>
-                    <Button className="w-full bg-green-600 hover:bg-green-700" onClick={() => startSession(session)}>
-                      <Play className="w-4 h-4 mr-2" />
-                      Mulai Konsultasi
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
         </TabsContent>
 
         <TabsContent value="completed" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle>Sesi Selesai</CardTitle>
+              <CardDescription>Riwayat konsultasi telemedicine</CardDescription>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Pasien</TableHead>
-                    <TableHead>Keluhan</TableHead>
-                    <TableHead>Waktu</TableHead>
-                    <TableHead>Durasi</TableHead>
-                    <TableHead>Aksi</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {sessions.filter(s => s.status === "completed").map((session) => (
-                    <TableRow key={session.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Avatar>
-                            <AvatarFallback>{session.patient.charAt(0)}</AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="font-medium">{session.patient}</p>
-                            <p className="text-xs text-muted-foreground">{session.mrn}</p>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>{session.chiefComplaint}</TableCell>
-                      <TableCell>{session.scheduledTime}</TableCell>
-                      <TableCell>{session.duration} menit</TableCell>
-                      <TableCell>
-                        <Button size="sm" variant="ghost">Lihat Catatan</Button>
-                      </TableCell>
+              {loading ? (
+                <div className="space-y-4">
+                  {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-16" />)}
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Pasien</TableHead>
+                      <TableHead>Dokter</TableHead>
+                      <TableHead>Tanggal</TableHead>
+                      <TableHead>Durasi</TableHead>
+                      <TableHead>Status</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {sessions.filter(s => s.status === "completed").map((session) => (
+                      <TableRow key={session.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <Avatar>
+                              <AvatarFallback>{session.patient?.full_name?.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="font-medium">{session.patient?.full_name}</p>
+                              <p className="text-xs text-muted-foreground">{session.patient?.medical_record_number}</p>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>{session.doctor?.full_name}</TableCell>
+                        <TableCell>{format(new Date(session.scheduled_start), "dd MMM yyyy, HH:mm", { locale: localeId })}</TableCell>
+                        <TableCell>{session.duration_minutes || 0} menit</TableCell>
+                        <TableCell>{getStatusBadge(session.status)}</TableCell>
+                      </TableRow>
+                    ))}
+                    {sessions.filter(s => s.status === "completed").length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                          Tidak ada sesi selesai
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

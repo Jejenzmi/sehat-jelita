@@ -122,7 +122,7 @@ export function useChatMessages(roomId: string | null) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  // Subscribe to real-time messages
+  // Subscribe to real-time messages with proper handling
   useEffect(() => {
     if (!roomId) return;
 
@@ -137,6 +137,35 @@ export function useChatMessages(roomId: string | null) {
           filter: `room_id=eq.${roomId}`,
         },
         (payload) => {
+          // Immediately add the new message to the cache for instant UI update
+          queryClient.setQueryData(
+            ["chat-messages", roomId],
+            (oldMessages: ChatMessage[] | undefined) => {
+              if (!oldMessages) return oldMessages;
+              const newMsg = payload.new as any;
+              // Avoid duplicates
+              if (oldMessages.some(m => m.id === newMsg.id)) return oldMessages;
+              return [
+                ...oldMessages,
+                {
+                  ...newMsg,
+                  sender_name: newMsg.sender_id === user?.id ? "Anda" : "Staff",
+                  is_own: newMsg.sender_id === user?.id,
+                },
+              ];
+            }
+          );
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "chat_messages",
+          filter: `room_id=eq.${roomId}`,
+        },
+        () => {
           queryClient.invalidateQueries({ queryKey: ["chat-messages", roomId] });
         }
       )
@@ -145,7 +174,7 @@ export function useChatMessages(roomId: string | null) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [roomId, queryClient]);
+  }, [roomId, queryClient, user?.id]);
 
   return useQuery({
     queryKey: ["chat-messages", roomId],
