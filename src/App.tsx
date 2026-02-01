@@ -29,6 +29,9 @@ import DashboardExecutive from "./pages/DashboardExecutive";
 import Booking from "./pages/Booking";
 import Telemedicine from "./pages/Telemedicine";
 import Inventory from "./pages/Inventory";
+import SDM from "./pages/SDM";
+import MasterData from "./pages/MasterData";
+import Pengaturan from "./pages/Pengaturan";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -195,7 +198,7 @@ const App = () => (
               path="/sdm"
               element={
                 <ProtectedPageWithLayout>
-                  <div className="p-8 text-center"><h1 className="text-2xl font-bold">SDM / HRD</h1><p className="text-muted-foreground mt-2">Coming soon...</p></div>
+                  <SDM />
                 </ProtectedPageWithLayout>
               }
             />
@@ -203,7 +206,7 @@ const App = () => (
               path="/master-data"
               element={
                 <ProtectedPageWithLayout>
-                  <div className="p-8 text-center"><h1 className="text-2xl font-bold">Master Data</h1><p className="text-muted-foreground mt-2">Coming soon...</p></div>
+                  <MasterData />
                 </ProtectedPageWithLayout>
               }
             />
@@ -211,7 +214,7 @@ const App = () => (
               path="/pengaturan"
               element={
                 <ProtectedPageWithLayout>
-                  <div className="p-8 text-center"><h1 className="text-2xl font-bold">Pengaturan Sistem</h1><p className="text-muted-foreground mt-2">Coming soon...</p></div>
+                  <Pengaturan />
                 </ProtectedPageWithLayout>
               }
             />
