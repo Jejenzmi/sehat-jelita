@@ -639,17 +639,46 @@ serve(async (req) => {
     switch (action) {
       case 'test-connection': {
         if (!clientId || !clientSecret) {
-          throw new Error('Client ID and Client Secret are required');
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Client ID dan Client Secret harus diisi',
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
         }
-        const token = await getAccessTokenWithConfig(clientId, clientSecret, environment);
-        return new Response(JSON.stringify({
-          success: true,
-          message: 'Connection successful',
-          token_type: token.token_type,
-          expires_in: token.expires_in,
-        }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
+        try {
+          const token = await getAccessTokenWithConfig(clientId, clientSecret, environment);
+          return new Response(JSON.stringify({
+            success: true,
+            message: 'Connection successful',
+            token_type: token.token_type,
+            expires_in: token.expires_in,
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        } catch (tokenError: any) {
+          const errorMsg = tokenError.message || 'Unknown error';
+          let userFriendlyError = 'Gagal terhubung ke SATU SEHAT API';
+          
+          if (errorMsg.includes('403')) {
+            userFriendlyError = 'Akses ditolak (403). Pastikan: 1) Client ID & Secret valid, 2) IP server sudah di-whitelist di portal SATU SEHAT, 3) Environment sesuai dengan kredensial';
+          } else if (errorMsg.includes('401')) {
+            userFriendlyError = 'Autentikasi gagal (401). Client ID atau Client Secret tidak valid';
+          } else if (errorMsg.includes('404')) {
+            userFriendlyError = 'Endpoint tidak ditemukan (404). Periksa environment yang dipilih';
+          } else if (errorMsg.includes('500')) {
+            userFriendlyError = 'Server SATU SEHAT sedang bermasalah (500). Silakan coba lagi nanti';
+          }
+          
+          console.error('Test connection error:', errorMsg);
+          return new Response(JSON.stringify({
+            success: false,
+            error: userFriendlyError,
+            detail: errorMsg,
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
       }
 
       case 'sync-patient': {
