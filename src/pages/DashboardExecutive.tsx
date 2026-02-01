@@ -21,42 +21,6 @@ import {
   useDepartmentPerformance,
 } from "@/hooks/useExecutiveDashboardData";
 
-// Fallback data for when real data is empty
-const fallbackRevenueData = [
-  { month: "Jan", revenue: 450, target: 400, rawat_jalan: 280, rawat_inap: 170 },
-  { month: "Feb", revenue: 480, target: 420, rawat_jalan: 300, rawat_inap: 180 },
-  { month: "Mar", revenue: 520, target: 450, rawat_jalan: 320, rawat_inap: 200 },
-  { month: "Apr", revenue: 490, target: 470, rawat_jalan: 290, rawat_inap: 200 },
-  { month: "Mei", revenue: 560, target: 500, rawat_jalan: 350, rawat_inap: 210 },
-  { month: "Jun", revenue: 610, target: 520, rawat_jalan: 380, rawat_inap: 230 },
-];
-
-const fallbackVisitData = [
-  { month: "Jan", rawat_jalan: 1250, igd: 320, rawat_inap: 180 },
-  { month: "Feb", rawat_jalan: 1380, igd: 290, rawat_inap: 195 },
-  { month: "Mar", rawat_jalan: 1420, igd: 350, rawat_inap: 210 },
-  { month: "Apr", rawat_jalan: 1300, igd: 310, rawat_inap: 188 },
-  { month: "Mei", rawat_jalan: 1520, igd: 380, rawat_inap: 225 },
-  { month: "Jun", rawat_jalan: 1680, igd: 420, rawat_inap: 240 },
-];
-
-const fallbackBedOccupancy = [
-  { class: "VIP", occupied: 8, total: 10, rate: 80 },
-  { class: "Kelas 1", occupied: 18, total: 24, rate: 75 },
-  { class: "Kelas 2", occupied: 28, total: 36, rate: 78 },
-  { class: "Kelas 3", occupied: 45, total: 60, rate: 75 },
-  { class: "ICU", occupied: 6, total: 8, rate: 75 },
-];
-
-const fallbackKPIs = [
-  { label: "Total Pasien", value: "12,845", change: "+12.5%", trend: "up" as const },
-  { label: "Pendapatan", value: "Rp 6.1M", change: "+18.2%", trend: "up" as const },
-  { label: "BOR", value: "76.8%", change: "+2.3%", trend: "up" as const },
-  { label: "ALOS", value: "4.2 hari", change: "-0.3", trend: "down" as const },
-  { label: "BTO", value: "5.8", change: "+0.4", trend: "up" as const },
-  { label: "TOI", value: "1.2 hari", change: "-0.2", trend: "down" as const },
-];
-
 const getKPIIcon = (label: string) => {
   switch (label) {
     case "Total Pasien": return Users;
@@ -77,23 +41,20 @@ export default function DashboardExecutive() {
   const { data: bedOccupancy, isLoading: loadingBeds } = useBedOccupancyByClass();
   const { data: deptPerformance, isLoading: loadingDepts } = useDepartmentPerformance();
 
-  // Use real data or fallback
-  const kpiData = kpis && kpis.length > 0 ? kpis : fallbackKPIs;
-  const revenue = revenueData && revenueData.some(r => r.revenue > 0) ? revenueData : fallbackRevenueData;
-  const visits = visitData && visitData.some(v => v.rawat_jalan > 0 || v.igd > 0) ? visitData : fallbackVisitData;
-  const beds = bedOccupancy && bedOccupancy.length > 0 ? bedOccupancy : fallbackBedOccupancy;
-  const payments = paymentDist || [
-    { name: "BPJS", value: 65, color: "#22c55e" },
-    { name: "Umum", value: 25, color: "#3b82f6" },
-    { name: "Asuransi", value: 10, color: "#f59e0b" },
-  ];
-  const departments = deptPerformance || [
-    { name: "Poli Umum", visits: 580, revenue: 145, satisfaction: 92 },
-    { name: "Poli Gigi", visits: 320, revenue: 98, satisfaction: 88 },
-    { name: "Poli Anak", visits: 420, revenue: 125, satisfaction: 95 },
-    { name: "Poli Kandungan", visits: 280, revenue: 156, satisfaction: 90 },
-    { name: "Poli Jantung", visits: 180, revenue: 210, satisfaction: 87 },
-  ];
+  // Use real data only - no fallbacks
+  const kpiData = kpis || [];
+  const revenue = revenueData || [];
+  const visits = visitData || [];
+  const beds = bedOccupancy || [];
+  const payments = paymentDist || [];
+  const departments = deptPerformance || [];
+
+  const hasKPIData = kpiData.length > 0;
+  const hasRevenueData = revenue.length > 0;
+  const hasVisitData = visits.length > 0;
+  const hasBedData = beds.length > 0;
+  const hasPaymentData = payments.length > 0;
+  const hasDeptData = departments.length > 0;
 
   return (
     <div className="p-6 space-y-6">
@@ -128,7 +89,7 @@ export default function DashboardExecutive() {
               </CardContent>
             </Card>
           ))
-        ) : (
+        ) : hasKPIData ? (
           kpiData.map((metric, idx) => {
             const Icon = getKPIIcon(metric.label);
             return (
@@ -150,6 +111,12 @@ export default function DashboardExecutive() {
               </Card>
             );
           })
+        ) : (
+          <Card className="md:col-span-3 lg:col-span-6">
+            <CardContent className="pt-6 text-center text-muted-foreground">
+              Belum ada data KPI. Data akan muncul setelah ada transaksi.
+            </CardContent>
+          </Card>
         )}
       </div>
 
@@ -167,7 +134,7 @@ export default function DashboardExecutive() {
           <CardContent>
             {loadingRevenue ? (
               <Skeleton className="h-[300px] w-full" />
-            ) : (
+            ) : hasRevenueData ? (
               <ResponsiveContainer width="100%" height={300}>
                 <AreaChart data={revenue}>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
@@ -182,6 +149,10 @@ export default function DashboardExecutive() {
                   <Area type="monotone" dataKey="revenue" stroke="hsl(var(--primary))" fill="hsl(var(--primary)/0.3)" name="Realisasi" />
                 </AreaChart>
               </ResponsiveContainer>
+            ) : (
+              <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                Belum ada data pendapatan
+              </div>
             )}
           </CardContent>
         </Card>
@@ -198,7 +169,7 @@ export default function DashboardExecutive() {
           <CardContent>
             {loadingVisits ? (
               <Skeleton className="h-[300px] w-full" />
-            ) : (
+            ) : hasVisitData ? (
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={visits}>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
@@ -211,6 +182,10 @@ export default function DashboardExecutive() {
                   <Bar dataKey="rawat_inap" fill="hsl(var(--success))" name="Rawat Inap" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
+            ) : (
+              <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                Belum ada data kunjungan
+              </div>
             )}
           </CardContent>
         </Card>
@@ -226,7 +201,7 @@ export default function DashboardExecutive() {
           <CardContent>
             {loadingPayment ? (
               <Skeleton className="h-[200px] w-full" />
-            ) : (
+            ) : hasPaymentData ? (
               <>
                 <ResponsiveContainer width="100%" height={200}>
                   <PieChart>
@@ -255,6 +230,10 @@ export default function DashboardExecutive() {
                   ))}
                 </div>
               </>
+            ) : (
+              <div className="h-[200px] flex items-center justify-center text-muted-foreground">
+                Belum ada data pembayaran
+              </div>
             )}
           </CardContent>
         </Card>
@@ -270,7 +249,7 @@ export default function DashboardExecutive() {
               Array.from({ length: 5 }).map((_, i) => (
                 <Skeleton key={i} className="h-10 w-full" />
               ))
-            ) : (
+            ) : hasBedData ? (
               beds.map((item, idx) => (
                 <div key={idx} className="space-y-2">
                   <div className="flex justify-between text-sm">
@@ -280,6 +259,10 @@ export default function DashboardExecutive() {
                   <Progress value={item.rate} className="h-2" />
                 </div>
               ))
+            ) : (
+              <div className="text-center text-muted-foreground py-8">
+                Belum ada data tempat tidur
+              </div>
             )}
           </CardContent>
         </Card>
@@ -298,17 +281,17 @@ export default function DashboardExecutive() {
                   <p className="text-xs text-muted-foreground">Rata-rata bulan ini</p>
                 </div>
               </div>
-              <span className="text-2xl font-bold text-success">91%</span>
+              <span className="text-2xl font-bold text-success">-</span>
             </div>
             <div className="flex items-center justify-between p-3 bg-primary/10 rounded-lg">
               <div className="flex items-center gap-3">
                 <Target className="h-5 w-5 text-primary" />
                 <div>
                   <p className="font-medium">Target Tercapai</p>
-                  <p className="text-xs text-muted-foreground">6 dari 8 KPI</p>
+                  <p className="text-xs text-muted-foreground">KPI tercapai</p>
                 </div>
               </div>
-              <span className="text-2xl font-bold text-primary">75%</span>
+              <span className="text-2xl font-bold text-primary">-</span>
             </div>
             <div className="flex items-center justify-between p-3 bg-warning/10 rounded-lg">
               <div className="flex items-center gap-3">
@@ -318,7 +301,7 @@ export default function DashboardExecutive() {
                   <p className="text-xs text-muted-foreground">Perlu restock</p>
                 </div>
               </div>
-              <span className="text-2xl font-bold text-warning">12</span>
+              <span className="text-2xl font-bold text-warning">-</span>
             </div>
           </CardContent>
         </Card>
@@ -336,7 +319,7 @@ export default function DashboardExecutive() {
         <CardContent>
           {loadingDepts ? (
             <Skeleton className="h-[200px] w-full" />
-          ) : (
+          ) : hasDeptData ? (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
@@ -372,6 +355,10 @@ export default function DashboardExecutive() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          ) : (
+            <div className="text-center text-muted-foreground py-8">
+              Belum ada data performa departemen
             </div>
           )}
         </CardContent>
