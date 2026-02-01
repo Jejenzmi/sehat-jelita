@@ -33,6 +33,8 @@ import {
   Activity,
   ClipboardCheck,
   Skull,
+  Wrench,
+  Award,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import zenLogo from "@/assets/zen-logo.webp";
@@ -101,6 +103,8 @@ const allNavigationGroups: NavGroup[] = [
     title: "Manajemen",
     items: [
       { icon: Package, label: "Inventory", path: "/inventory" },
+      { icon: Wrench, label: "Penunjang", path: "/penunjang" },
+      { icon: Award, label: "Mutu & Akreditasi", path: "/mutu" },
       { icon: UserCog, label: "SDM / HRD", path: "/sdm" },
       { icon: FileBarChart, label: "Laporan", path: "/laporan" },
       { icon: Database, label: "Master Data", path: "/master-data" },

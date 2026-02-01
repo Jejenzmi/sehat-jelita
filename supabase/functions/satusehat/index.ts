@@ -566,6 +566,38 @@ async function searchFHIRResources(
   return await response.json();
 }
 
+// Get OAuth token with custom credentials
+async function getAccessTokenWithConfig(
+  clientId: string, 
+  clientSecret: string, 
+  environment: string = 'staging'
+): Promise<TokenResponse> {
+  const oauthUrl = environment === 'production' ? PRODUCTION_OAUTH_URL : STAGING_OAUTH_URL;
+  
+  console.log(`Getting access token from ${oauthUrl}`);
+  
+  const response = await fetch(`${oauthUrl}/accesstoken?grant_type=client_credentials`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: new URLSearchParams({
+      client_id: clientId,
+      client_secret: clientSecret,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('OAuth error:', errorText);
+    throw new Error(`Failed to get access token: ${response.status} - ${errorText}`);
+  }
+
+  const data = await response.json();
+  console.log('Token obtained successfully');
+  return data;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -573,22 +605,43 @@ serve(async (req) => {
 
   try {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-    const { action, data } = await req.json();
+    const { action, data, config: customConfig } = await req.json();
 
     console.log(`Processing action: ${action}`);
 
-    // Get config
-    const { data: config } = await supabase
-      .from('satusehat_config')
-      .select('*')
-      .single();
-
-    const environment = config?.environment || 'staging';
-    const organizationId = config?.organization_id || 'ORG_ID_NOT_SET';
+    // Get config - use custom config if provided, otherwise fetch from system_settings
+    let environment: string;
+    let organizationId: string;
+    let clientId: string | undefined;
+    let clientSecret: string | undefined;
+    
+    if (customConfig) {
+      // Use custom config passed from admin settings
+      environment = customConfig.environment || 'staging';
+      organizationId = customConfig.org_id || 'ORG_ID_NOT_SET';
+      clientId = customConfig.client_id;
+      clientSecret = customConfig.client_secret;
+    } else {
+      // Fetch from system_settings table
+      const { data: settingsData } = await supabase
+        .from('system_settings')
+        .select('setting_value')
+        .eq('setting_key', 'integration_satusehat')
+        .single();
+      
+      const settings = settingsData?.setting_value || {};
+      environment = settings.environment || 'staging';
+      organizationId = settings.org_id || 'ORG_ID_NOT_SET';
+      clientId = settings.client_id || SATUSEHAT_CLIENT_ID;
+      clientSecret = settings.client_secret || SATUSEHAT_CLIENT_SECRET;
+    }
 
     switch (action) {
       case 'test-connection': {
-        const token = await getAccessToken(environment);
+        if (!clientId || !clientSecret) {
+          throw new Error('Client ID and Client Secret are required');
+        }
+        const token = await getAccessTokenWithConfig(clientId, clientSecret, environment);
         return new Response(JSON.stringify({
           success: true,
           message: 'Connection successful',
@@ -601,7 +654,8 @@ serve(async (req) => {
 
       case 'sync-patient': {
         const { patientId } = data;
-        const token = await getAccessToken(environment);
+        if (!clientId || !clientSecret) throw new Error('Client credentials not configured');
+        const token = await getAccessTokenWithConfig(clientId, clientSecret, environment);
 
         // Get patient data
         const { data: patient, error } = await supabase
@@ -671,7 +725,8 @@ serve(async (req) => {
 
       case 'sync-practitioner': {
         const { doctorId } = data;
-        const token = await getAccessToken(environment);
+        if (!clientId || !clientSecret) throw new Error('Client credentials not configured');
+        const token = await getAccessTokenWithConfig(clientId, clientSecret, environment);
 
         const { data: doctor, error } = await supabase
           .from('doctors')
@@ -743,7 +798,8 @@ serve(async (req) => {
 
       case 'sync-location': {
         const { locationId, locationType } = data; // locationType: 'department' or 'room'
-        const token = await getAccessToken(environment);
+        if (!clientId || !clientSecret) throw new Error('Client credentials not configured');
+        const token = await getAccessTokenWithConfig(clientId, clientSecret, environment);
 
         const tableName = locationType === 'department' ? 'departments' : 'rooms';
         const { data: location, error } = await supabase
@@ -815,7 +871,8 @@ serve(async (req) => {
 
       case 'sync-encounter': {
         const { visitId } = data;
-        const token = await getAccessToken(environment);
+        if (!clientId || !clientSecret) throw new Error('Client credentials not configured');
+        const token = await getAccessTokenWithConfig(clientId, clientSecret, environment);
 
         const { data: visit, error } = await supabase
           .from('visits')
@@ -907,7 +964,8 @@ serve(async (req) => {
 
       case 'sync-condition': {
         const { diagnosisId } = data;
-        const token = await getAccessToken(environment);
+        if (!clientId || !clientSecret) throw new Error('Client credentials not configured');
+        const token = await getAccessTokenWithConfig(clientId, clientSecret, environment);
 
         const { data: diagnosis, error } = await supabase
           .from('diagnoses')
@@ -979,7 +1037,8 @@ serve(async (req) => {
 
       case 'search-patient-by-nik': {
         const { nik } = data;
-        const token = await getAccessToken(environment);
+        if (!clientId || !clientSecret) throw new Error('Client credentials not configured');
+        const token = await getAccessTokenWithConfig(clientId, clientSecret, environment);
 
         const result = await searchFHIRResources(
           token.access_token,
@@ -998,7 +1057,8 @@ serve(async (req) => {
 
       case 'get-patient-ihs': {
         const { nik } = data;
-        const token = await getAccessToken(environment);
+        if (!clientId || !clientSecret) throw new Error('Client credentials not configured');
+        const token = await getAccessTokenWithConfig(clientId, clientSecret, environment);
 
         // Search for patient by NIK to get IHS Number
         const result = await searchFHIRResources(
@@ -1133,7 +1193,8 @@ serve(async (req) => {
       }
 
       case 'bulk-sync-patients': {
-        const token = await getAccessToken(environment);
+        if (!clientId || !clientSecret) throw new Error('Client credentials not configured');
+        const token = await getAccessTokenWithConfig(clientId, clientSecret, environment);
         
         const { data: allPatients } = await supabase.from('patients').select('id');
         const { data: syncedPatients } = await supabase
@@ -1208,7 +1269,8 @@ serve(async (req) => {
       }
 
       case 'bulk-sync-practitioners': {
-        const token = await getAccessToken(environment);
+        if (!clientId || !clientSecret) throw new Error('Client credentials not configured');
+        const token = await getAccessTokenWithConfig(clientId, clientSecret, environment);
         
         const { data: allDoctors } = await supabase.from('doctors').select('id');
         const { data: syncedDoctors } = await supabase

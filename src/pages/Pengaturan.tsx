@@ -18,6 +18,7 @@ import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { SatuSehatSettings } from "@/components/settings/SatuSehatSettings";
 
 export default function Pengaturan() {
   const { 
@@ -460,32 +461,14 @@ export default function Pengaturan() {
 
         {/* Integrations */}
         <TabsContent value="integrations">
-          <div className="grid gap-4 md:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>SATU SEHAT</CardTitle>
-                <CardDescription>Integrasi dengan platform SATU SEHAT Kemenkes RI</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <Badge variant="default" className={satuSehatConfig.enabled ? "bg-green-500" : "bg-muted"}>
-                    {satuSehatConfig.enabled ? "Terhubung" : "Tidak Aktif"}
-                  </Badge>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Organization ID</span>
-                    <span className="font-mono">{satuSehatConfig.org_id || "-"}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Environment</span>
-                    <span>{satuSehatConfig.environment || "Sandbox"}</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+          <div className="grid gap-4 lg:grid-cols-2">
+            {/* SATU SEHAT Settings Component */}
+            <div className="lg:col-span-2">
+              <SatuSehatSettings />
+            </div>
 
-            <Card>
+            {/* BPJS Settings */}
+            <Card className="lg:col-span-2">
               <CardHeader>
                 <CardTitle>BPJS Kesehatan</CardTitle>
                 <CardDescription>Konfigurasi kredensial bridging BPJS Kesehatan (VClaim/PCare)</CardDescription>
