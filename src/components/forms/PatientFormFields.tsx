@@ -9,6 +9,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 // Standard options based on Indonesian regulations (Kemenkes, Dukcapil, BPJS)
 export const RELIGION_OPTIONS = [
@@ -140,6 +141,7 @@ export function PatientFormFields({ data, onChange, compact = false }: PatientFo
 
   if (compact) {
     return (
+      <ScrollArea className="max-h-[60vh] pr-4">
       <div className="space-y-4">
         {/* Identitas Dasar */}
         <div className="grid grid-cols-2 gap-4">
@@ -297,6 +299,7 @@ export function PatientFormFields({ data, onChange, compact = false }: PatientFo
           </div>
         </div>
       </div>
+      </ScrollArea>
     );
   }
 
@@ -310,7 +313,8 @@ export function PatientFormFields({ data, onChange, compact = false }: PatientFo
         <TabsTrigger value="medis">Data Medis</TabsTrigger>
       </TabsList>
 
-      <TabsContent value="identitas" className="space-y-4 mt-4">
+      <ScrollArea className="max-h-[60vh] mt-4">
+      <TabsContent value="identitas" className="space-y-4 pr-4">
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label>NIK <span className="text-destructive">*</span></Label>
@@ -450,7 +454,7 @@ export function PatientFormFields({ data, onChange, compact = false }: PatientFo
         </div>
       </TabsContent>
 
-      <TabsContent value="alamat" className="space-y-4 mt-4">
+      <TabsContent value="alamat" className="space-y-4 pr-4">
         <div className="space-y-2">
           <Label>Alamat Lengkap</Label>
           <Textarea
@@ -504,7 +508,7 @@ export function PatientFormFields({ data, onChange, compact = false }: PatientFo
         </div>
       </TabsContent>
 
-      <TabsContent value="kontak" className="space-y-4 mt-4">
+      <TabsContent value="kontak" className="space-y-4 pr-4">
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label>No. Telepon</Label>
@@ -565,7 +569,7 @@ export function PatientFormFields({ data, onChange, compact = false }: PatientFo
         </div>
       </TabsContent>
 
-      <TabsContent value="medis" className="space-y-4 mt-4">
+      <TabsContent value="medis" className="space-y-4 pr-4">
         <div className="space-y-2">
           <Label>Riwayat Alergi</Label>
           <Textarea
@@ -576,6 +580,7 @@ export function PatientFormFields({ data, onChange, compact = false }: PatientFo
           />
         </div>
       </TabsContent>
+      </ScrollArea>
     </Tabs>
   );
 }

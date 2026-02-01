@@ -3,6 +3,7 @@ import { Search, UserPlus, Calendar, Clock, Filter, Loader2, Phone } from "lucid
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select,
   SelectContent,
@@ -484,13 +485,14 @@ export default function Pendaftaran() {
               Daftarkan Pasien
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-2xl max-h-[90vh]">
             <DialogHeader>
               <DialogTitle>Pendaftaran Pasien</DialogTitle>
               <DialogDescription>
                 Daftarkan pasien baru atau cari pasien lama
               </DialogDescription>
             </DialogHeader>
+            <ScrollArea className="max-h-[65vh] pr-4">
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4">
               <TabsList className="grid w-full grid-cols-2">
@@ -624,8 +626,9 @@ export default function Pendaftaran() {
                 />
               </div>
             </div>
+            </ScrollArea>
 
-            <DialogFooter className="mt-6">
+            <DialogFooter className="mt-4">
               <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
                 Batal
               </Button>

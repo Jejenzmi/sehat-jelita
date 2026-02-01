@@ -193,7 +193,9 @@ export function UserFormFields({ data, onChange, isEditing = false }: UserFormFi
         <TabsTrigger value="menu">Akses Menu</TabsTrigger>
       </TabsList>
 
-      <TabsContent value="account" className="space-y-4 mt-4">
+      <TabsContent value="account" className="mt-4">
+        <ScrollArea className="max-h-[50vh] pr-4">
+        <div className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label>Nama Lengkap <span className="text-destructive">*</span></Label>
@@ -256,9 +258,12 @@ export function UserFormFields({ data, onChange, isEditing = false }: UserFormFi
             </div>
           </div>
         )}
+        </div>
+        </ScrollArea>
       </TabsContent>
 
       <TabsContent value="roles" className="mt-4">
+        <ScrollArea className="max-h-[50vh] pr-4">
         <p className="text-sm text-muted-foreground mb-4">
           Pilih role untuk menentukan hak akses dasar pengguna. Role akan otomatis menetapkan akses menu sesuai template.
         </p>
@@ -302,6 +307,7 @@ export function UserFormFields({ data, onChange, isEditing = false }: UserFormFi
             </div>
           </div>
         )}
+        </ScrollArea>
       </TabsContent>
 
       <TabsContent value="menu" className="mt-4">
