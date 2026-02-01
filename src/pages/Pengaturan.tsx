@@ -34,6 +34,7 @@ export default function Pengaturan() {
   const [localHospital, setLocalHospital] = useState(hospitalInfo);
   const [localNotifications, setLocalNotifications] = useState(notificationSettings);
   const [localSystem, setLocalSystem] = useState(systemConfig);
+  const [localBpjs, setLocalBpjs] = useState(bpjsConfig);
 
   // Audit logs
   const [auditTableFilter, setAuditTableFilter] = useState<string>("all");
@@ -51,8 +52,9 @@ export default function Pengaturan() {
       setLocalHospital(hospitalInfo);
       setLocalNotifications(notificationSettings);
       setLocalSystem(systemConfig);
+      setLocalBpjs(bpjsConfig);
     }
-  }, [isLoading, hospitalInfo, notificationSettings, systemConfig]);
+  }, [isLoading, hospitalInfo, notificationSettings, systemConfig, bpjsConfig]);
 
   const handleSaveHospital = () => {
     updateSetting.mutate({ key: "hospital_info", value: localHospital });
@@ -64,6 +66,10 @@ export default function Pengaturan() {
 
   const handleSaveSystem = () => {
     updateSetting.mutate({ key: "system_config", value: localSystem });
+  };
+
+  const handleSaveBpjs = () => {
+    updateSetting.mutate({ key: "integration_bpjs", value: localBpjs });
   };
 
   const getActionBadgeColor = (action: string) => {
@@ -482,19 +488,78 @@ export default function Pengaturan() {
             <Card>
               <CardHeader>
                 <CardTitle>BPJS Kesehatan</CardTitle>
-                <CardDescription>Integrasi bridging BPJS Kesehatan</CardDescription>
+                <CardDescription>Konfigurasi kredensial bridging BPJS Kesehatan (VClaim/PCare)</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <Badge variant="default" className={bpjsConfig.enabled ? "bg-green-500" : "bg-muted"}>
-                    {bpjsConfig.enabled ? "Terhubung" : "Tidak Aktif"}
-                  </Badge>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="bpjs-enabled">Status Integrasi</Label>
+                  <Switch
+                    id="bpjs-enabled"
+                    checked={localBpjs.enabled}
+                    onCheckedChange={(checked) => setLocalBpjs({ ...localBpjs, enabled: checked })}
+                  />
                 </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Provider Code</span>
-                    <span className="font-mono">{bpjsConfig.provider_code || "-"}</span>
+                <Separator />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="bpjs-provider">Provider Code (Kode PPK)</Label>
+                    <Input
+                      id="bpjs-provider"
+                      placeholder="Contoh: 0301R001"
+                      value={localBpjs.provider_code}
+                      onChange={(e) => setLocalBpjs({ ...localBpjs, provider_code: e.target.value })}
+                    />
                   </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="bpjs-env">Environment</Label>
+                    <Select
+                      value={localBpjs.environment}
+                      onValueChange={(val) => setLocalBpjs({ ...localBpjs, environment: val as "development" | "production" })}
+                    >
+                      <SelectTrigger id="bpjs-env">
+                        <SelectValue placeholder="Pilih environment" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="development">Development (Sandbox)</SelectItem>
+                        <SelectItem value="production">Production</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="bpjs-consumer-id">Consumer ID</Label>
+                    <Input
+                      id="bpjs-consumer-id"
+                      placeholder="Consumer ID dari BPJS"
+                      value={localBpjs.consumer_id}
+                      onChange={(e) => setLocalBpjs({ ...localBpjs, consumer_id: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="bpjs-consumer-secret">Consumer Secret</Label>
+                    <Input
+                      id="bpjs-consumer-secret"
+                      type="password"
+                      placeholder="••••••••"
+                      value={localBpjs.consumer_secret}
+                      onChange={(e) => setLocalBpjs({ ...localBpjs, consumer_secret: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="bpjs-user-key">User Key</Label>
+                    <Input
+                      id="bpjs-user-key"
+                      type="password"
+                      placeholder="User Key dari BPJS"
+                      value={localBpjs.user_key}
+                      onChange={(e) => setLocalBpjs({ ...localBpjs, user_key: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end pt-4">
+                  <Button onClick={handleSaveBpjs} disabled={updateSetting.isPending}>
+                    <Save className="mr-2 h-4 w-4" />
+                    Simpan Konfigurasi BPJS
+                  </Button>
                 </div>
               </CardContent>
             </Card>
