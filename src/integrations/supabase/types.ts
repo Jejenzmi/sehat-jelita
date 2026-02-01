@@ -10105,6 +10105,7 @@ export type Database = {
         | "cssd"
         | "manajemen"
         | "bank_darah"
+        | "hemodialisa"
       asa_classification:
         | "ASA_I"
         | "ASA_II"
@@ -10377,6 +10378,7 @@ export const Constants = {
         "cssd",
         "manajemen",
         "bank_darah",
+        "hemodialisa",
       ],
       asa_classification: [
         "ASA_I",
