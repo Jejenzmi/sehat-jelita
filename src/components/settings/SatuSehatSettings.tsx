@@ -74,7 +74,9 @@ export function SatuSehatSettings() {
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        throw new Error(error.message || "Gagal menghubungi server");
+      }
 
       if (data?.success) {
         setConnectionStatus("success");
@@ -83,7 +85,12 @@ export function SatuSehatSettings() {
           description: "Berhasil terhubung ke SATU SEHAT API",
         });
       } else {
-        throw new Error(data?.message || "Gagal terhubung");
+        setConnectionStatus("error");
+        toast({
+          title: "Koneksi Gagal",
+          description: data?.error || "Gagal terhubung ke SATU SEHAT API",
+          variant: "destructive",
+        });
       }
     } catch (err: any) {
       setConnectionStatus("error");
