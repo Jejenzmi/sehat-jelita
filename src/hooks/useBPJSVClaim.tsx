@@ -523,3 +523,232 @@ export function useRefDokterLPK() {
     },
   });
 }
+
+// ==================== RENCANA KONTROL / SPRI ====================
+export function useInsertRencanaKontrol() {
+  const { toast } = useToast();
+  
+  return useMutation({
+    mutationFn: async (kontrolData: any) => {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
+        body: { action: "insert_rencana_kontrol", data: kontrolData },
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      if (data?.metaData?.code === "200") {
+        toast({ title: "Rencana Kontrol berhasil dibuat", description: `No Surat: ${data.response?.noSuratKontrol}` });
+      } else {
+        toast({ title: "Gagal membuat Rencana Kontrol", description: data?.metaData?.message, variant: "destructive" });
+      }
+    },
+    onError: (error: Error) => {
+      toast({ title: "Gagal membuat Rencana Kontrol", description: error.message, variant: "destructive" });
+    },
+  });
+}
+
+export function useUpdateRencanaKontrol() {
+  const { toast } = useToast();
+  
+  return useMutation({
+    mutationFn: async (kontrolData: any) => {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
+        body: { action: "update_rencana_kontrol", data: kontrolData },
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      if (data?.metaData?.code === "200") {
+        toast({ title: "Rencana Kontrol berhasil diupdate" });
+      } else {
+        toast({ title: "Gagal update Rencana Kontrol", description: data?.metaData?.message, variant: "destructive" });
+      }
+    },
+  });
+}
+
+export function useInsertRencanaKontrolV2() {
+  const { toast } = useToast();
+  
+  return useMutation({
+    mutationFn: async (kontrolData: any) => {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
+        body: { action: "insert_rencana_kontrol_v2", data: kontrolData },
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      if (data?.metaData?.code === "200") {
+        toast({ title: "Rencana Kontrol v2 berhasil dibuat", description: `No Surat: ${data.response?.noSuratKontrol}` });
+      } else {
+        toast({ title: "Gagal membuat Rencana Kontrol v2", description: data?.metaData?.message, variant: "destructive" });
+      }
+    },
+    onError: (error: Error) => {
+      toast({ title: "Gagal membuat Rencana Kontrol v2", description: error.message, variant: "destructive" });
+    },
+  });
+}
+
+export function useUpdateRencanaKontrolV2() {
+  const { toast } = useToast();
+  
+  return useMutation({
+    mutationFn: async (kontrolData: any) => {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
+        body: { action: "update_rencana_kontrol_v2", data: kontrolData },
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      if (data?.metaData?.code === "200") {
+        toast({ title: "Rencana Kontrol v2 berhasil diupdate" });
+      } else {
+        toast({ title: "Gagal update Rencana Kontrol v2", description: data?.metaData?.message, variant: "destructive" });
+      }
+    },
+  });
+}
+
+export function useDeleteRencanaKontrol() {
+  const { toast } = useToast();
+  
+  return useMutation({
+    mutationFn: async ({ noSuratKontrol, user }: { noSuratKontrol: string; user: string }) => {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
+        body: { action: "delete_rencana_kontrol", data: { noSuratKontrol, user } },
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      if (data?.metaData?.code === "200") {
+        toast({ title: "Rencana Kontrol berhasil dihapus" });
+      } else {
+        toast({ title: "Gagal menghapus Rencana Kontrol", description: data?.metaData?.message, variant: "destructive" });
+      }
+    },
+  });
+}
+
+export function useInsertSPRI() {
+  const { toast } = useToast();
+  
+  return useMutation({
+    mutationFn: async (spriData: any) => {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
+        body: { action: "insert_spri", data: spriData },
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      if (data?.metaData?.code === "200") {
+        toast({ title: "SPRI berhasil dibuat", description: `No SPRI: ${data.response?.noSPRI}` });
+      } else {
+        toast({ title: "Gagal membuat SPRI", description: data?.metaData?.message, variant: "destructive" });
+      }
+    },
+    onError: (error: Error) => {
+      toast({ title: "Gagal membuat SPRI", description: error.message, variant: "destructive" });
+    },
+  });
+}
+
+export function useUpdateSPRI() {
+  const { toast } = useToast();
+  
+  return useMutation({
+    mutationFn: async (spriData: any) => {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
+        body: { action: "update_spri", data: spriData },
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      if (data?.metaData?.code === "200") {
+        toast({ title: "SPRI berhasil diupdate" });
+      } else {
+        toast({ title: "Gagal update SPRI", description: data?.metaData?.message, variant: "destructive" });
+      }
+    },
+  });
+}
+
+export function useGetRencanaKontrolBySEP() {
+  return useMutation({
+    mutationFn: async (noSep: string) => {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
+        body: { action: "get_rencana_kontrol_by_sep", data: { noSep } },
+      });
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export function useGetRencanaKontrolBySurat() {
+  return useMutation({
+    mutationFn: async (noSuratKontrol: string) => {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
+        body: { action: "get_rencana_kontrol_by_surat", data: { noSuratKontrol } },
+      });
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export function useListRencanaKontrolByKartu() {
+  return useMutation({
+    mutationFn: async ({ bulan, tahun, noKartu, filter }: { bulan: string; tahun: string; noKartu: string; filter: string }) => {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
+        body: { action: "list_rencana_kontrol_by_kartu", data: { bulan, tahun, noKartu, filter } },
+      });
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export function useListRencanaKontrolByDate() {
+  return useMutation({
+    mutationFn: async ({ tglAwal, tglAkhir, filter }: { tglAwal: string; tglAkhir: string; filter: string }) => {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
+        body: { action: "list_rencana_kontrol_by_date", data: { tglAwal, tglAkhir, filter } },
+      });
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export function useListSpesialistikKontrol() {
+  return useMutation({
+    mutationFn: async ({ jnsKontrol, nomor, tglRencanaKontrol }: { jnsKontrol: string; nomor: string; tglRencanaKontrol: string }) => {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
+        body: { action: "list_spesialistik_kontrol", data: { jnsKontrol, nomor, tglRencanaKontrol } },
+      });
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export function useJadwalPraktekDokter() {
+  return useMutation({
+    mutationFn: async ({ jnsKontrol, kdPoli, tglRencanaKontrol }: { jnsKontrol: string; kdPoli: string; tglRencanaKontrol: string }) => {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
+        body: { action: "jadwal_praktek_dokter", data: { jnsKontrol, kdPoli, tglRencanaKontrol } },
+      });
+      if (error) throw error;
+      return data;
+    },
+  });
+}
