@@ -1,9 +1,15 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
+
+// Initialize Supabase client
+const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
+const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 // BPJS Antrean API Configuration
 const BPJS_ANTREAN_BASE_URL = Deno.env.get("BPJS_ANTREAN_BASE_URL") || "https://apijkn.bpjs-kesehatan.go.id/antreanrs";
@@ -482,223 +488,666 @@ async function getRSStatusAntrean(params: any) {
   // Get queue status per poli from local database
   const { kodePoli, kodeDokter, tanggalPeriksa, jamPraktek } = params;
   
-  // TODO: Query local database for queue status
-  // This is a mock response
-  return {
-    response: {
-      namapoli: "Poli Anak",
-      namadokter: "Dr. Example",
-      totalantrean: 20,
-      sisaantrean: 10,
-      antreanpanggil: "A-010",
-      sisakuotajkn: 5,
-      kuotajkn: 30,
-      sisakuotanonjkn: 5,
-      kuotanonjkn: 30,
-      keterangan: "Peserta harap datang 30 menit lebih awal",
-    },
-    metadata: {
-      message: "Ok",
-      code: 200,
-    },
-  };
+  try {
+    // Get department by code
+    const { data: dept } = await supabase
+      .from("departments")
+      .select("id, name")
+      .eq("code", kodePoli)
+      .single();
+
+    // Get doctor by id or fetch first doctor if not specified
+    let doctorName = "Dokter";
+    if (kodeDokter) {
+      const { data: doctor } = await supabase
+        .from("doctors")
+        .select("name")
+        .eq("id", kodeDokter)
+        .single();
+      doctorName = doctor?.name || "Dokter";
+    }
+
+    // Count queue tickets for today
+    const today = tanggalPeriksa || new Date().toISOString().split('T')[0];
+    
+    const { count: totalAntrean } = await supabase
+      .from("queue_tickets")
+      .select("*", { count: "exact", head: true })
+      .eq("queue_date", today)
+      .eq("service_type", "rawat_jalan");
+
+    const { count: sisaAntrean } = await supabase
+      .from("queue_tickets")
+      .select("*", { count: "exact", head: true })
+      .eq("queue_date", today)
+      .eq("service_type", "rawat_jalan")
+      .in("status", ["waiting", "called"]);
+
+    // Get currently called ticket
+    const { data: currentTicket } = await supabase
+      .from("queue_tickets")
+      .select("ticket_number")
+      .eq("queue_date", today)
+      .eq("service_type", "rawat_jalan")
+      .eq("status", "called")
+      .order("called_at", { ascending: false })
+      .limit(1)
+      .single();
+
+    return {
+      response: {
+        namapoli: dept?.name || "Poli",
+        namadokter: doctorName,
+        totalantrean: totalAntrean || 0,
+        sisaantrean: sisaAntrean || 0,
+        antreanpanggil: currentTicket?.ticket_number || "-",
+        sisakuotajkn: Math.max(30 - (totalAntrean || 0), 0),
+        kuotajkn: 30,
+        sisakuotanonjkn: Math.max(30 - (totalAntrean || 0), 0),
+        kuotanonjkn: 30,
+        keterangan: "Peserta harap datang 30 menit lebih awal",
+      },
+      metadata: {
+        message: "Ok",
+        code: 200,
+      },
+    };
+  } catch (error) {
+    console.error("[BPJS Antrean] Error getRSStatusAntrean:", error);
+    return {
+      response: null,
+      metadata: {
+        message: "Gagal mengambil status antrean",
+        code: 500,
+      },
+    };
+  }
 }
 
 async function getRSAmbilAntrean(params: any) {
   // Create queue ticket for patient from Mobile JKN
   const { nomorKartu, nik, noHp, kodePoli, norm, tanggalPeriksa, kodeDokter, jamPraktek, jenisKunjungan, nomorReferensi } = params;
   
-  // Check if patient exists (has norm)
-  if (!norm) {
-    // Patient baru - return code 202
+  try {
+    // Check if patient exists by medical record number
+    let patientId = null;
+    let patientName = "Pasien";
+    
+    if (norm) {
+      const { data: patient } = await supabase
+        .from("patients")
+        .select("id, full_name")
+        .eq("medical_record_number", norm)
+        .single();
+      
+      if (!patient) {
+        // Patient not found, return code 202 for new patient
+        return {
+          metadata: {
+            message: "Pasien Baru",
+            code: 202,
+          },
+        };
+      }
+      patientId = patient.id;
+      patientName = patient.full_name;
+    } else {
+      // No medical record number provided
+      return {
+        metadata: {
+          message: "Pasien Baru",
+          code: 202,
+        },
+      };
+    }
+
+    // Get department info
+    const { data: dept } = await supabase
+      .from("departments")
+      .select("id, name")
+      .eq("code", kodePoli)
+      .single();
+
+    // Get doctor info
+    let doctorName = "Dokter";
+    if (kodeDokter) {
+      const { data: doctor } = await supabase
+        .from("doctors")
+        .select("name")
+        .eq("id", kodeDokter)
+        .single();
+      doctorName = doctor?.name || "Dokter";
+    }
+
+    // Generate queue ticket using RPC
+    const { data: ticketNumber, error: rpcError } = await supabase
+      .rpc("generate_queue_number", { p_service_type: "rawat_jalan" });
+
+    if (rpcError) throw rpcError;
+
+    // Create queue ticket
+    const queueDate = tanggalPeriksa || new Date().toISOString().split('T')[0];
+    const kodeBooking = `${queueDate.replace(/-/g, "")}${ticketNumber}`;
+    
+    const { data: ticket, error: insertError } = await supabase
+      .from("queue_tickets")
+      .insert({
+        patient_id: patientId,
+        ticket_number: ticketNumber,
+        queue_date: queueDate,
+        service_type: "rawat_jalan",
+        department_id: dept?.id,
+        status: "waiting",
+        booking_code: kodeBooking,
+        source: "mobile_jkn",
+        bpjs_card_number: nomorKartu,
+        reference_number: nomorReferensi,
+      })
+      .select()
+      .single();
+
+    if (insertError) throw insertError;
+
+    // Count remaining quota
+    const { count: totalAntrean } = await supabase
+      .from("queue_tickets")
+      .select("*", { count: "exact", head: true })
+      .eq("queue_date", queueDate)
+      .eq("service_type", "rawat_jalan");
+
+    const angkaAntrean = parseInt(ticketNumber.replace(/\D/g, "")) || 1;
+    const estimasiDilayani = Date.now() + (angkaAntrean * 15 * 60 * 1000); // 15 min per patient
+
     return {
+      response: {
+        nomorantrean: ticketNumber,
+        angkaantrean: angkaAntrean,
+        kodebooking: kodeBooking,
+        norm: norm,
+        namapoli: dept?.name || "Poli",
+        namadokter: doctorName,
+        estimasidilayani: estimasiDilayani,
+        sisakuotajkn: Math.max(30 - (totalAntrean || 0), 0),
+        kuotajkn: 30,
+        sisakuotanonjkn: Math.max(30 - (totalAntrean || 0), 0),
+        kuotanonjkn: 30,
+        keterangan: "Peserta harap datang 30 menit lebih awal",
+        pasienbaru: 0,
+      },
       metadata: {
-        message: "Pasien Baru",
-        code: 202,
+        message: "Ok",
+        code: 200,
+      },
+    };
+  } catch (error) {
+    console.error("[BPJS Antrean] Error getRSAmbilAntrean:", error);
+    return {
+      response: null,
+      metadata: {
+        message: "Gagal mengambil antrean",
+        code: 500,
       },
     };
   }
-  
-  // TODO: Create queue in local database
-  // Mock response for now
-  const kodeBooking = `${new Date().toISOString().slice(0, 10).replace(/-/g, "")}A${Date.now().toString().slice(-4)}`;
-  
-  return {
-    response: {
-      nomorantrean: "A-001",
-      angkaantrean: 1,
-      kodebooking: kodeBooking,
-      norm: norm,
-      namapoli: "Poli Anak",
-      namadokter: "Dr. Example",
-      estimasidilayani: Date.now() + 3600000, // 1 hour from now
-      sisakuotajkn: 5,
-      kuotajkn: 30,
-      sisakuotanonjkn: 5,
-      kuotanonjkn: 30,
-      keterangan: "Peserta harap datang 30 menit lebih awal",
-      pasienbaru: 0,
-    },
-    metadata: {
-      message: "Ok",
-      code: 200,
-    },
-  };
 }
 
 async function getRSSisaAntrean(params: any) {
   // Get remaining queue for patient
   const { kodeBooking } = params;
   
-  // TODO: Query local database
-  return {
-    response: {
-      nomorantrean: "A-001",
-      namapoli: "Poli Anak",
-      namadokter: "Dr. Example",
-      sisaantrean: 5,
-      antreanpanggil: "A-095",
-      waktutunggu: 1800, // seconds (SPM * (sisaantrean-1))
-      keterangan: "",
-    },
-    metadata: {
-      message: "Ok",
-      code: 200,
-    },
-  };
+  try {
+    // Find ticket by booking code
+    const { data: ticket, error } = await supabase
+      .from("queue_tickets")
+      .select(`
+        *,
+        departments (name),
+        patients (full_name)
+      `)
+      .eq("booking_code", kodeBooking)
+      .single();
+
+    if (error || !ticket) {
+      return {
+        response: null,
+        metadata: {
+          message: "Antrean tidak ditemukan",
+          code: 404,
+        },
+      };
+    }
+
+    // Count remaining tickets ahead
+    const { count: sisaAntrean } = await supabase
+      .from("queue_tickets")
+      .select("*", { count: "exact", head: true })
+      .eq("queue_date", ticket.queue_date)
+      .eq("service_type", ticket.service_type)
+      .in("status", ["waiting", "called"])
+      .lt("created_at", ticket.created_at);
+
+    // Get currently called ticket
+    const { data: currentTicket } = await supabase
+      .from("queue_tickets")
+      .select("ticket_number")
+      .eq("queue_date", ticket.queue_date)
+      .eq("service_type", ticket.service_type)
+      .eq("status", "called")
+      .order("called_at", { ascending: false })
+      .limit(1)
+      .single();
+
+    const waktuTunggu = ((sisaAntrean || 0) + 1) * 15 * 60; // 15 min per patient in seconds
+
+    return {
+      response: {
+        nomorantrean: ticket.ticket_number,
+        namapoli: ticket.departments?.name || "Poli",
+        namadokter: "Dokter",
+        sisaantrean: (sisaAntrean || 0) + 1,
+        antreanpanggil: currentTicket?.ticket_number || "-",
+        waktutunggu: waktuTunggu,
+        keterangan: "",
+      },
+      metadata: {
+        message: "Ok",
+        code: 200,
+      },
+    };
+  } catch (error) {
+    console.error("[BPJS Antrean] Error getRSSisaAntrean:", error);
+    return {
+      response: null,
+      metadata: {
+        message: "Gagal mengambil sisa antrean",
+        code: 500,
+      },
+    };
+  }
 }
 
 async function getRSBatalAntrean(params: any) {
   // Cancel queue from Mobile JKN
   const { kodeBooking, keterangan } = params;
   
-  // TODO: Update queue status in local database
-  return {
-    metadata: {
-      message: "Ok",
-      code: 200,
-    },
-  };
+  try {
+    const { error } = await supabase
+      .from("queue_tickets")
+      .update({ 
+        status: "cancelled",
+        notes: keterangan || "Dibatalkan via Mobile JKN"
+      })
+      .eq("booking_code", kodeBooking);
+
+    if (error) throw error;
+
+    return {
+      metadata: {
+        message: "Ok",
+        code: 200,
+      },
+    };
+  } catch (error) {
+    console.error("[BPJS Antrean] Error getRSBatalAntrean:", error);
+    return {
+      metadata: {
+        message: "Gagal membatalkan antrean",
+        code: 500,
+      },
+    };
+  }
 }
 
 async function getRSCheckin(params: any) {
   // Check in patient
   const { kodeBooking, waktu } = params;
   
-  // TODO: Update checkin time in local database
-  return {
-    metadata: {
-      message: "Ok",
-      code: 200,
-    },
-  };
+  try {
+    const { error } = await supabase
+      .from("queue_tickets")
+      .update({ 
+        check_in_time: waktu ? new Date(waktu).toISOString() : new Date().toISOString(),
+        status: "waiting"
+      })
+      .eq("booking_code", kodeBooking);
+
+    if (error) throw error;
+
+    return {
+      metadata: {
+        message: "Ok",
+        code: 200,
+      },
+    };
+  } catch (error) {
+    console.error("[BPJS Antrean] Error getRSCheckin:", error);
+    return {
+      metadata: {
+        message: "Gagal melakukan check-in",
+        code: 500,
+      },
+    };
+  }
 }
 
 async function getRSInfoPasienBaru(params: any) {
   // Receive new patient info from Mobile JKN
   const { nomorKartu, nik, nomorKK, nama, jenisKelamin, tanggalLahir, noHp, alamat } = params;
   
-  // TODO: Create new patient in local database
-  const newNorm = `RM-${new Date().getFullYear()}-${Date.now().toString().slice(-6)}`;
-  
-  return {
-    response: {
-      norm: newNorm,
-    },
-    metadata: {
-      message: "Ok",
-      code: 200,
-    },
-  };
+  try {
+    // Generate medical record number using RPC
+    const { data: newNorm, error: rpcError } = await supabase
+      .rpc("generate_medical_record_number");
+
+    if (rpcError) throw rpcError;
+
+    // Create new patient
+    const { error: insertError } = await supabase
+      .from("patients")
+      .insert({
+        medical_record_number: newNorm,
+        full_name: nama,
+        nik: nik,
+        birth_date: tanggalLahir,
+        gender: jenisKelamin === "L" ? "Laki-laki" : "Perempuan",
+        phone: noHp,
+        address: alamat,
+        bpjs_number: nomorKartu,
+        registration_date: new Date().toISOString(),
+      });
+
+    if (insertError) throw insertError;
+
+    return {
+      response: {
+        norm: newNorm,
+      },
+      metadata: {
+        message: "Ok",
+        code: 200,
+      },
+    };
+  } catch (error) {
+    console.error("[BPJS Antrean] Error getRSInfoPasienBaru:", error);
+    return {
+      response: null,
+      metadata: {
+        message: "Gagal mendaftarkan pasien baru",
+        code: 500,
+      },
+    };
+  }
 }
 
 async function getRSJadwalOperasiRS(params: any) {
   // Get hospital surgery schedule
   const { tanggalAwal, tanggalAkhir } = params;
   
-  // TODO: Query surgery schedule from local database
-  return {
-    response: {
-      list: [
-        {
-          kodebooking: "OP-001",
-          tanggaloperasi: "2021-03-24",
-          jenistindakan: "Appendectomy",
-          kodepoli: "BED",
-          namapoli: "Bedah",
-          terlaksana: 0,
-          nopeserta: "0000000000123",
-          namapeserta: "John Doe",
-        },
-      ],
-    },
-    metadata: {
-      message: "Ok",
-      code: 200,
-    },
-  };
+  try {
+    let query = supabase
+      .from("surgeries")
+      .select(`
+        id,
+        surgery_number,
+        scheduled_date,
+        procedure_name,
+        status,
+        patients (
+          full_name,
+          bpjs_number
+        ),
+        departments (
+          code,
+          name
+        )
+      `)
+      .in("status", ["scheduled", "in_progress"]);
+
+    if (tanggalAwal) {
+      query = query.gte("scheduled_date", tanggalAwal);
+    }
+    if (tanggalAkhir) {
+      query = query.lte("scheduled_date", tanggalAkhir);
+    }
+
+    const { data: surgeries, error } = await query.order("scheduled_date");
+
+    if (error) throw error;
+
+    const list = (surgeries || []).map((surgery: any) => ({
+      kodebooking: surgery.surgery_number || surgery.id,
+      tanggaloperasi: surgery.scheduled_date?.split('T')[0] || "",
+      jenistindakan: surgery.procedure_name || "",
+      kodepoli: (surgery.departments as any)?.code || "BED",
+      namapoli: (surgery.departments as any)?.name || "Bedah",
+      terlaksana: surgery.status === "completed" ? 1 : 0,
+      nopeserta: (surgery.patients as any)?.bpjs_number || "",
+      namapeserta: (surgery.patients as any)?.full_name || "",
+    }));
+
+    return {
+      response: { list },
+      metadata: {
+        message: "Ok",
+        code: 200,
+      },
+    };
+  } catch (error) {
+    console.error("[BPJS Antrean] Error getRSJadwalOperasiRS:", error);
+    return {
+      response: { list: [] },
+      metadata: {
+        message: "Ok",
+        code: 200,
+      },
+    };
+  }
 }
 
 async function getRSJadwalOperasiPasien(params: any) {
   // Get patient surgery schedule
   const { noPeserta } = params;
   
-  // TODO: Query patient surgery schedule from local database
-  return {
-    response: {
-      list: [
-        {
-          kodebooking: "OP-001",
-          tanggaloperasi: "2021-03-24",
-          jenistindakan: "Appendectomy",
-          kodepoli: "BED",
-          namapoli: "Bedah",
-          terlaksana: 0,
+  try {
+    // Find patient by BPJS number
+    const { data: patient } = await supabase
+      .from("patients")
+      .select("id")
+      .eq("bpjs_number", noPeserta)
+      .single();
+
+    if (!patient) {
+      return {
+        response: { list: [] },
+        metadata: {
+          message: "Ok",
+          code: 200,
         },
-      ],
-    },
-    metadata: {
-      message: "Ok",
-      code: 200,
-    },
-  };
+      };
+    }
+
+    const { data: surgeries, error } = await supabase
+      .from("surgeries")
+      .select(`
+        id,
+        surgery_number,
+        scheduled_date,
+        procedure_name,
+        status,
+        departments (
+          code,
+          name
+        )
+      `)
+      .eq("patient_id", patient.id)
+      .in("status", ["scheduled", "in_progress"])
+      .order("scheduled_date");
+
+    if (error) throw error;
+
+    const list = (surgeries || []).map((surgery: any) => ({
+      kodebooking: surgery.surgery_number || surgery.id,
+      tanggaloperasi: surgery.scheduled_date?.split('T')[0] || "",
+      jenistindakan: surgery.procedure_name || "",
+      kodepoli: (surgery.departments as any)?.code || "BED",
+      namapoli: (surgery.departments as any)?.name || "Bedah",
+      terlaksana: surgery.status === "completed" ? 1 : 0,
+    }));
+
+    return {
+      response: { list },
+      metadata: {
+        message: "Ok",
+        code: 200,
+      },
+    };
+  } catch (error) {
+    console.error("[BPJS Antrean] Error getRSJadwalOperasiPasien:", error);
+    return {
+      response: { list: [] },
+      metadata: {
+        message: "Ok",
+        code: 200,
+      },
+    };
+  }
 }
 
 async function getRSAmbilAntreanFarmasi(params: any) {
   // Get pharmacy queue
   const { kodeBooking } = params;
   
-  // TODO: Get pharmacy queue from local database
-  return {
-    response: {
-      nomorantrean: "F-001",
-      jenisresep: "non racikan",
-      estimasidilayani: Date.now() + 1800000, // 30 min
-      keterangan: "",
-    },
-    metadata: {
-      message: "Ok",
-      code: 200,
-    },
-  };
+  try {
+    // Find the original queue ticket
+    const { data: ticket } = await supabase
+      .from("queue_tickets")
+      .select("patient_id")
+      .eq("booking_code", kodeBooking)
+      .single();
+
+    if (!ticket) {
+      return {
+        response: null,
+        metadata: {
+          message: "Booking tidak ditemukan",
+          code: 404,
+        },
+      };
+    }
+
+    // Generate pharmacy queue ticket
+    const { data: ticketNumber, error: rpcError } = await supabase
+      .rpc("generate_queue_number", { p_service_type: "farmasi" });
+
+    if (rpcError) throw rpcError;
+
+    // Create pharmacy queue ticket
+    const { data: pharmacyTicket, error: insertError } = await supabase
+      .from("queue_tickets")
+      .insert({
+        patient_id: ticket.patient_id,
+        ticket_number: ticketNumber,
+        queue_date: new Date().toISOString().split('T')[0],
+        service_type: "farmasi",
+        status: "waiting",
+        booking_code: `${kodeBooking}-F`,
+        source: "mobile_jkn",
+      })
+      .select()
+      .single();
+
+    if (insertError) throw insertError;
+
+    const angkaAntrean = parseInt(ticketNumber.replace(/\D/g, "")) || 1;
+    const estimasiDilayani = Date.now() + (angkaAntrean * 5 * 60 * 1000); // 5 min per patient
+
+    return {
+      response: {
+        nomorantrean: ticketNumber,
+        jenisresep: "non racikan",
+        estimasidilayani: estimasiDilayani,
+        keterangan: "",
+      },
+      metadata: {
+        message: "Ok",
+        code: 200,
+      },
+    };
+  } catch (error) {
+    console.error("[BPJS Antrean] Error getRSAmbilAntreanFarmasi:", error);
+    return {
+      response: null,
+      metadata: {
+        message: "Gagal mengambil antrean farmasi",
+        code: 500,
+      },
+    };
+  }
 }
 
 async function getRSStatusAntreanFarmasi(params: any) {
   // Get pharmacy queue status
   const { kodeBooking } = params;
   
-  // TODO: Get pharmacy queue status from local database
-  return {
-    response: {
-      nomorantrean: "F-001",
-      jenisresep: "non racikan",
-      sisaantrean: 3,
-      antreanpanggil: "F-098",
-      keterangan: "",
-    },
-    metadata: {
-      message: "Ok",
-      code: 200,
-    },
-  };
+  try {
+    // Find pharmacy ticket
+    const { data: ticket, error } = await supabase
+      .from("queue_tickets")
+      .select("*")
+      .eq("booking_code", `${kodeBooking}-F`)
+      .single();
+
+    if (error || !ticket) {
+      return {
+        response: null,
+        metadata: {
+          message: "Antrean farmasi tidak ditemukan",
+          code: 404,
+        },
+      };
+    }
+
+    // Count remaining tickets ahead
+    const { count: sisaAntrean } = await supabase
+      .from("queue_tickets")
+      .select("*", { count: "exact", head: true })
+      .eq("queue_date", ticket.queue_date)
+      .eq("service_type", "farmasi")
+      .in("status", ["waiting", "called"])
+      .lt("created_at", ticket.created_at);
+
+    // Get currently called ticket
+    const { data: currentTicket } = await supabase
+      .from("queue_tickets")
+      .select("ticket_number")
+      .eq("queue_date", ticket.queue_date)
+      .eq("service_type", "farmasi")
+      .eq("status", "called")
+      .order("called_at", { ascending: false })
+      .limit(1)
+      .single();
+
+    return {
+      response: {
+        nomorantrean: ticket.ticket_number,
+        jenisresep: "non racikan",
+        sisaantrean: (sisaAntrean || 0) + 1,
+        antreanpanggil: currentTicket?.ticket_number || "-",
+        keterangan: "",
+      },
+      metadata: {
+        message: "Ok",
+        code: 200,
+      },
+    };
+  } catch (error) {
+    console.error("[BPJS Antrean] Error getRSStatusAntreanFarmasi:", error);
+    return {
+      response: null,
+      metadata: {
+        message: "Gagal mengambil status antrean farmasi",
+        code: 500,
+      },
+    };
+  }
 }

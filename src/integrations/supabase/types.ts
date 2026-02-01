@@ -363,6 +363,13 @@ export type Database = {
             foreignKeyName: "appointments_department_id_fkey"
             columns: ["department_id"]
             isOneToOne: false
+            referencedRelation: "department_satisfaction_summary"
+            referencedColumns: ["department_id"]
+          },
+          {
+            foreignKeyName: "appointments_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
             referencedRelation: "departments"
             referencedColumns: ["id"]
           },
@@ -1157,6 +1164,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "chat_rooms_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "department_satisfaction_summary"
+            referencedColumns: ["department_id"]
+          },
           {
             foreignKeyName: "chat_rooms_department_id_fkey"
             columns: ["department_id"]
@@ -2076,6 +2090,13 @@ export type Database = {
             foreignKeyName: "doctors_department_id_fkey"
             columns: ["department_id"]
             isOneToOne: false
+            referencedRelation: "department_satisfaction_summary"
+            referencedColumns: ["department_id"]
+          },
+          {
+            foreignKeyName: "doctors_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
             referencedRelation: "departments"
             referencedColumns: ["id"]
           },
@@ -2540,6 +2561,13 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "employees_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "department_satisfaction_summary"
+            referencedColumns: ["department_id"]
+          },
           {
             foreignKeyName: "employees_department_id_fkey"
             columns: ["department_id"]
@@ -3704,6 +3732,13 @@ export type Database = {
             foreignKeyName: "journal_entry_lines_department_id_fkey"
             columns: ["department_id"]
             isOneToOne: false
+            referencedRelation: "department_satisfaction_summary"
+            referencedColumns: ["department_id"]
+          },
+          {
+            foreignKeyName: "journal_entry_lines_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
             referencedRelation: "departments"
             referencedColumns: ["id"]
           },
@@ -4122,6 +4157,13 @@ export type Database = {
             foreignKeyName: "linen_inventory_department_id_fkey"
             columns: ["department_id"]
             isOneToOne: false
+            referencedRelation: "department_satisfaction_summary"
+            referencedColumns: ["department_id"]
+          },
+          {
+            foreignKeyName: "linen_inventory_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
             referencedRelation: "departments"
             referencedColumns: ["id"]
           },
@@ -4198,6 +4240,13 @@ export type Database = {
           warranty_expiry?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "maintenance_assets_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "department_satisfaction_summary"
+            referencedColumns: ["department_id"]
+          },
           {
             foreignKeyName: "maintenance_assets_department_id_fkey"
             columns: ["department_id"]
@@ -6066,6 +6115,13 @@ export type Database = {
             foreignKeyName: "positions_department_id_fkey"
             columns: ["department_id"]
             isOneToOne: false
+            referencedRelation: "department_satisfaction_summary"
+            referencedColumns: ["department_id"]
+          },
+          {
+            foreignKeyName: "positions_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
             referencedRelation: "departments"
             referencedColumns: ["id"]
           },
@@ -6548,6 +6604,13 @@ export type Database = {
             foreignKeyName: "quality_indicators_responsible_department_fkey"
             columns: ["responsible_department"]
             isOneToOne: false
+            referencedRelation: "department_satisfaction_summary"
+            referencedColumns: ["department_id"]
+          },
+          {
+            foreignKeyName: "quality_indicators_responsible_department_fkey"
+            columns: ["responsible_department"]
+            isOneToOne: false
             referencedRelation: "departments"
             referencedColumns: ["id"]
           },
@@ -6611,6 +6674,13 @@ export type Database = {
             foreignKeyName: "quality_measurements_department_id_fkey"
             columns: ["department_id"]
             isOneToOne: false
+            referencedRelation: "department_satisfaction_summary"
+            referencedColumns: ["department_id"]
+          },
+          {
+            foreignKeyName: "quality_measurements_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
             referencedRelation: "departments"
             referencedColumns: ["id"]
           },
@@ -6662,6 +6732,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "queue_display_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "department_satisfaction_summary"
+            referencedColumns: ["department_id"]
+          },
           {
             foreignKeyName: "queue_display_department_id_fkey"
             columns: ["department_id"]
@@ -6730,6 +6807,13 @@ export type Database = {
           visit_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "queue_tickets_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "department_satisfaction_summary"
+            referencedColumns: ["department_id"]
+          },
           {
             foreignKeyName: "queue_tickets_department_id_fkey"
             columns: ["department_id"]
@@ -7101,6 +7185,13 @@ export type Database = {
             foreignKeyName: "rooms_department_id_fkey"
             columns: ["department_id"]
             isOneToOne: false
+            referencedRelation: "department_satisfaction_summary"
+            referencedColumns: ["department_id"]
+          },
+          {
+            foreignKeyName: "rooms_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
             referencedRelation: "departments"
             referencedColumns: ["id"]
           },
@@ -7198,6 +7289,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "safety_incidents_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "department_satisfaction_summary"
+            referencedColumns: ["department_id"]
           },
           {
             foreignKeyName: "safety_incidents_department_id_fkey"
@@ -7495,6 +7593,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "service_tariffs_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "department_satisfaction_summary"
+            referencedColumns: ["department_id"]
+          },
           {
             foreignKeyName: "service_tariffs_department_id_fkey"
             columns: ["department_id"]
@@ -8005,6 +8110,219 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      survey_answers: {
+        Row: {
+          created_at: string
+          id: string
+          question_id: string
+          rating_value: number | null
+          response_id: string
+          selected_options: Json | null
+          text_value: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          question_id: string
+          rating_value?: number | null
+          response_id: string
+          selected_options?: Json | null
+          text_value?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          question_id?: string
+          rating_value?: number | null
+          response_id?: string
+          selected_options?: Json | null
+          text_value?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "survey_answers_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "survey_questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "survey_answers_response_id_fkey"
+            columns: ["response_id"]
+            isOneToOne: false
+            referencedRelation: "survey_responses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      survey_questions: {
+        Row: {
+          created_at: string
+          display_order: number
+          id: string
+          is_required: boolean
+          max_rating: number | null
+          options: Json | null
+          question_code: string
+          question_text: string
+          question_type: string
+          template_id: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_required?: boolean
+          max_rating?: number | null
+          options?: Json | null
+          question_code: string
+          question_text: string
+          question_type?: string
+          template_id: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_required?: boolean
+          max_rating?: number | null
+          options?: Json | null
+          question_code?: string
+          question_text?: string
+          question_type?: string
+          template_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "survey_questions_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "survey_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      survey_responses: {
+        Row: {
+          created_at: string
+          department_id: string | null
+          doctor_id: string | null
+          feedback_notes: string | null
+          id: string
+          nps_score: number | null
+          overall_score: number | null
+          patient_id: string | null
+          response_date: string
+          status: string
+          template_id: string
+          visit_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          department_id?: string | null
+          doctor_id?: string | null
+          feedback_notes?: string | null
+          id?: string
+          nps_score?: number | null
+          overall_score?: number | null
+          patient_id?: string | null
+          response_date?: string
+          status?: string
+          template_id: string
+          visit_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          department_id?: string | null
+          doctor_id?: string | null
+          feedback_notes?: string | null
+          id?: string
+          nps_score?: number | null
+          overall_score?: number | null
+          patient_id?: string | null
+          response_date?: string
+          status?: string
+          template_id?: string
+          visit_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "survey_responses_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "department_satisfaction_summary"
+            referencedColumns: ["department_id"]
+          },
+          {
+            foreignKeyName: "survey_responses_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "survey_responses_doctor_id_fkey"
+            columns: ["doctor_id"]
+            isOneToOne: false
+            referencedRelation: "doctors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "survey_responses_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "survey_responses_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "survey_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "survey_responses_visit_id_fkey"
+            columns: ["visit_id"]
+            isOneToOne: false
+            referencedRelation: "visits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      survey_templates: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          survey_type: string
+          template_code: string
+          template_name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          survey_type?: string
+          template_code: string
+          template_name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          survey_type?: string
+          template_code?: string
+          template_name?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       system_settings: {
         Row: {
@@ -9073,6 +9391,13 @@ export type Database = {
             foreignKeyName: "visits_department_id_fkey"
             columns: ["department_id"]
             isOneToOne: false
+            referencedRelation: "department_satisfaction_summary"
+            referencedColumns: ["department_id"]
+          },
+          {
+            foreignKeyName: "visits_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
             referencedRelation: "departments"
             referencedColumns: ["id"]
           },
@@ -9384,6 +9709,13 @@ export type Database = {
             foreignKeyName: "waste_collections_department_id_fkey"
             columns: ["department_id"]
             isOneToOne: false
+            referencedRelation: "department_satisfaction_summary"
+            referencedColumns: ["department_id"]
+          },
+          {
+            foreignKeyName: "waste_collections_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
             referencedRelation: "departments"
             referencedColumns: ["id"]
           },
@@ -9499,9 +9831,36 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      department_satisfaction_summary: {
+        Row: {
+          avg_satisfaction: number | null
+          department_id: string | null
+          department_name: string | null
+          detractors: number | null
+          nps_score: number | null
+          passives: number | null
+          promoters: number | null
+          total_responses: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      calculate_satisfaction_score: {
+        Args: {
+          p_department_id?: string
+          p_end_date?: string
+          p_start_date?: string
+        }
+        Returns: {
+          avg_score: number
+          detractors: number
+          nps_score: number
+          passives: number
+          promoters: number
+          total_responses: number
+        }[]
+      }
       generate_claim_number: { Args: never; Returns: string }
       generate_consent_number: { Args: never; Returns: string }
       generate_dialysis_session_number: { Args: never; Returns: string }
