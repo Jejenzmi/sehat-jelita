@@ -16,6 +16,16 @@ export interface PatientData {
   alamat?: string;
 }
 
+// Helper function to map database gender to BPJS format
+function mapGenderToBPJS(gender: string | null | undefined): "L" | "P" {
+  if (!gender) return "L";
+  const lowerGender = gender.toLowerCase();
+  if (lowerGender === "laki-laki" || lowerGender === "l" || lowerGender === "male") {
+    return "L";
+  }
+  return "P";
+}
+
 export interface EncounterData {
   id: string;
   noSep: string;
@@ -303,7 +313,7 @@ export function useBuildAndSendMedicalRecord() {
           nomorKartu: visit.patients?.bpjs_number || "",
           nik: visit.patients?.nik || "",
           nama: visit.patients?.full_name || "",
-          jenisKelamin: visit.patients?.gender === "Laki-laki" ? "L" : "P",
+          jenisKelamin: mapGenderToBPJS(visit.patients?.gender),
           tanggalLahir: visit.patients?.birth_date || "",
           alamat: visit.patients?.address,
         },
