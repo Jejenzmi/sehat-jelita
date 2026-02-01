@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, ReactNode } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -22,37 +22,78 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [roles, setRoles] = useState<AppRole[]>([]);
+  const lastRolesUserIdRef = useRef<string | null>(null);
 
   useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        // Fetch roles after auth state changes
-        if (session?.user) {
-          setTimeout(() => {
-            fetchUserRoles(session.user.id);
-          }, 0);
-        } else {
-          setRoles([]);
-        }
-      }
-    );
+    let cancelled = false;
 
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchUserRoles(session.user.id);
-      }
-      setLoading(false);
+    // Listener FIRST (synchronous state updates only)
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      setSession(nextSession);
+      setUser(nextSession?.user ?? null);
     });
 
-    return () => subscription.unsubscribe();
+    // THEN validate existing session before releasing loading state
+    const initialize = async () => {
+      try {
+        const {
+          data: { session: initialSession },
+        } = await supabase.auth.getSession();
+
+        let validatedSession: Session | null = initialSession;
+        let validatedUser: User | null = initialSession?.user ?? null;
+
+        // If there is a stored session, validate it (prevents UI "flash" on expired tokens)
+        if (initialSession) {
+          const {
+            data: { user: verifiedUser },
+            error,
+          } = await supabase.auth.getUser();
+
+          if (error || !verifiedUser) {
+            validatedSession = null;
+            validatedUser = null;
+          } else {
+            validatedUser = verifiedUser;
+          }
+        }
+
+        if (cancelled) return;
+
+        setSession(validatedSession);
+        setUser(validatedUser);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    initialize();
+
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
   }, []);
+
+  // Fetch roles when user changes (keeps auth listener callback clean)
+  useEffect(() => {
+    if (!user) {
+      lastRolesUserIdRef.current = null;
+      setRoles([]);
+      return;
+    }
+
+    if (lastRolesUserIdRef.current === user.id) return;
+    lastRolesUserIdRef.current = user.id;
+
+    // Defer DB call to avoid coupling with auth state updates
+    const id = user.id;
+    setTimeout(() => {
+      fetchUserRoles(id);
+    }, 0);
+  }, [user]);
 
   const fetchUserRoles = async (userId: string) => {
     try {
