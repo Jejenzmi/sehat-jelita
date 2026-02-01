@@ -31,6 +31,7 @@ import Telemedicine from "./pages/Telemedicine";
 import Inventory from "./pages/Inventory";
 import SDM from "./pages/SDM";
 import MasterData from "./pages/MasterData";
+import ManajemenUser from "./pages/ManajemenUser";
 import Pengaturan from "./pages/Pengaturan";
 import KamarOperasi from "./pages/KamarOperasi";
 import ICU from "./pages/ICU";
@@ -218,6 +219,14 @@ const App = () => (
               element={
                 <ProtectedPageWithLayout>
                   <MasterData />
+                </ProtectedPageWithLayout>
+              }
+            />
+            <Route
+              path="/manajemen-user"
+              element={
+                <ProtectedPageWithLayout>
+                  <ManajemenUser />
                 </ProtectedPageWithLayout>
               }
             />
