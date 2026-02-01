@@ -29,6 +29,10 @@ import {
   CalendarDays,
   Video,
   BarChart3,
+  UtensilsCrossed,
+  Activity,
+  ClipboardCheck,
+  Skull,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import zenLogo from "@/assets/zen-logo.webp";
@@ -78,6 +82,10 @@ const allNavigationGroups: NavGroup[] = [
       { icon: Radio, label: "Radiologi", path: "/radiologi" },
       { icon: Droplet, label: "Hemodialisa", path: "/hemodialisa" },
       { icon: Droplet, label: "Bank Darah", path: "/bank-darah", badge: "BDRS" },
+      { icon: UtensilsCrossed, label: "Gizi", path: "/gizi" },
+      { icon: Activity, label: "Rehabilitasi", path: "/rehabilitasi" },
+      { icon: ClipboardCheck, label: "Medical Check Up", path: "/mcu" },
+      { icon: Skull, label: "Forensik", path: "/forensik" },
     ],
   },
   {

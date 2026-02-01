@@ -36,6 +36,10 @@ import KamarOperasi from "./pages/KamarOperasi";
 import ICU from "./pages/ICU";
 import Hemodialisa from "./pages/Hemodialisa";
 import BankDarah from "./pages/BankDarah";
+import Gizi from "./pages/Gizi";
+import Rehabilitasi from "./pages/Rehabilitasi";
+import MCU from "./pages/MCU";
+import Forensik from "./pages/Forensik";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -275,6 +279,38 @@ const App = () => (
               element={
                 <ProtectedPageWithLayout>
                   <BankDarah />
+                </ProtectedPageWithLayout>
+              }
+            />
+            <Route
+              path="/gizi"
+              element={
+                <ProtectedPageWithLayout>
+                  <Gizi />
+                </ProtectedPageWithLayout>
+              }
+            />
+            <Route
+              path="/rehabilitasi"
+              element={
+                <ProtectedPageWithLayout>
+                  <Rehabilitasi />
+                </ProtectedPageWithLayout>
+              }
+            />
+            <Route
+              path="/mcu"
+              element={
+                <ProtectedPageWithLayout>
+                  <MCU />
+                </ProtectedPageWithLayout>
+              }
+            />
+            <Route
+              path="/forensik"
+              element={
+                <ProtectedPageWithLayout>
+                  <Forensik />
                 </ProtectedPageWithLayout>
               }
             />
