@@ -1398,6 +1398,8 @@ export type Database = {
           status: string
           template_id: string
           updated_at: string
+          validated_at: string | null
+          validated_by: string | null
           visit_id: string
         }
         Insert: {
@@ -1416,6 +1418,8 @@ export type Database = {
           status?: string
           template_id: string
           updated_at?: string
+          validated_at?: string | null
+          validated_by?: string | null
           visit_id: string
         }
         Update: {
@@ -1434,6 +1438,8 @@ export type Database = {
           status?: string
           template_id?: string
           updated_at?: string
+          validated_at?: string | null
+          validated_by?: string | null
           visit_id?: string
         }
         Relationships: [
@@ -2656,6 +2662,8 @@ export type Database = {
           status: string
           template_id: string
           updated_at: string
+          validated_at: string | null
+          validated_by: string | null
           visit_id: string
         }
         Insert: {
@@ -2681,6 +2689,8 @@ export type Database = {
           status?: string
           template_id: string
           updated_at?: string
+          validated_at?: string | null
+          validated_by?: string | null
           visit_id: string
         }
         Update: {
@@ -2706,6 +2716,8 @@ export type Database = {
           status?: string
           template_id?: string
           updated_at?: string
+          validated_at?: string | null
+          validated_by?: string | null
           visit_id?: string
         }
         Relationships: [
