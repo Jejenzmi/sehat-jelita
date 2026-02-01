@@ -32,6 +32,7 @@ import Inventory from "./pages/Inventory";
 import SDM from "./pages/SDM";
 import MasterData from "./pages/MasterData";
 import Pengaturan from "./pages/Pengaturan";
+import KamarOperasi from "./pages/KamarOperasi";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -239,6 +240,14 @@ const App = () => (
               element={
                 <ProtectedPageWithLayout>
                   <Telemedicine />
+                </ProtectedPageWithLayout>
+              }
+            />
+            <Route
+              path="/kamar-operasi"
+              element={
+                <ProtectedPageWithLayout>
+                  <KamarOperasi />
                 </ProtectedPageWithLayout>
               }
             />
