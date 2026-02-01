@@ -599,6 +599,128 @@ serve(async (req) => {
         break;
       }
 
+      // ==================== RUJUKAN ====================
+      case "insert_rujukan": {
+        const response = await fetch(`${baseUrl}/Rujukan/insert`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ request: { t_rujukan: data } }),
+        });
+        result = await response.json();
+        break;
+      }
+
+      case "update_rujukan": {
+        const response = await fetch(`${baseUrl}/Rujukan/update`, {
+          method: "PUT",
+          headers,
+          body: JSON.stringify({ request: { t_rujukan: data } }),
+        });
+        result = await response.json();
+        break;
+      }
+
+      case "delete_rujukan": {
+        const { noRujukan, user } = data;
+        const response = await fetch(`${baseUrl}/Rujukan/delete`, {
+          method: "DELETE",
+          headers,
+          body: JSON.stringify({ request: { t_rujukan: { noRujukan, user } } }),
+        });
+        result = await response.json();
+        break;
+      }
+
+      case "insert_rujukan_khusus": {
+        const response = await fetch(`${baseUrl}/Rujukan/Khusus/insert`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify(data),
+        });
+        result = await response.json();
+        break;
+      }
+
+      case "delete_rujukan_khusus": {
+        const response = await fetch(`${baseUrl}/Rujukan/Khusus/delete`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ request: { t_rujukan: data } }),
+        });
+        result = await response.json();
+        break;
+      }
+
+      case "list_rujukan_khusus": {
+        const { bulan, tahun } = data;
+        const response = await fetch(
+          `${baseUrl}/Rujukan/Khusus/List/Bulan/${bulan}/Tahun/${tahun}`,
+          { method: "GET", headers }
+        );
+        result = await response.json();
+        break;
+      }
+
+      case "insert_rujukan_v2": {
+        const response = await fetch(`${baseUrl}/Rujukan/2.0/insert`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ request: { t_rujukan: data } }),
+        });
+        result = await response.json();
+        break;
+      }
+
+      case "list_spesialistik_rujukan": {
+        const { ppkRujukan, tglRujukan } = data;
+        const response = await fetch(
+          `${baseUrl}/Rujukan/ListSpesialistik/PPKRujukan/${ppkRujukan}/TglRujukan/${tglRujukan}`,
+          { method: "GET", headers }
+        );
+        result = await response.json();
+        break;
+      }
+
+      case "list_sarana_rujukan": {
+        const { ppkRujukan } = data;
+        const response = await fetch(
+          `${baseUrl}/Rujukan/ListSarana/PPKRujukan/${ppkRujukan}`,
+          { method: "GET", headers }
+        );
+        result = await response.json();
+        break;
+      }
+
+      case "list_rujukan_keluar": {
+        const { tglMulai, tglAkhir } = data;
+        const response = await fetch(
+          `${baseUrl}/Rujukan/Keluar/List/tglMulai/${tglMulai}/tglAkhir/${tglAkhir}`,
+          { method: "GET", headers }
+        );
+        result = await response.json();
+        break;
+      }
+
+      case "get_rujukan_keluar": {
+        const { noRujukan } = data;
+        const response = await fetch(
+          `${baseUrl}/Rujukan/Keluar/${noRujukan}`,
+          { method: "GET", headers }
+        );
+        result = await response.json();
+        break;
+      }
+
+      case "get_jumlah_sep_rujukan": {
+        const { jnsRujukan, noRujukan } = data;
+        const response = await fetch(
+          `${baseUrl}/Rujukan/JumlahSEP/${jnsRujukan}/${noRujukan}`,
+          { method: "GET", headers }
+        );
+        result = await response.json();
+        break;
+      }
+
       default:
         return new Response(
           JSON.stringify({ error: `Invalid action: ${action}` }),

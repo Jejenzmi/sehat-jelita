@@ -752,3 +752,211 @@ export function useJadwalPraktekDokter() {
     },
   });
 }
+
+// ==================== RUJUKAN ====================
+export function useInsertRujukan() {
+  const { toast } = useToast();
+  
+  return useMutation({
+    mutationFn: async (rujukanData: any) => {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
+        body: { action: "insert_rujukan", data: rujukanData },
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      if (data?.metaData?.code === "200") {
+        toast({ title: "Rujukan berhasil dibuat", description: `No Rujukan: ${data.response?.rujukan?.noRujukan}` });
+      } else {
+        toast({ title: "Gagal membuat Rujukan", description: data?.metaData?.message, variant: "destructive" });
+      }
+    },
+    onError: (error: Error) => {
+      toast({ title: "Gagal membuat Rujukan", description: error.message, variant: "destructive" });
+    },
+  });
+}
+
+export function useUpdateRujukan() {
+  const { toast } = useToast();
+  
+  return useMutation({
+    mutationFn: async (rujukanData: any) => {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
+        body: { action: "update_rujukan", data: rujukanData },
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      if (data?.metaData?.code === "200") {
+        toast({ title: "Rujukan berhasil diupdate" });
+      } else {
+        toast({ title: "Gagal update Rujukan", description: data?.metaData?.message, variant: "destructive" });
+      }
+    },
+  });
+}
+
+export function useDeleteRujukan() {
+  const { toast } = useToast();
+  
+  return useMutation({
+    mutationFn: async ({ noRujukan, user }: { noRujukan: string; user: string }) => {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
+        body: { action: "delete_rujukan", data: { noRujukan, user } },
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      if (data?.metaData?.code === "200") {
+        toast({ title: "Rujukan berhasil dihapus" });
+      } else {
+        toast({ title: "Gagal menghapus Rujukan", description: data?.metaData?.message, variant: "destructive" });
+      }
+    },
+  });
+}
+
+export function useInsertRujukanKhusus() {
+  const { toast } = useToast();
+  
+  return useMutation({
+    mutationFn: async (rujukanData: any) => {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
+        body: { action: "insert_rujukan_khusus", data: rujukanData },
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      if (data?.metaData?.code === "200") {
+        toast({ title: "Rujukan Khusus berhasil dibuat" });
+      } else {
+        toast({ title: "Gagal membuat Rujukan Khusus", description: data?.metaData?.message, variant: "destructive" });
+      }
+    },
+    onError: (error: Error) => {
+      toast({ title: "Gagal membuat Rujukan Khusus", description: error.message, variant: "destructive" });
+    },
+  });
+}
+
+export function useDeleteRujukanKhusus() {
+  const { toast } = useToast();
+  
+  return useMutation({
+    mutationFn: async (rujukanData: { idRujukan: string; noRujukan: string; user: string }) => {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
+        body: { action: "delete_rujukan_khusus", data: rujukanData },
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      if (data?.metaData?.code === "200") {
+        toast({ title: "Rujukan Khusus berhasil dihapus" });
+      } else {
+        toast({ title: "Gagal menghapus Rujukan Khusus", description: data?.metaData?.message, variant: "destructive" });
+      }
+    },
+  });
+}
+
+export function useListRujukanKhusus() {
+  return useMutation({
+    mutationFn: async ({ bulan, tahun }: { bulan: string; tahun: string }) => {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
+        body: { action: "list_rujukan_khusus", data: { bulan, tahun } },
+      });
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export function useInsertRujukanV2() {
+  const { toast } = useToast();
+  
+  return useMutation({
+    mutationFn: async (rujukanData: any) => {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
+        body: { action: "insert_rujukan_v2", data: rujukanData },
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      if (data?.metaData?.code === "200") {
+        toast({ title: "Rujukan 2.0 berhasil dibuat", description: `No Rujukan: ${data.response?.rujukan?.noRujukan}` });
+      } else {
+        toast({ title: "Gagal membuat Rujukan 2.0", description: data?.metaData?.message, variant: "destructive" });
+      }
+    },
+    onError: (error: Error) => {
+      toast({ title: "Gagal membuat Rujukan 2.0", description: error.message, variant: "destructive" });
+    },
+  });
+}
+
+export function useListSpesialistikRujukan() {
+  return useMutation({
+    mutationFn: async ({ ppkRujukan, tglRujukan }: { ppkRujukan: string; tglRujukan: string }) => {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
+        body: { action: "list_spesialistik_rujukan", data: { ppkRujukan, tglRujukan } },
+      });
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export function useListSaranaRujukan() {
+  return useMutation({
+    mutationFn: async (ppkRujukan: string) => {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
+        body: { action: "list_sarana_rujukan", data: { ppkRujukan } },
+      });
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export function useListRujukanKeluar() {
+  return useMutation({
+    mutationFn: async ({ tglMulai, tglAkhir }: { tglMulai: string; tglAkhir: string }) => {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
+        body: { action: "list_rujukan_keluar", data: { tglMulai, tglAkhir } },
+      });
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export function useGetRujukanKeluar() {
+  return useMutation({
+    mutationFn: async (noRujukan: string) => {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
+        body: { action: "get_rujukan_keluar", data: { noRujukan } },
+      });
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export function useGetJumlahSEPRujukan() {
+  return useMutation({
+    mutationFn: async ({ jnsRujukan, noRujukan }: { jnsRujukan: string; noRujukan: string }) => {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
+        body: { action: "get_jumlah_sep_rujukan", data: { jnsRujukan, noRujukan } },
+      });
+      if (error) throw error;
+      return data;
+    },
+  });
+}
