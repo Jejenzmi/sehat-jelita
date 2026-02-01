@@ -25,6 +25,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { PatientFormFields } from "@/components/forms/PatientFormFields";
 
 interface Patient {
   id: string;
@@ -94,15 +95,36 @@ export default function Pendaftaran() {
     chief_complaint: "",
   });
 
-  // New patient form
+  // New patient form - using standardized form data
   const [newPatientData, setNewPatientData] = useState({
     nik: "",
     full_name: "",
     birth_date: "",
+    birth_place: "",
     gender: "" as "L" | "P" | "",
+    blood_type: "",
+    religion: "",
+    marital_status: "",
+    education_level: "",
+    occupation: "",
+    nationality: "Indonesia",
+    mother_name: "",
     phone: "",
+    email: "",
     address: "",
+    rt: "",
+    rw: "",
+    kelurahan: "",
+    kecamatan: "",
+    kabupaten: "",
+    city: "",
+    province: "",
+    postal_code: "",
     bpjs_number: "",
+    emergency_contact_name: "",
+    emergency_contact_phone: "",
+    emergency_contact_relation: "",
+    allergy_notes: "",
   });
 
   useEffect(() => {
@@ -283,10 +305,31 @@ export default function Pendaftaran() {
             nik: newPatientData.nik,
             full_name: newPatientData.full_name,
             birth_date: newPatientData.birth_date,
+            birth_place: newPatientData.birth_place || null,
             gender: newPatientData.gender as "L" | "P",
+            blood_type: newPatientData.blood_type || null,
+            religion: newPatientData.religion || null,
+            marital_status: newPatientData.marital_status || null,
+            education_level: newPatientData.education_level || null,
+            occupation: newPatientData.occupation || null,
+            nationality: newPatientData.nationality || "Indonesia",
+            mother_name: newPatientData.mother_name || null,
             phone: newPatientData.phone || null,
+            email: newPatientData.email || null,
             address: newPatientData.address || null,
+            rt: newPatientData.rt || null,
+            rw: newPatientData.rw || null,
+            kelurahan: newPatientData.kelurahan || null,
+            kecamatan: newPatientData.kecamatan || null,
+            kabupaten: newPatientData.kabupaten || null,
+            city: newPatientData.city || null,
+            province: newPatientData.province || null,
+            postal_code: newPatientData.postal_code || null,
             bpjs_number: newPatientData.bpjs_number || null,
+            emergency_contact_name: newPatientData.emergency_contact_name || null,
+            emergency_contact_phone: newPatientData.emergency_contact_phone || null,
+            emergency_contact_relation: newPatientData.emergency_contact_relation || null,
+            allergy_notes: newPatientData.allergy_notes || null,
           })
           .select()
           .single();
@@ -353,10 +396,31 @@ export default function Pendaftaran() {
       nik: "",
       full_name: "",
       birth_date: "",
+      birth_place: "",
       gender: "",
+      blood_type: "",
+      religion: "",
+      marital_status: "",
+      education_level: "",
+      occupation: "",
+      nationality: "Indonesia",
+      mother_name: "",
       phone: "",
+      email: "",
       address: "",
+      rt: "",
+      rw: "",
+      kelurahan: "",
+      kecamatan: "",
+      kabupaten: "",
+      city: "",
+      province: "",
+      postal_code: "",
       bpjs_number: "",
+      emergency_contact_name: "",
+      emergency_contact_phone: "",
+      emergency_contact_relation: "",
+      allergy_notes: "",
     });
     setSelectedPatient(null);
     setSearchTerm("");
@@ -486,77 +550,12 @@ export default function Pendaftaran() {
                 )}
               </TabsContent>
 
-              <TabsContent value="new" className="space-y-4 mt-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>NIK *</Label>
-                    <Input
-                      placeholder="16 digit NIK"
-                      value={newPatientData.nik}
-                      onChange={(e) => setNewPatientData({ ...newPatientData, nik: e.target.value })}
-                      maxLength={16}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>No. BPJS</Label>
-                    <Input
-                      placeholder="Opsional"
-                      value={newPatientData.bpjs_number}
-                      onChange={(e) => setNewPatientData({ ...newPatientData, bpjs_number: e.target.value })}
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Nama Lengkap *</Label>
-                    <Input
-                      placeholder="Nama sesuai KTP"
-                      value={newPatientData.full_name}
-                      onChange={(e) => setNewPatientData({ ...newPatientData, full_name: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Tanggal Lahir *</Label>
-                    <Input
-                      type="date"
-                      value={newPatientData.birth_date}
-                      onChange={(e) => setNewPatientData({ ...newPatientData, birth_date: e.target.value })}
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Jenis Kelamin *</Label>
-                    <Select
-                      value={newPatientData.gender}
-                      onValueChange={(value: "L" | "P") => setNewPatientData({ ...newPatientData, gender: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Pilih" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="L">Laki-laki</SelectItem>
-                        <SelectItem value="P">Perempuan</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>No. Telepon</Label>
-                    <Input
-                      placeholder="08xxxxxxxxxx"
-                      value={newPatientData.phone}
-                      onChange={(e) => setNewPatientData({ ...newPatientData, phone: e.target.value })}
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label>Alamat</Label>
-                  <Input
-                    placeholder="Alamat lengkap"
-                    value={newPatientData.address}
-                    onChange={(e) => setNewPatientData({ ...newPatientData, address: e.target.value })}
-                  />
-                </div>
+              <TabsContent value="new" className="mt-4">
+                <PatientFormFields 
+                  data={newPatientData as any} 
+                  onChange={(data) => setNewPatientData(data as any)} 
+                  compact={true} 
+                />
               </TabsContent>
             </Tabs>
 
