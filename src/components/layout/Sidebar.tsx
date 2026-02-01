@@ -98,11 +98,13 @@ export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
-  const { canViewPath, isLoading: loadingAccess } = useMenuAccess();
+  const { canViewPath, isLoading: loadingAccess, menuAccess } = useMenuAccess();
 
   // Filter navigation based on user access
+  // Show all menus while loading OR if no menu access data exists (user has no role yet)
   const navigationGroups = useMemo(() => {
-    if (loadingAccess) return allNavigationGroups; // Show all while loading
+    const hasNoRoleData = !loadingAccess && menuAccess.length === 0;
+    if (loadingAccess || hasNoRoleData) return allNavigationGroups;
     
     return allNavigationGroups
       .map(group => ({
@@ -110,7 +112,7 @@ export function Sidebar() {
         items: group.items.filter(item => canViewPath(item.path)),
       }))
       .filter(group => group.items.length > 0);
-  }, [canViewPath, loadingAccess]);
+  }, [canViewPath, loadingAccess, menuAccess]);
 
   return (
     <>
