@@ -10068,6 +10068,16 @@ export type Database = {
         | "laboratorium"
         | "radiologi"
         | "pendaftaran"
+        | "keuangan"
+        | "gizi"
+        | "icu"
+        | "bedah"
+        | "rehabilitasi"
+        | "mcu"
+        | "forensik"
+        | "cssd"
+        | "manajemen"
+        | "bank_darah"
       asa_classification:
         | "ASA_I"
         | "ASA_II"
@@ -10330,6 +10340,16 @@ export const Constants = {
         "laboratorium",
         "radiologi",
         "pendaftaran",
+        "keuangan",
+        "gizi",
+        "icu",
+        "bedah",
+        "rehabilitasi",
+        "mcu",
+        "forensik",
+        "cssd",
+        "manajemen",
+        "bank_darah",
       ],
       asa_classification: [
         "ASA_I",
