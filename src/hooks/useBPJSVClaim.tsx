@@ -960,3 +960,109 @@ export function useGetJumlahSEPRujukan() {
     },
   });
 }
+
+// ==================== SEP INTERNAL ====================
+export function useGetSEPInternal() {
+  return useMutation({
+    mutationFn: async (noSep: string) => {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
+        body: { action: "get_sep_internal", data: { noSep } },
+      });
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export function useDeleteSEPInternal() {
+  const { toast } = useToast();
+  
+  return useMutation({
+    mutationFn: async (sepInternalData: {
+      noSep: string;
+      noSurat: string;
+      tglRujukanInternal: string;
+      kdPoliTuj: string;
+      user: string;
+    }) => {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
+        body: { action: "delete_sep_internal", data: sepInternalData },
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      if (data?.metaData?.code === "200") {
+        toast({ title: "SEP Internal berhasil dihapus" });
+      } else {
+        toast({ title: "Gagal menghapus SEP Internal", description: data?.metaData?.message, variant: "destructive" });
+      }
+    },
+  });
+}
+
+// ==================== FINGER PRINT ====================
+export function useGetFingerPrint() {
+  return useMutation({
+    mutationFn: async ({ noKartu, tglPelayanan }: { noKartu: string; tglPelayanan: string }) => {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
+        body: { action: "get_finger_print", data: { noKartu, tglPelayanan } },
+      });
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export function useGetListFingerPrint() {
+  return useMutation({
+    mutationFn: async (tglPelayanan: string) => {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
+        body: { action: "get_list_finger_print", data: { tglPelayanan } },
+      });
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export function useGetFingerPrintRandomQuestion() {
+  return useMutation({
+    mutationFn: async ({ noKartu, tglSep }: { noKartu: string; tglSep: string }) => {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
+        body: { action: "get_finger_print_random_question", data: { noKartu, tglSep } },
+      });
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export function usePostFingerPrintRandomAnswer() {
+  const { toast } = useToast();
+  
+  return useMutation({
+    mutationFn: async (answerData: {
+      noKartu: string;
+      tglSep: string;
+      jenPel: string;
+      ppkPelSep: string;
+      tglLahir: string;
+      ppkPst: string;
+      user: string;
+    }) => {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
+        body: { action: "post_finger_print_random_answer", data: answerData },
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      if (data?.metaData?.code === "200") {
+        toast({ title: "Validasi fingerprint berhasil" });
+      } else {
+        toast({ title: "Gagal validasi fingerprint", description: data?.metaData?.message, variant: "destructive" });
+      }
+    },
+  });
+}

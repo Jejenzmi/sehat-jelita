@@ -721,6 +721,68 @@ serve(async (req) => {
         break;
       }
 
+      // ==================== SEP INTERNAL ====================
+      case "get_sep_internal": {
+        const { noSep } = data;
+        const response = await fetch(
+          `${baseUrl}/SEP/Internal/${noSep}`,
+          { method: "GET", headers }
+        );
+        result = await response.json();
+        break;
+      }
+
+      case "delete_sep_internal": {
+        const response = await fetch(`${baseUrl}/SEP/Internal/delete`, {
+          method: "DELETE",
+          headers,
+          body: JSON.stringify({ request: { t_sep: data } }),
+        });
+        result = await response.json();
+        break;
+      }
+
+      // ==================== FINGER PRINT ====================
+      case "get_finger_print": {
+        const { noKartu, tglPelayanan } = data;
+        const response = await fetch(
+          `${baseUrl}/SEP/FingerPrint/Peserta/${noKartu}/TglPelayanan/${tglPelayanan}`,
+          { method: "GET", headers }
+        );
+        result = await response.json();
+        break;
+      }
+
+      case "get_list_finger_print": {
+        const { tglPelayanan } = data;
+        const response = await fetch(
+          `${baseUrl}/SEP/FingerPrint/List/Peserta/TglPelayanan/${tglPelayanan}`,
+          { method: "GET", headers }
+        );
+        result = await response.json();
+        break;
+      }
+
+      case "get_finger_print_random_question": {
+        const { noKartu, tglSep } = data;
+        const response = await fetch(
+          `${baseUrl}/SEP/FingerPrint/randomquestion/faskesterdaftar/nokapst/${noKartu}/tglsep/${tglSep}`,
+          { method: "GET", headers }
+        );
+        result = await response.json();
+        break;
+      }
+
+      case "post_finger_print_random_answer": {
+        const response = await fetch(`${baseUrl}/SEP/FingerPrint/randomanswer`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ request: { t_sep: data } }),
+        });
+        result = await response.json();
+        break;
+      }
+
       default:
         return new Response(
           JSON.stringify({ error: `Invalid action: ${action}` }),
