@@ -1,4 +1,4 @@
-import { Users, Stethoscope, BedDouble, CreditCard, TrendingUp, TrendingDown, ShieldCheck, Loader2 } from "lucide-react";
+import { Users, Stethoscope, BedDouble, CreditCard, ShieldCheck, Loader2 } from "lucide-react";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { RecentPatients } from "@/components/dashboard/RecentPatients";
 import { ServiceChart } from "@/components/dashboard/ServiceChart";
@@ -20,16 +20,22 @@ export default function Dashboard() {
   const { data: stats, isLoading } = useDashboardStats();
   const { needsBootstrap, bootstrapAdmin, loading: bootstrapLoading, error: bootstrapError } = useBootstrapAdmin();
   const { roles } = useAuth();
-  const { canViewPath } = useMenuAccess();
+  const { canViewPath, menuAccess, isLoading: loadingAccess } = useMenuAccess();
 
-  // Determine which stats to show based on role
+  // Determine visibility based on menu access (not hardcoded roles)
   const isAdmin = roles.includes("admin");
-  const isManagement = roles.includes("manajemen") || isAdmin;
-  const isClinical = roles.some(r => ["dokter", "perawat", "icu", "bedah"].includes(r)) || isAdmin;
-  const isFinance = roles.some(r => ["kasir", "keuangan"].includes(r)) || isAdmin;
-  const showBPJS = canViewPath("/bpjs");
-  const showSatuSehat = canViewPath("/satu-sehat");
-  const showBedOccupancy = canViewPath("/rawat-inap") || isAdmin;
+  
+  // Stats visibility based on accessible paths
+  const canViewClinical = canViewPath("/rawat-jalan") || canViewPath("/rawat-inap") || canViewPath("/igd");
+  const canViewFinance = canViewPath("/billing") || canViewPath("/akuntansi");
+  const canViewBedOccupancy = canViewPath("/rawat-inap");
+  const canViewBPJS = canViewPath("/bpjs");
+  const canViewSatuSehat = canViewPath("/satu-sehat");
+  const canViewPatients = canViewPath("/pasien") || canViewPath("/pendaftaran") || canViewClinical;
+  const canViewExecutive = canViewPath("/dashboard-executive") || canViewPath("/laporan");
+
+  // Determine if user has minimal access (show at least something)
+  const hasAnyAccess = menuAccess.length > 0 || isAdmin;
 
   const formatCurrency = (amount: number) => {
     if (amount >= 1000000000) {
@@ -40,6 +46,18 @@ export default function Dashboard() {
     }
     return `Rp ${amount.toLocaleString("id-ID")}`;
   };
+
+  // Calculate grid columns based on visible stats
+  const visibleStats = [
+    canViewClinical || isAdmin, // Total visits
+    canViewClinical, // Outpatient
+    canViewBedOccupancy, // Inpatient
+    canViewFinance, // Revenue
+  ].filter(Boolean).length;
+
+  const gridCols = visibleStats === 4 ? "lg:grid-cols-4" : 
+                   visibleStats === 3 ? "lg:grid-cols-3" : 
+                   visibleStats === 2 ? "lg:grid-cols-2" : "";
 
   return (
     <div className="space-y-6">
@@ -81,102 +99,117 @@ export default function Dashboard() {
         </p>
       </div>
 
-      {/* Stats Overview - Show based on role */}
-      <div className={`grid grid-cols-1 sm:grid-cols-2 ${isManagement || isAdmin ? 'lg:grid-cols-4' : 'lg:grid-cols-2'} gap-4`}>
-        {/* Total Visits - Show to clinical, admin, management */}
-        {(isClinical || isManagement) && (
-          <div className="animate-slide-up delay-100">
-            {isLoading ? (
-              <Skeleton className="h-32" />
-            ) : (
-              <StatCard
-                title="Total Kunjungan Hari Ini"
-                value={stats?.totalVisitsToday?.toString() || "0"}
-                subtitle="Semua layanan"
-                icon={Users}
-                variant="primary"
-              />
-            )}
-          </div>
-        )}
-        
-        {/* Outpatient - Show to clinical staff */}
-        {isClinical && (
-          <div className="animate-slide-up delay-200">
-            {isLoading ? (
-              <Skeleton className="h-32" />
-            ) : (
-              <StatCard
-                title="Rawat Jalan"
-                value={stats?.outpatientToday?.toString() || "0"}
-                subtitle="Hari ini"
-                icon={Stethoscope}
-                variant="success"
-              />
-            )}
-          </div>
-        )}
-        
-        {/* Inpatient - Show to those with bed access */}
-        {showBedOccupancy && (
-          <div className="animate-slide-up delay-300">
-            {isLoading ? (
-              <Skeleton className="h-32" />
-            ) : (
-              <StatCard
-                title="Rawat Inap"
-                value={stats?.inpatientCount?.toString() || "0"}
-                subtitle={`${stats?.occupancyRate || 0}% okupansi`}
-                icon={BedDouble}
-                variant="warning"
-              />
-            )}
-          </div>
-        )}
-        
-        {/* Revenue - Show only to finance & management */}
-        {isFinance && (
-          <div className="animate-slide-up delay-400">
-            {isLoading ? (
-              <Skeleton className="h-32" />
-            ) : (
-              <StatCard
-                title="Pendapatan Hari Ini"
-                value={formatCurrency(stats?.revenueToday || 0)}
-                subtitle="BPJS & Umum"
-                icon={CreditCard}
-                variant="default"
-              />
-            )}
-          </div>
-        )}
-      </div>
+      {/* Stats Overview - Show based on menu access */}
+      {visibleStats > 0 && (
+        <div className={`grid grid-cols-1 sm:grid-cols-2 ${gridCols} gap-4`}>
+          {/* Total Visits - Show to clinical staff, admin, management */}
+          {(canViewClinical || isAdmin) && (
+            <div className="animate-slide-up delay-100">
+              {isLoading ? (
+                <Skeleton className="h-32" />
+              ) : (
+                <StatCard
+                  title="Total Kunjungan Hari Ini"
+                  value={stats?.totalVisitsToday?.toString() || "0"}
+                  subtitle="Semua layanan"
+                  icon={Users}
+                  variant="primary"
+                />
+              )}
+            </div>
+          )}
+          
+          {/* Outpatient - Show to clinical staff */}
+          {canViewClinical && (
+            <div className="animate-slide-up delay-200">
+              {isLoading ? (
+                <Skeleton className="h-32" />
+              ) : (
+                <StatCard
+                  title="Rawat Jalan"
+                  value={stats?.outpatientToday?.toString() || "0"}
+                  subtitle="Hari ini"
+                  icon={Stethoscope}
+                  variant="success"
+                />
+              )}
+            </div>
+          )}
+          
+          {/* Inpatient - Show to those with rawat-inap access */}
+          {canViewBedOccupancy && (
+            <div className="animate-slide-up delay-300">
+              {isLoading ? (
+                <Skeleton className="h-32" />
+              ) : (
+                <StatCard
+                  title="Rawat Inap"
+                  value={stats?.inpatientCount?.toString() || "0"}
+                  subtitle={`${stats?.occupancyRate || 0}% okupansi`}
+                  icon={BedDouble}
+                  variant="warning"
+                />
+              )}
+            </div>
+          )}
+          
+          {/* Revenue - Show only to finance staff */}
+          {canViewFinance && (
+            <div className="animate-slide-up delay-400">
+              {isLoading ? (
+                <Skeleton className="h-32" />
+              ) : (
+                <StatCard
+                  title="Pendapatan Hari Ini"
+                  value={formatCurrency(stats?.revenueToday || 0)}
+                  subtitle="BPJS & Umum"
+                  icon={CreditCard}
+                  variant="default"
+                />
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
-      {/* Quick Actions */}
+      {/* Quick Actions - Always show, filtered internally */}
       <div className="animate-slide-up delay-500">
         <QuickActions />
       </div>
 
-      {/* Main Content Grid - Adaptive based on role */}
-      <div className={`grid grid-cols-1 ${(showBPJS || showSatuSehat || showBedOccupancy) ? 'lg:grid-cols-3' : ''} gap-6`}>
-        {/* Left Column - Charts & Tables */}
-        <div className={`${(showBPJS || showSatuSehat || showBedOccupancy) ? 'lg:col-span-2' : ''} space-y-6`}>
-          {/* Service Chart - Show to management & clinical */}
-          {(isManagement || isClinical) && <ServiceChart />}
-          
-          {/* Recent Patients - Show to clinical staff & pendaftaran */}
-          {(isClinical || roles.includes("pendaftaran") || isAdmin) && <RecentPatients />}
-        </div>
-
-        {/* Right Column - Status Cards (only if user has access to any) */}
-        {(showBPJS || showSatuSehat || showBedOccupancy) && (
-          <div className="space-y-6">
-            {showBPJS && <BPJSStatus />}
-            {showSatuSehat && <SatuSehatStatus />}
-            {showBedOccupancy && <BedOccupancy />}
+      {/* Main Content Grid - Adaptive based on accessible features */}
+      {hasAnyAccess && (
+        <div className={`grid grid-cols-1 ${(canViewBPJS || canViewSatuSehat || canViewBedOccupancy) ? 'lg:grid-cols-3' : ''} gap-6`}>
+          {/* Left Column - Charts & Tables */}
+          <div className={`${(canViewBPJS || canViewSatuSehat || canViewBedOccupancy) ? 'lg:col-span-2' : ''} space-y-6`}>
+            {/* Service Chart - Show to executive/management and clinical staff */}
+            {(canViewExecutive || canViewClinical) && <ServiceChart />}
+            
+            {/* Recent Patients - Show to clinical staff & registration */}
+            {canViewPatients && <RecentPatients />}
           </div>
-        )}
-      </div>
+
+          {/* Right Column - Status Cards (only if user has access to any) */}
+          {(canViewBPJS || canViewSatuSehat || canViewBedOccupancy) && (
+            <div className="space-y-6">
+              {canViewBPJS && <BPJSStatus />}
+              {canViewSatuSehat && <SatuSehatStatus />}
+              {canViewBedOccupancy && <BedOccupancy />}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Empty state for users with no accessible features */}
+      {!hasAnyAccess && !loadingAccess && !needsBootstrap && (
+        <Card>
+          <CardContent className="py-12 text-center">
+            <p className="text-muted-foreground">
+              Anda belum memiliki akses ke modul manapun. Silakan hubungi administrator.
+            </p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
