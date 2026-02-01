@@ -2447,6 +2447,7 @@ export type Database = {
       }
       employees: {
         Row: {
+          academic_title: string | null
           address: string | null
           bank_account: string | null
           bank_name: string | null
@@ -2469,22 +2470,34 @@ export type Database = {
           grade_id: string | null
           id: string
           join_date: string
+          ktp_url: string | null
           last_education: string | null
           marital_status: string | null
+          nationality: string | null
           nik: string | null
           notes: string | null
           npwp: string | null
           phone: string | null
+          photo_url: string | null
           position: string
           position_id: string | null
           religion: string | null
           salary: number | null
+          satusehat_practitioner_id: string | null
+          sip_expiry_date: string | null
+          sip_number: string | null
+          sip_url: string | null
+          specialization: string | null
           status: string
+          str_expiry_date: string | null
+          str_number: string | null
+          str_url: string | null
           tax_status: string | null
           updated_at: string
           user_id: string | null
         }
         Insert: {
+          academic_title?: string | null
           address?: string | null
           bank_account?: string | null
           bank_name?: string | null
@@ -2507,22 +2520,34 @@ export type Database = {
           grade_id?: string | null
           id?: string
           join_date: string
+          ktp_url?: string | null
           last_education?: string | null
           marital_status?: string | null
+          nationality?: string | null
           nik?: string | null
           notes?: string | null
           npwp?: string | null
           phone?: string | null
+          photo_url?: string | null
           position: string
           position_id?: string | null
           religion?: string | null
           salary?: number | null
+          satusehat_practitioner_id?: string | null
+          sip_expiry_date?: string | null
+          sip_number?: string | null
+          sip_url?: string | null
+          specialization?: string | null
           status?: string
+          str_expiry_date?: string | null
+          str_number?: string | null
+          str_url?: string | null
           tax_status?: string | null
           updated_at?: string
           user_id?: string | null
         }
         Update: {
+          academic_title?: string | null
           address?: string | null
           bank_account?: string | null
           bank_name?: string | null
@@ -2545,17 +2570,28 @@ export type Database = {
           grade_id?: string | null
           id?: string
           join_date?: string
+          ktp_url?: string | null
           last_education?: string | null
           marital_status?: string | null
+          nationality?: string | null
           nik?: string | null
           notes?: string | null
           npwp?: string | null
           phone?: string | null
+          photo_url?: string | null
           position?: string
           position_id?: string | null
           religion?: string | null
           salary?: number | null
+          satusehat_practitioner_id?: string | null
+          sip_expiry_date?: string | null
+          sip_number?: string | null
+          sip_url?: string | null
+          specialization?: string | null
           status?: string
+          str_expiry_date?: string | null
+          str_number?: string | null
+          str_url?: string | null
           tax_status?: string | null
           updated_at?: string
           user_id?: string | null
@@ -5057,6 +5093,39 @@ export type Database = {
         }
         Relationships: []
       }
+      menu_access_templates: {
+        Row: {
+          can_create: boolean
+          can_delete: boolean
+          can_edit: boolean
+          can_view: boolean
+          created_at: string
+          id: string
+          menu_path: string
+          role: Database["public"]["Enums"]["app_role"]
+        }
+        Insert: {
+          can_create?: boolean
+          can_delete?: boolean
+          can_edit?: boolean
+          can_view?: boolean
+          created_at?: string
+          id?: string
+          menu_path: string
+          role: Database["public"]["Enums"]["app_role"]
+        }
+        Update: {
+          can_create?: boolean
+          can_delete?: boolean
+          can_edit?: boolean
+          can_view?: boolean
+          created_at?: string
+          id?: string
+          menu_path?: string
+          role?: Database["public"]["Enums"]["app_role"]
+        }
+        Relationships: []
+      }
       mortuary_cases: {
         Row: {
           admission_date: string
@@ -5707,6 +5776,7 @@ export type Database = {
           city: string | null
           created_at: string
           created_by: string | null
+          education_level: string | null
           email: string | null
           emergency_contact_name: string | null
           emergency_contact_phone: string | null
@@ -5714,11 +5784,21 @@ export type Database = {
           full_name: string
           gender: Database["public"]["Enums"]["gender_type"]
           id: string
+          kabupaten: string | null
+          kecamatan: string | null
+          kelurahan: string | null
+          marital_status: string | null
           medical_record_number: string
+          mother_name: string | null
+          nationality: string | null
           nik: string
+          occupation: string | null
           phone: string | null
           postal_code: string | null
           province: string | null
+          religion: string | null
+          rt: string | null
+          rw: string | null
           status: Database["public"]["Enums"]["patient_status"]
           updated_at: string
           user_id: string | null
@@ -5733,6 +5813,7 @@ export type Database = {
           city?: string | null
           created_at?: string
           created_by?: string | null
+          education_level?: string | null
           email?: string | null
           emergency_contact_name?: string | null
           emergency_contact_phone?: string | null
@@ -5740,11 +5821,21 @@ export type Database = {
           full_name: string
           gender: Database["public"]["Enums"]["gender_type"]
           id?: string
+          kabupaten?: string | null
+          kecamatan?: string | null
+          kelurahan?: string | null
+          marital_status?: string | null
           medical_record_number: string
+          mother_name?: string | null
+          nationality?: string | null
           nik: string
+          occupation?: string | null
           phone?: string | null
           postal_code?: string | null
           province?: string | null
+          religion?: string | null
+          rt?: string | null
+          rw?: string | null
           status?: Database["public"]["Enums"]["patient_status"]
           updated_at?: string
           user_id?: string | null
@@ -5759,6 +5850,7 @@ export type Database = {
           city?: string | null
           created_at?: string
           created_by?: string | null
+          education_level?: string | null
           email?: string | null
           emergency_contact_name?: string | null
           emergency_contact_phone?: string | null
@@ -5766,11 +5858,21 @@ export type Database = {
           full_name?: string
           gender?: Database["public"]["Enums"]["gender_type"]
           id?: string
+          kabupaten?: string | null
+          kecamatan?: string | null
+          kelurahan?: string | null
+          marital_status?: string | null
           medical_record_number?: string
+          mother_name?: string | null
+          nationality?: string | null
           nik?: string
+          occupation?: string | null
           phone?: string | null
           postal_code?: string | null
           province?: string | null
+          religion?: string | null
+          rt?: string | null
+          rw?: string | null
           status?: Database["public"]["Enums"]["patient_status"]
           updated_at?: string
           user_id?: string | null
@@ -9881,6 +9983,13 @@ export type Database = {
       }
     }
     Functions: {
+      apply_role_menu_access: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: undefined
+      }
       calculate_satisfaction_score: {
         Args: {
           p_department_id?: string

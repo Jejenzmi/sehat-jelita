@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,12 +13,19 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "@/hooks/use-toast";
 import { 
-  Users, Search, Shield, UserPlus, Pencil, Trash2, 
-  KeyRound, Check, X, Eye, EyeOff, Loader2
+  Users, Search, Shield, UserPlus, 
+  KeyRound, Check, X, Loader2, Eye, EyeOff
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
+import { 
+  UserFormFields, 
+  initialUserFormData, 
+  ALL_ROLES, 
+  ROLE_COLORS,
+  type UserFormData 
+} from "@/components/forms/UserFormFields";
 
 type AppRole = "admin" | "dokter" | "perawat" | "kasir" | "farmasi" | "laboratorium" | "radiologi" | "pendaftaran";
 
@@ -42,28 +48,6 @@ interface UserRole {
   role: AppRole;
   created_at: string;
 }
-
-const ALL_ROLES: { value: AppRole; label: string; description: string }[] = [
-  { value: "admin", label: "Administrator", description: "Akses penuh ke semua modul" },
-  { value: "dokter", label: "Dokter", description: "Pelayanan medis rawat jalan/inap" },
-  { value: "perawat", label: "Perawat", description: "Asistensi pelayanan medis" },
-  { value: "kasir", label: "Kasir", description: "Billing dan pembayaran" },
-  { value: "farmasi", label: "Farmasi", description: "Pengelolaan obat dan resep" },
-  { value: "laboratorium", label: "Laboratorium", description: "Pemeriksaan lab" },
-  { value: "radiologi", label: "Radiologi", description: "Pemeriksaan radiologi" },
-  { value: "pendaftaran", label: "Pendaftaran", description: "Registrasi pasien" },
-];
-
-const ROLE_COLORS: Record<AppRole, string> = {
-  admin: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
-  dokter: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
-  perawat: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
-  kasir: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
-  farmasi: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200",
-  laboratorium: "bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-200",
-  radiologi: "bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200",
-  pendaftaran: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200",
-};
 
 // Hook for fetching all user profiles
 function useUserProfiles() {
