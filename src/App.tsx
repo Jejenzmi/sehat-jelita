@@ -42,6 +42,7 @@ import MCU from "./pages/MCU";
 import Forensik from "./pages/Forensik";
 import Penunjang from "./pages/Penunjang";
 import Mutu from "./pages/Mutu";
+import Akuntansi from "./pages/Akuntansi";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -329,6 +330,14 @@ const App = () => (
               element={
                 <ProtectedPageWithLayout>
                   <Mutu />
+                </ProtectedPageWithLayout>
+              }
+            />
+            <Route
+              path="/akuntansi"
+              element={
+                <ProtectedPageWithLayout>
+                  <Akuntansi />
                 </ProtectedPageWithLayout>
               }
             />
