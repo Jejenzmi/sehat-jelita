@@ -1,4 +1,4 @@
-import { Users, Stethoscope, BedDouble, CreditCard, TrendingUp, TrendingDown } from "lucide-react";
+import { Users, Stethoscope, BedDouble, CreditCard, TrendingUp, TrendingDown, ShieldCheck, Loader2 } from "lucide-react";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { RecentPatients } from "@/components/dashboard/RecentPatients";
 import { ServiceChart } from "@/components/dashboard/ServiceChart";
@@ -8,9 +8,14 @@ import { QuickActions } from "@/components/dashboard/QuickActions";
 import { BedOccupancy } from "@/components/dashboard/BedOccupancy";
 import { useDashboardStats } from "@/hooks/useDashboardData";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useBootstrapAdmin } from "@/hooks/useBootstrapAdmin";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default function Dashboard() {
   const { data: stats, isLoading } = useDashboardStats();
+  const { needsBootstrap, bootstrapAdmin, loading: bootstrapLoading, error: bootstrapError } = useBootstrapAdmin();
 
   const formatCurrency = (amount: number) => {
     if (amount >= 1000000000) {
@@ -24,6 +29,33 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
+      {/* Bootstrap Admin Alert - shown if user has no role */}
+      {needsBootstrap && (
+        <Card className="border-warning bg-warning/10">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <ShieldCheck className="h-5 w-5 text-warning" />
+              Setup Admin Pertama
+            </CardTitle>
+            <CardDescription>
+              Anda belum memiliki role. Klik tombol di bawah untuk menjadi admin pertama.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {bootstrapError && (
+              <Alert variant="destructive">
+                <AlertTitle>Gagal</AlertTitle>
+                <AlertDescription>{bootstrapError}</AlertDescription>
+              </Alert>
+            )}
+            <Button onClick={bootstrapAdmin} disabled={bootstrapLoading}>
+              {bootstrapLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Jadikan Saya Admin
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Page Header */}
       <div className="animate-fade-in">
         <h1 className="text-2xl font-bold">Dashboard</h1>
