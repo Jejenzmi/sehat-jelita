@@ -1043,6 +1043,178 @@ export type Database = {
           },
         ]
       }
+      insurance_claims: {
+        Row: {
+          accident_date: string | null
+          accident_location: string | null
+          approval_date: string | null
+          approved_amount: number | null
+          approved_by: string | null
+          claim_amount: number
+          claim_date: string | null
+          claim_number: string
+          created_at: string | null
+          created_by: string | null
+          documents: Json | null
+          id: string
+          inacbg_code: string | null
+          inacbg_description: string | null
+          lp_number: string | null
+          notes: string | null
+          paid_amount: number | null
+          patient_id: string
+          patient_insurance_id: string
+          patient_responsibility: number | null
+          payment_date: string | null
+          police_report_number: string | null
+          priority_order: number | null
+          rejection_reason: string | null
+          sep_number: string | null
+          status: Database["public"]["Enums"]["insurance_claim_status"] | null
+          submission_date: string | null
+          updated_at: string | null
+          verification_date: string | null
+          verified_by: string | null
+          visit_id: string
+        }
+        Insert: {
+          accident_date?: string | null
+          accident_location?: string | null
+          approval_date?: string | null
+          approved_amount?: number | null
+          approved_by?: string | null
+          claim_amount: number
+          claim_date?: string | null
+          claim_number: string
+          created_at?: string | null
+          created_by?: string | null
+          documents?: Json | null
+          id?: string
+          inacbg_code?: string | null
+          inacbg_description?: string | null
+          lp_number?: string | null
+          notes?: string | null
+          paid_amount?: number | null
+          patient_id: string
+          patient_insurance_id: string
+          patient_responsibility?: number | null
+          payment_date?: string | null
+          police_report_number?: string | null
+          priority_order?: number | null
+          rejection_reason?: string | null
+          sep_number?: string | null
+          status?: Database["public"]["Enums"]["insurance_claim_status"] | null
+          submission_date?: string | null
+          updated_at?: string | null
+          verification_date?: string | null
+          verified_by?: string | null
+          visit_id: string
+        }
+        Update: {
+          accident_date?: string | null
+          accident_location?: string | null
+          approval_date?: string | null
+          approved_amount?: number | null
+          approved_by?: string | null
+          claim_amount?: number
+          claim_date?: string | null
+          claim_number?: string
+          created_at?: string | null
+          created_by?: string | null
+          documents?: Json | null
+          id?: string
+          inacbg_code?: string | null
+          inacbg_description?: string | null
+          lp_number?: string | null
+          notes?: string | null
+          paid_amount?: number | null
+          patient_id?: string
+          patient_insurance_id?: string
+          patient_responsibility?: number | null
+          payment_date?: string | null
+          police_report_number?: string | null
+          priority_order?: number | null
+          rejection_reason?: string | null
+          sep_number?: string | null
+          status?: Database["public"]["Enums"]["insurance_claim_status"] | null
+          submission_date?: string | null
+          updated_at?: string | null
+          verification_date?: string | null
+          verified_by?: string | null
+          visit_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "insurance_claims_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "insurance_claims_patient_insurance_id_fkey"
+            columns: ["patient_insurance_id"]
+            isOneToOne: false
+            referencedRelation: "patient_insurances"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "insurance_claims_visit_id_fkey"
+            columns: ["visit_id"]
+            isOneToOne: false
+            referencedRelation: "visits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      insurance_providers: {
+        Row: {
+          address: string | null
+          code: string
+          created_at: string | null
+          email: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          notes: string | null
+          phone: string | null
+          pic_name: string | null
+          pic_phone: string | null
+          type: Database["public"]["Enums"]["insurance_type"]
+          updated_at: string | null
+        }
+        Insert: {
+          address?: string | null
+          code: string
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          notes?: string | null
+          phone?: string | null
+          pic_name?: string | null
+          pic_phone?: string | null
+          type: Database["public"]["Enums"]["insurance_type"]
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string | null
+          code?: string
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          pic_name?: string | null
+          pic_phone?: string | null
+          type?: Database["public"]["Enums"]["insurance_type"]
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       inventory_settings: {
         Row: {
           auto_reorder_enabled: boolean | null
@@ -1517,6 +1689,75 @@ export type Database = {
           type?: string
         }
         Relationships: []
+      }
+      patient_insurances: {
+        Row: {
+          class: string | null
+          coverage_percentage: number | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          is_primary: boolean | null
+          max_coverage: number | null
+          member_id: string | null
+          notes: string | null
+          patient_id: string
+          policy_number: string
+          provider_id: string
+          updated_at: string | null
+          valid_from: string | null
+          valid_until: string | null
+        }
+        Insert: {
+          class?: string | null
+          coverage_percentage?: number | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_primary?: boolean | null
+          max_coverage?: number | null
+          member_id?: string | null
+          notes?: string | null
+          patient_id: string
+          policy_number: string
+          provider_id: string
+          updated_at?: string | null
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Update: {
+          class?: string | null
+          coverage_percentage?: number | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_primary?: boolean | null
+          max_coverage?: number | null
+          member_id?: string | null
+          notes?: string | null
+          patient_id?: string
+          policy_number?: string
+          provider_id?: string
+          updated_at?: string | null
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_insurances_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_insurances_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "insurance_providers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       patient_portal_sessions: {
         Row: {
@@ -2676,6 +2917,7 @@ export type Database = {
     Functions: {
       generate_claim_number: { Args: never; Returns: string }
       generate_employee_number: { Args: never; Returns: string }
+      generate_insurance_claim_number: { Args: never; Returns: string }
       generate_invoice_number: { Args: never; Returns: string }
       generate_lab_number: { Args: never; Returns: string }
       generate_medical_record_number: { Args: never; Returns: string }
@@ -2711,6 +2953,15 @@ export type Database = {
       billing_status: "pending" | "lunas" | "batal"
       claim_status: "draft" | "submitted" | "approved" | "rejected" | "paid"
       gender_type: "L" | "P"
+      insurance_claim_status:
+        | "draft"
+        | "submitted"
+        | "verified"
+        | "approved"
+        | "partial"
+        | "rejected"
+        | "paid"
+      insurance_type: "bpjs" | "jasa_raharja" | "private" | "corporate"
       patient_status: "aktif" | "non_aktif" | "meninggal"
       payment_type: "bpjs" | "umum" | "asuransi"
       prescription_status:
@@ -2863,6 +3114,16 @@ export const Constants = {
       billing_status: ["pending", "lunas", "batal"],
       claim_status: ["draft", "submitted", "approved", "rejected", "paid"],
       gender_type: ["L", "P"],
+      insurance_claim_status: [
+        "draft",
+        "submitted",
+        "verified",
+        "approved",
+        "partial",
+        "rejected",
+        "paid",
+      ],
+      insurance_type: ["bpjs", "jasa_raharja", "private", "corporate"],
       patient_status: ["aktif", "non_aktif", "meninggal"],
       payment_type: ["bpjs", "umum", "asuransi"],
       prescription_status: [

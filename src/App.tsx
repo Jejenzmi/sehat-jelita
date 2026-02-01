@@ -15,6 +15,7 @@ import Pasien from "./pages/Pasien";
 import RawatJalan from "./pages/RawatJalan";
 import Farmasi from "./pages/Farmasi";
 import BPJS from "./pages/BPJS";
+import Asuransi from "./pages/Asuransi";
 import SatuSehat from "./pages/SatuSehat";
 import Billing from "./pages/Billing";
 import IGD from "./pages/IGD";
@@ -114,6 +115,14 @@ const App = () => (
               element={
                 <ProtectedPageWithLayout>
                   <BPJS />
+                </ProtectedPageWithLayout>
+              }
+            />
+            <Route
+              path="/asuransi"
+              element={
+                <ProtectedPageWithLayout>
+                  <Asuransi />
                 </ProtectedPageWithLayout>
               }
             />
