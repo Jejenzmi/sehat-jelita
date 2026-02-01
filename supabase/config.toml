@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.bpjs-antrean]
 verify_jwt = false
+
+[functions.bpjs-eclaim]
+verify_jwt = false
