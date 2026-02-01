@@ -56,21 +56,55 @@ export interface ConditionData {
   description: string;
   type: "primary" | "secondary";
   onsetDate?: string;
+  patientRef?: string;
+}
+
+export interface ObservationData {
+  id: string;
+  status: string;
+  text?: string;
+  issued?: string;
+  effectiveDateTime?: string;
+  code: string;
+  display: string;
+  performerRef?: string;
+  performerName?: string;
+  conclusion?: string;
 }
 
 export interface DiagnosticReportData {
   id: string;
-  labCode: string;
-  labName: string;
-  tanggal: string;
-  hasil: any;
+  patientRef?: string;
+  patientName?: string;
+  noSep?: string;
+  category: "RAD" | "LAB" | "OTH";
+  categoryDisplay: string;
+  status: string;
+  performerRef?: string;
+  performerName?: string;
+  observations: ObservationData[];
 }
 
 export interface ProcedureData {
   id: string;
-  icd9Code: string;
-  description: string;
-  tanggal: string;
+  code: string;
+  display: string;
+  patientRef?: string;
+  patientName?: string;
+  encounterRef?: string;
+  encounterDisplay?: string;
+  performedStart: string;
+  performedEnd: string;
+  performerRef?: string;
+  performerName?: string;
+  performerRoleCode?: string;
+  performerRoleDisplay?: string;
+  reasonCode?: string;
+  bodySiteCode?: string;
+  bodySiteDisplay?: string;
+  deviceAction?: string;
+  deviceRef?: string;
+  note?: string;
 }
 
 export interface MedicationData {
@@ -84,9 +118,15 @@ export interface MedicationData {
 
 export interface DeviceData {
   id: string;
-  kode: string;
-  nama: string;
-  status: string;
+  code: string;
+  display: string;
+  lotNumber?: string;
+  manufacturer?: string;
+  manufactureDate?: string;
+  expirationDate?: string;
+  model?: string;
+  patientRef?: string;
+  contactPhone?: string;
 }
 
 export interface MedicalRecordBundleParams {
@@ -129,6 +169,181 @@ export function useInsertMedicalRecord() {
 
   return useMutation({
     mutationFn: async (params: MedicalRecordBundleParams) => {
+      // Build FHIR-compliant Condition resources
+      const conditionEntries = (params.conditions || []).map((c) => ({
+        resourceType: "Condition",
+        id: c.id,
+        clinicalStatus: "active",
+        verificationStatus: "confirmed",
+        category: [{
+          coding: [{
+            system: "http://hl7.org/fhir/condition-category",
+            code: "encounter-diagnosis",
+            display: "Encounter Diagnosis"
+          }]
+        }],
+        code: {
+          coding: [{
+            system: "http://hl7.org/fhir/sid/icd-10",
+            code: c.icd10Code,
+            display: c.description
+          }],
+          text: c.description
+        },
+        subject: {
+          reference: c.patientRef || `Patient/${params.patient.id}`
+        },
+        onsetDateTime: c.onsetDate,
+      }));
+
+      // Build FHIR-compliant DiagnosticReport resources
+      const diagnosticEntries = (params.diagnosticReports || []).map((r) => ({
+        resourceType: "DiagnosticReport",
+        id: r.id,
+        subject: {
+          reference: r.patientRef || `Patient/${params.patient.id}`,
+          display: r.patientName || params.patient.nama,
+          noSep: r.noSep || params.noSep
+        },
+        category: {
+          coding: {
+            system: "http://hl7.org/fhir/v2/0074",
+            code: r.category,
+            display: r.categoryDisplay
+          }
+        },
+        status: r.status,
+        performer: [{
+          reference: r.performerRef || `Organization/${params.organization.id}`,
+          display: r.performerName || params.organization.namaRS
+        }],
+        result: r.observations.map((obs) => ({
+          resourceType: "Observation",
+          id: obs.id,
+          status: obs.status,
+          text: obs.text ? {
+            status: "generated",
+            div: `<div>${obs.text}</div>`
+          } : undefined,
+          issued: obs.issued,
+          effectiveDateTime: obs.effectiveDateTime,
+          code: {
+            coding: {
+              system: "http://snomed.info/sct",
+              code: obs.code,
+              display: obs.display
+            },
+            text: obs.display
+          },
+          performer: obs.performerRef ? {
+            reference: obs.performerRef,
+            display: obs.performerName
+          } : undefined,
+          image: [{
+            comment: "",
+            link: { reference: "", display: "" }
+          }],
+          conclusion: obs.conclusion
+        }))
+      }));
+
+      // Build FHIR-compliant Procedure resources
+      const procedureEntries = (params.procedures || []).map((p) => ({
+        resourceType: "Procedure",
+        id: p.id,
+        text: {
+          status: "generated",
+          div: "Generated Narrative with Details"
+        },
+        status: "completed",
+        code: {
+          coding: [{
+            system: "http://snomed.info/sct",
+            code: p.code,
+            display: p.display
+          }]
+        },
+        subject: {
+          reference: p.patientRef || `Patient/${params.patient.id}`,
+          display: p.patientName || params.patient.nama
+        },
+        context: p.encounterRef ? {
+          reference: p.encounterRef,
+          display: p.encounterDisplay
+        } : undefined,
+        performedPeriod: {
+          start: p.performedStart,
+          end: p.performedEnd
+        },
+        performer: [{
+          role: p.performerRoleCode ? {
+            coding: [{
+              system: "http://snomed.info/sct",
+              code: p.performerRoleCode,
+              display: p.performerRoleDisplay || ""
+            }]
+          } : undefined,
+          actor: {
+            reference: p.performerRef || `Practitioner/${params.practitioner.id}`,
+            display: p.performerName || params.practitioner.nama
+          }
+        }],
+        reasonCode: p.reasonCode ? [{ text: p.reasonCode }] : undefined,
+        bodySite: p.bodySiteCode ? [{
+          coding: [{
+            system: "http://snomed.info/sct",
+            code: p.bodySiteCode,
+            display: p.bodySiteDisplay || ""
+          }]
+        }] : undefined,
+        focalDevice: p.deviceRef ? [{
+          action: {
+            coding: [{
+              system: "http://hl7.org/fhir/device-action",
+              code: p.deviceAction || "implanted"
+            }]
+          },
+          manipulated: {
+            reference: p.deviceRef
+          }
+        }] : undefined,
+        note: p.note ? [{ text: p.note }] : undefined
+      }));
+
+      // Build FHIR-compliant Device resources
+      const deviceEntries = (params.devices || []).map((d) => ({
+        resourceType: "Device",
+        id: d.id,
+        text: {
+          status: "generated",
+          div: `<div>Generated Narrative with Details\nid: ${d.id}\nidentifier: ${d.code}\ntype: ${d.display}</div>`
+        },
+        identifier: [{
+          system: "http://acme.com/devices/pacemakers/octane/serial",
+          value: d.code
+        }],
+        type: {
+          coding: [{
+            system: "http://acme.com/devices",
+            code: d.code,
+            display: d.display
+          }]
+        },
+        lotNumber: d.lotNumber || "",
+        manufacturer: d.manufacturer || "",
+        manufactureDate: d.manufactureDate || "",
+        expirationDate: d.expirationDate || "",
+        model: d.model || "",
+        patient: {
+          reference: d.patientRef || `Patient/${params.patient.id}`
+        },
+        contact: d.contactPhone ? [{
+          system: "phone",
+          value: d.contactPhone,
+          use: "work"
+        }] : []
+      }));
+
       // Transform to FHIR-like bundle format
       const dataMR = {
         identifier: params.noSep,
@@ -181,40 +396,11 @@ export function useInsertMedicalRecord() {
             name: params.organization.namaRS,
             type: params.organization.tipeRS,
           },
-          // Conditions (diagnoses)
-          ...(params.conditions || []).map((c) => ({
-            resourceType: "Condition",
-            id: c.id,
-            code: {
-              coding: [{ system: "ICD-10", code: c.icd10Code, display: c.description }],
-            },
-            clinicalStatus: "active",
-            verificationStatus: "confirmed",
-            category: c.type,
-            onsetDateTime: c.onsetDate,
-          })),
-          // Diagnostic Reports
-          ...(params.diagnosticReports || []).map((r) => ({
-            resourceType: "DiagnosticReport",
-            id: r.id,
-            status: "final",
-            code: {
-              coding: [{ system: "LOCAL", code: r.labCode, display: r.labName }],
-            },
-            effectiveDateTime: r.tanggal,
-            result: r.hasil,
-          })),
-          // Procedures
-          ...(params.procedures || []).map((p) => ({
-            resourceType: "Procedure",
-            id: p.id,
-            status: "completed",
-            code: {
-              coding: [{ system: "ICD-9-CM", code: p.icd9Code, display: p.description }],
-            },
-            performedDateTime: p.tanggal,
-          })),
-          // Medication Requests
+          // FHIR-compliant resources
+          ...conditionEntries,
+          ...diagnosticEntries,
+          ...procedureEntries,
+          // Medication Requests (legacy format)
           ...(params.medications || []).map((m) => ({
             resourceType: "MedicationRequest",
             id: m.id,
@@ -222,21 +408,11 @@ export function useInsertMedicalRecord() {
             medicationCodeableConcept: {
               coding: [{ system: "LOCAL", code: m.kodeObat, display: m.namaObat }],
             },
-            dosageInstruction: [
-              {
-                text: `${m.dosis} - ${m.frekuensi} - ${m.durasi}`,
-              },
-            ],
+            dosageInstruction: [{
+              text: `${m.dosis} - ${m.frekuensi} - ${m.durasi}`,
+            }],
           })),
-          // Devices
-          ...(params.devices || []).map((d) => ({
-            resourceType: "Device",
-            id: d.id,
-            type: {
-              coding: [{ system: "LOCAL", code: d.kode, display: d.nama }],
-            },
-            status: d.status,
-          })),
+          ...deviceEntries,
         ],
       };
 

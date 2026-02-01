@@ -121,7 +121,7 @@ export async function encryptMedicalRecordData(
 }
 
 // ============================================
-// Medical Record Bundle Interfaces
+// Medical Record Bundle Interfaces (FHIR-Compliant)
 // ============================================
 
 export interface MRBundleEntry {
@@ -184,39 +184,95 @@ export interface OrganizationResource {
   type?: string;
 }
 
-// Condition resource structure (for diagnoses)
+// Condition resource structure (FHIR-compliant for diagnoses)
 export interface ConditionResource {
   id: string;
+  clinicalStatus: string;
+  verificationStatus: string;
+  category: Array<{
+    coding: Array<{
+      system: string;
+      code: string;
+      display: string;
+    }>;
+  }>;
   code: {
     coding: Array<{
       system: string;
       code: string;
       display: string;
     }>;
+    text: string;
   };
-  clinicalStatus: string;
-  verificationStatus: string;
+  subject: {
+    reference: string;
+  };
   onsetDateTime?: string;
 }
 
-// DiagnosticReport resource structure
-export interface DiagnosticReportResource {
+// Observation resource for DiagnosticReport results
+export interface ObservationResource {
+  resourceType: "Observation";
   id: string;
   status: string;
+  text?: {
+    status: string;
+    div: string;
+  };
+  issued?: string;
+  effectiveDateTime?: string;
   code: {
     coding: Array<{
       system: string;
       code: string;
       display: string;
     }>;
+    text: string;
   };
-  effectiveDateTime: string;
-  result?: any[];
+  performer?: {
+    reference: string;
+    display: string;
+  };
+  image?: Array<{
+    comment: string;
+    link: {
+      reference: string;
+      display: string;
+    };
+  }>;
+  conclusion?: string;
 }
 
-// Procedure resource structure
+// DiagnosticReport resource structure (FHIR-compliant)
+export interface DiagnosticReportResource {
+  id: string;
+  subject: {
+    reference: string;
+    display: string;
+    noSep?: string;
+  };
+  category: {
+    coding: {
+      system: string;
+      code: string;
+      display: string;
+    };
+  };
+  status: string;
+  performer: Array<{
+    reference: string;
+    display: string;
+  }>;
+  result: ObservationResource[];
+}
+
+// Procedure resource structure (FHIR-compliant)
 export interface ProcedureResource {
   id: string;
+  text?: {
+    status: string;
+    div: string;
+  };
   status: string;
   code: {
     coding: Array<{
@@ -225,7 +281,88 @@ export interface ProcedureResource {
       display: string;
     }>;
   };
-  performedDateTime?: string;
+  subject: {
+    reference: string;
+    display: string;
+  };
+  context?: {
+    reference: string;
+    display: string;
+  };
+  performedPeriod: {
+    start: string;
+    end: string;
+  };
+  performer: Array<{
+    role?: {
+      coding: Array<{
+        system: string;
+        code: string;
+        display: string;
+      }>;
+    };
+    actor: {
+      reference: string;
+      display: string;
+    };
+  }>;
+  reasonCode?: Array<{
+    text: string;
+  }>;
+  bodySite?: Array<{
+    coding: Array<{
+      system: string;
+      code: string;
+      display: string;
+    }>;
+  }>;
+  focalDevice?: Array<{
+    action: {
+      coding: Array<{
+        system: string;
+        code: string;
+      }>;
+    };
+    manipulated: {
+      reference: string;
+    };
+  }>;
+  note?: Array<{
+    text: string;
+  }>;
+}
+
+// Device resource structure (FHIR-compliant)
+export interface DeviceResource {
+  id: string;
+  text?: {
+    status: string;
+    div: string;
+  };
+  identifier: Array<{
+    system: string;
+    value: string;
+  }>;
+  type: {
+    coding: Array<{
+      system: string;
+      code: string;
+      display: string;
+    }>;
+  };
+  lotNumber?: string;
+  manufacturer?: string;
+  manufactureDate?: string;
+  expirationDate?: string;
+  model?: string;
+  patient: {
+    reference: string;
+  };
+  contact?: Array<{
+    system: string;
+    value: string;
+    use: string;
+  }>;
 }
 
 // MedicationRequest resource structure
@@ -239,20 +376,9 @@ export interface MedicationRequestResource {
       display: string;
     }>;
   };
-  dosageInstruction?: any[];
-}
-
-// Device resource structure
-export interface DeviceResource {
-  id: string;
-  type: {
-    coding: Array<{
-      system: string;
-      code: string;
-      display: string;
-    }>;
-  };
-  status: string;
+  dosageInstruction?: Array<{
+    text: string;
+  }>;
 }
 
 /**
@@ -318,7 +444,7 @@ export function buildMedicalRecordBundle(params: {
     ...params.organization,
   });
   
-  // Conditions (Diagnoses with ICD-10)
+  // Conditions (Diagnoses with ICD-10) - FHIR compliant
   if (params.conditions) {
     for (const condition of params.conditions) {
       bundle.entry.push({
@@ -328,7 +454,7 @@ export function buildMedicalRecordBundle(params: {
     }
   }
   
-  // Diagnostic Reports (Lab Results)
+  // Diagnostic Reports - FHIR compliant with Observation results
   if (params.diagnosticReports) {
     for (const report of params.diagnosticReports) {
       bundle.entry.push({
@@ -338,7 +464,7 @@ export function buildMedicalRecordBundle(params: {
     }
   }
   
-  // Procedures (with ICD-9 codes)
+  // Procedures (with ICD-9/SNOMED codes) - FHIR compliant
   if (params.procedures) {
     for (const procedure of params.procedures) {
       bundle.entry.push({
@@ -358,7 +484,7 @@ export function buildMedicalRecordBundle(params: {
     }
   }
   
-  // Devices
+  // Devices - FHIR compliant
   if (params.devices) {
     for (const device of params.devices) {
       bundle.entry.push({
