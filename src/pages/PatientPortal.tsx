@@ -7,7 +7,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
   User, FileText, TestTube, Pill, Calendar, 
   Download, Eye, QrCode, Clock, CheckCircle,
-  AlertCircle, Phone, Mail, MapPin, LogOut
+  AlertCircle, Phone, Mail, MapPin, LogOut, Shield
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
@@ -18,6 +18,7 @@ import PatientMedicalRecords from "@/components/patient-portal/PatientMedicalRec
 import PatientPrescriptions from "@/components/patient-portal/PatientPrescriptions";
 import PatientAppointments from "@/components/patient-portal/PatientAppointments";
 import PatientProfile from "@/components/patient-portal/PatientProfile";
+import PatientInsurances from "@/components/patient-portal/PatientInsurances";
 
 export default function PatientPortal() {
   const { user, signOut } = useAuth();
@@ -56,10 +57,14 @@ export default function PatientPortal() {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid grid-cols-5 w-full max-w-2xl mx-auto">
+          <TabsList className="grid grid-cols-6 w-full max-w-3xl mx-auto">
             <TabsTrigger value="profile" className="flex items-center gap-2">
               <User className="h-4 w-4" />
               <span className="hidden sm:inline">Profil</span>
+            </TabsTrigger>
+            <TabsTrigger value="insurance" className="flex items-center gap-2">
+              <Shield className="h-4 w-4" />
+              <span className="hidden sm:inline">Asuransi</span>
             </TabsTrigger>
             <TabsTrigger value="records" className="flex items-center gap-2">
               <FileText className="h-4 w-4" />
@@ -81,6 +86,10 @@ export default function PatientPortal() {
 
           <TabsContent value="profile">
             <PatientProfile />
+          </TabsContent>
+
+          <TabsContent value="insurance">
+            <PatientInsurances />
           </TabsContent>
 
           <TabsContent value="records">

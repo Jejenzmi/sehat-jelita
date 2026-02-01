@@ -77,6 +77,7 @@ const navigationGroups: NavGroup[] = [
     items: [
       { icon: CreditCard, label: "Kasir / Billing", path: "/billing" },
       { icon: Shield, label: "BPJS Kesehatan", path: "/bpjs", badge: "API" },
+      { icon: Building2, label: "Asuransi Lain", path: "/asuransi" },
       { icon: Building2, label: "SATU SEHAT", path: "/satu-sehat", badge: "API" },
     ],
   },
