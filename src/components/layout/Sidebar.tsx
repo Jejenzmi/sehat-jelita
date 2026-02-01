@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import zenLogo from "@/assets/zen-logo.webp";
+import { useMenuAccess } from "@/hooks/useMenuAccess";
 
 interface NavItem {
   icon: React.ElementType;
@@ -42,7 +43,7 @@ interface NavGroup {
   items: NavItem[];
 }
 
-const navigationGroups: NavGroup[] = [
+const allNavigationGroups: NavGroup[] = [
   {
     title: "Utama",
     items: [
@@ -97,6 +98,19 @@ export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
+  const { canViewPath, isLoading: loadingAccess } = useMenuAccess();
+
+  // Filter navigation based on user access
+  const navigationGroups = useMemo(() => {
+    if (loadingAccess) return allNavigationGroups; // Show all while loading
+    
+    return allNavigationGroups
+      .map(group => ({
+        ...group,
+        items: group.items.filter(item => canViewPath(item.path)),
+      }))
+      .filter(group => group.items.length > 0);
+  }, [canViewPath, loadingAccess]);
 
   return (
     <>
