@@ -6,6 +6,7 @@ export interface HospitalInfo {
   name: string;
   code: string;
   address: string;
+  city: string;
   phone: string;
   email: string;
   website: string;
@@ -105,6 +106,7 @@ export function useSystemSettings() {
     name: "RS Sehat Jelita",
     code: "RSJ-001",
     address: "",
+    city: "Jakarta",
     phone: "",
     email: "",
     website: "",
