@@ -122,12 +122,20 @@ export function Sidebar() {
   const location = useLocation();
   const { canViewPath, isLoading: loadingAccess, menuAccess } = useMenuAccess();
 
-  // Filter navigation based on user access
-  // Show all menus while loading OR if no menu access data exists (user has no role yet)
+  // Filter navigation based on user access from database
   const navigationGroups = useMemo(() => {
-    const hasNoRoleData = !loadingAccess && menuAccess.length === 0;
-    if (loadingAccess || hasNoRoleData) return allNavigationGroups;
+    // While loading, show skeleton/empty state
+    if (loadingAccess) return [];
     
+    // If user has no menu access (no role assigned), show only dashboard
+    if (menuAccess.length === 0) {
+      return [{
+        title: "Utama",
+        items: [{ icon: allNavigationGroups[0].items[0].icon, label: "Dashboard", path: "/" }]
+      }];
+    }
+    
+    // Filter navigation items based on actual menu access
     return allNavigationGroups
       .map(group => ({
         ...group,
