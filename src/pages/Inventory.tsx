@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { 
   Package, AlertTriangle, TrendingDown, ShoppingCart, 
-  Calendar, BarChart3, Clock, CheckCircle 
+  Calendar, BarChart3, Clock, CheckCircle, Building2 
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import InventoryStock from "@/components/inventory/InventoryStock";
@@ -13,6 +13,7 @@ import InventoryTransactions from "@/components/inventory/InventoryTransactions"
 import PurchaseOrders from "@/components/inventory/PurchaseOrders";
 import ExpiringMedicines from "@/components/inventory/ExpiringMedicines";
 import AutoReorderSettings from "@/components/inventory/AutoReorderSettings";
+import SupplierManagement from "@/components/inventory/SupplierManagement";
 
 interface InventoryStats {
   totalMedicines: number;
@@ -146,7 +147,7 @@ export default function Inventory() {
 
       {/* Main Content */}
       <Tabs defaultValue="stock" className="space-y-4">
-        <TabsList className="grid grid-cols-6 w-full max-w-4xl">
+        <TabsList className="grid grid-cols-7 w-full max-w-5xl">
           <TabsTrigger value="stock" className="flex items-center gap-2">
             <Package className="h-4 w-4" />
             <span className="hidden sm:inline">Stok</span>
@@ -162,6 +163,10 @@ export default function Inventory() {
           <TabsTrigger value="orders" className="flex items-center gap-2">
             <ShoppingCart className="h-4 w-4" />
             <span className="hidden sm:inline">Pesanan</span>
+          </TabsTrigger>
+          <TabsTrigger value="suppliers" className="flex items-center gap-2">
+            <Building2 className="h-4 w-4" />
+            <span className="hidden sm:inline">Supplier</span>
           </TabsTrigger>
           <TabsTrigger value="transactions" className="flex items-center gap-2">
             <Clock className="h-4 w-4" />
@@ -187,6 +192,10 @@ export default function Inventory() {
 
         <TabsContent value="orders">
           <PurchaseOrders onOrderUpdate={fetchStats} />
+        </TabsContent>
+
+        <TabsContent value="suppliers">
+          <SupplierManagement />
         </TabsContent>
 
         <TabsContent value="transactions">

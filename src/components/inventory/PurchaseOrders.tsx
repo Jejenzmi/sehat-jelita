@@ -48,6 +48,12 @@ interface Medicine {
   price: number;
 }
 
+interface Vendor {
+  id: string;
+  vendor_code: string;
+  vendor_name: string;
+}
+
 interface PurchaseOrdersProps {
   onOrderUpdate: () => void;
 }
@@ -55,12 +61,14 @@ interface PurchaseOrdersProps {
 export default function PurchaseOrders({ onOrderUpdate }: PurchaseOrdersProps) {
   const [orders, setOrders] = useState<PurchaseOrder[]>([]);
   const [medicines, setMedicines] = useState<Medicine[]>([]);
+  const [vendors, setVendors] = useState<Vendor[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<PurchaseOrder | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Create form state
+  const [supplierId, setSupplierId] = useState("");
   const [supplierName, setSupplierName] = useState("");
   const [expectedDelivery, setExpectedDelivery] = useState<Date | undefined>();
   const [orderItems, setOrderItems] = useState<{ medicineId: string; quantity: string; unitPrice: string }[]>([
@@ -73,7 +81,7 @@ export default function PurchaseOrders({ onOrderUpdate }: PurchaseOrdersProps) {
 
   const fetchData = async () => {
     try {
-      const [ordersRes, medicinesRes] = await Promise.all([
+      const [ordersRes, medicinesRes, vendorsRes] = await Promise.all([
         supabase
           .from("purchase_orders")
           .select("id, order_number, supplier_name, order_date, expected_delivery_date, status, total, auto_generated")
@@ -82,11 +90,18 @@ export default function PurchaseOrders({ onOrderUpdate }: PurchaseOrdersProps) {
           .from("medicines")
           .select("id, name, code, unit, price")
           .eq("is_active", true)
-          .order("name")
+          .order("name"),
+        supabase
+          .from("vendors")
+          .select("id, vendor_code, vendor_name")
+          .eq("is_active", true)
+          .eq("blacklisted", false)
+          .order("vendor_name")
       ]);
 
       if (ordersRes.error) throw ordersRes.error;
       if (medicinesRes.error) throw medicinesRes.error;
+      if (vendorsRes.error) throw vendorsRes.error;
 
       // Fetch items for each order
       const ordersWithItems = await Promise.all(
@@ -104,6 +119,7 @@ export default function PurchaseOrders({ onOrderUpdate }: PurchaseOrdersProps) {
 
       setOrders(ordersWithItems);
       setMedicines(medicinesRes.data || []);
+      setVendors(vendorsRes.data || []);
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
@@ -112,8 +128,8 @@ export default function PurchaseOrders({ onOrderUpdate }: PurchaseOrdersProps) {
   };
 
   const handleCreateOrder = async () => {
-    if (!supplierName || orderItems.every(i => !i.medicineId)) {
-      toast.error("Lengkapi data pesanan");
+    if (!supplierId || orderItems.every(i => !i.medicineId)) {
+      toast.error("Pilih supplier dan minimal 1 item obat");
       return;
     }
 
@@ -249,6 +265,7 @@ export default function PurchaseOrders({ onOrderUpdate }: PurchaseOrdersProps) {
   };
 
   const resetCreateForm = () => {
+    setSupplierId("");
     setSupplierName("");
     setExpectedDelivery(undefined);
     setOrderItems([{ medicineId: "", quantity: "", unitPrice: "" }]);
@@ -275,11 +292,11 @@ export default function PurchaseOrders({ onOrderUpdate }: PurchaseOrdersProps) {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "draft": return <Badge variant="secondary"><Clock className="h-3 w-3 mr-1" />Draft</Badge>;
-      case "pending": return <Badge className="bg-amber-500/10 text-amber-600"><Clock className="h-3 w-3 mr-1" />Pending</Badge>;
-      case "approved": return <Badge className="bg-blue-500/10 text-blue-600"><CheckCircle className="h-3 w-3 mr-1" />Approved</Badge>;
-      case "ordered": return <Badge className="bg-purple-500/10 text-purple-600"><Send className="h-3 w-3 mr-1" />Ordered</Badge>;
-      case "shipped": return <Badge className="bg-indigo-500/10 text-indigo-600"><Package className="h-3 w-3 mr-1" />Shipped</Badge>;
-      case "received": return <Badge className="bg-green-500/10 text-green-600"><CheckCircle className="h-3 w-3 mr-1" />Received</Badge>;
+      case "pending": return <Badge variant="outline"><Clock className="h-3 w-3 mr-1" />Pending</Badge>;
+      case "approved": return <Badge variant="outline" className="border-primary text-primary"><CheckCircle className="h-3 w-3 mr-1" />Approved</Badge>;
+      case "ordered": return <Badge variant="outline" className="border-secondary text-secondary-foreground"><Send className="h-3 w-3 mr-1" />Ordered</Badge>;
+      case "shipped": return <Badge variant="default"><Package className="h-3 w-3 mr-1" />Shipped</Badge>;
+      case "received": return <Badge variant="default" className="bg-primary"><CheckCircle className="h-3 w-3 mr-1" />Received</Badge>;
       case "cancelled": return <Badge variant="destructive"><XCircle className="h-3 w-3 mr-1" />Cancelled</Badge>;
       default: return <Badge variant="outline">{status}</Badge>;
     }
@@ -341,7 +358,7 @@ export default function PurchaseOrders({ onOrderUpdate }: PurchaseOrdersProps) {
                           </Button>
                         )}
                         {order.status === "shipped" && (
-                          <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => handleReceiveOrder(order)}>
+                          <Button size="sm" variant="default" onClick={() => handleReceiveOrder(order)}>
                             Terima
                           </Button>
                         )}
@@ -369,12 +386,26 @@ export default function PurchaseOrders({ onOrderUpdate }: PurchaseOrdersProps) {
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Supplier</Label>
-                <Input
-                  placeholder="Nama supplier"
-                  value={supplierName}
-                  onChange={(e) => setSupplierName(e.target.value)}
-                />
+                <Label>Supplier *</Label>
+                <Select 
+                  value={supplierId} 
+                  onValueChange={(v) => {
+                    setSupplierId(v);
+                    const vendor = vendors.find(vd => vd.id === v);
+                    if (vendor) setSupplierName(vendor.vendor_name);
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Pilih supplier" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {vendors.map(vendor => (
+                      <SelectItem key={vendor.id} value={vendor.id}>
+                        {vendor.vendor_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label>Estimasi Pengiriman</Label>
