@@ -38,7 +38,7 @@ export default function Auth() {
 
   useEffect(() => {
     if (user && !authLoading) {
-      navigate("/");
+      navigate("/", { replace: true });
     }
   }, [user, authLoading, navigate]);
 
@@ -76,7 +76,7 @@ export default function Auth() {
         title: "Login Berhasil",
         description: "Selamat datang di SIMRS",
       });
-      navigate("/");
+      // Navigation handled by useEffect when user state updates
     }
   };
 
