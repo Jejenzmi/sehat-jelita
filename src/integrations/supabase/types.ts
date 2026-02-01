@@ -1497,6 +1497,33 @@ export type Database = {
           },
         ]
       }
+      demo_accounts: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          email: string
+          full_name: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          email: string
+          full_name: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          email?: string
+          full_name?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+        }
+        Relationships: []
+      }
       departments: {
         Row: {
           code: string
