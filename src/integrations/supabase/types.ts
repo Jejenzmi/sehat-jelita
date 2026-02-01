@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_cash_flow_mapping: {
+        Row: {
+          account_id: string
+          cash_flow_category_id: string
+          created_at: string | null
+          id: string
+          is_cash_account: boolean | null
+        }
+        Insert: {
+          account_id: string
+          cash_flow_category_id: string
+          created_at?: string | null
+          id?: string
+          is_cash_account?: boolean | null
+        }
+        Update: {
+          account_id?: string
+          cash_flow_category_id?: string
+          created_at?: string | null
+          id?: string
+          is_cash_account?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "account_cash_flow_mapping_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: true
+            referencedRelation: "chart_of_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "account_cash_flow_mapping_cash_flow_category_id_fkey"
+            columns: ["cash_flow_category_id"]
+            isOneToOne: false
+            referencedRelation: "cash_flow_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       accreditation_assessments: {
         Row: {
           action_required: string | null
@@ -873,6 +912,142 @@ export type Database = {
             columns: ["visit_id"]
             isOneToOne: false
             referencedRelation: "visits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      budgets: {
+        Row: {
+          account_id: string
+          actual_amount: number | null
+          budget_amount: number | null
+          created_at: string | null
+          fiscal_year: number
+          id: string
+          notes: string | null
+          period_month: number
+          updated_at: string | null
+          variance: number | null
+        }
+        Insert: {
+          account_id: string
+          actual_amount?: number | null
+          budget_amount?: number | null
+          created_at?: string | null
+          fiscal_year: number
+          id?: string
+          notes?: string | null
+          period_month: number
+          updated_at?: string | null
+          variance?: number | null
+        }
+        Update: {
+          account_id?: string
+          actual_amount?: number | null
+          budget_amount?: number | null
+          created_at?: string | null
+          fiscal_year?: number
+          id?: string
+          notes?: string | null
+          period_month?: number
+          updated_at?: string | null
+          variance?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budgets_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "chart_of_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cash_flow_categories: {
+        Row: {
+          category_name: string
+          category_type: string
+          description: string | null
+          display_order: number | null
+          id: string
+          is_active: boolean | null
+        }
+        Insert: {
+          category_name: string
+          category_type: string
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+        }
+        Update: {
+          category_name?: string
+          category_type?: string
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+        }
+        Relationships: []
+      }
+      chart_of_accounts: {
+        Row: {
+          account_category: string | null
+          account_code: string
+          account_name: string
+          account_type: string
+          created_at: string | null
+          current_balance: number | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          is_header: boolean | null
+          level: number | null
+          normal_balance: string | null
+          opening_balance: number | null
+          parent_account_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          account_category?: string | null
+          account_code: string
+          account_name: string
+          account_type: string
+          created_at?: string | null
+          current_balance?: number | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_header?: boolean | null
+          level?: number | null
+          normal_balance?: string | null
+          opening_balance?: number | null
+          parent_account_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          account_category?: string | null
+          account_code?: string
+          account_name?: string
+          account_type?: string
+          created_at?: string | null
+          current_balance?: number | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_header?: boolean | null
+          level?: number | null
+          normal_balance?: string | null
+          opening_balance?: number | null
+          parent_account_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chart_of_accounts_parent_account_id_fkey"
+            columns: ["parent_account_id"]
+            isOneToOne: false
+            referencedRelation: "chart_of_accounts"
             referencedColumns: ["id"]
           },
         ]
@@ -2388,6 +2563,45 @@ export type Database = {
           },
         ]
       }
+      fiscal_periods: {
+        Row: {
+          closed_at: string | null
+          closed_by: string | null
+          created_at: string | null
+          end_date: string
+          fiscal_year: number
+          id: string
+          is_closed: boolean | null
+          period_name: string
+          period_number: number
+          start_date: string
+        }
+        Insert: {
+          closed_at?: string | null
+          closed_by?: string | null
+          created_at?: string | null
+          end_date: string
+          fiscal_year: number
+          id?: string
+          is_closed?: boolean | null
+          period_name: string
+          period_number: number
+          start_date: string
+        }
+        Update: {
+          closed_at?: string | null
+          closed_by?: string | null
+          created_at?: string | null
+          end_date?: string
+          fiscal_year?: number
+          id?: string
+          is_closed?: boolean | null
+          period_name?: string
+          period_number?: number
+          start_date?: string
+        }
+        Relationships: []
+      }
       food_allergies: {
         Row: {
           allergen: string
@@ -2428,6 +2642,63 @@ export type Database = {
             columns: ["patient_id"]
             isOneToOne: false
             referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      general_ledger: {
+        Row: {
+          account_id: string
+          closing_balance: number | null
+          fiscal_period_id: string | null
+          id: string
+          last_updated: string | null
+          opening_balance: number | null
+          period_month: number
+          period_year: number
+          total_credit: number | null
+          total_debit: number | null
+          transaction_count: number | null
+        }
+        Insert: {
+          account_id: string
+          closing_balance?: number | null
+          fiscal_period_id?: string | null
+          id?: string
+          last_updated?: string | null
+          opening_balance?: number | null
+          period_month: number
+          period_year: number
+          total_credit?: number | null
+          total_debit?: number | null
+          transaction_count?: number | null
+        }
+        Update: {
+          account_id?: string
+          closing_balance?: number | null
+          fiscal_period_id?: string | null
+          id?: string
+          last_updated?: string | null
+          opening_balance?: number | null
+          period_month?: number
+          period_year?: number
+          total_credit?: number | null
+          total_debit?: number | null
+          transaction_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "general_ledger_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "chart_of_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "general_ledger_fiscal_period_id_fkey"
+            columns: ["fiscal_period_id"]
+            isOneToOne: false
+            referencedRelation: "fiscal_periods"
             referencedColumns: ["id"]
           },
         ]
@@ -3309,6 +3580,138 @@ export type Database = {
             columns: ["medicine_id"]
             isOneToOne: false
             referencedRelation: "medicines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      journal_entries: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          description: string
+          entry_date: string
+          fiscal_period_id: string | null
+          id: string
+          journal_number: string
+          posted_at: string | null
+          posted_by: string | null
+          reference_id: string | null
+          reference_number: string | null
+          reference_type: string | null
+          status: string | null
+          total_credit: number
+          total_debit: number
+          updated_at: string | null
+          void_reason: string | null
+          voided_at: string | null
+          voided_by: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          description: string
+          entry_date: string
+          fiscal_period_id?: string | null
+          id?: string
+          journal_number: string
+          posted_at?: string | null
+          posted_by?: string | null
+          reference_id?: string | null
+          reference_number?: string | null
+          reference_type?: string | null
+          status?: string | null
+          total_credit?: number
+          total_debit?: number
+          updated_at?: string | null
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string
+          entry_date?: string
+          fiscal_period_id?: string | null
+          id?: string
+          journal_number?: string
+          posted_at?: string | null
+          posted_by?: string | null
+          reference_id?: string | null
+          reference_number?: string | null
+          reference_type?: string | null
+          status?: string | null
+          total_credit?: number
+          total_debit?: number
+          updated_at?: string | null
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journal_entries_fiscal_period_id_fkey"
+            columns: ["fiscal_period_id"]
+            isOneToOne: false
+            referencedRelation: "fiscal_periods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      journal_entry_lines: {
+        Row: {
+          account_id: string
+          created_at: string | null
+          credit_amount: number | null
+          debit_amount: number | null
+          department_id: string | null
+          description: string | null
+          id: string
+          journal_entry_id: string
+          line_number: number
+        }
+        Insert: {
+          account_id: string
+          created_at?: string | null
+          credit_amount?: number | null
+          debit_amount?: number | null
+          department_id?: string | null
+          description?: string | null
+          id?: string
+          journal_entry_id: string
+          line_number: number
+        }
+        Update: {
+          account_id?: string
+          created_at?: string | null
+          credit_amount?: number | null
+          debit_amount?: number | null
+          department_id?: string | null
+          description?: string | null
+          id?: string
+          journal_entry_id?: string
+          line_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journal_entry_lines_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "chart_of_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_entry_lines_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_entry_lines_journal_entry_id_fkey"
+            columns: ["journal_entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
             referencedColumns: ["id"]
           },
         ]
@@ -9107,6 +9510,7 @@ export type Database = {
       generate_incident_number: { Args: never; Returns: string }
       generate_insurance_claim_number: { Args: never; Returns: string }
       generate_invoice_number: { Args: never; Returns: string }
+      generate_journal_number: { Args: never; Returns: string }
       generate_lab_number: { Args: never; Returns: string }
       generate_maintenance_request_number: { Args: never; Returns: string }
       generate_mcu_registration_number: { Args: never; Returns: string }
