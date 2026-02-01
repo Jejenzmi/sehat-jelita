@@ -38,6 +38,15 @@ export interface IntegrationConfig {
   enabled: boolean;
 }
 
+export interface BPJSConfig {
+  enabled: boolean;
+  provider_code: string;
+  consumer_id: string;
+  consumer_secret: string;
+  user_key: string;
+  environment: "development" | "production";
+}
+
 export function useSystemSettings() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -127,9 +136,13 @@ export function useSystemSettings() {
     enabled: false,
   });
 
-  const bpjsConfig = getSetting<IntegrationConfig>("integration_bpjs", {
-    provider_code: "",
+  const bpjsConfig = getSetting<BPJSConfig>("integration_bpjs", {
     enabled: false,
+    provider_code: "",
+    consumer_id: "",
+    consumer_secret: "",
+    user_key: "",
+    environment: "development",
   });
 
   return {
