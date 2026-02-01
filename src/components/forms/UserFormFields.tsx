@@ -8,17 +8,27 @@ import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-type AppRole = "admin" | "dokter" | "perawat" | "kasir" | "farmasi" | "laboratorium" | "radiologi" | "pendaftaran";
+type AppRole = "admin" | "dokter" | "perawat" | "kasir" | "farmasi" | "laboratorium" | "radiologi" | "pendaftaran" | "keuangan" | "gizi" | "icu" | "bedah" | "rehabilitasi" | "mcu" | "forensik" | "cssd" | "manajemen" | "bank_darah";
 
 export const ALL_ROLES: { value: AppRole; label: string; description: string }[] = [
   { value: "admin", label: "Administrator", description: "Akses penuh ke semua modul sistem" },
   { value: "dokter", label: "Dokter", description: "Pelayanan medis, rekam medis, telemedicine" },
   { value: "perawat", label: "Perawat", description: "Asistensi pelayanan medis, monitoring pasien" },
-  { value: "kasir", label: "Kasir", description: "Billing, pembayaran, laporan keuangan" },
+  { value: "kasir", label: "Kasir", description: "Billing, pembayaran" },
   { value: "farmasi", label: "Farmasi", description: "Pengelolaan obat, resep, inventory farmasi" },
   { value: "laboratorium", label: "Laboratorium", description: "Pemeriksaan lab, hasil lab" },
   { value: "radiologi", label: "Radiologi", description: "Pemeriksaan radiologi, hasil radiologi" },
   { value: "pendaftaran", label: "Pendaftaran", description: "Registrasi pasien, antrian, booking" },
+  { value: "keuangan", label: "Keuangan", description: "Akuntansi, billing, laporan keuangan" },
+  { value: "gizi", label: "Gizi", description: "Pengelolaan gizi dan diet pasien" },
+  { value: "icu", label: "ICU", description: "Intensive Care Unit, monitoring kritis" },
+  { value: "bedah", label: "Bedah", description: "Kamar operasi, jadwal bedah" },
+  { value: "rehabilitasi", label: "Rehabilitasi", description: "Fisioterapi, terapi rehabilitasi" },
+  { value: "mcu", label: "MCU", description: "Medical Check Up" },
+  { value: "forensik", label: "Forensik", description: "Forensik dan medikolegal" },
+  { value: "cssd", label: "CSSD", description: "Sterilisasi alat medis" },
+  { value: "manajemen", label: "Manajemen", description: "Executive dashboard, laporan manajemen" },
+  { value: "bank_darah", label: "Bank Darah", description: "Pengelolaan stok darah dan transfusi" },
 ];
 
 export const ROLE_COLORS: Record<AppRole, string> = {
@@ -30,6 +40,16 @@ export const ROLE_COLORS: Record<AppRole, string> = {
   laboratorium: "bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-200",
   radiologi: "bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200",
   pendaftaran: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200",
+  keuangan: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200",
+  gizi: "bg-lime-100 text-lime-800 dark:bg-lime-900 dark:text-lime-200",
+  icu: "bg-rose-100 text-rose-800 dark:bg-rose-900 dark:text-rose-200",
+  bedah: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200",
+  rehabilitasi: "bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200",
+  mcu: "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200",
+  forensik: "bg-slate-100 text-slate-800 dark:bg-slate-900 dark:text-slate-200",
+  cssd: "bg-violet-100 text-violet-800 dark:bg-violet-900 dark:text-violet-200",
+  manajemen: "bg-fuchsia-100 text-fuchsia-800 dark:bg-fuchsia-900 dark:text-fuchsia-200",
+  bank_darah: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
 };
 
 // Menu paths grouped by category

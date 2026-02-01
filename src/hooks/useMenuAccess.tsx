@@ -44,6 +44,18 @@ export function useMenuAccess() {
           { menu_path: "/jadwal-dokter", can_view: true, can_create: true, can_edit: true, can_delete: true },
           { menu_path: "/telemedicine", can_view: true, can_create: true, can_edit: true, can_delete: true },
           { menu_path: "/dashboard-executive", can_view: true, can_create: true, can_edit: true, can_delete: true },
+          { menu_path: "/akuntansi", can_view: true, can_create: true, can_edit: true, can_delete: true },
+          { menu_path: "/icu", can_view: true, can_create: true, can_edit: true, can_delete: true },
+          { menu_path: "/kamar-operasi", can_view: true, can_create: true, can_edit: true, can_delete: true },
+          { menu_path: "/hemodialisa", can_view: true, can_create: true, can_edit: true, can_delete: true },
+          { menu_path: "/bank-darah", can_view: true, can_create: true, can_edit: true, can_delete: true },
+          { menu_path: "/gizi", can_view: true, can_create: true, can_edit: true, can_delete: true },
+          { menu_path: "/rehabilitasi", can_view: true, can_create: true, can_edit: true, can_delete: true },
+          { menu_path: "/mcu", can_view: true, can_create: true, can_edit: true, can_delete: true },
+          { menu_path: "/forensik", can_view: true, can_create: true, can_edit: true, can_delete: true },
+          { menu_path: "/penunjang", can_view: true, can_create: true, can_edit: true, can_delete: true },
+          { menu_path: "/mutu", can_view: true, can_create: true, can_edit: true, can_delete: true },
+          { menu_path: "/manajemen-user", can_view: true, can_create: true, can_edit: true, can_delete: true },
         ];
       }
 

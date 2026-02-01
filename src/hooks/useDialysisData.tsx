@@ -204,6 +204,75 @@ export function useDialysisStatistics() {
   });
 }
 
+// Weekly dialysis sessions data for charts
+export function useWeeklyDialysisSessions() {
+  return useQuery({
+    queryKey: ["dialysis-weekly-sessions"],
+    queryFn: async () => {
+      const today = new Date();
+      const weekStart = new Date(today);
+      weekStart.setDate(today.getDate() - today.getDay() + 1); // Monday
+      
+      const weekDays = [];
+      for (let i = 0; i < 6; i++) { // Mon-Sat
+        const date = new Date(weekStart);
+        date.setDate(weekStart.getDate() + i);
+        weekDays.push(date.toISOString().split('T')[0]);
+      }
+      
+      const { data, error } = await supabase
+        .from("dialysis_sessions")
+        .select("session_date")
+        .in("session_date", weekDays);
+      
+      if (error) throw error;
+      
+      const dayLabels = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
+      const sessionCounts: Record<string, number> = {};
+      weekDays.forEach(d => sessionCounts[d] = 0);
+      
+      data?.forEach(s => {
+        if (sessionCounts[s.session_date] !== undefined) {
+          sessionCounts[s.session_date]++;
+        }
+      });
+      
+      return weekDays.map((date, idx) => ({
+        day: dayLabels[idx],
+        sessions: sessionCounts[date] || 0,
+      }));
+    },
+  });
+}
+
+// Adequacy data (Kt/V distribution)
+export function useDialysisAdequacy() {
+  return useQuery({
+    queryKey: ["dialysis-adequacy"],
+    queryFn: async () => {
+      const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
+      
+      const { data, error } = await supabase
+        .from("dialysis_sessions")
+        .select("kt_v")
+        .gte("session_date", monthStart)
+        .eq("status", "completed")
+        .not("kt_v", "is", null);
+      
+      if (error) throw error;
+      
+      const total = data?.length || 0;
+      const adequate = data?.filter(s => (s.kt_v || 0) >= 1.2).length || 0;
+      const inadequate = total - adequate;
+      
+      return [
+        { name: "Kt/V ≥ 1.2", value: total > 0 ? Math.round((adequate / total) * 100) : 0, color: "hsl(var(--primary))" },
+        { name: "Kt/V < 1.2", value: total > 0 ? Math.round((inadequate / total) * 100) : 0, color: "hsl(var(--muted))" },
+      ];
+    },
+  });
+}
+
 // Mutations
 export function useUpdateDialysisSession() {
   const queryClient = useQueryClient();
