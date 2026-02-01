@@ -328,6 +328,145 @@ serve(async (req) => {
         break;
       }
 
+      // ==================== PRB (Program Rujuk Balik) ====================
+      case "insert_prb": {
+        const response = await fetch(`${baseUrl}/PRB/insert`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ request: { t_prb: data } }),
+        });
+        result = await response.json();
+        break;
+      }
+
+      case "update_prb": {
+        const response = await fetch(`${baseUrl}/PRB/Update`, {
+          method: "PUT",
+          headers,
+          body: JSON.stringify({ request: { t_prb: data } }),
+        });
+        result = await response.json();
+        break;
+      }
+
+      case "delete_prb": {
+        const { noSrb, noSep, user } = data;
+        const response = await fetch(`${baseUrl}/PRB/Delete`, {
+          method: "DELETE",
+          headers,
+          body: JSON.stringify({ request: { t_prb: { noSrb, noSep, user } } }),
+        });
+        result = await response.json();
+        break;
+      }
+
+      case "get_prb_by_srb": {
+        const { noSrb, noSep } = data;
+        const response = await fetch(
+          `${baseUrl}/prb/${noSrb}/nosep/${noSep}`,
+          { method: "GET", headers }
+        );
+        result = await response.json();
+        break;
+      }
+
+      case "get_prb_by_date": {
+        const { tglMulai, tglAkhir } = data;
+        const response = await fetch(
+          `${baseUrl}/prb/tglMulai/${tglMulai}/tglAkhir/${tglAkhir}`,
+          { method: "GET", headers }
+        );
+        result = await response.json();
+        break;
+      }
+
+      case "get_prb_potensi": {
+        const { tahun, bulan } = data;
+        const response = await fetch(
+          `${baseUrl}/prbpotensi/tahun/${tahun}/bulan/${bulan}`,
+          { method: "GET", headers }
+        );
+        result = await response.json();
+        break;
+      }
+
+      // ==================== REFERENSI TAMBAHAN ====================
+      case "ref_diagnosa_prb": {
+        const response = await fetch(
+          `${baseUrl}/referensi/diagnosaprb`,
+          { method: "GET", headers }
+        );
+        result = await response.json();
+        break;
+      }
+
+      case "ref_obat_prb": {
+        const { keyword } = data;
+        const response = await fetch(
+          `${baseUrl}/referensi/obatprb/${keyword}`,
+          { method: "GET", headers }
+        );
+        result = await response.json();
+        break;
+      }
+
+      case "ref_propinsi": {
+        const response = await fetch(
+          `${baseUrl}/referensi/propinsi`,
+          { method: "GET", headers }
+        );
+        result = await response.json();
+        break;
+      }
+
+      case "ref_kabupaten": {
+        const { kodePropinsi } = data;
+        const response = await fetch(
+          `${baseUrl}/referensi/kabupaten/propinsi/${kodePropinsi}`,
+          { method: "GET", headers }
+        );
+        result = await response.json();
+        break;
+      }
+
+      case "ref_kecamatan": {
+        const { kodeKabupaten } = data;
+        const response = await fetch(
+          `${baseUrl}/referensi/kecamatan/kabupaten/${kodeKabupaten}`,
+          { method: "GET", headers }
+        );
+        result = await response.json();
+        break;
+      }
+
+      case "ref_spesialistik": {
+        const response = await fetch(
+          `${baseUrl}/referensi/spesialistik`,
+          { method: "GET", headers }
+        );
+        result = await response.json();
+        break;
+      }
+
+      case "ref_kelas_rawat": {
+        const response = await fetch(
+          `${baseUrl}/referensi/kelasrawat`,
+          { method: "GET", headers }
+        );
+        result = await response.json();
+        break;
+      }
+
+      case "ref_dokter_lpk": {
+        const { keyword } = data;
+        const response = await fetch(
+          `${baseUrl}/referensi/dokter/${keyword}`,
+          { method: "GET", headers }
+        );
+        result = await response.json();
+        break;
+      }
+
       default:
         return new Response(
           JSON.stringify({ error: `Invalid action: ${action}` }),
