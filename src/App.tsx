@@ -40,6 +40,8 @@ import Gizi from "./pages/Gizi";
 import Rehabilitasi from "./pages/Rehabilitasi";
 import MCU from "./pages/MCU";
 import Forensik from "./pages/Forensik";
+import Penunjang from "./pages/Penunjang";
+import Mutu from "./pages/Mutu";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -311,6 +313,22 @@ const App = () => (
               element={
                 <ProtectedPageWithLayout>
                   <Forensik />
+                </ProtectedPageWithLayout>
+              }
+            />
+            <Route
+              path="/penunjang"
+              element={
+                <ProtectedPageWithLayout>
+                  <Penunjang />
+                </ProtectedPageWithLayout>
+              }
+            />
+            <Route
+              path="/mutu"
+              element={
+                <ProtectedPageWithLayout>
+                  <Mutu />
                 </ProtectedPageWithLayout>
               }
             />
