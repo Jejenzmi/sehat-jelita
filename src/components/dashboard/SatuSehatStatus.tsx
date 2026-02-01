@@ -3,6 +3,7 @@ import { Building2, CheckCircle, RefreshCw, AlertCircle, Upload, Loader2 } from 
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
+import { ForwardedLink } from "@/components/ForwardedLink";
 
 interface SyncStat {
   name: string;
@@ -137,7 +138,7 @@ export function SatuSehatStatus() {
             Sync Now
           </Button>
           <Button variant="outline" size="sm" className="flex-1" asChild>
-            <a href="/satu-sehat">View Logs</a>
+            <ForwardedLink to="/satu-sehat">View Logs</ForwardedLink>
           </Button>
         </div>
       </div>
