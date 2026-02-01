@@ -11,8 +11,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Bed, Users, Calendar, Clock, CheckCircle, LogOut, Building2, Plus, Search, FileText, AlertTriangle } from "lucide-react";
+import { Bed, Users, Calendar, Clock, CheckCircle, LogOut, Building2, Plus, Search, FileText, AlertTriangle, RefreshCw, Cloud } from "lucide-react";
 import { useRooms, useInpatientAdmissions, useDischargeQueue, useDischargePatient } from "@/hooks/useInpatientData";
+import { useSyncBedsToBPJS } from "@/hooks/useBPJSiCare";
 import { differenceInDays, format } from "date-fns";
 
 const getClassBadge = (roomClass: string) => {
@@ -50,6 +51,7 @@ export default function RawatInap() {
   const { data: admissions = [], isLoading: admissionsLoading } = useInpatientAdmissions();
   const { data: dischargeQueue = [] } = useDischargeQueue();
   const dischargePatient = useDischargePatient();
+  const syncBedsToBPJS = useSyncBedsToBPJS();
 
   // Calculate stats from real data
   const totalBeds = rooms.reduce((acc, room) => acc + (room.beds?.length || 0), 0);
@@ -92,6 +94,18 @@ export default function RawatInap() {
           <p className="text-muted-foreground">Manajemen pasien rawat inap dan kamar</p>
         </div>
         <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={() => syncBedsToBPJS.mutate()}
+            disabled={syncBedsToBPJS.isPending}
+          >
+            {syncBedsToBPJS.isPending ? (
+              <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <Cloud className="w-4 h-4 mr-2" />
+            )}
+            Sync ke BPJS
+          </Button>
           <Dialog>
             <DialogTrigger asChild>
               <Button>
