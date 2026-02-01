@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Dialog,
   DialogContent,
@@ -67,13 +68,14 @@ export default function RekamMedis() {
               Buat Rekam Medis
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-4xl max-h-[90vh]">
             <DialogHeader>
               <DialogTitle>Buat Rekam Medis Baru</DialogTitle>
               <DialogDescription>
                 Isi catatan medis dengan format SOAP
               </DialogDescription>
             </DialogHeader>
+            <ScrollArea className="max-h-[70vh] pr-4">
             <div className="grid gap-6 py-4">
               {/* Patient Selection */}
               <div className="grid grid-cols-2 gap-4">
@@ -184,6 +186,7 @@ export default function RekamMedis() {
                 </div>
               </div>
             </div>
+            </ScrollArea>
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowNewRecord(false)}>Batal</Button>
               <Button className="gradient-primary">Simpan Rekam Medis</Button>

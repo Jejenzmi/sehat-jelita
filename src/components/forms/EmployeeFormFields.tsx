@@ -9,6 +9,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { RELIGION_OPTIONS, EDUCATION_OPTIONS, MARITAL_STATUS_OPTIONS, BLOOD_TYPE_OPTIONS } from "./PatientFormFields";
 
 export const TAX_STATUS_OPTIONS = [
@@ -170,7 +171,8 @@ export function EmployeeFormFields({
         <TabsTrigger value="emergency">Darurat</TabsTrigger>
       </TabsList>
 
-      <TabsContent value="personal" className="space-y-4 mt-4">
+      <ScrollArea className="max-h-[60vh] mt-4">
+      <TabsContent value="personal" className="space-y-4 pr-4">
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label>Nama Lengkap <span className="text-destructive">*</span></Label>
@@ -319,7 +321,7 @@ export function EmployeeFormFields({
         </div>
       </TabsContent>
 
-      <TabsContent value="employment" className="space-y-4 mt-4">
+      <TabsContent value="employment" className="space-y-4 pr-4">
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label>Jabatan <span className="text-destructive">*</span></Label>
@@ -377,7 +379,7 @@ export function EmployeeFormFields({
       </TabsContent>
 
       {showProfessionalTab && (
-        <TabsContent value="professional" className="space-y-4 mt-4">
+        <TabsContent value="professional" className="space-y-4 pr-4">
           <p className="text-sm text-muted-foreground mb-4">
             Kredensial profesional untuk tenaga kesehatan (dokter, perawat, farmasi, dll)
           </p>
@@ -460,7 +462,7 @@ export function EmployeeFormFields({
         </TabsContent>
       )}
 
-      <TabsContent value="financial" className="space-y-4 mt-4">
+      <TabsContent value="financial" className="space-y-4 pr-4">
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label>Gaji Pokok</Label>
@@ -535,7 +537,7 @@ export function EmployeeFormFields({
         </div>
       </TabsContent>
 
-      <TabsContent value="emergency" className="space-y-4 mt-4">
+      <TabsContent value="emergency" className="space-y-4 pr-4">
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label>Nama Kontak Darurat</Label>
@@ -565,6 +567,7 @@ export function EmployeeFormFields({
           />
         </div>
       </TabsContent>
+      </ScrollArea>
     </Tabs>
   );
 }

@@ -5,6 +5,7 @@ import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Form,
   FormControl,
@@ -113,6 +114,8 @@ export function SurgeryForm({ onSuccess, initialData }: SurgeryFormProps) {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <ScrollArea className="max-h-[60vh] pr-4">
+        <div className="space-y-6">
         {/* Patient Selection */}
         <div className="space-y-2">
           <FormLabel>Pasien</FormLabel>
@@ -390,8 +393,10 @@ export function SurgeryForm({ onSuccess, initialData }: SurgeryFormProps) {
             </FormItem>
           )}
         />
+        </div>
+        </ScrollArea>
 
-        <div className="flex justify-end gap-2">
+        <div className="flex justify-end gap-2 pt-4 border-t">
           <Button type="button" variant="outline" onClick={onSuccess}>
             Batal
           </Button>
