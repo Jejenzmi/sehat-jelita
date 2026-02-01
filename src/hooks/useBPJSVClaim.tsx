@@ -315,3 +315,211 @@ export function useRefKondisiPulang() {
     enabled: false,
   });
 }
+
+// ==================== PRB (Program Rujuk Balik) ====================
+export function useInsertPRB() {
+  const { toast } = useToast();
+  
+  return useMutation({
+    mutationFn: async (prbData: any) => {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
+        body: { action: "insert_prb", data: prbData },
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      if (data?.metaData?.code === "200") {
+        toast({ title: "PRB berhasil dibuat", description: `No SRB: ${data.response?.noSrb}` });
+      } else {
+        toast({ title: "Gagal membuat PRB", description: data?.metaData?.message, variant: "destructive" });
+      }
+    },
+    onError: (error: Error) => {
+      toast({ title: "Gagal membuat PRB", description: error.message, variant: "destructive" });
+    },
+  });
+}
+
+export function useUpdatePRB() {
+  const { toast } = useToast();
+  
+  return useMutation({
+    mutationFn: async (prbData: any) => {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
+        body: { action: "update_prb", data: prbData },
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      if (data?.metaData?.code === "200") {
+        toast({ title: "PRB berhasil diupdate" });
+      } else {
+        toast({ title: "Gagal update PRB", description: data?.metaData?.message, variant: "destructive" });
+      }
+    },
+  });
+}
+
+export function useDeletePRB() {
+  const { toast } = useToast();
+  
+  return useMutation({
+    mutationFn: async ({ noSrb, noSep, user }: { noSrb: string; noSep: string; user: string }) => {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
+        body: { action: "delete_prb", data: { noSrb, noSep, user } },
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      if (data?.metaData?.code === "200") {
+        toast({ title: "PRB berhasil dihapus" });
+      } else {
+        toast({ title: "Gagal menghapus PRB", description: data?.metaData?.message, variant: "destructive" });
+      }
+    },
+  });
+}
+
+export function useGetPRBBySRB() {
+  return useMutation({
+    mutationFn: async ({ noSrb, noSep }: { noSrb: string; noSep: string }) => {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
+        body: { action: "get_prb_by_srb", data: { noSrb, noSep } },
+      });
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export function useGetPRBByDate() {
+  return useMutation({
+    mutationFn: async ({ tglMulai, tglAkhir }: { tglMulai: string; tglAkhir: string }) => {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
+        body: { action: "get_prb_by_date", data: { tglMulai, tglAkhir } },
+      });
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export function useGetPRBPotensi() {
+  return useMutation({
+    mutationFn: async ({ tahun, bulan }: { tahun: string; bulan: string }) => {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
+        body: { action: "get_prb_potensi", data: { tahun, bulan } },
+      });
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+// ==================== REFERENSI TAMBAHAN ====================
+export function useRefDiagnosaPRB() {
+  return useQuery({
+    queryKey: ["bpjs-ref-diagnosa-prb"],
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
+        body: { action: "ref_diagnosa_prb", data: {} },
+      });
+      if (error) throw error;
+      return data?.response?.list || [];
+    },
+    enabled: false,
+  });
+}
+
+export function useRefObatPRB() {
+  return useMutation({
+    mutationFn: async (keyword: string) => {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
+        body: { action: "ref_obat_prb", data: { keyword } },
+      });
+      if (error) throw error;
+      return data?.response?.list || [];
+    },
+  });
+}
+
+export function useRefPropinsi() {
+  return useQuery({
+    queryKey: ["bpjs-ref-propinsi"],
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
+        body: { action: "ref_propinsi", data: {} },
+      });
+      if (error) throw error;
+      return data?.response?.list || [];
+    },
+    enabled: false,
+  });
+}
+
+export function useRefKabupaten() {
+  return useMutation({
+    mutationFn: async (kodePropinsi: string) => {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
+        body: { action: "ref_kabupaten", data: { kodePropinsi } },
+      });
+      if (error) throw error;
+      return data?.response?.list || [];
+    },
+  });
+}
+
+export function useRefKecamatan() {
+  return useMutation({
+    mutationFn: async (kodeKabupaten: string) => {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
+        body: { action: "ref_kecamatan", data: { kodeKabupaten } },
+      });
+      if (error) throw error;
+      return data?.response?.list || [];
+    },
+  });
+}
+
+export function useRefSpesialistik() {
+  return useQuery({
+    queryKey: ["bpjs-ref-spesialistik"],
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
+        body: { action: "ref_spesialistik", data: {} },
+      });
+      if (error) throw error;
+      return data?.response?.list || [];
+    },
+    enabled: false,
+  });
+}
+
+export function useRefKelasRawat() {
+  return useQuery({
+    queryKey: ["bpjs-ref-kelas-rawat"],
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
+        body: { action: "ref_kelas_rawat", data: {} },
+      });
+      if (error) throw error;
+      return data?.response?.list || [];
+    },
+    enabled: false,
+  });
+}
+
+export function useRefDokterLPK() {
+  return useMutation({
+    mutationFn: async (keyword: string) => {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
+        body: { action: "ref_dokter_lpk", data: { keyword } },
+      });
+      if (error) throw error;
+      return data?.response?.list || [];
+    },
+  });
+}
