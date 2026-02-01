@@ -18,9 +18,11 @@ interface BPJSConfig {
   environment: string;
 }
 
-// Generate BPJS signature (HMAC-SHA256)
-async function generateSignature(consumerSecret: string, timestamp: string): Promise<string> {
+// Generate BPJS Signature: HMAC-SHA256(consumerID&timestamp, consumerSecret) -> Base64
+async function generateSignature(consumerId: string, consumerSecret: string, timestamp: string): Promise<string> {
   const encoder = new TextEncoder();
+  const message = `${consumerId}&${timestamp}`;
+  
   const key = await crypto.subtle.importKey(
     "raw",
     encoder.encode(consumerSecret),
@@ -29,19 +31,14 @@ async function generateSignature(consumerSecret: string, timestamp: string): Pro
     ["sign"]
   );
   
-  const signature = await crypto.subtle.sign(
-    "HMAC",
-    key,
-    encoder.encode(timestamp)
-  );
-  
+  const signature = await crypto.subtle.sign("HMAC", key, encoder.encode(message));
   return base64Encode(signature);
 }
 
 // Get BPJS auth headers
 async function getBPJSHeaders(config: BPJSConfig): Promise<Record<string, string>> {
   const timestamp = Math.floor(Date.now() / 1000).toString();
-  const signature = await generateSignature(config.consumer_secret, timestamp);
+  const signature = await generateSignature(config.consumer_id, config.consumer_secret, timestamp);
   
   return {
     "Content-Type": "application/json",
