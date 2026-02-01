@@ -403,11 +403,23 @@ export function useDepartmentPerformance() {
 
         const revenue = billings?.reduce((sum, b) => sum + (b.paid_amount || 0), 0) || 0;
 
+        // Get real satisfaction score from survey data
+        const { data: surveyData } = await supabase
+          .from("survey_responses")
+          .select("overall_score")
+          .eq("department_id", dept.id)
+          .eq("status", "completed")
+          .not("overall_score", "is", null);
+
+        const satisfaction = surveyData && surveyData.length > 0
+          ? Math.round((surveyData.reduce((sum, s) => sum + (Number(s.overall_score) || 0), 0) / surveyData.length) * 20) // Convert 5-point to 100%
+          : null;
+
         result.push({
           name: dept.name,
           visits: visits || 0,
           revenue: Math.round(revenue / 1000000),
-          satisfaction: Math.floor(Math.random() * 10) + 85, // Mock for now
+          satisfaction: satisfaction ?? 0, // Use real data, default to 0 if no surveys
         });
       }
 
