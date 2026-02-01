@@ -7,18 +7,21 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-
-const data = [
-  { name: "Sen", rawatJalan: 120, rawatInap: 45, igd: 28 },
-  { name: "Sel", rawatJalan: 145, rawatInap: 52, igd: 32 },
-  { name: "Rab", rawatJalan: 138, rawatInap: 48, igd: 25 },
-  { name: "Kam", rawatJalan: 156, rawatInap: 55, igd: 38 },
-  { name: "Jum", rawatJalan: 142, rawatInap: 50, igd: 30 },
-  { name: "Sab", rawatJalan: 98, rawatInap: 42, igd: 22 },
-  { name: "Min", rawatJalan: 75, rawatInap: 38, igd: 18 },
-];
+import { useWeeklyVisits } from "@/hooks/useDashboardData";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export function ServiceChart() {
+  const { data = [], isLoading } = useWeeklyVisits();
+
+  if (isLoading) {
+    return (
+      <div className="module-card">
+        <Skeleton className="h-6 w-48 mb-4" />
+        <Skeleton className="h-[300px]" />
+      </div>
+    );
+  }
+
   return (
     <div className="module-card">
       <div className="mb-6">

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
@@ -34,59 +35,36 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 import { useToast } from "@/hooks/use-toast";
-
-// Sample data
-const monthlyVisits = [
-  { month: "Jan", rawatJalan: 2450, rawatInap: 320, igd: 180 },
-  { month: "Feb", rawatJalan: 2680, rawatInap: 350, igd: 195 },
-  { month: "Mar", rawatJalan: 2890, rawatInap: 380, igd: 210 },
-  { month: "Apr", rawatJalan: 2750, rawatInap: 340, igd: 185 },
-  { month: "Mei", rawatJalan: 3100, rawatInap: 420, igd: 225 },
-  { month: "Jun", rawatJalan: 2950, rawatInap: 390, igd: 200 },
-  { month: "Jul", rawatJalan: 3200, rawatInap: 450, igd: 240 },
-  { month: "Agu", rawatJalan: 3050, rawatInap: 410, igd: 215 },
-  { month: "Sep", rawatJalan: 2900, rawatInap: 370, igd: 190 },
-  { month: "Okt", rawatJalan: 3150, rawatInap: 430, igd: 230 },
-  { month: "Nov", rawatJalan: 3300, rawatInap: 460, igd: 250 },
-  { month: "Des", rawatJalan: 2800, rawatInap: 350, igd: 180 },
-];
-
-const monthlyRevenue = [
-  { month: "Jan", bpjs: 1250, umum: 450, asuransi: 120 },
-  { month: "Feb", bpjs: 1380, umum: 520, asuransi: 145 },
-  { month: "Mar", bpjs: 1520, umum: 580, asuransi: 160 },
-  { month: "Apr", bpjs: 1420, umum: 510, asuransi: 135 },
-  { month: "Mei", bpjs: 1680, umum: 650, asuransi: 180 },
-  { month: "Jun", bpjs: 1550, umum: 590, asuransi: 155 },
-  { month: "Jul", bpjs: 1780, umum: 720, asuransi: 200 },
-  { month: "Agu", bpjs: 1650, umum: 680, asuransi: 185 },
-  { month: "Sep", bpjs: 1480, umum: 550, asuransi: 150 },
-  { month: "Okt", bpjs: 1720, umum: 700, asuransi: 190 },
-  { month: "Nov", bpjs: 1850, umum: 750, asuransi: 210 },
-  { month: "Des", bpjs: 1450, umum: 520, asuransi: 140 },
-];
-
-const departmentStats = [
-  { name: "Poli Umum", value: 3500, color: "#0891b2" },
-  { name: "Poli Anak", value: 2800, color: "#10b981" },
-  { name: "Poli Kandungan", value: 2200, color: "#f59e0b" },
-  { name: "Poli Jantung", value: 1800, color: "#ef4444" },
-  { name: "Poli Penyakit Dalam", value: 2500, color: "#8b5cf6" },
-  { name: "Lainnya", value: 1500, color: "#6b7280" },
-];
-
-const topDiagnoses = [
-  { code: "J06.9", description: "ISPA", count: 1250, percentage: 15.2 },
-  { code: "I10", description: "Hipertensi", count: 980, percentage: 11.9 },
-  { code: "E11.9", description: "DM Tipe 2", count: 750, percentage: 9.1 },
-  { code: "K29.7", description: "Gastritis", count: 620, percentage: 7.5 },
-  { code: "M54.5", description: "Low Back Pain", count: 540, percentage: 6.6 },
-];
+import { 
+  useReportStats, 
+  useMonthlyVisits, 
+  useMonthlyRevenue, 
+  useDepartmentStats, 
+  useTopDiagnoses 
+} from "@/hooks/useReportData";
 
 export default function Laporan() {
   const { toast } = useToast();
-  const [dateRange, setDateRange] = useState({ start: "2024-01-01", end: "2024-12-31" });
-  const [selectedReport, setSelectedReport] = useState("kunjungan");
+  const currentYear = new Date().getFullYear();
+  const [dateRange, setDateRange] = useState({ 
+    start: `${currentYear}-01-01`, 
+    end: `${currentYear}-12-31` 
+  });
+
+  // Fetch real data
+  const { data: stats, isLoading: statsLoading } = useReportStats(dateRange.start, dateRange.end);
+  const { data: monthlyVisits = [], isLoading: visitsLoading } = useMonthlyVisits(currentYear);
+  const { data: monthlyRevenue = [], isLoading: revenueLoading } = useMonthlyRevenue(currentYear);
+  const { data: departmentStats = [], isLoading: deptLoading } = useDepartmentStats(dateRange.start, dateRange.end);
+  const { data: topDiagnoses = [], isLoading: diagnosesLoading } = useTopDiagnoses(dateRange.start, dateRange.end);
+
+  const isLoading = statsLoading || visitsLoading || revenueLoading;
+
+  const formatCurrency = (amount: number) => {
+    if (amount >= 1000000000) return `Rp ${(amount / 1000000000).toFixed(1)}M`;
+    if (amount >= 1000000) return `Rp ${(amount / 1000000).toFixed(1)}jt`;
+    return `Rp ${amount.toLocaleString("id-ID")}`;
+  };
 
   const exportToPDF = () => {
     const doc = new jsPDF();
@@ -102,11 +80,12 @@ export default function Laporan() {
     doc.text("Ringkasan Statistik", 14, 45);
     
     const statsData = [
-      ["Total Kunjungan", "35,225"],
-      ["Rawat Jalan", "30,000"],
-      ["Rawat Inap", "4,670"],
-      ["IGD", "2,400"],
-      ["Total Pendapatan", "Rp 28.5 Miliar"],
+      ["Total Kunjungan", (stats?.totalVisits || 0).toLocaleString()],
+      ["Rawat Jalan", (stats?.outpatientVisits || 0).toLocaleString()],
+      ["Rawat Inap", (stats?.inpatientVisits || 0).toLocaleString()],
+      ["IGD", (stats?.emergencyVisits || 0).toLocaleString()],
+      ["Total Pendapatan", formatCurrency(stats?.totalRevenue || 0)],
+      ["Rata-rata LOS", `${stats?.avgLOS || 0} hari`],
     ];
     
     autoTable(doc, {
@@ -117,16 +96,18 @@ export default function Laporan() {
     });
     
     // Top Diagnoses
-    doc.text("10 Diagnosa Terbanyak", 14, (doc as any).lastAutoTable.finalY + 15);
-    
-    const diagnosesData = topDiagnoses.map(d => [d.code, d.description, d.count.toString(), `${d.percentage}%`]);
-    
-    autoTable(doc, {
-      startY: (doc as any).lastAutoTable.finalY + 20,
-      head: [["Kode ICD", "Diagnosa", "Jumlah", "Persentase"]],
-      body: diagnosesData,
-      theme: "striped",
-    });
+    if (topDiagnoses.length > 0) {
+      doc.text("10 Diagnosa Terbanyak", 14, (doc as any).lastAutoTable.finalY + 15);
+      
+      const diagnosesData = topDiagnoses.map(d => [d.code, d.description, d.count.toString(), `${d.percentage}%`]);
+      
+      autoTable(doc, {
+        startY: (doc as any).lastAutoTable.finalY + 20,
+        head: [["Kode ICD", "Diagnosa", "Jumlah", "Persentase"]],
+        body: diagnosesData,
+        theme: "striped",
+      });
+    }
     
     doc.save(`Laporan_SIMRS_${dateRange.start}_${dateRange.end}.pdf`);
     
@@ -146,11 +127,12 @@ export default function Laporan() {
       [`Periode: ${dateRange.start} - ${dateRange.end}`],
       [],
       ["Metrik", "Nilai"],
-      ["Total Kunjungan", 35225],
-      ["Rawat Jalan", 30000],
-      ["Rawat Inap", 4670],
-      ["IGD", 2400],
-      ["Total Pendapatan (Rp)", 28500000000],
+      ["Total Kunjungan", stats?.totalVisits || 0],
+      ["Rawat Jalan", stats?.outpatientVisits || 0],
+      ["Rawat Inap", stats?.inpatientVisits || 0],
+      ["IGD", stats?.emergencyVisits || 0],
+      ["Total Pendapatan (Rp)", stats?.totalRevenue || 0],
+      ["Rata-rata LOS (hari)", stats?.avgLOS || 0],
     ];
     const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
     XLSX.utils.book_append_sheet(wb, wsSummary, "Ringkasan");
@@ -184,12 +166,14 @@ export default function Laporan() {
     XLSX.utils.book_append_sheet(wb, wsRevenue, "Pendapatan Bulanan");
     
     // Diagnoses sheet
-    const diagnosesData = [
-      ["Kode ICD", "Diagnosa", "Jumlah", "Persentase"],
-      ...topDiagnoses.map(d => [d.code, d.description, d.count, `${d.percentage}%`]),
-    ];
-    const wsDiagnoses = XLSX.utils.aoa_to_sheet(diagnosesData);
-    XLSX.utils.book_append_sheet(wb, wsDiagnoses, "Top Diagnosa");
+    if (topDiagnoses.length > 0) {
+      const diagnosesData = [
+        ["Kode ICD", "Diagnosa", "Jumlah", "Persentase"],
+        ...topDiagnoses.map(d => [d.code, d.description, d.count, `${d.percentage}%`]),
+      ];
+      const wsDiagnoses = XLSX.utils.aoa_to_sheet(diagnosesData);
+      XLSX.utils.book_append_sheet(wb, wsDiagnoses, "Top Diagnosa");
+    }
     
     XLSX.writeFile(wb, `Laporan_SIMRS_${dateRange.start}_${dateRange.end}.xlsx`);
     
@@ -268,11 +252,17 @@ export default function Laporan() {
             </div>
             <span className="text-sm text-muted-foreground">Total Kunjungan</span>
           </div>
-          <p className="text-3xl font-bold">35,225</p>
-          <p className="text-sm text-success flex items-center gap-1 mt-1">
-            <TrendingUp className="h-4 w-4" />
-            +12.5% vs tahun lalu
-          </p>
+          {isLoading ? (
+            <Skeleton className="h-10 w-24" />
+          ) : (
+            <>
+              <p className="text-3xl font-bold">{(stats?.totalVisits || 0).toLocaleString()}</p>
+              <p className="text-sm text-success flex items-center gap-1 mt-1">
+                <TrendingUp className="h-4 w-4" />
+                Periode ini
+              </p>
+            </>
+          )}
         </div>
         <div className="module-card">
           <div className="flex items-center gap-3 mb-2">
@@ -281,8 +271,16 @@ export default function Laporan() {
             </div>
             <span className="text-sm text-muted-foreground">Rawat Jalan</span>
           </div>
-          <p className="text-3xl font-bold">30,000</p>
-          <p className="text-sm text-muted-foreground mt-1">85.2% dari total</p>
+          {isLoading ? (
+            <Skeleton className="h-10 w-24" />
+          ) : (
+            <>
+              <p className="text-3xl font-bold">{(stats?.outpatientVisits || 0).toLocaleString()}</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                {stats?.totalVisits ? ((stats.outpatientVisits / stats.totalVisits) * 100).toFixed(1) : 0}% dari total
+              </p>
+            </>
+          )}
         </div>
         <div className="module-card">
           <div className="flex items-center gap-3 mb-2">
@@ -291,8 +289,14 @@ export default function Laporan() {
             </div>
             <span className="text-sm text-muted-foreground">Rawat Inap</span>
           </div>
-          <p className="text-3xl font-bold">4,670</p>
-          <p className="text-sm text-muted-foreground mt-1">Avg. LOS: 4.2 hari</p>
+          {isLoading ? (
+            <Skeleton className="h-10 w-24" />
+          ) : (
+            <>
+              <p className="text-3xl font-bold">{(stats?.inpatientVisits || 0).toLocaleString()}</p>
+              <p className="text-sm text-muted-foreground mt-1">Avg. LOS: {stats?.avgLOS || 0} hari</p>
+            </>
+          )}
         </div>
         <div className="module-card">
           <div className="flex items-center gap-3 mb-2">
@@ -301,11 +305,17 @@ export default function Laporan() {
             </div>
             <span className="text-sm text-muted-foreground">Total Pendapatan</span>
           </div>
-          <p className="text-3xl font-bold">Rp 28.5M</p>
-          <p className="text-sm text-success flex items-center gap-1 mt-1">
-            <TrendingUp className="h-4 w-4" />
-            +18.3% vs tahun lalu
-          </p>
+          {isLoading ? (
+            <Skeleton className="h-10 w-24" />
+          ) : (
+            <>
+              <p className="text-3xl font-bold">{formatCurrency(stats?.totalRevenue || 0)}</p>
+              <p className="text-sm text-success flex items-center gap-1 mt-1">
+                <TrendingUp className="h-4 w-4" />
+                Periode ini
+              </p>
+            </>
+          )}
         </div>
       </div>
 
@@ -321,67 +331,75 @@ export default function Laporan() {
         <TabsContent value="kunjungan">
           <div className="module-card">
             <h3 className="text-lg font-semibold mb-6">Tren Kunjungan Bulanan</h3>
-            <div className="h-[400px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={monthlyVisits}>
-                  <defs>
-                    <linearGradient id="colorRawatJalan" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#0891b2" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#0891b2" stopOpacity={0} />
-                    </linearGradient>
-                    <linearGradient id="colorRawatInap" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                    </linearGradient>
-                    <linearGradient id="colorIGD" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                  <XAxis dataKey="month" tick={{ fill: "hsl(var(--muted-foreground))" }} />
-                  <YAxis tick={{ fill: "hsl(var(--muted-foreground))" }} />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: "hsl(var(--card))", 
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "0.5rem"
-                    }} 
-                  />
-                  <Legend />
-                  <Area type="monotone" dataKey="rawatJalan" name="Rawat Jalan" stroke="#0891b2" fill="url(#colorRawatJalan)" strokeWidth={2} />
-                  <Area type="monotone" dataKey="rawatInap" name="Rawat Inap" stroke="#10b981" fill="url(#colorRawatInap)" strokeWidth={2} />
-                  <Area type="monotone" dataKey="igd" name="IGD" stroke="#ef4444" fill="url(#colorIGD)" strokeWidth={2} />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
+            {visitsLoading ? (
+              <Skeleton className="h-[400px]" />
+            ) : (
+              <div className="h-[400px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={monthlyVisits}>
+                    <defs>
+                      <linearGradient id="colorRawatJalan" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#0891b2" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#0891b2" stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="colorRawatInap" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="colorIGD" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                    <XAxis dataKey="month" tick={{ fill: "hsl(var(--muted-foreground))" }} />
+                    <YAxis tick={{ fill: "hsl(var(--muted-foreground))" }} />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: "hsl(var(--card))", 
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: "0.5rem"
+                      }} 
+                    />
+                    <Legend />
+                    <Area type="monotone" dataKey="rawatJalan" name="Rawat Jalan" stroke="#0891b2" fill="url(#colorRawatJalan)" strokeWidth={2} />
+                    <Area type="monotone" dataKey="rawatInap" name="Rawat Inap" stroke="#10b981" fill="url(#colorRawatInap)" strokeWidth={2} />
+                    <Area type="monotone" dataKey="igd" name="IGD" stroke="#ef4444" fill="url(#colorIGD)" strokeWidth={2} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            )}
           </div>
         </TabsContent>
 
         <TabsContent value="pendapatan">
           <div className="module-card">
             <h3 className="text-lg font-semibold mb-6">Pendapatan Bulanan (dalam Juta Rupiah)</h3>
-            <div className="h-[400px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={monthlyRevenue}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                  <XAxis dataKey="month" tick={{ fill: "hsl(var(--muted-foreground))" }} />
-                  <YAxis tick={{ fill: "hsl(var(--muted-foreground))" }} />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: "hsl(var(--card))", 
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "0.5rem"
-                    }}
-                    formatter={(value: number) => [`Rp ${value} Jt`, ""]}
-                  />
-                  <Legend />
-                  <Bar dataKey="bpjs" name="BPJS" fill="#0891b2" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="umum" name="Umum" fill="#f59e0b" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="asuransi" name="Asuransi" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+            {revenueLoading ? (
+              <Skeleton className="h-[400px]" />
+            ) : (
+              <div className="h-[400px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={monthlyRevenue}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                    <XAxis dataKey="month" tick={{ fill: "hsl(var(--muted-foreground))" }} />
+                    <YAxis tick={{ fill: "hsl(var(--muted-foreground))" }} />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: "hsl(var(--card))", 
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: "0.5rem"
+                      }}
+                      formatter={(value: number) => [`Rp ${value} Jt`, ""]}
+                    />
+                    <Legend />
+                    <Bar dataKey="bpjs" name="BPJS" fill="#0891b2" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="umum" name="Umum" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="asuransi" name="Asuransi" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
           </div>
         </TabsContent>
 
@@ -389,55 +407,76 @@ export default function Laporan() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="module-card">
               <h3 className="text-lg font-semibold mb-6">Distribusi per Departemen</h3>
-              <div className="h-[350px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={departmentStats}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={120}
-                      paddingAngle={2}
-                      dataKey="value"
-                    >
-                      {departmentStats.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: "hsl(var(--card))", 
-                        border: "1px solid hsl(var(--border))",
-                        borderRadius: "0.5rem"
-                      }}
-                    />
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
+              {deptLoading ? (
+                <Skeleton className="h-[350px]" />
+              ) : departmentStats.length === 0 ? (
+                <div className="h-[350px] flex items-center justify-center text-muted-foreground">
+                  Tidak ada data departemen
+                </div>
+              ) : (
+                <div className="h-[350px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={departmentStats}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={120}
+                        paddingAngle={2}
+                        dataKey="value"
+                      >
+                        {departmentStats.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: "hsl(var(--card))", 
+                          border: "1px solid hsl(var(--border))",
+                          borderRadius: "0.5rem"
+                        }}
+                      />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
             </div>
             <div className="module-card">
               <h3 className="text-lg font-semibold mb-6">Detail per Departemen</h3>
-              <div className="space-y-4">
-                {departmentStats.map((dept, idx) => (
-                  <div key={idx} className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div 
-                        className="w-4 h-4 rounded-full" 
-                        style={{ backgroundColor: dept.color }}
-                      />
-                      <span>{dept.name}</span>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <span className="font-bold">{dept.value.toLocaleString()}</span>
-                      <Badge variant="secondary">
-                        {((dept.value / departmentStats.reduce((a, b) => a + b.value, 0)) * 100).toFixed(1)}%
-                      </Badge>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              {deptLoading ? (
+                <div className="space-y-4">
+                  {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-8" />)}
+                </div>
+              ) : departmentStats.length === 0 ? (
+                <div className="text-center text-muted-foreground py-8">
+                  Tidak ada data departemen
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {departmentStats.map((dept, idx) => {
+                    const total = departmentStats.reduce((a, b) => a + b.value, 0);
+                    return (
+                      <div key={idx} className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div 
+                            className="w-4 h-4 rounded-full" 
+                            style={{ backgroundColor: dept.color }}
+                          />
+                          <span>{dept.name}</span>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <span className="font-bold">{dept.value.toLocaleString()}</span>
+                          <Badge variant="secondary">
+                            {total > 0 ? ((dept.value / total) * 100).toFixed(1) : 0}%
+                          </Badge>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
         </TabsContent>
@@ -445,51 +484,42 @@ export default function Laporan() {
         <TabsContent value="diagnosa">
           <div className="module-card">
             <h3 className="text-lg font-semibold mb-6">10 Diagnosa Terbanyak (ICD-10)</h3>
-            <div className="overflow-x-auto">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Rank</th>
-                    <th>Kode ICD-10</th>
-                    <th>Diagnosa</th>
-                    <th>Jumlah Kasus</th>
-                    <th>Persentase</th>
-                    <th>Trend</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {topDiagnoses.map((dx, idx) => (
-                    <tr key={dx.code}>
-                      <td>
-                        <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-bold">
-                          {idx + 1}
-                        </span>
-                      </td>
-                      <td className="font-mono font-medium">{dx.code}</td>
-                      <td>{dx.description}</td>
-                      <td className="font-bold">{dx.count.toLocaleString()}</td>
-                      <td>
-                        <div className="flex items-center gap-2">
-                          <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
-                            <div 
-                              className="h-full bg-primary rounded-full"
-                              style={{ width: `${dx.percentage * 5}%` }}
-                            />
-                          </div>
-                          <span className="text-sm">{dx.percentage}%</span>
-                        </div>
-                      </td>
-                      <td>
-                        <Badge variant="secondary" className="bg-success/10 text-success">
-                          <TrendingUp className="h-3 w-3 mr-1" />
-                          +5%
-                        </Badge>
-                      </td>
+            {diagnosesLoading ? (
+              <div className="space-y-4">
+                {[1, 2, 3, 4, 5].map(i => <Skeleton key={i} className="h-12" />)}
+              </div>
+            ) : topDiagnoses.length === 0 ? (
+              <div className="text-center text-muted-foreground py-8">
+                Tidak ada data diagnosis
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>No</th>
+                      <th>Kode ICD-10</th>
+                      <th>Diagnosis</th>
+                      <th>Jumlah</th>
+                      <th>Persentase</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {topDiagnoses.map((dx, idx) => (
+                      <tr key={idx}>
+                        <td>{idx + 1}</td>
+                        <td><code className="font-mono">{dx.code}</code></td>
+                        <td>{dx.description}</td>
+                        <td className="font-medium">{dx.count.toLocaleString()}</td>
+                        <td>
+                          <Badge variant="secondary">{dx.percentage}%</Badge>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </TabsContent>
       </Tabs>
