@@ -416,6 +416,447 @@ function procedureToFHIR(procedure: any, patientSatuSehatId: string, encounterSa
   };
 }
 
+// Convert lab order to FHIR ServiceRequest resource
+function labOrderToFHIRServiceRequest(
+  labOrder: any, 
+  patientSatuSehatId: string, 
+  encounterSatuSehatId?: string, 
+  practitionerId?: string
+): any {
+  return {
+    resourceType: 'ServiceRequest',
+    identifier: [
+      {
+        system: 'http://sys-ids.kemkes.go.id/servicerequest',
+        value: labOrder.lab_number || labOrder.id,
+      },
+    ],
+    status: labOrder.status === 'selesai' ? 'completed' : labOrder.status === 'batal' ? 'revoked' : 'active',
+    intent: 'order',
+    category: [
+      {
+        coding: [
+          {
+            system: 'http://snomed.info/sct',
+            code: labOrder.category === 'radiologi' ? '363679005' : '108252007',
+            display: labOrder.category === 'radiologi' ? 'Imaging' : 'Laboratory procedure',
+          },
+        ],
+      },
+    ],
+    priority: labOrder.priority === 'cito' ? 'urgent' : 'routine',
+    code: {
+      coding: [
+        {
+          system: 'http://loinc.org',
+          code: labOrder.loinc_code || 'unknown',
+          display: labOrder.test_name,
+        },
+      ],
+      text: labOrder.test_name,
+    },
+    subject: {
+      reference: `Patient/${patientSatuSehatId}`,
+    },
+    ...(encounterSatuSehatId ? {
+      encounter: {
+        reference: `Encounter/${encounterSatuSehatId}`,
+      },
+    } : {}),
+    occurrenceDateTime: labOrder.order_date || labOrder.created_at,
+    authoredOn: labOrder.created_at,
+    ...(practitionerId ? {
+      requester: {
+        reference: `Practitioner/${practitionerId}`,
+      },
+    } : {}),
+    reasonCode: labOrder.clinical_notes ? [
+      {
+        text: labOrder.clinical_notes,
+      },
+    ] : undefined,
+  };
+}
+
+// Convert radiology order to FHIR ServiceRequest resource
+function radiologyOrderToFHIRServiceRequest(
+  radioOrder: any, 
+  patientSatuSehatId: string, 
+  encounterSatuSehatId?: string, 
+  practitionerId?: string
+): any {
+  return {
+    resourceType: 'ServiceRequest',
+    identifier: [
+      {
+        system: 'http://sys-ids.kemkes.go.id/servicerequest',
+        value: radioOrder.rad_number || radioOrder.id,
+      },
+    ],
+    status: radioOrder.status === 'selesai' ? 'completed' : radioOrder.status === 'batal' ? 'revoked' : 'active',
+    intent: 'order',
+    category: [
+      {
+        coding: [
+          {
+            system: 'http://snomed.info/sct',
+            code: '363679005',
+            display: 'Imaging',
+          },
+        ],
+      },
+    ],
+    priority: radioOrder.priority === 'cito' ? 'urgent' : 'routine',
+    code: {
+      coding: [
+        {
+          system: 'http://terminology.kemkes.go.id/CodeSystem/clinical-term',
+          code: radioOrder.procedure_code || 'unknown',
+          display: radioOrder.exam_name,
+        },
+      ],
+      text: radioOrder.exam_name,
+    },
+    subject: {
+      reference: `Patient/${patientSatuSehatId}`,
+    },
+    ...(encounterSatuSehatId ? {
+      encounter: {
+        reference: `Encounter/${encounterSatuSehatId}`,
+      },
+    } : {}),
+    occurrenceDateTime: radioOrder.order_date || radioOrder.created_at,
+    authoredOn: radioOrder.created_at,
+    ...(practitionerId ? {
+      requester: {
+        reference: `Practitioner/${practitionerId}`,
+      },
+    } : {}),
+    bodySite: radioOrder.body_site ? [
+      {
+        coding: [
+          {
+            system: 'http://snomed.info/sct',
+            display: radioOrder.body_site,
+          },
+        ],
+      },
+    ] : undefined,
+  };
+}
+
+// Convert lab result to FHIR DiagnosticReport resource
+function labResultToFHIRDiagnosticReport(
+  labResult: any, 
+  patientSatuSehatId: string, 
+  encounterSatuSehatId?: string,
+  practitionerId?: string,
+  observationIds?: string[]
+): any {
+  return {
+    resourceType: 'DiagnosticReport',
+    identifier: [
+      {
+        system: 'http://sys-ids.kemkes.go.id/diagnostic-report',
+        value: labResult.lab_number,
+      },
+    ],
+    status: labResult.status === 'selesai' ? 'final' : labResult.status === 'validasi' ? 'preliminary' : 'registered',
+    category: [
+      {
+        coding: [
+          {
+            system: 'http://terminology.hl7.org/CodeSystem/v2-0074',
+            code: 'LAB',
+            display: 'Laboratory',
+          },
+        ],
+      },
+    ],
+    code: {
+      coding: [
+        {
+          system: 'http://loinc.org',
+          code: labResult.panel_code || 'unknown',
+          display: labResult.panel_name || labResult.test_name,
+        },
+      ],
+      text: labResult.panel_name || labResult.test_name,
+    },
+    subject: {
+      reference: `Patient/${patientSatuSehatId}`,
+    },
+    ...(encounterSatuSehatId ? {
+      encounter: {
+        reference: `Encounter/${encounterSatuSehatId}`,
+      },
+    } : {}),
+    effectiveDateTime: labResult.result_date || labResult.created_at,
+    issued: labResult.validated_at || labResult.result_date,
+    ...(practitionerId ? {
+      performer: [
+        {
+          reference: `Practitioner/${practitionerId}`,
+        },
+      ],
+    } : {}),
+    result: observationIds?.map(id => ({
+      reference: `Observation/${id}`,
+    })),
+    conclusion: labResult.conclusion || labResult.interpretation,
+  };
+}
+
+// Convert radiology result to FHIR DiagnosticReport resource
+function radiologyToFHIRDiagnosticReport(
+  radioResult: any, 
+  patientSatuSehatId: string, 
+  encounterSatuSehatId?: string,
+  practitionerId?: string,
+  imagingStudyId?: string
+): any {
+  return {
+    resourceType: 'DiagnosticReport',
+    identifier: [
+      {
+        system: 'http://sys-ids.kemkes.go.id/diagnostic-report',
+        value: radioResult.rad_number,
+      },
+    ],
+    status: radioResult.status === 'selesai' ? 'final' : radioResult.status === 'validasi' ? 'preliminary' : 'registered',
+    category: [
+      {
+        coding: [
+          {
+            system: 'http://terminology.hl7.org/CodeSystem/v2-0074',
+            code: 'RAD',
+            display: 'Radiology',
+          },
+        ],
+      },
+    ],
+    code: {
+      coding: [
+        {
+          system: 'http://loinc.org',
+          code: radioResult.loinc_code || 'unknown',
+          display: radioResult.exam_name,
+        },
+      ],
+      text: radioResult.exam_name,
+    },
+    subject: {
+      reference: `Patient/${patientSatuSehatId}`,
+    },
+    ...(encounterSatuSehatId ? {
+      encounter: {
+        reference: `Encounter/${encounterSatuSehatId}`,
+      },
+    } : {}),
+    effectiveDateTime: radioResult.exam_date,
+    issued: radioResult.report_date,
+    ...(practitionerId ? {
+      performer: [
+        {
+          reference: `Practitioner/${practitionerId}`,
+        },
+      ],
+    } : {}),
+    ...(imagingStudyId ? {
+      imagingStudy: [
+        {
+          reference: `ImagingStudy/${imagingStudyId}`,
+        },
+      ],
+    } : {}),
+    conclusion: radioResult.conclusion || radioResult.findings,
+    conclusionCode: radioResult.impression ? [
+      {
+        text: radioResult.impression,
+      },
+    ] : undefined,
+  };
+}
+
+// Create FHIR Composition for RME bundle
+function createRMEComposition(
+  visitData: any,
+  patientSatuSehatId: string,
+  encounterSatuSehatId: string,
+  practitionerId: string,
+  organizationId: string,
+  sectionReferences: {
+    conditions?: string[];
+    observations?: string[];
+    medicationRequests?: string[];
+    procedures?: string[];
+    diagnosticReports?: string[];
+    allergies?: string[];
+  }
+): any {
+  const sections: any[] = [];
+
+  // Diagnosis section
+  if (sectionReferences.conditions?.length) {
+    sections.push({
+      title: 'Diagnosis',
+      code: {
+        coding: [
+          {
+            system: 'http://loinc.org',
+            code: '29548-5',
+            display: 'Diagnosis',
+          },
+        ],
+      },
+      entry: sectionReferences.conditions.map(id => ({
+        reference: `Condition/${id}`,
+      })),
+    });
+  }
+
+  // Lab Results section
+  if (sectionReferences.observations?.length) {
+    sections.push({
+      title: 'Hasil Laboratorium',
+      code: {
+        coding: [
+          {
+            system: 'http://loinc.org',
+            code: '30954-2',
+            display: 'Relevant diagnostic tests/laboratory data Narrative',
+          },
+        ],
+      },
+      entry: sectionReferences.observations.map(id => ({
+        reference: `Observation/${id}`,
+      })),
+    });
+  }
+
+  // Medication section
+  if (sectionReferences.medicationRequests?.length) {
+    sections.push({
+      title: 'Resep Obat',
+      code: {
+        coding: [
+          {
+            system: 'http://loinc.org',
+            code: '10160-0',
+            display: 'History of Medication use Narrative',
+          },
+        ],
+      },
+      entry: sectionReferences.medicationRequests.map(id => ({
+        reference: `MedicationRequest/${id}`,
+      })),
+    });
+  }
+
+  // Procedures section
+  if (sectionReferences.procedures?.length) {
+    sections.push({
+      title: 'Tindakan',
+      code: {
+        coding: [
+          {
+            system: 'http://loinc.org',
+            code: '47519-4',
+            display: 'History of Procedures Document',
+          },
+        ],
+      },
+      entry: sectionReferences.procedures.map(id => ({
+        reference: `Procedure/${id}`,
+      })),
+    });
+  }
+
+  // Diagnostic Reports section
+  if (sectionReferences.diagnosticReports?.length) {
+    sections.push({
+      title: 'Laporan Diagnostik',
+      code: {
+        coding: [
+          {
+            system: 'http://loinc.org',
+            code: '30954-2',
+            display: 'Diagnostic studies',
+          },
+        ],
+      },
+      entry: sectionReferences.diagnosticReports.map(id => ({
+        reference: `DiagnosticReport/${id}`,
+      })),
+    });
+  }
+
+  // Allergies section
+  if (sectionReferences.allergies?.length) {
+    sections.push({
+      title: 'Riwayat Alergi',
+      code: {
+        coding: [
+          {
+            system: 'http://loinc.org',
+            code: '48765-2',
+            display: 'Allergies and adverse reactions Document',
+          },
+        ],
+      },
+      entry: sectionReferences.allergies.map(id => ({
+        reference: `AllergyIntolerance/${id}`,
+      })),
+    });
+  }
+
+  return {
+    resourceType: 'Composition',
+    identifier: {
+      system: `http://sys-ids.kemkes.go.id/composition/${organizationId}`,
+      value: visitData.visit_number,
+    },
+    status: visitData.status === 'selesai' ? 'final' : 'preliminary',
+    type: {
+      coding: [
+        {
+          system: 'http://loinc.org',
+          code: '18842-5',
+          display: 'Discharge summary',
+        },
+      ],
+    },
+    category: [
+      {
+        coding: [
+          {
+            system: 'http://loinc.org',
+            code: '18842-5',
+            display: 'Discharge summary',
+          },
+        ],
+      },
+    ],
+    subject: {
+      reference: `Patient/${patientSatuSehatId}`,
+    },
+    encounter: {
+      reference: `Encounter/${encounterSatuSehatId}`,
+    },
+    date: new Date().toISOString(),
+    author: [
+      {
+        reference: `Practitioner/${practitionerId}`,
+      },
+    ],
+    title: `Rekam Medis Elektronik - ${visitData.visit_number}`,
+    custodian: {
+      reference: `Organization/${organizationId}`,
+    },
+    section: sections,
+  };
+}
+
 // Convert allergy to FHIR AllergyIntolerance resource
 function allergyToFHIRAllergyIntolerance(allergy: any, patientSatuSehatId: string): any {
   return {
@@ -1148,6 +1589,9 @@ serve(async (req) => {
           { name: 'Condition', synced: syncedCounts['Condition'] || 0, total: diagnoses.count || 0 },
           { name: 'MedicationRequest', synced: syncedCounts['MedicationRequest'] || 0, total: prescriptions.count || 0 },
           { name: 'Observation', synced: syncedCounts['Observation'] || 0, total: labResults.count || 0 },
+          { name: 'ServiceRequest', synced: syncedCounts['ServiceRequest'] || 0, total: labResults.count || 0 },
+          { name: 'DiagnosticReport', synced: syncedCounts['DiagnosticReport'] || 0, total: labResults.count || 0 },
+          { name: 'Composition', synced: syncedCounts['Composition'] || 0, total: visits.count || 0 },
         ].map(s => ({
           ...s,
           percentage: s.total > 0 ? Math.round((s.synced / s.total) * 100 * 10) / 10 : 0,
@@ -1373,6 +1817,274 @@ serve(async (req) => {
           synced,
           failed,
           remaining: unsyncedIds.length - 50,
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      case 'sync-service-request': {
+        const { labResultId, type = 'lab' } = data;
+        if (!clientId || !clientSecret) throw new Error('Client credentials not configured');
+        const token = await getAccessTokenWithConfig(clientId, clientSecret, environment);
+
+        if (type === 'lab') {
+          const { data: labResult, error } = await supabase
+            .from('lab_results')
+            .select('*, visits(patient_id), patients(nik)')
+            .eq('id', labResultId)
+            .single();
+
+          if (error || !labResult) throw new Error(`Lab result not found: ${labResultId}`);
+
+          // Get patient SATU SEHAT ID
+          const { data: patientMapping } = await supabase
+            .from('satusehat_resource_mappings')
+            .select('satusehat_id')
+            .eq('resource_type', 'Patient')
+            .eq('local_id', labResult.visits?.patient_id)
+            .single();
+
+          if (!patientMapping) throw new Error('Patient not synced to SATU SEHAT');
+
+          // Get encounter SATU SEHAT ID
+          const { data: encounterMapping } = await supabase
+            .from('satusehat_resource_mappings')
+            .select('satusehat_id')
+            .eq('resource_type', 'Encounter')
+            .eq('local_id', labResult.visit_id)
+            .single();
+
+          const fhirServiceRequest = labOrderToFHIRServiceRequest(
+            labResult,
+            patientMapping.satusehat_id,
+            encounterMapping?.satusehat_id
+          );
+
+          const result = await sendFHIRResource(
+            token.access_token,
+            'ServiceRequest',
+            fhirServiceRequest,
+            environment
+          );
+
+          await supabase.from('satusehat_resource_mappings').insert({
+            resource_type: 'ServiceRequest',
+            local_id: labResultId,
+            satusehat_id: result.id,
+          });
+
+          await supabase.from('satusehat_sync_logs').insert({
+            resource_type: 'ServiceRequest',
+            resource_id: labResultId,
+            local_table: 'lab_results',
+            satusehat_id: result.id,
+            action: 'create',
+            status: 'synced',
+            synced_at: new Date().toISOString(),
+          });
+
+          return new Response(JSON.stringify({
+            success: true,
+            satusehat_id: result.id,
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+
+        throw new Error('Unsupported service request type');
+      }
+
+      case 'sync-diagnostic-report': {
+        const { labResultId, type = 'lab' } = data;
+        if (!clientId || !clientSecret) throw new Error('Client credentials not configured');
+        const token = await getAccessTokenWithConfig(clientId, clientSecret, environment);
+
+        if (type === 'lab') {
+          const { data: labResult, error } = await supabase
+            .from('lab_results')
+            .select('*, visits(patient_id, doctor_id)')
+            .eq('id', labResultId)
+            .single();
+
+          if (error || !labResult) throw new Error(`Lab result not found: ${labResultId}`);
+
+          // Get patient SATU SEHAT ID
+          const { data: patientMapping } = await supabase
+            .from('satusehat_resource_mappings')
+            .select('satusehat_id')
+            .eq('resource_type', 'Patient')
+            .eq('local_id', labResult.visits?.patient_id)
+            .single();
+
+          if (!patientMapping) throw new Error('Patient not synced to SATU SEHAT');
+
+          // Get encounter SATU SEHAT ID
+          const { data: encounterMapping } = await supabase
+            .from('satusehat_resource_mappings')
+            .select('satusehat_id')
+            .eq('resource_type', 'Encounter')
+            .eq('local_id', labResult.visit_id)
+            .single();
+
+          // Get practitioner ID
+          const { data: practitionerMapping } = await supabase
+            .from('satusehat_resource_mappings')
+            .select('satusehat_id')
+            .eq('resource_type', 'Practitioner')
+            .eq('local_id', labResult.visits?.doctor_id)
+            .single();
+
+          // Get observation IDs if already synced
+          const { data: observationMappings } = await supabase
+            .from('satusehat_resource_mappings')
+            .select('satusehat_id')
+            .eq('resource_type', 'Observation')
+            .eq('local_id', labResultId);
+
+          const fhirDiagnosticReport = labResultToFHIRDiagnosticReport(
+            labResult,
+            patientMapping.satusehat_id,
+            encounterMapping?.satusehat_id,
+            practitionerMapping?.satusehat_id,
+            observationMappings?.map(m => m.satusehat_id)
+          );
+
+          const result = await sendFHIRResource(
+            token.access_token,
+            'DiagnosticReport',
+            fhirDiagnosticReport,
+            environment
+          );
+
+          await supabase.from('satusehat_resource_mappings').insert({
+            resource_type: 'DiagnosticReport',
+            local_id: labResultId,
+            satusehat_id: result.id,
+          });
+
+          await supabase.from('satusehat_sync_logs').insert({
+            resource_type: 'DiagnosticReport',
+            resource_id: labResultId,
+            local_table: 'lab_results',
+            satusehat_id: result.id,
+            action: 'create',
+            status: 'synced',
+            synced_at: new Date().toISOString(),
+          });
+
+          return new Response(JSON.stringify({
+            success: true,
+            satusehat_id: result.id,
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+
+        throw new Error('Unsupported diagnostic report type');
+      }
+
+      case 'sync-composition': {
+        const { visitId } = data;
+        if (!clientId || !clientSecret) throw new Error('Client credentials not configured');
+        const token = await getAccessTokenWithConfig(clientId, clientSecret, environment);
+
+        // Get visit data
+        const { data: visit, error } = await supabase
+          .from('visits')
+          .select('*, patients(*), doctors(*)')
+          .eq('id', visitId)
+          .single();
+
+        if (error || !visit) throw new Error(`Visit not found: ${visitId}`);
+
+        // Get all required SATU SEHAT IDs
+        const { data: patientMapping } = await supabase
+          .from('satusehat_resource_mappings')
+          .select('satusehat_id')
+          .eq('resource_type', 'Patient')
+          .eq('local_id', visit.patient_id)
+          .single();
+
+        if (!patientMapping) throw new Error('Patient not synced to SATU SEHAT');
+
+        const { data: encounterMapping } = await supabase
+          .from('satusehat_resource_mappings')
+          .select('satusehat_id')
+          .eq('resource_type', 'Encounter')
+          .eq('local_id', visitId)
+          .single();
+
+        if (!encounterMapping) throw new Error('Encounter not synced to SATU SEHAT');
+
+        const { data: practitionerMapping } = await supabase
+          .from('satusehat_resource_mappings')
+          .select('satusehat_id')
+          .eq('resource_type', 'Practitioner')
+          .eq('local_id', visit.doctor_id)
+          .single();
+
+        if (!practitionerMapping) throw new Error('Practitioner not synced to SATU SEHAT');
+
+        // Get all related resource IDs
+        const [conditionMappings, observationMappings, medicationMappings, procedureMappings, diagnosticMappings, allergyMappings] = await Promise.all([
+          supabase.from('satusehat_resource_mappings').select('satusehat_id').eq('resource_type', 'Condition').like('local_id', `%${visitId}%`),
+          supabase.from('satusehat_resource_mappings').select('satusehat_id').eq('resource_type', 'Observation').like('local_id', `%${visitId}%`),
+          supabase.from('satusehat_resource_mappings').select('satusehat_id').eq('resource_type', 'MedicationRequest').like('local_id', `%${visitId}%`),
+          supabase.from('satusehat_resource_mappings').select('satusehat_id').eq('resource_type', 'Procedure').like('local_id', `%${visitId}%`),
+          supabase.from('satusehat_resource_mappings').select('satusehat_id').eq('resource_type', 'DiagnosticReport').like('local_id', `%${visitId}%`),
+          supabase.from('satusehat_resource_mappings').select('satusehat_id').eq('resource_type', 'AllergyIntolerance').eq('local_id', visit.patient_id),
+        ]);
+
+        const fhirComposition = createRMEComposition(
+          visit,
+          patientMapping.satusehat_id,
+          encounterMapping.satusehat_id,
+          practitionerMapping.satusehat_id,
+          organizationId,
+          {
+            conditions: conditionMappings.data?.map(m => m.satusehat_id),
+            observations: observationMappings.data?.map(m => m.satusehat_id),
+            medicationRequests: medicationMappings.data?.map(m => m.satusehat_id),
+            procedures: procedureMappings.data?.map(m => m.satusehat_id),
+            diagnosticReports: diagnosticMappings.data?.map(m => m.satusehat_id),
+            allergies: allergyMappings.data?.map(m => m.satusehat_id),
+          }
+        );
+
+        const result = await sendFHIRResource(
+          token.access_token,
+          'Composition',
+          fhirComposition,
+          environment
+        );
+
+        await supabase.from('satusehat_resource_mappings').insert({
+          resource_type: 'Composition',
+          local_id: visitId,
+          satusehat_id: result.id,
+        });
+
+        await supabase.from('satusehat_sync_logs').insert({
+          resource_type: 'Composition',
+          resource_id: visitId,
+          local_table: 'visits',
+          satusehat_id: result.id,
+          action: 'create',
+          status: 'synced',
+          synced_at: new Date().toISOString(),
+        });
+
+        return new Response(JSON.stringify({
+          success: true,
+          satusehat_id: result.id,
+          sections_count: Object.values({
+            conditions: conditionMappings.data?.length || 0,
+            observations: observationMappings.data?.length || 0,
+            medicationRequests: medicationMappings.data?.length || 0,
+            procedures: procedureMappings.data?.length || 0,
+            diagnosticReports: diagnosticMappings.data?.length || 0,
+            allergies: allergyMappings.data?.length || 0,
+          }).reduce((a, b) => a + b, 0),
         }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
