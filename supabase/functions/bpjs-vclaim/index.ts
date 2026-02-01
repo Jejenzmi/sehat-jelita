@@ -467,6 +467,138 @@ serve(async (req) => {
         break;
       }
 
+      // ==================== RENCANA KONTROL / SPRI ====================
+      case "insert_rencana_kontrol": {
+        const response = await fetch(`${baseUrl}/RencanaKontrol/insert`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ request: data }),
+        });
+        result = await response.json();
+        break;
+      }
+
+      case "update_rencana_kontrol": {
+        const response = await fetch(`${baseUrl}/RencanaKontrol/Update`, {
+          method: "PUT",
+          headers,
+          body: JSON.stringify({ request: data }),
+        });
+        result = await response.json();
+        break;
+      }
+
+      case "insert_rencana_kontrol_v2": {
+        const response = await fetch(`${baseUrl}/RencanaKontrol/v2/Insert`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ request: data }),
+        });
+        result = await response.json();
+        break;
+      }
+
+      case "update_rencana_kontrol_v2": {
+        const response = await fetch(`${baseUrl}/RencanaKontrol/v2/Update`, {
+          method: "PUT",
+          headers,
+          body: JSON.stringify({ request: data }),
+        });
+        result = await response.json();
+        break;
+      }
+
+      case "delete_rencana_kontrol": {
+        const { noSuratKontrol, user } = data;
+        const response = await fetch(`${baseUrl}/RencanaKontrol/Delete`, {
+          method: "DELETE",
+          headers,
+          body: JSON.stringify({ request: { t_suratkontrol: { noSuratKontrol, user } } }),
+        });
+        result = await response.json();
+        break;
+      }
+
+      case "insert_spri": {
+        const response = await fetch(`${baseUrl}/RencanaKontrol/InsertSPRI`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ request: data }),
+        });
+        result = await response.json();
+        break;
+      }
+
+      case "update_spri": {
+        const response = await fetch(`${baseUrl}/RencanaKontrol/UpdateSPRI`, {
+          method: "PUT",
+          headers,
+          body: JSON.stringify({ request: data }),
+        });
+        result = await response.json();
+        break;
+      }
+
+      case "get_rencana_kontrol_by_sep": {
+        const { noSep } = data;
+        const response = await fetch(
+          `${baseUrl}/RencanaKontrol/nosep/${noSep}`,
+          { method: "GET", headers }
+        );
+        result = await response.json();
+        break;
+      }
+
+      case "get_rencana_kontrol_by_surat": {
+        const { noSuratKontrol } = data;
+        const response = await fetch(
+          `${baseUrl}/RencanaKontrol/noSuratKontrol/${noSuratKontrol}`,
+          { method: "GET", headers }
+        );
+        result = await response.json();
+        break;
+      }
+
+      case "list_rencana_kontrol_by_kartu": {
+        const { bulan, tahun, noKartu, filter } = data;
+        const response = await fetch(
+          `${baseUrl}/RencanaKontrol/ListRencanaKontrol/Bulan/${bulan}/Tahun/${tahun}/Nokartu/${noKartu}/filter/${filter}`,
+          { method: "GET", headers }
+        );
+        result = await response.json();
+        break;
+      }
+
+      case "list_rencana_kontrol_by_date": {
+        const { tglAwal, tglAkhir, filter } = data;
+        const response = await fetch(
+          `${baseUrl}/RencanaKontrol/ListRencanaKontrol/tglAwal/${tglAwal}/tglAkhir/${tglAkhir}/filter/${filter}`,
+          { method: "GET", headers }
+        );
+        result = await response.json();
+        break;
+      }
+
+      case "list_spesialistik_kontrol": {
+        const { jnsKontrol, nomor, tglRencanaKontrol } = data;
+        const response = await fetch(
+          `${baseUrl}/RencanaKontrol/ListSpesialistik/JnsKontrol/${jnsKontrol}/nomor/${nomor}/TglRencanaKontrol/${tglRencanaKontrol}`,
+          { method: "GET", headers }
+        );
+        result = await response.json();
+        break;
+      }
+
+      case "jadwal_praktek_dokter": {
+        const { jnsKontrol, kdPoli, tglRencanaKontrol } = data;
+        const response = await fetch(
+          `${baseUrl}/RencanaKontrol/JadwalPraktekDokter/JnsKontrol/${jnsKontrol}/KdPoli/${kdPoli}/TglRencanaKontrol/${tglRencanaKontrol}`,
+          { method: "GET", headers }
+        );
+        result = await response.json();
+        break;
+      }
+
       default:
         return new Response(
           JSON.stringify({ error: `Invalid action: ${action}` }),
