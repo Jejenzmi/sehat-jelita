@@ -15,6 +15,8 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useTelemedicineData } from "@/hooks/useTelemedicineData";
+import { useWebRTCSignaling, createPeerConnection, createOffer, createAnswer, setRemoteAnswer, addIceCandidate } from "@/hooks/useWebRTCSignaling";
+import { useAuth } from "@/hooks/useAuth";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 
@@ -49,12 +51,57 @@ function VideoCallRoom({
   const [callDuration, setCallDuration] = useState(0);
   const [notes, setNotes] = useState(session.notes || "");
   const [connectionState, setConnectionState] = useState<string>("connecting");
+  const [isInitiator, setIsInitiator] = useState(false);
   
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
+  const pendingCandidatesRef = useRef<RTCIceCandidateInit[]>([]);
+  
   const { toast } = useToast();
+  const { user } = useAuth();
+  const userId = user?.id || "anonymous";
+
+  // Handle incoming signals
+  const handleSignalReceived = useCallback(async (signal: { type: string; data: any }) => {
+    const pc = peerConnectionRef.current;
+    if (!pc) return;
+
+    console.log(`[VideoCall] Processing signal: ${signal.type}`);
+
+    try {
+      if (signal.type === "offer") {
+        // Received offer, create answer
+        const answer = await createAnswer(pc, signal.data);
+        sendSignal({ type: "answer", data: answer });
+      } else if (signal.type === "answer") {
+        // Received answer
+        await setRemoteAnswer(pc, signal.data);
+        // Process pending ICE candidates
+        for (const candidate of pendingCandidatesRef.current) {
+          await addIceCandidate(pc, candidate);
+        }
+        pendingCandidatesRef.current = [];
+      } else if (signal.type === "ice-candidate") {
+        if (pc.remoteDescription) {
+          await addIceCandidate(pc, signal.data);
+        } else {
+          pendingCandidatesRef.current.push(signal.data);
+        }
+      }
+    } catch (error) {
+      console.error("[VideoCall] Error processing signal:", error);
+    }
+  }, []);
+
+  // Setup WebRTC signaling
+  const { sendSignal } = useWebRTCSignaling({
+    sessionId: session.id,
+    localUserId: userId,
+    onSignalReceived: handleSignalReceived,
+    enabled: true,
+  });
 
   // Initialize WebRTC
   const initializeWebRTC = useCallback(async () => {
@@ -70,15 +117,39 @@ function VideoCallRoom({
         localVideoRef.current.srcObject = stream;
       }
 
-      // Create RTCPeerConnection
-      const config: RTCConfiguration = {
-        iceServers: [
-          { urls: 'stun:stun.l.google.com:19302' },
-          { urls: 'stun:stun1.l.google.com:19302' },
-        ]
-      };
+      // Create RTCPeerConnection with signaling
+      const pc = createPeerConnection(
+        // onTrack
+        (event) => {
+          console.log("[VideoCall] Remote track received");
+          if (remoteVideoRef.current && event.streams[0]) {
+            remoteVideoRef.current.srcObject = event.streams[0];
+          }
+        },
+        // onIceCandidate
+        (candidate) => {
+          console.log("[VideoCall] Sending ICE candidate");
+          sendSignal({ type: "ice-candidate", data: candidate.toJSON() });
+        },
+        // onConnectionStateChange
+        (state) => {
+          console.log(`[VideoCall] Connection state: ${state}`);
+          setConnectionState(state);
+          if (state === "connected") {
+            toast({
+              title: "Terhubung",
+              description: "Video call berhasil terhubung",
+            });
+          } else if (state === "failed" || state === "disconnected") {
+            toast({
+              title: "Koneksi Terputus",
+              description: "Koneksi video call terputus",
+              variant: "destructive",
+            });
+          }
+        }
+      );
       
-      const pc = new RTCPeerConnection(config);
       peerConnectionRef.current = pc;
 
       // Add local tracks to peer connection
@@ -86,28 +157,16 @@ function VideoCallRoom({
         pc.addTrack(track, stream);
       });
 
-      // Handle incoming remote stream
-      pc.ontrack = (event) => {
-        if (remoteVideoRef.current && event.streams[0]) {
-          remoteVideoRef.current.srcObject = event.streams[0];
-        }
-      };
+      // Determine if we're the initiator (doctor initiates)
+      const isDoctor = session.doctor_id === userId;
+      setIsInitiator(isDoctor);
 
-      // Handle connection state changes
-      pc.onconnectionstatechange = () => {
-        setConnectionState(pc.connectionState);
-        if (pc.connectionState === 'connected') {
-          toast({
-            title: "Terhubung",
-            description: "Video call berhasil terhubung",
-          });
-        }
-      };
-
-      // For demo purposes, simulate connection after 2 seconds
-      setTimeout(() => {
-        setConnectionState('connected');
-      }, 2000);
+      if (isDoctor) {
+        // Doctor creates and sends offer
+        console.log("[VideoCall] Creating offer as initiator");
+        const offer = await createOffer(pc);
+        sendSignal({ type: "offer", data: offer });
+      }
 
     } catch (error) {
       console.error("Error accessing media devices:", error);
@@ -117,7 +176,7 @@ function VideoCallRoom({
         variant: "destructive",
       });
     }
-  }, [toast]);
+  }, [session.id, session.doctor_id, userId, toast, sendSignal]);
 
   useEffect(() => {
     initializeWebRTC();
