@@ -28,7 +28,7 @@ const signupSchema = z.object({
 export default function Auth() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user, signIn, signUp, loading: authLoading } = useAuth();
+  const { user, session, signIn, signUp, loading: authLoading } = useAuth();
   
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -36,11 +36,36 @@ export default function Auth() {
   const [signupData, setSignupData] = useState({ fullName: "", email: "", password: "", confirmPassword: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // Redirect if already authenticated - check both user AND session
   useEffect(() => {
-    if (user && !authLoading) {
+    if (!authLoading && user && session) {
       navigate("/", { replace: true });
     }
-  }, [user, authLoading, navigate]);
+  }, [user, session, authLoading, navigate]);
+
+  // Show loading while checking auth state
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto mb-4" />
+          <p className="text-muted-foreground">Memeriksa autentikasi...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If already authenticated, show loading while redirecting
+  if (user && session) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto mb-4" />
+          <p className="text-muted-foreground">Mengalihkan...</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -117,13 +142,7 @@ export default function Auth() {
     }
   };
 
-  if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
+  // Auth form rendering below (loading states handled above)
 
   return (
     <div className="min-h-screen flex">
