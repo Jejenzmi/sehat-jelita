@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { 
   Building2, Bell, Shield, Globe, Database, History,
-  Save, RefreshCw, CheckCircle, AlertTriangle, Search, Filter, Puzzle, RotateCcw, ArrowRightLeft
+  Save, RefreshCw, CheckCircle, AlertTriangle, Search, Filter, Puzzle, RotateCcw, ArrowRightLeft, Network
 } from "lucide-react";
 import SystemResetTab from "@/components/settings/SystemResetTab";
 import HospitalMigrationTab from "@/components/settings/HospitalMigrationTab";
@@ -20,8 +20,9 @@ import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { SatuSehatSettings } from "@/components/settings/SatuSehatSettings";
 import { ModuleConfigurationTab } from "@/components/settings/ModuleConfigurationTab";
+import { ExternalIntegrationsTab } from "@/components/settings/ExternalIntegrationsTab";
+import { ConfirmationDialog } from "@/components/shared/ConfirmationDialog";
 
 export default function Pengaturan() {
   const { 
@@ -189,7 +190,10 @@ export default function Pengaturan() {
           </TabsTrigger>
           <TabsTrigger value="notifications">Notifikasi</TabsTrigger>
           <TabsTrigger value="system">Sistem</TabsTrigger>
-          <TabsTrigger value="integrations">Integrasi</TabsTrigger>
+          <TabsTrigger value="integrations" className="gap-1">
+            <Network className="h-4 w-4" />
+            Integrasi Eksternal
+          </TabsTrigger>
           <TabsTrigger value="audit">Audit Trail</TabsTrigger>
           <TabsTrigger value="reset" className="gap-1 text-destructive">
             <RotateCcw className="h-4 w-4" />
@@ -484,94 +488,9 @@ export default function Pengaturan() {
           </Card>
         </TabsContent>
 
-        {/* Integrations */}
+        {/* External Integrations */}
         <TabsContent value="integrations">
-          <div className="grid gap-4 lg:grid-cols-2">
-            {/* SATU SEHAT Settings Component */}
-            <div className="lg:col-span-2">
-              <SatuSehatSettings />
-            </div>
-
-            {/* BPJS Settings */}
-            <Card className="lg:col-span-2">
-              <CardHeader>
-                <CardTitle>BPJS Kesehatan</CardTitle>
-                <CardDescription>Konfigurasi kredensial bridging BPJS Kesehatan (VClaim/PCare)</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="bpjs-enabled">Status Integrasi</Label>
-                  <Switch
-                    id="bpjs-enabled"
-                    checked={localBpjs.enabled}
-                    onCheckedChange={(checked) => setLocalBpjs({ ...localBpjs, enabled: checked })}
-                  />
-                </div>
-                <Separator />
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="bpjs-provider">Provider Code (Kode PPK)</Label>
-                    <Input
-                      id="bpjs-provider"
-                      placeholder="Contoh: 0301R001"
-                      value={localBpjs.provider_code}
-                      onChange={(e) => setLocalBpjs({ ...localBpjs, provider_code: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="bpjs-env">Environment</Label>
-                    <Select
-                      value={localBpjs.environment}
-                      onValueChange={(val) => setLocalBpjs({ ...localBpjs, environment: val as "development" | "production" })}
-                    >
-                      <SelectTrigger id="bpjs-env">
-                        <SelectValue placeholder="Pilih environment" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="development">Development (Sandbox)</SelectItem>
-                        <SelectItem value="production">Production</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="bpjs-consumer-id">Consumer ID</Label>
-                    <Input
-                      id="bpjs-consumer-id"
-                      placeholder="Consumer ID dari BPJS"
-                      value={localBpjs.consumer_id}
-                      onChange={(e) => setLocalBpjs({ ...localBpjs, consumer_id: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="bpjs-consumer-secret">Consumer Secret</Label>
-                    <Input
-                      id="bpjs-consumer-secret"
-                      type="password"
-                      placeholder="••••••••"
-                      value={localBpjs.consumer_secret}
-                      onChange={(e) => setLocalBpjs({ ...localBpjs, consumer_secret: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2 md:col-span-2">
-                    <Label htmlFor="bpjs-user-key">User Key</Label>
-                    <Input
-                      id="bpjs-user-key"
-                      type="password"
-                      placeholder="User Key dari BPJS"
-                      value={localBpjs.user_key}
-                      onChange={(e) => setLocalBpjs({ ...localBpjs, user_key: e.target.value })}
-                    />
-                  </div>
-                </div>
-                <div className="flex justify-end pt-4">
-                  <Button onClick={handleSaveBpjs} disabled={updateSetting.isPending}>
-                    <Save className="mr-2 h-4 w-4" />
-                    Simpan Konfigurasi BPJS
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          <ExternalIntegrationsTab />
         </TabsContent>
 
         {/* Audit Trail */}
