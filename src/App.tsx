@@ -45,6 +45,7 @@ import Penunjang from "./pages/Penunjang";
 import Mutu from "./pages/Mutu";
 import Akuntansi from "./pages/Akuntansi";
 import Pendidikan from "./pages/Pendidikan";
+import LaporanKemenkes from "./pages/LaporanKemenkes";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -356,6 +357,14 @@ const App = () => (
               element={
                 <ProtectedPageWithLayout>
                   <Pendidikan />
+                </ProtectedPageWithLayout>
+              }
+            />
+            <Route
+              path="/laporan-kemenkes"
+              element={
+                <ProtectedPageWithLayout>
+                  <LaporanKemenkes />
                 </ProtectedPageWithLayout>
               }
             />

@@ -110,6 +110,7 @@ const allNavigationGroups: NavGroup[] = [
       { icon: KeyRound, label: "Pendidikan", path: "/pendidikan" },
       { icon: UserCog, label: "SDM / HRD", path: "/sdm" },
       { icon: FileBarChart, label: "Laporan", path: "/laporan" },
+      { icon: FileBarChart, label: "Kemenkes", path: "/laporan-kemenkes", badge: "RL" },
       { icon: Database, label: "Master Data", path: "/master-data" },
       { icon: Shield, label: "Manajemen User", path: "/manajemen-user", badge: "RBAC" },
       { icon: Settings, label: "Pengaturan", path: "/pengaturan" },
