@@ -10,9 +10,10 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { 
   Building2, Bell, Shield, Globe, Database, History,
-  Save, RefreshCw, CheckCircle, AlertTriangle, Search, Filter, Puzzle, RotateCcw
+  Save, RefreshCw, CheckCircle, AlertTriangle, Search, Filter, Puzzle, RotateCcw, ArrowRightLeft
 } from "lucide-react";
 import SystemResetTab from "@/components/settings/SystemResetTab";
+import HospitalMigrationTab from "@/components/settings/HospitalMigrationTab";
 import { useSystemSettings } from "@/hooks/useSystemSettings";
 import { useAuditLogs, useAuditStats } from "@/hooks/useAuditLogs";
 import { format } from "date-fns";
@@ -182,6 +183,10 @@ export default function Pengaturan() {
             <Puzzle className="h-4 w-4" />
             Modul
           </TabsTrigger>
+          <TabsTrigger value="migration" className="gap-1">
+            <ArrowRightLeft className="h-4 w-4" />
+            Migrasi Tipe
+          </TabsTrigger>
           <TabsTrigger value="notifications">Notifikasi</TabsTrigger>
           <TabsTrigger value="system">Sistem</TabsTrigger>
           <TabsTrigger value="integrations">Integrasi</TabsTrigger>
@@ -294,6 +299,11 @@ export default function Pengaturan() {
         {/* Module Configuration */}
         <TabsContent value="modules">
           <ModuleConfigurationTab />
+        </TabsContent>
+
+        {/* Hospital Type Migration */}
+        <TabsContent value="migration">
+          <HospitalMigrationTab />
         </TabsContent>
 
         {/* Notification Settings */}

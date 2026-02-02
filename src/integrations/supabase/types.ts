@@ -3457,6 +3457,39 @@ export type Database = {
         }
         Relationships: []
       }
+      hospital_type_migrations: {
+        Row: {
+          created_at: string | null
+          from_type: string
+          id: string
+          migrated_by: string | null
+          migration_notes: string | null
+          modules_added: string[] | null
+          modules_removed: string[] | null
+          to_type: string
+        }
+        Insert: {
+          created_at?: string | null
+          from_type: string
+          id?: string
+          migrated_by?: string | null
+          migration_notes?: string | null
+          modules_added?: string[] | null
+          modules_removed?: string[] | null
+          to_type: string
+        }
+        Update: {
+          created_at?: string | null
+          from_type?: string
+          id?: string
+          migrated_by?: string | null
+          migration_notes?: string | null
+          modules_added?: string[] | null
+          modules_removed?: string[] | null
+          to_type?: string
+        }
+        Relationships: []
+      }
       icd10_codes: {
         Row: {
           category: string | null
@@ -11878,6 +11911,14 @@ export type Database = {
       }
       is_module_enabled: { Args: { p_module_code: string }; Returns: boolean }
       is_setup_completed: { Args: never; Returns: boolean }
+      migrate_hospital_type: {
+        Args: { p_new_type: string; p_notes?: string }
+        Returns: Json
+      }
+      preview_hospital_type_migration: {
+        Args: { p_new_type: string }
+        Returns: Json
+      }
       reset_system_to_initial: { Args: never; Returns: boolean }
       toggle_module: {
         Args: { p_enabled: boolean; p_module_code: string }
