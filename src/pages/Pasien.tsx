@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Search, Filter, Download, Eye, Edit, MoreHorizontal, Users, Plus, Loader2 } from "lucide-react";
+import { Search, Filter, Download, Eye, Edit, MoreHorizontal, Users, Plus, Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,6 +9,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -30,6 +31,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format, differenceInYears } from "date-fns";
+import { ConfirmationDialog } from "@/components/shared/ConfirmationDialog";
 
 interface Patient {
   id: string;
@@ -62,6 +64,14 @@ export default function Pasien() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
+  
+  // Delete confirmation
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [patientToDelete, setPatientToDelete] = useState<Patient | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  
+  // Save confirmation
+  const [saveConfirmOpen, setSaveConfirmOpen] = useState(false);
   
   // Form state
   const [formData, setFormData] = useState({
@@ -151,7 +161,7 @@ export default function Pasien() {
     }
   };
 
-  const handleSubmit = async () => {
+  const handleSubmitConfirm = () => {
     if (!formData.nik || !formData.full_name || !formData.birth_date || !formData.gender) {
       toast({
         variant: "destructive",
@@ -160,7 +170,11 @@ export default function Pasien() {
       });
       return;
     }
+    setSaveConfirmOpen(true);
+  };
 
+  const handleSubmit = async () => {
+    setSaveConfirmOpen(false);
     setIsSubmitting(true);
     try {
       if (editingPatient) {
@@ -219,6 +233,43 @@ export default function Pasien() {
       });
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteConfirm = (patient: Patient) => {
+    setPatientToDelete(patient);
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleDelete = async () => {
+    if (!patientToDelete) return;
+    
+    setIsDeleting(true);
+    try {
+      const { error } = await supabase
+        .from("patients")
+        .delete()
+        .eq("id", patientToDelete.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Berhasil",
+        description: "Data pasien berhasil dihapus",
+      });
+
+      fetchPatients();
+      fetchStats();
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message,
+      });
+    } finally {
+      setIsDeleting(false);
+      setDeleteConfirmOpen(false);
+      setPatientToDelete(null);
     }
   };
 
@@ -361,7 +412,7 @@ export default function Pasien() {
                 <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
                   Batal
                 </Button>
-                <Button onClick={handleSubmit} disabled={isSubmitting} className="gradient-primary">
+                <Button onClick={handleSubmitConfirm} disabled={isSubmitting} className="gradient-primary">
                   {isSubmitting ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -531,6 +582,14 @@ export default function Pasien() {
                           <DropdownMenuItem>
                             Rekam Medis
                           </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem 
+                            onClick={() => handleDeleteConfirm(patient)}
+                            className="text-destructive focus:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Hapus Pasien
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </td>
@@ -582,6 +641,40 @@ export default function Pasien() {
           </div>
         )}
       </div>
+
+      {/* Save Confirmation Dialog */}
+      <ConfirmationDialog
+        open={saveConfirmOpen}
+        onOpenChange={setSaveConfirmOpen}
+        title={editingPatient ? "Simpan Perubahan" : "Daftarkan Pasien Baru"}
+        description={
+          editingPatient
+            ? `Apakah Anda yakin ingin menyimpan perubahan data pasien "${formData.full_name}"?`
+            : `Apakah Anda yakin ingin mendaftarkan pasien baru "${formData.full_name}"?`
+        }
+        type="save"
+        confirmLabel={editingPatient ? "Simpan" : "Daftarkan"}
+        onConfirm={handleSubmit}
+        isLoading={isSubmitting}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmationDialog
+        open={deleteConfirmOpen}
+        onOpenChange={setDeleteConfirmOpen}
+        title="Hapus Data Pasien"
+        description={
+          <>
+            Apakah Anda yakin ingin menghapus data pasien <strong>{patientToDelete?.full_name}</strong> (No. RM: {patientToDelete?.medical_record_number})?
+            <br /><br />
+            <span className="text-destructive">Tindakan ini tidak dapat dibatalkan dan akan menghapus semua data terkait pasien ini.</span>
+          </>
+        }
+        type="delete"
+        confirmLabel="Hapus"
+        onConfirm={handleDelete}
+        isLoading={isDeleting}
+      />
     </div>
   );
 }
