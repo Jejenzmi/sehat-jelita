@@ -474,6 +474,54 @@ export type Database = {
           },
         ]
       }
+      aspak_sync_logs: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          error_count: number | null
+          error_details: Json | null
+          id: string
+          initiated_by: string | null
+          notes: string | null
+          started_at: string | null
+          success_count: number | null
+          sync_direction: string | null
+          sync_status: string | null
+          sync_type: string | null
+          total_records: number | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          error_count?: number | null
+          error_details?: Json | null
+          id?: string
+          initiated_by?: string | null
+          notes?: string | null
+          started_at?: string | null
+          success_count?: number | null
+          sync_direction?: string | null
+          sync_status?: string | null
+          sync_type?: string | null
+          total_records?: number | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          error_count?: number | null
+          error_details?: Json | null
+          id?: string
+          initiated_by?: string | null
+          notes?: string | null
+          started_at?: string | null
+          success_count?: number | null
+          sync_direction?: string | null
+          sync_status?: string | null
+          sync_type?: string | null
+          total_records?: number | null
+        }
+        Relationships: []
+      }
       attendance: {
         Row: {
           attendance_date: string
@@ -2899,6 +2947,212 @@ export type Database = {
           },
         ]
       }
+      equipment_calibrations: {
+        Row: {
+          calibration_date: string
+          calibration_number: string | null
+          calibration_result: string | null
+          calibrator_accreditation: string | null
+          calibrator_institution: string | null
+          calibrator_name: string | null
+          certificate_expiry: string | null
+          certificate_number: string | null
+          certificate_url: string | null
+          corrective_action: string | null
+          cost: number | null
+          created_at: string | null
+          deviation_found: string | null
+          equipment_id: string | null
+          id: string
+          next_calibration_date: string | null
+          notes: string | null
+          performed_by: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          calibration_date: string
+          calibration_number?: string | null
+          calibration_result?: string | null
+          calibrator_accreditation?: string | null
+          calibrator_institution?: string | null
+          calibrator_name?: string | null
+          certificate_expiry?: string | null
+          certificate_number?: string | null
+          certificate_url?: string | null
+          corrective_action?: string | null
+          cost?: number | null
+          created_at?: string | null
+          deviation_found?: string | null
+          equipment_id?: string | null
+          id?: string
+          next_calibration_date?: string | null
+          notes?: string | null
+          performed_by?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          calibration_date?: string
+          calibration_number?: string | null
+          calibration_result?: string | null
+          calibrator_accreditation?: string | null
+          calibrator_institution?: string | null
+          calibrator_name?: string | null
+          certificate_expiry?: string | null
+          certificate_number?: string | null
+          certificate_url?: string | null
+          corrective_action?: string | null
+          cost?: number | null
+          created_at?: string | null
+          deviation_found?: string | null
+          equipment_id?: string | null
+          id?: string
+          next_calibration_date?: string | null
+          notes?: string | null
+          performed_by?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipment_calibrations_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "medical_equipment"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_calibrations_performed_by_fkey"
+            columns: ["performed_by"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      equipment_categories: {
+        Row: {
+          calibration_required: boolean | null
+          category_code: string
+          category_name: string
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          parent_id: string | null
+          risk_class: string | null
+        }
+        Insert: {
+          calibration_required?: boolean | null
+          category_code: string
+          category_name: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          parent_id?: string | null
+          risk_class?: string | null
+        }
+        Update: {
+          calibration_required?: boolean | null
+          category_code?: string
+          category_name?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          parent_id?: string | null
+          risk_class?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipment_categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      equipment_maintenance: {
+        Row: {
+          actions_taken: string | null
+          cost: number | null
+          created_at: string | null
+          description: string | null
+          downtime_hours: number | null
+          equipment_id: string | null
+          findings: string | null
+          id: string
+          maintenance_date: string
+          maintenance_number: string | null
+          maintenance_type: string | null
+          next_maintenance_date: string | null
+          notes: string | null
+          parts_replaced: Json | null
+          performed_by: string | null
+          status: string | null
+          technician_institution: string | null
+          technician_name: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          actions_taken?: string | null
+          cost?: number | null
+          created_at?: string | null
+          description?: string | null
+          downtime_hours?: number | null
+          equipment_id?: string | null
+          findings?: string | null
+          id?: string
+          maintenance_date: string
+          maintenance_number?: string | null
+          maintenance_type?: string | null
+          next_maintenance_date?: string | null
+          notes?: string | null
+          parts_replaced?: Json | null
+          performed_by?: string | null
+          status?: string | null
+          technician_institution?: string | null
+          technician_name?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          actions_taken?: string | null
+          cost?: number | null
+          created_at?: string | null
+          description?: string | null
+          downtime_hours?: number | null
+          equipment_id?: string | null
+          findings?: string | null
+          id?: string
+          maintenance_date?: string
+          maintenance_number?: string | null
+          maintenance_type?: string | null
+          next_maintenance_date?: string | null
+          notes?: string | null
+          parts_replaced?: Json | null
+          performed_by?: string | null
+          status?: string | null
+          technician_institution?: string | null
+          technician_name?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipment_maintenance_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "medical_equipment"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_maintenance_performed_by_fkey"
+            columns: ["performed_by"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fiscal_periods: {
         Row: {
           closed_at: string | null
@@ -3038,6 +3292,117 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      hospital_profile: {
+        Row: {
+          accreditation_date: string | null
+          accreditation_expiry: string | null
+          accreditation_status: string | null
+          address: string | null
+          bed_count_class1: number | null
+          bed_count_class2: number | null
+          bed_count_class3: number | null
+          bed_count_icu: number | null
+          bed_count_nicu: number | null
+          bed_count_picu: number | null
+          bed_count_total: number | null
+          bed_count_vip: number | null
+          city: string | null
+          created_at: string | null
+          director_name: string | null
+          director_nip: string | null
+          email: string | null
+          fax: string | null
+          hospital_code: string
+          hospital_name: string
+          hospital_type: string | null
+          id: string
+          is_teaching_hospital: boolean | null
+          operational_permit_date: string | null
+          operational_permit_expiry: string | null
+          operational_permit_number: string | null
+          ownership: string | null
+          phone: string | null
+          postal_code: string | null
+          province: string | null
+          services_available: Json | null
+          teaching_affiliation: string | null
+          updated_at: string | null
+          website: string | null
+        }
+        Insert: {
+          accreditation_date?: string | null
+          accreditation_expiry?: string | null
+          accreditation_status?: string | null
+          address?: string | null
+          bed_count_class1?: number | null
+          bed_count_class2?: number | null
+          bed_count_class3?: number | null
+          bed_count_icu?: number | null
+          bed_count_nicu?: number | null
+          bed_count_picu?: number | null
+          bed_count_total?: number | null
+          bed_count_vip?: number | null
+          city?: string | null
+          created_at?: string | null
+          director_name?: string | null
+          director_nip?: string | null
+          email?: string | null
+          fax?: string | null
+          hospital_code: string
+          hospital_name: string
+          hospital_type?: string | null
+          id?: string
+          is_teaching_hospital?: boolean | null
+          operational_permit_date?: string | null
+          operational_permit_expiry?: string | null
+          operational_permit_number?: string | null
+          ownership?: string | null
+          phone?: string | null
+          postal_code?: string | null
+          province?: string | null
+          services_available?: Json | null
+          teaching_affiliation?: string | null
+          updated_at?: string | null
+          website?: string | null
+        }
+        Update: {
+          accreditation_date?: string | null
+          accreditation_expiry?: string | null
+          accreditation_status?: string | null
+          address?: string | null
+          bed_count_class1?: number | null
+          bed_count_class2?: number | null
+          bed_count_class3?: number | null
+          bed_count_icu?: number | null
+          bed_count_nicu?: number | null
+          bed_count_picu?: number | null
+          bed_count_total?: number | null
+          bed_count_vip?: number | null
+          city?: string | null
+          created_at?: string | null
+          director_name?: string | null
+          director_nip?: string | null
+          email?: string | null
+          fax?: string | null
+          hospital_code?: string
+          hospital_name?: string
+          hospital_type?: string | null
+          id?: string
+          is_teaching_hospital?: boolean | null
+          operational_permit_date?: string | null
+          operational_permit_expiry?: string | null
+          operational_permit_number?: string | null
+          ownership?: string | null
+          phone?: string | null
+          postal_code?: string | null
+          province?: string | null
+          services_available?: Json | null
+          teaching_affiliation?: string | null
+          updated_at?: string | null
+          website?: string | null
+        }
+        Relationships: []
       }
       icd10_codes: {
         Row: {
@@ -5271,6 +5636,136 @@ export type Database = {
             columns: ["patient_id"]
             isOneToOne: false
             referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      medical_equipment: {
+        Row: {
+          aspak_code: string | null
+          aspak_last_sync: string | null
+          aspak_sync_status: string | null
+          brand: string | null
+          calibration_interval_months: number | null
+          calibration_required: boolean | null
+          category: string | null
+          condition: string | null
+          created_at: string | null
+          department_id: string | null
+          equipment_code: string
+          equipment_name: string
+          expected_lifespan_years: number | null
+          id: string
+          last_calibration_date: string | null
+          last_maintenance_date: string | null
+          location: string | null
+          maintenance_interval_months: number | null
+          manual_document_url: string | null
+          model: string | null
+          next_calibration_date: string | null
+          next_maintenance_date: string | null
+          notes: string | null
+          photo_url: string | null
+          purchase_date: string | null
+          purchase_price: number | null
+          risk_class: string | null
+          serial_number: string | null
+          status: string | null
+          subcategory: string | null
+          updated_at: string | null
+          vendor_id: string | null
+          warranty_expiry: string | null
+        }
+        Insert: {
+          aspak_code?: string | null
+          aspak_last_sync?: string | null
+          aspak_sync_status?: string | null
+          brand?: string | null
+          calibration_interval_months?: number | null
+          calibration_required?: boolean | null
+          category?: string | null
+          condition?: string | null
+          created_at?: string | null
+          department_id?: string | null
+          equipment_code: string
+          equipment_name: string
+          expected_lifespan_years?: number | null
+          id?: string
+          last_calibration_date?: string | null
+          last_maintenance_date?: string | null
+          location?: string | null
+          maintenance_interval_months?: number | null
+          manual_document_url?: string | null
+          model?: string | null
+          next_calibration_date?: string | null
+          next_maintenance_date?: string | null
+          notes?: string | null
+          photo_url?: string | null
+          purchase_date?: string | null
+          purchase_price?: number | null
+          risk_class?: string | null
+          serial_number?: string | null
+          status?: string | null
+          subcategory?: string | null
+          updated_at?: string | null
+          vendor_id?: string | null
+          warranty_expiry?: string | null
+        }
+        Update: {
+          aspak_code?: string | null
+          aspak_last_sync?: string | null
+          aspak_sync_status?: string | null
+          brand?: string | null
+          calibration_interval_months?: number | null
+          calibration_required?: boolean | null
+          category?: string | null
+          condition?: string | null
+          created_at?: string | null
+          department_id?: string | null
+          equipment_code?: string
+          equipment_name?: string
+          expected_lifespan_years?: number | null
+          id?: string
+          last_calibration_date?: string | null
+          last_maintenance_date?: string | null
+          location?: string | null
+          maintenance_interval_months?: number | null
+          manual_document_url?: string | null
+          model?: string | null
+          next_calibration_date?: string | null
+          next_maintenance_date?: string | null
+          notes?: string | null
+          photo_url?: string | null
+          purchase_date?: string | null
+          purchase_price?: number | null
+          risk_class?: string | null
+          serial_number?: string | null
+          status?: string | null
+          subcategory?: string | null
+          updated_at?: string | null
+          vendor_id?: string | null
+          warranty_expiry?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medical_equipment_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "department_satisfaction_summary"
+            referencedColumns: ["department_id"]
+          },
+          {
+            foreignKeyName: "medical_equipment_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medical_equipment_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
             referencedColumns: ["id"]
           },
         ]
@@ -7823,6 +8318,447 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      rl_report_submissions: {
+        Row: {
+          created_at: string | null
+          id: string
+          notes: string | null
+          rejection_reason: string | null
+          report_data: Json | null
+          report_period_month: number | null
+          report_period_quarter: number | null
+          report_period_year: number
+          report_type: string
+          status: string | null
+          submission_date: string | null
+          submitted_by: string | null
+          updated_at: string | null
+          verification_date: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          rejection_reason?: string | null
+          report_data?: Json | null
+          report_period_month?: number | null
+          report_period_quarter?: number | null
+          report_period_year: number
+          report_type: string
+          status?: string | null
+          submission_date?: string | null
+          submitted_by?: string | null
+          updated_at?: string | null
+          verification_date?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          rejection_reason?: string | null
+          report_data?: Json | null
+          report_period_month?: number | null
+          report_period_quarter?: number | null
+          report_period_year?: number
+          report_type?: string
+          status?: string | null
+          submission_date?: string | null
+          submitted_by?: string | null
+          updated_at?: string | null
+          verification_date?: string | null
+          verified_by?: string | null
+        }
+        Relationships: []
+      }
+      rl3_inpatient_stats: {
+        Row: {
+          admissions: number | null
+          bed_count: number | null
+          bor: number | null
+          bto: number | null
+          created_at: string | null
+          deaths_less_48h: number | null
+          deaths_more_48h: number | null
+          discharges: number | null
+          id: string
+          los: number | null
+          patient_days: number | null
+          period_month: number
+          period_year: number
+          referrals_out: number | null
+          toi: number | null
+          updated_at: string | null
+          ward_class: string | null
+        }
+        Insert: {
+          admissions?: number | null
+          bed_count?: number | null
+          bor?: number | null
+          bto?: number | null
+          created_at?: string | null
+          deaths_less_48h?: number | null
+          deaths_more_48h?: number | null
+          discharges?: number | null
+          id?: string
+          los?: number | null
+          patient_days?: number | null
+          period_month: number
+          period_year: number
+          referrals_out?: number | null
+          toi?: number | null
+          updated_at?: string | null
+          ward_class?: string | null
+        }
+        Update: {
+          admissions?: number | null
+          bed_count?: number | null
+          bor?: number | null
+          bto?: number | null
+          created_at?: string | null
+          deaths_less_48h?: number | null
+          deaths_more_48h?: number | null
+          discharges?: number | null
+          id?: string
+          los?: number | null
+          patient_days?: number | null
+          period_month?: number
+          period_year?: number
+          referrals_out?: number | null
+          toi?: number | null
+          updated_at?: string | null
+          ward_class?: string | null
+        }
+        Relationships: []
+      }
+      rl3_outpatient_stats: {
+        Row: {
+          bpjs_patients: number | null
+          created_at: string | null
+          department_id: string | null
+          female_patients: number | null
+          general_patients: number | null
+          id: string
+          insurance_patients: number | null
+          male_patients: number | null
+          new_patients: number | null
+          period_month: number
+          period_year: number
+          returning_patients: number | null
+          specialty_name: string | null
+          total_visits: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          bpjs_patients?: number | null
+          created_at?: string | null
+          department_id?: string | null
+          female_patients?: number | null
+          general_patients?: number | null
+          id?: string
+          insurance_patients?: number | null
+          male_patients?: number | null
+          new_patients?: number | null
+          period_month: number
+          period_year: number
+          returning_patients?: number | null
+          specialty_name?: string | null
+          total_visits?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          bpjs_patients?: number | null
+          created_at?: string | null
+          department_id?: string | null
+          female_patients?: number | null
+          general_patients?: number | null
+          id?: string
+          insurance_patients?: number | null
+          male_patients?: number | null
+          new_patients?: number | null
+          period_month?: number
+          period_year?: number
+          returning_patients?: number | null
+          specialty_name?: string | null
+          total_visits?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rl3_outpatient_stats_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "department_satisfaction_summary"
+            referencedColumns: ["department_id"]
+          },
+          {
+            foreignKeyName: "rl3_outpatient_stats_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rl4_morbidity_stats: {
+        Row: {
+          age_0_7d: number | null
+          age_1_12m: number | null
+          age_1_4y: number | null
+          age_15_24y: number | null
+          age_25_44y: number | null
+          age_45_64y: number | null
+          age_5_14y: number | null
+          age_65_plus: number | null
+          age_8_28d: number | null
+          case_count: number | null
+          created_at: string | null
+          death_count: number | null
+          disease_name: string | null
+          female_count: number | null
+          icd10_code: string | null
+          id: string
+          male_count: number | null
+          patient_type: string | null
+          period_month: number | null
+          period_year: number
+          ranking: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          age_0_7d?: number | null
+          age_1_12m?: number | null
+          age_1_4y?: number | null
+          age_15_24y?: number | null
+          age_25_44y?: number | null
+          age_45_64y?: number | null
+          age_5_14y?: number | null
+          age_65_plus?: number | null
+          age_8_28d?: number | null
+          case_count?: number | null
+          created_at?: string | null
+          death_count?: number | null
+          disease_name?: string | null
+          female_count?: number | null
+          icd10_code?: string | null
+          id?: string
+          male_count?: number | null
+          patient_type?: string | null
+          period_month?: number | null
+          period_year: number
+          ranking?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          age_0_7d?: number | null
+          age_1_12m?: number | null
+          age_1_4y?: number | null
+          age_15_24y?: number | null
+          age_25_44y?: number | null
+          age_45_64y?: number | null
+          age_5_14y?: number | null
+          age_65_plus?: number | null
+          age_8_28d?: number | null
+          case_count?: number | null
+          created_at?: string | null
+          death_count?: number | null
+          disease_name?: string | null
+          female_count?: number | null
+          icd10_code?: string | null
+          id?: string
+          male_count?: number | null
+          patient_type?: string | null
+          period_month?: number | null
+          period_year?: number
+          ranking?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      rl4_mortality_stats: {
+        Row: {
+          age_0_7d: number | null
+          age_1_12m: number | null
+          age_1_4y: number | null
+          age_15_24y: number | null
+          age_25_44y: number | null
+          age_45_64y: number | null
+          age_5_14y: number | null
+          age_65_plus: number | null
+          age_8_28d: number | null
+          cause_of_death: string | null
+          created_at: string | null
+          death_count: number | null
+          deaths_less_48h: number | null
+          deaths_more_48h: number | null
+          female_count: number | null
+          icd10_code: string | null
+          id: string
+          male_count: number | null
+          period_month: number | null
+          period_year: number
+          ranking: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          age_0_7d?: number | null
+          age_1_12m?: number | null
+          age_1_4y?: number | null
+          age_15_24y?: number | null
+          age_25_44y?: number | null
+          age_45_64y?: number | null
+          age_5_14y?: number | null
+          age_65_plus?: number | null
+          age_8_28d?: number | null
+          cause_of_death?: string | null
+          created_at?: string | null
+          death_count?: number | null
+          deaths_less_48h?: number | null
+          deaths_more_48h?: number | null
+          female_count?: number | null
+          icd10_code?: string | null
+          id?: string
+          male_count?: number | null
+          period_month?: number | null
+          period_year: number
+          ranking?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          age_0_7d?: number | null
+          age_1_12m?: number | null
+          age_1_4y?: number | null
+          age_15_24y?: number | null
+          age_25_44y?: number | null
+          age_45_64y?: number | null
+          age_5_14y?: number | null
+          age_65_plus?: number | null
+          age_8_28d?: number | null
+          cause_of_death?: string | null
+          created_at?: string | null
+          death_count?: number | null
+          deaths_less_48h?: number | null
+          deaths_more_48h?: number | null
+          female_count?: number | null
+          icd10_code?: string | null
+          id?: string
+          male_count?: number | null
+          period_month?: number | null
+          period_year?: number
+          ranking?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      rl5_visitor_stats: {
+        Row: {
+          created_at: string | null
+          id: string
+          origin_city: string | null
+          origin_province: string | null
+          patient_type: string | null
+          period_month: number
+          period_year: number
+          updated_at: string | null
+          visit_count: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          origin_city?: string | null
+          origin_province?: string | null
+          patient_type?: string | null
+          period_month: number
+          period_year: number
+          updated_at?: string | null
+          visit_count?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          origin_city?: string | null
+          origin_province?: string | null
+          patient_type?: string | null
+          period_month?: number
+          period_year?: number
+          updated_at?: string | null
+          visit_count?: number | null
+        }
+        Relationships: []
+      }
+      rl6_indicators: {
+        Row: {
+          alos: number | null
+          bor: number | null
+          bto: number | null
+          calculated_at: string | null
+          created_at: string | null
+          gdr: number | null
+          id: string
+          ndr: number | null
+          period_month: number
+          period_year: number
+          toi: number | null
+          total_beds: number | null
+          total_deliveries: number | null
+          total_igd_visits: number | null
+          total_inpatient_admissions: number | null
+          total_lab_tests: number | null
+          total_outpatient_visits: number | null
+          total_radiology_exams: number | null
+          total_revenue: number | null
+          total_surgeries: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          alos?: number | null
+          bor?: number | null
+          bto?: number | null
+          calculated_at?: string | null
+          created_at?: string | null
+          gdr?: number | null
+          id?: string
+          ndr?: number | null
+          period_month: number
+          period_year: number
+          toi?: number | null
+          total_beds?: number | null
+          total_deliveries?: number | null
+          total_igd_visits?: number | null
+          total_inpatient_admissions?: number | null
+          total_lab_tests?: number | null
+          total_outpatient_visits?: number | null
+          total_radiology_exams?: number | null
+          total_revenue?: number | null
+          total_surgeries?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          alos?: number | null
+          bor?: number | null
+          bto?: number | null
+          calculated_at?: string | null
+          created_at?: string | null
+          gdr?: number | null
+          id?: string
+          ndr?: number | null
+          period_month?: number
+          period_year?: number
+          toi?: number | null
+          total_beds?: number | null
+          total_deliveries?: number | null
+          total_igd_visits?: number | null
+          total_inpatient_admissions?: number | null
+          total_lab_tests?: number | null
+          total_outpatient_visits?: number | null
+          total_radiology_exams?: number | null
+          total_revenue?: number | null
+          total_surgeries?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       rooms: {
         Row: {
@@ -10751,6 +11687,10 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: undefined
+      }
+      calculate_rl6_indicators: {
+        Args: { p_month: number; p_year: number }
         Returns: undefined
       }
       calculate_satisfaction_score: {
