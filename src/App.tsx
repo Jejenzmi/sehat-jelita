@@ -47,6 +47,7 @@ import Mutu from "./pages/Mutu";
 import Akuntansi from "./pages/Akuntansi";
 import Pendidikan from "./pages/Pendidikan";
 import LaporanKemenkes from "./pages/LaporanKemenkes";
+import Kiosk from "./pages/Kiosk";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -69,6 +70,8 @@ const App = () => (
             {/* Public routes */}
             <Route path="/auth" element={<Auth />} />
             <Route path="/patient-auth" element={<PatientAuth />} />
+            <Route path="/patient-portal" element={<PatientPortal />} />
+            <Route path="/kiosk" element={<Kiosk />} />
             <Route path="/patient-portal" element={<PatientPortal />} />
             <Route
               path="/setup"
