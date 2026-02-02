@@ -14,6 +14,91 @@ export type Database = {
   }
   public: {
     Tables: {
+      academic_activities: {
+        Row: {
+          activity_code: string
+          activity_date: string
+          activity_type: string
+          created_at: string
+          department_id: string | null
+          description: string | null
+          end_time: string | null
+          id: string
+          location: string | null
+          max_participants: number | null
+          organizer_id: string | null
+          registered_count: number | null
+          skp_points: number | null
+          speaker_names: string[] | null
+          start_time: string | null
+          status: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          activity_code: string
+          activity_date: string
+          activity_type: string
+          created_at?: string
+          department_id?: string | null
+          description?: string | null
+          end_time?: string | null
+          id?: string
+          location?: string | null
+          max_participants?: number | null
+          organizer_id?: string | null
+          registered_count?: number | null
+          skp_points?: number | null
+          speaker_names?: string[] | null
+          start_time?: string | null
+          status?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          activity_code?: string
+          activity_date?: string
+          activity_type?: string
+          created_at?: string
+          department_id?: string | null
+          description?: string | null
+          end_time?: string | null
+          id?: string
+          location?: string | null
+          max_participants?: number | null
+          organizer_id?: string | null
+          registered_count?: number | null
+          skp_points?: number | null
+          speaker_names?: string[] | null
+          start_time?: string | null
+          status?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "academic_activities_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "department_satisfaction_summary"
+            referencedColumns: ["department_id"]
+          },
+          {
+            foreignKeyName: "academic_activities_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "academic_activities_organizer_id_fkey"
+            columns: ["organizer_id"]
+            isOneToOne: false
+            referencedRelation: "doctors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       account_cash_flow_mapping: {
         Row: {
           account_id: string
@@ -1180,6 +1265,80 @@ export type Database = {
           },
         ]
       }
+      clinical_rotations: {
+        Row: {
+          created_at: string
+          department_id: string | null
+          end_date: string
+          evaluation_notes: string | null
+          evaluation_score: number | null
+          id: string
+          rotation_type: string | null
+          start_date: string
+          status: string | null
+          supervisor_id: string | null
+          trainee_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          department_id?: string | null
+          end_date: string
+          evaluation_notes?: string | null
+          evaluation_score?: number | null
+          id?: string
+          rotation_type?: string | null
+          start_date: string
+          status?: string | null
+          supervisor_id?: string | null
+          trainee_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          department_id?: string | null
+          end_date?: string
+          evaluation_notes?: string | null
+          evaluation_score?: number | null
+          id?: string
+          rotation_type?: string | null
+          start_date?: string
+          status?: string | null
+          supervisor_id?: string | null
+          trainee_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinical_rotations_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "department_satisfaction_summary"
+            referencedColumns: ["department_id"]
+          },
+          {
+            foreignKeyName: "clinical_rotations_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clinical_rotations_supervisor_id_fkey"
+            columns: ["supervisor_id"]
+            isOneToOne: false
+            referencedRelation: "doctors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clinical_rotations_trainee_id_fkey"
+            columns: ["trainee_id"]
+            isOneToOne: false
+            referencedRelation: "medical_trainees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       consent_templates: {
         Row: {
           alternatives_explanation: string | null
@@ -2068,47 +2227,56 @@ export type Database = {
       }
       doctors: {
         Row: {
+          academic_title: string | null
           consultation_fee: number | null
           created_at: string
           department_id: string | null
           full_name: string
           id: string
           is_active: boolean
+          is_subspecialist: boolean | null
           nik: string | null
           profile_id: string | null
           satusehat_practitioner_id: string | null
           sip_number: string
           specialization: string | null
+          subspecialty_id: string | null
           updated_at: string
           user_id: string | null
         }
         Insert: {
+          academic_title?: string | null
           consultation_fee?: number | null
           created_at?: string
           department_id?: string | null
           full_name: string
           id?: string
           is_active?: boolean
+          is_subspecialist?: boolean | null
           nik?: string | null
           profile_id?: string | null
           satusehat_practitioner_id?: string | null
           sip_number: string
           specialization?: string | null
+          subspecialty_id?: string | null
           updated_at?: string
           user_id?: string | null
         }
         Update: {
+          academic_title?: string | null
           consultation_fee?: number | null
           created_at?: string
           department_id?: string | null
           full_name?: string
           id?: string
           is_active?: boolean
+          is_subspecialist?: boolean | null
           nik?: string | null
           profile_id?: string | null
           satusehat_practitioner_id?: string | null
           sip_number?: string
           specialization?: string | null
+          subspecialty_id?: string | null
           updated_at?: string
           user_id?: string | null
         }
@@ -2132,6 +2300,83 @@ export type Database = {
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "doctors_subspecialty_id_fkey"
+            columns: ["subspecialty_id"]
+            isOneToOne: false
+            referencedRelation: "subspecialties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      education_programs: {
+        Row: {
+          accreditation_status: string | null
+          affiliated_university: string | null
+          coordinator_id: string | null
+          created_at: string
+          department_id: string | null
+          duration_months: number | null
+          id: string
+          is_active: boolean | null
+          max_students: number | null
+          program_code: string
+          program_name: string
+          program_type: string
+          updated_at: string
+        }
+        Insert: {
+          accreditation_status?: string | null
+          affiliated_university?: string | null
+          coordinator_id?: string | null
+          created_at?: string
+          department_id?: string | null
+          duration_months?: number | null
+          id?: string
+          is_active?: boolean | null
+          max_students?: number | null
+          program_code: string
+          program_name: string
+          program_type: string
+          updated_at?: string
+        }
+        Update: {
+          accreditation_status?: string | null
+          affiliated_university?: string | null
+          coordinator_id?: string | null
+          created_at?: string
+          department_id?: string | null
+          duration_months?: number | null
+          id?: string
+          is_active?: boolean | null
+          max_students?: number | null
+          program_code?: string
+          program_name?: string
+          program_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "education_programs_coordinator_id_fkey"
+            columns: ["coordinator_id"]
+            isOneToOne: false
+            referencedRelation: "doctors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "education_programs_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "department_satisfaction_summary"
+            referencedColumns: ["department_id"]
+          },
+          {
+            foreignKeyName: "education_programs_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
             referencedColumns: ["id"]
           },
         ]
@@ -3188,6 +3433,150 @@ export type Database = {
             columns: ["admission_id"]
             isOneToOne: false
             referencedRelation: "icu_admissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inacbg_calculations: {
+        Row: {
+          adjustment_factor: number | null
+          base_tariff: number | null
+          billing_id: string | null
+          calculated_at: string
+          calculated_by: string | null
+          created_at: string
+          drg_code: string
+          drg_description: string | null
+          final_tariff: number | null
+          grouper_version: string | null
+          hospital_cost: number | null
+          id: string
+          los_actual: number | null
+          los_grouper: number | null
+          notes: string | null
+          patient_id: string | null
+          primary_diagnosis: string | null
+          procedures: string[] | null
+          secondary_diagnoses: string[] | null
+          severity_level: number | null
+          variance: number | null
+          visit_id: string | null
+        }
+        Insert: {
+          adjustment_factor?: number | null
+          base_tariff?: number | null
+          billing_id?: string | null
+          calculated_at?: string
+          calculated_by?: string | null
+          created_at?: string
+          drg_code: string
+          drg_description?: string | null
+          final_tariff?: number | null
+          grouper_version?: string | null
+          hospital_cost?: number | null
+          id?: string
+          los_actual?: number | null
+          los_grouper?: number | null
+          notes?: string | null
+          patient_id?: string | null
+          primary_diagnosis?: string | null
+          procedures?: string[] | null
+          secondary_diagnoses?: string[] | null
+          severity_level?: number | null
+          variance?: number | null
+          visit_id?: string | null
+        }
+        Update: {
+          adjustment_factor?: number | null
+          base_tariff?: number | null
+          billing_id?: string | null
+          calculated_at?: string
+          calculated_by?: string | null
+          created_at?: string
+          drg_code?: string
+          drg_description?: string | null
+          final_tariff?: number | null
+          grouper_version?: string | null
+          hospital_cost?: number | null
+          id?: string
+          los_actual?: number | null
+          los_grouper?: number | null
+          notes?: string | null
+          patient_id?: string | null
+          primary_diagnosis?: string | null
+          procedures?: string[] | null
+          secondary_diagnoses?: string[] | null
+          severity_level?: number | null
+          variance?: number | null
+          visit_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inacbg_calculations_billing_id_fkey"
+            columns: ["billing_id"]
+            isOneToOne: false
+            referencedRelation: "billings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inacbg_calculations_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inacbg_calculations_visit_id_fkey"
+            columns: ["visit_id"]
+            isOneToOne: false
+            referencedRelation: "visits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inacbg_tariffs: {
+        Row: {
+          created_at: string
+          drg_id: string | null
+          effective_date: string
+          end_date: string | null
+          hospital_class: string
+          id: string
+          is_active: boolean | null
+          regional_code: string
+          tariff_amount: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          drg_id?: string | null
+          effective_date?: string
+          end_date?: string | null
+          hospital_class: string
+          id?: string
+          is_active?: boolean | null
+          regional_code?: string
+          tariff_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          drg_id?: string | null
+          effective_date?: string
+          end_date?: string | null
+          hospital_class?: string
+          id?: string
+          is_active?: boolean | null
+          regional_code?: string
+          tariff_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inacbg_tariffs_drg_id_fkey"
+            columns: ["drg_id"]
+            isOneToOne: false
+            referencedRelation: "inadrg_codes"
             referencedColumns: ["id"]
           },
         ]
@@ -4979,6 +5368,81 @@ export type Database = {
             columns: ["visit_id"]
             isOneToOne: false
             referencedRelation: "visits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      medical_trainees: {
+        Row: {
+          created_at: string
+          current_rotation_id: string | null
+          email: string | null
+          enrollment_date: string
+          expected_graduation: string | null
+          full_name: string
+          id: string
+          nik: string | null
+          notes: string | null
+          phone: string | null
+          photo_url: string | null
+          program_id: string | null
+          status: string | null
+          supervisor_id: string | null
+          trainee_code: string
+          university: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_rotation_id?: string | null
+          email?: string | null
+          enrollment_date: string
+          expected_graduation?: string | null
+          full_name: string
+          id?: string
+          nik?: string | null
+          notes?: string | null
+          phone?: string | null
+          photo_url?: string | null
+          program_id?: string | null
+          status?: string | null
+          supervisor_id?: string | null
+          trainee_code: string
+          university?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_rotation_id?: string | null
+          email?: string | null
+          enrollment_date?: string
+          expected_graduation?: string | null
+          full_name?: string
+          id?: string
+          nik?: string | null
+          notes?: string | null
+          phone?: string | null
+          photo_url?: string | null
+          program_id?: string | null
+          status?: string | null
+          supervisor_id?: string | null
+          trainee_code?: string
+          university?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medical_trainees_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "education_programs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medical_trainees_supervisor_id_fkey"
+            columns: ["supervisor_id"]
+            isOneToOne: false
+            referencedRelation: "doctors"
             referencedColumns: ["id"]
           },
         ]
@@ -7272,6 +7736,94 @@ export type Database = {
           },
         ]
       }
+      research_projects: {
+        Row: {
+          abstract: string | null
+          budget: number | null
+          co_investigators: string[] | null
+          created_at: string
+          department_id: string | null
+          end_date: string | null
+          ethics_approval_date: string | null
+          ethics_approval_number: string | null
+          funding_source: string | null
+          id: string
+          keywords: string[] | null
+          principal_investigator_id: string | null
+          project_code: string
+          publication_status: string | null
+          research_type: string | null
+          start_date: string | null
+          status: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          abstract?: string | null
+          budget?: number | null
+          co_investigators?: string[] | null
+          created_at?: string
+          department_id?: string | null
+          end_date?: string | null
+          ethics_approval_date?: string | null
+          ethics_approval_number?: string | null
+          funding_source?: string | null
+          id?: string
+          keywords?: string[] | null
+          principal_investigator_id?: string | null
+          project_code: string
+          publication_status?: string | null
+          research_type?: string | null
+          start_date?: string | null
+          status?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          abstract?: string | null
+          budget?: number | null
+          co_investigators?: string[] | null
+          created_at?: string
+          department_id?: string | null
+          end_date?: string | null
+          ethics_approval_date?: string | null
+          ethics_approval_number?: string | null
+          funding_source?: string | null
+          id?: string
+          keywords?: string[] | null
+          principal_investigator_id?: string | null
+          project_code?: string
+          publication_status?: string | null
+          research_type?: string | null
+          start_date?: string | null
+          status?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "research_projects_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "department_satisfaction_summary"
+            referencedColumns: ["department_id"]
+          },
+          {
+            foreignKeyName: "research_projects_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "research_projects_principal_investigator_id_fkey"
+            columns: ["principal_investigator_id"]
+            isOneToOne: false
+            referencedRelation: "doctors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rooms: {
         Row: {
           code: string
@@ -7738,6 +8290,157 @@ export type Database = {
           },
         ]
       }
+      sisrute_referrals: {
+        Row: {
+          arrival_time: string | null
+          clinical_summary: string | null
+          created_at: string
+          departure_time: string | null
+          destination_city: string | null
+          destination_department: string | null
+          destination_facility_code: string | null
+          destination_facility_name: string | null
+          destination_facility_type: string | null
+          destination_province: string | null
+          diagnosis_description: string | null
+          id: string
+          last_sync_at: string | null
+          patient_id: string | null
+          primary_diagnosis: string | null
+          reason_for_referral: string | null
+          referral_category: string | null
+          referral_number: string
+          referral_type: string
+          referring_doctor_id: string | null
+          referring_doctor_name: string | null
+          referring_doctor_sip: string | null
+          responded_at: string | null
+          responded_by: string | null
+          response_notes: string | null
+          sisrute_id: string | null
+          source_city: string | null
+          source_facility_code: string | null
+          source_facility_name: string | null
+          source_facility_type: string | null
+          source_province: string | null
+          status: string | null
+          sync_error: string | null
+          sync_status: string | null
+          transport_status: string | null
+          transport_type: string | null
+          treatment_given: string | null
+          updated_at: string
+          visit_id: string | null
+          vital_signs: Json | null
+        }
+        Insert: {
+          arrival_time?: string | null
+          clinical_summary?: string | null
+          created_at?: string
+          departure_time?: string | null
+          destination_city?: string | null
+          destination_department?: string | null
+          destination_facility_code?: string | null
+          destination_facility_name?: string | null
+          destination_facility_type?: string | null
+          destination_province?: string | null
+          diagnosis_description?: string | null
+          id?: string
+          last_sync_at?: string | null
+          patient_id?: string | null
+          primary_diagnosis?: string | null
+          reason_for_referral?: string | null
+          referral_category?: string | null
+          referral_number: string
+          referral_type: string
+          referring_doctor_id?: string | null
+          referring_doctor_name?: string | null
+          referring_doctor_sip?: string | null
+          responded_at?: string | null
+          responded_by?: string | null
+          response_notes?: string | null
+          sisrute_id?: string | null
+          source_city?: string | null
+          source_facility_code?: string | null
+          source_facility_name?: string | null
+          source_facility_type?: string | null
+          source_province?: string | null
+          status?: string | null
+          sync_error?: string | null
+          sync_status?: string | null
+          transport_status?: string | null
+          transport_type?: string | null
+          treatment_given?: string | null
+          updated_at?: string
+          visit_id?: string | null
+          vital_signs?: Json | null
+        }
+        Update: {
+          arrival_time?: string | null
+          clinical_summary?: string | null
+          created_at?: string
+          departure_time?: string | null
+          destination_city?: string | null
+          destination_department?: string | null
+          destination_facility_code?: string | null
+          destination_facility_name?: string | null
+          destination_facility_type?: string | null
+          destination_province?: string | null
+          diagnosis_description?: string | null
+          id?: string
+          last_sync_at?: string | null
+          patient_id?: string | null
+          primary_diagnosis?: string | null
+          reason_for_referral?: string | null
+          referral_category?: string | null
+          referral_number?: string
+          referral_type?: string
+          referring_doctor_id?: string | null
+          referring_doctor_name?: string | null
+          referring_doctor_sip?: string | null
+          responded_at?: string | null
+          responded_by?: string | null
+          response_notes?: string | null
+          sisrute_id?: string | null
+          source_city?: string | null
+          source_facility_code?: string | null
+          source_facility_name?: string | null
+          source_facility_type?: string | null
+          source_province?: string | null
+          status?: string | null
+          sync_error?: string | null
+          sync_status?: string | null
+          transport_status?: string | null
+          transport_type?: string | null
+          treatment_given?: string | null
+          updated_at?: string
+          visit_id?: string | null
+          vital_signs?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sisrute_referrals_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sisrute_referrals_referring_doctor_id_fkey"
+            columns: ["referring_doctor_id"]
+            isOneToOne: false
+            referencedRelation: "doctors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sisrute_referrals_visit_id_fkey"
+            columns: ["visit_id"]
+            isOneToOne: false
+            referencedRelation: "visits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sterilization_batches: {
         Row: {
           batch_number: string
@@ -7895,6 +8598,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      subspecialties: {
+        Row: {
+          code: string
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          specialty_code: string | null
+          specialty_name: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          specialty_code?: string | null
+          specialty_name?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          specialty_code?: string | null
+          specialty_name?: string | null
+        }
+        Relationships: []
       }
       surgeries: {
         Row: {
