@@ -10,8 +10,9 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { 
   Building2, Bell, Shield, Globe, Database, History,
-  Save, RefreshCw, CheckCircle, AlertTriangle, Search, Filter, Puzzle
+  Save, RefreshCw, CheckCircle, AlertTriangle, Search, Filter, Puzzle, RotateCcw
 } from "lucide-react";
+import SystemResetTab from "@/components/settings/SystemResetTab";
 import { useSystemSettings } from "@/hooks/useSystemSettings";
 import { useAuditLogs, useAuditStats } from "@/hooks/useAuditLogs";
 import { format } from "date-fns";
@@ -185,6 +186,10 @@ export default function Pengaturan() {
           <TabsTrigger value="system">Sistem</TabsTrigger>
           <TabsTrigger value="integrations">Integrasi</TabsTrigger>
           <TabsTrigger value="audit">Audit Trail</TabsTrigger>
+          <TabsTrigger value="reset" className="gap-1 text-destructive">
+            <RotateCcw className="h-4 w-4" />
+            Reset
+          </TabsTrigger>
         </TabsList>
 
         {/* Hospital Settings */}
@@ -670,6 +675,11 @@ export default function Pengaturan() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* System Reset */}
+        <TabsContent value="reset">
+          <SystemResetTab />
         </TabsContent>
       </Tabs>
     </div>
