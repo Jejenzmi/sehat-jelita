@@ -18,12 +18,12 @@ export default function Setup() {
 
     // If setup is already completed, go to dashboard
     if (!isLoading && isSetupCompleted) {
-      navigate("/dashboard");
+      navigate("/");
     }
   }, [user, authLoading, isSetupCompleted, isLoading, navigate]);
 
   const handleComplete = () => {
-    navigate("/dashboard");
+    navigate("/");
   };
 
   if (authLoading || isLoading) {
