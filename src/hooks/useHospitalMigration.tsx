@@ -78,8 +78,13 @@ export function useMigrateHospitalType() {
       
       toast({
         title: "Migrasi Berhasil!",
-        description: `Tipe RS berhasil diubah dari ${data.from_type} ke ${data.to_type}`,
+        description: `Tipe RS berhasil diubah dari ${data.from_type} ke ${data.to_type}. Halaman akan dimuat ulang...`,
       });
+      
+      // Auto refresh halaman setelah 1.5 detik untuk memperbarui seluruh state aplikasi
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
     },
     onError: (error: Error) => {
       toast({
