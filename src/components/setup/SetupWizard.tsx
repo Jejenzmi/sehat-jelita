@@ -357,17 +357,17 @@ export default function SetupWizard({ onComplete }: SetupWizardProps) {
             </div>
           )}
 
-          {/* Step 4: Module Preview */}
+          {/* Step 4: Module Preview with Toggle */}
           {step === 4 && (
             <div className="space-y-4">
               <div className="flex items-center gap-2 mb-4">
                 <Settings className="h-5 w-5 text-primary" />
-                <h3 className="font-semibold">Modul yang Akan Aktif</h3>
+                <h3 className="font-semibold">Konfigurasi Modul</h3>
               </div>
 
               <p className="text-sm text-muted-foreground mb-4">
                 Berdasarkan tipe <strong>{HOSPITAL_TYPES.find(t => t.value === formData.facility_level)?.label}</strong>, 
-                modul-modul berikut akan tersedia:
+                modul-modul berikut tersedia. Anda dapat mengaktifkan atau menonaktifkan sesuai kebutuhan:
               </p>
 
               <div className="max-h-80 overflow-y-auto space-y-4 pr-2">
@@ -376,18 +376,28 @@ export default function SetupWizard({ onComplete }: SetupWizardProps) {
                     <h4 className="font-medium text-sm mb-2 text-muted-foreground">
                       {categoryLabels[category] || category}
                     </h4>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="space-y-2">
                       {modules.map((mod) => (
-                        <Badge
+                        <div
                           key={mod.module_code}
-                          variant={mod.is_core_module ? "default" : "secondary"}
-                          className="py-1"
+                          className={`flex items-center justify-between p-2 rounded-lg border ${
+                            mod.is_core_module ? "bg-muted/50" : "bg-background"
+                          }`}
                         >
-                          {mod.module_name}
-                          {mod.is_core_module && (
-                            <span className="ml-1 text-xs opacity-70">•</span>
-                          )}
-                        </Badge>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium">{mod.module_name}</span>
+                            {mod.is_core_module && (
+                              <Badge variant="secondary" className="text-xs">
+                                Inti
+                              </Badge>
+                            )}
+                          </div>
+                          <Switch
+                            checked={true}
+                            disabled={mod.is_core_module}
+                            className="scale-90"
+                          />
+                        </div>
                       ))}
                     </div>
                   </div>
@@ -396,8 +406,8 @@ export default function SetupWizard({ onComplete }: SetupWizardProps) {
 
               <div className="bg-muted/50 p-4 rounded-lg mt-4">
                 <p className="text-sm text-muted-foreground">
-                  💡 Anda dapat mengaktifkan atau menonaktifkan modul tambahan setelah setup 
-                  melalui menu <strong>Pengaturan → Konfigurasi Modul</strong>.
+                  💡 Anda dapat mengubah konfigurasi modul kapan saja melalui menu{" "}
+                  <strong>Pengaturan → Modul</strong>.
                 </p>
               </div>
             </div>

@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { 
   Building2, Bell, Shield, Globe, Database, History,
-  Save, RefreshCw, CheckCircle, AlertTriangle, Search, Filter
+  Save, RefreshCw, CheckCircle, AlertTriangle, Search, Filter, Puzzle
 } from "lucide-react";
 import { useSystemSettings } from "@/hooks/useSystemSettings";
 import { useAuditLogs, useAuditStats } from "@/hooks/useAuditLogs";
@@ -19,6 +19,7 @@ import { id } from "date-fns/locale";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { SatuSehatSettings } from "@/components/settings/SatuSehatSettings";
+import { ModuleConfigurationTab } from "@/components/settings/ModuleConfigurationTab";
 
 export default function Pengaturan() {
   const { 
@@ -174,8 +175,12 @@ export default function Pengaturan() {
 
       {/* Tabs */}
       <Tabs defaultValue="hospital" className="space-y-4">
-        <TabsList>
+        <TabsList className="flex-wrap h-auto gap-1">
           <TabsTrigger value="hospital">Rumah Sakit</TabsTrigger>
+          <TabsTrigger value="modules" className="gap-1">
+            <Puzzle className="h-4 w-4" />
+            Modul
+          </TabsTrigger>
           <TabsTrigger value="notifications">Notifikasi</TabsTrigger>
           <TabsTrigger value="system">Sistem</TabsTrigger>
           <TabsTrigger value="integrations">Integrasi</TabsTrigger>
@@ -279,6 +284,11 @@ export default function Pengaturan() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Module Configuration */}
+        <TabsContent value="modules">
+          <ModuleConfigurationTab />
         </TabsContent>
 
         {/* Notification Settings */}

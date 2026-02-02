@@ -3344,6 +3344,7 @@ export type Database = {
           director_name: string | null
           director_nip: string | null
           email: string | null
+          enabled_modules: Json | null
           facility_level:
             | Database["public"]["Enums"]["hospital_type_enum"]
             | null
@@ -3386,6 +3387,7 @@ export type Database = {
           director_name?: string | null
           director_nip?: string | null
           email?: string | null
+          enabled_modules?: Json | null
           facility_level?:
             | Database["public"]["Enums"]["hospital_type_enum"]
             | null
@@ -3428,6 +3430,7 @@ export type Database = {
           director_name?: string | null
           director_nip?: string | null
           email?: string | null
+          enabled_modules?: Json | null
           facility_level?:
             | Database["public"]["Enums"]["hospital_type_enum"]
             | null
@@ -11873,7 +11876,16 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_module_enabled: { Args: { p_module_code: string }; Returns: boolean }
       is_setup_completed: { Args: never; Returns: boolean }
+      toggle_module: {
+        Args: { p_enabled: boolean; p_module_code: string }
+        Returns: boolean
+      }
+      update_enabled_modules: {
+        Args: { p_module_codes: string[] }
+        Returns: boolean
+      }
     }
     Enums: {
       anesthesia_type:
