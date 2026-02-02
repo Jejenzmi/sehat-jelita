@@ -107,6 +107,7 @@ const allNavigationGroups: NavGroup[] = [
       { icon: Package, label: "Inventory", path: "/inventory" },
       { icon: Wrench, label: "Penunjang", path: "/penunjang" },
       { icon: Award, label: "Mutu & Akreditasi", path: "/mutu" },
+      { icon: KeyRound, label: "Pendidikan", path: "/pendidikan" },
       { icon: UserCog, label: "SDM / HRD", path: "/sdm" },
       { icon: FileBarChart, label: "Laporan", path: "/laporan" },
       { icon: Database, label: "Master Data", path: "/master-data" },
