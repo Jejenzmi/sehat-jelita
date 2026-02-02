@@ -40,6 +40,7 @@ import {
 import { cn } from "@/lib/utils";
 import zenLogo from "@/assets/zen-logo.webp";
 import { useMenuAccess } from "@/hooks/useMenuAccess";
+import { useModuleVisibility } from "@/hooks/useModuleVisibility";
 
 interface NavItem {
   icon: React.ElementType;
@@ -123,11 +124,12 @@ export function Sidebar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
   const { canViewPath, isLoading: loadingAccess, menuAccess } = useMenuAccess();
+  const { isModuleAvailable, isLoading: loadingModules } = useModuleVisibility();
 
-  // Filter navigation based on user access from database
+  // Filter navigation based on user access AND hospital type module configuration
   const navigationGroups = useMemo(() => {
     // While loading, show skeleton/empty state
-    if (loadingAccess) return [];
+    if (loadingAccess || loadingModules) return [];
     
     // If user has no menu access (no role assigned), show only dashboard
     if (menuAccess.length === 0) {
@@ -137,14 +139,18 @@ export function Sidebar() {
       }];
     }
     
-    // Filter navigation items based on actual menu access
+    // Filter navigation items based on:
+    // 1. User role-based menu access
+    // 2. Hospital type module availability
     return allNavigationGroups
       .map(group => ({
         ...group,
-        items: group.items.filter(item => canViewPath(item.path)),
+        items: group.items.filter(item => 
+          canViewPath(item.path) && isModuleAvailable(item.path)
+        ),
       }))
       .filter(group => group.items.length > 0);
-  }, [canViewPath, loadingAccess, menuAccess]);
+  }, [canViewPath, loadingAccess, menuAccess, isModuleAvailable, loadingModules]);
 
   return (
     <>

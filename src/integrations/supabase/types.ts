@@ -3293,6 +3293,38 @@ export type Database = {
           },
         ]
       }
+      hospital_enabled_modules: {
+        Row: {
+          enabled_at: string | null
+          enabled_by: string | null
+          id: string
+          is_enabled: boolean | null
+          module_id: string | null
+        }
+        Insert: {
+          enabled_at?: string | null
+          enabled_by?: string | null
+          id?: string
+          is_enabled?: boolean | null
+          module_id?: string | null
+        }
+        Update: {
+          enabled_at?: string | null
+          enabled_by?: string | null
+          id?: string
+          is_enabled?: boolean | null
+          module_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hospital_enabled_modules_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: true
+            referencedRelation: "module_configurations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       hospital_profile: {
         Row: {
           accreditation_date: string | null
@@ -3312,6 +3344,9 @@ export type Database = {
           director_name: string | null
           director_nip: string | null
           email: string | null
+          facility_level:
+            | Database["public"]["Enums"]["hospital_type_enum"]
+            | null
           fax: string | null
           hospital_code: string
           hospital_name: string
@@ -3326,6 +3361,9 @@ export type Database = {
           postal_code: string | null
           province: string | null
           services_available: Json | null
+          setup_completed: boolean | null
+          setup_completed_at: string | null
+          setup_completed_by: string | null
           teaching_affiliation: string | null
           updated_at: string | null
           website: string | null
@@ -3348,6 +3386,9 @@ export type Database = {
           director_name?: string | null
           director_nip?: string | null
           email?: string | null
+          facility_level?:
+            | Database["public"]["Enums"]["hospital_type_enum"]
+            | null
           fax?: string | null
           hospital_code: string
           hospital_name: string
@@ -3362,6 +3403,9 @@ export type Database = {
           postal_code?: string | null
           province?: string | null
           services_available?: Json | null
+          setup_completed?: boolean | null
+          setup_completed_at?: string | null
+          setup_completed_by?: string | null
           teaching_affiliation?: string | null
           updated_at?: string | null
           website?: string | null
@@ -3384,6 +3428,9 @@ export type Database = {
           director_name?: string | null
           director_nip?: string | null
           email?: string | null
+          facility_level?:
+            | Database["public"]["Enums"]["hospital_type_enum"]
+            | null
           fax?: string | null
           hospital_code?: string
           hospital_name?: string
@@ -3398,6 +3445,9 @@ export type Database = {
           postal_code?: string | null
           province?: string | null
           services_available?: Json | null
+          setup_completed?: boolean | null
+          setup_completed_at?: string | null
+          setup_completed_by?: string | null
           teaching_affiliation?: string | null
           updated_at?: string | null
           website?: string | null
@@ -6109,6 +6159,63 @@ export type Database = {
           id?: string
           menu_path?: string
           role?: Database["public"]["Enums"]["app_role"]
+        }
+        Relationships: []
+      }
+      module_configurations: {
+        Row: {
+          available_for_fktp: boolean | null
+          available_for_type_a: boolean | null
+          available_for_type_b: boolean | null
+          available_for_type_c: boolean | null
+          available_for_type_d: boolean | null
+          created_at: string | null
+          description: string | null
+          display_order: number | null
+          id: string
+          is_active: boolean | null
+          is_core_module: boolean | null
+          module_category: string
+          module_code: string
+          module_icon: string | null
+          module_name: string
+          module_path: string
+        }
+        Insert: {
+          available_for_fktp?: boolean | null
+          available_for_type_a?: boolean | null
+          available_for_type_b?: boolean | null
+          available_for_type_c?: boolean | null
+          available_for_type_d?: boolean | null
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          is_core_module?: boolean | null
+          module_category: string
+          module_code: string
+          module_icon?: string | null
+          module_name: string
+          module_path: string
+        }
+        Update: {
+          available_for_fktp?: boolean | null
+          available_for_type_a?: boolean | null
+          available_for_type_b?: boolean | null
+          available_for_type_c?: boolean | null
+          available_for_type_d?: boolean | null
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          is_core_module?: boolean | null
+          module_category?: string
+          module_code?: string
+          module_icon?: string | null
+          module_name?: string
+          module_path?: string
         }
         Relationships: []
       }
@@ -11733,6 +11840,18 @@ export type Database = {
       generate_transfusion_request_number: { Args: never; Returns: string }
       generate_visit_number: { Args: never; Returns: string }
       generate_visum_number: { Args: never; Returns: string }
+      get_available_modules: {
+        Args: { p_hospital_type: string }
+        Returns: {
+          display_order: number
+          is_core_module: boolean
+          module_category: string
+          module_code: string
+          module_icon: string
+          module_name: string
+          module_path: string
+        }[]
+      }
       get_user_menu_access: {
         Args: { _user_id: string }
         Returns: {
@@ -11754,6 +11873,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_setup_completed: { Args: never; Returns: boolean }
     }
     Enums: {
       anesthesia_type:
@@ -11827,6 +11947,7 @@ export type Database = {
         | "parenteral"
         | "other"
       gender_type: "L" | "P"
+      hospital_type_enum: "A" | "B" | "C" | "D" | "FKTP"
       icu_admission_status: "active" | "transferred" | "discharged" | "deceased"
       icu_type: "icu" | "nicu" | "picu" | "iccu" | "hcu"
       incident_severity:
@@ -12107,6 +12228,7 @@ export const Constants = {
         "other",
       ],
       gender_type: ["L", "P"],
+      hospital_type_enum: ["A", "B", "C", "D", "FKTP"],
       icu_admission_status: ["active", "transferred", "discharged", "deceased"],
       icu_type: ["icu", "nicu", "picu", "iccu", "hcu"],
       incident_severity: [
