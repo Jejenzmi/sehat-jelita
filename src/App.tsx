@@ -348,6 +348,14 @@ const App = () => (
               element={
                 <ProtectedPageWithLayout>
                   <Akuntansi />
+            </ProtectedPageWithLayout>
+              }
+            />
+            <Route
+              path="/pendidikan"
+              element={
+                <ProtectedPageWithLayout>
+                  <Pendidikan />
                 </ProtectedPageWithLayout>
               }
             />
