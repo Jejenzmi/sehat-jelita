@@ -10,6 +10,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import PatientAuth from "./pages/PatientAuth";
 import PatientPortal from "./pages/PatientPortal";
+import Setup from "./pages/Setup";
 import Pendaftaran from "./pages/Pendaftaran";
 import Pasien from "./pages/Pasien";
 import RawatJalan from "./pages/RawatJalan";
@@ -69,6 +70,14 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/patient-auth" element={<PatientAuth />} />
             <Route path="/patient-portal" element={<PatientPortal />} />
+            <Route
+              path="/setup"
+              element={
+                <ProtectedRoute>
+                  <Setup />
+                </ProtectedRoute>
+              }
+            />
             
             {/* Protected routes */}
             <Route
