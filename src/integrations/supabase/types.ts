@@ -11878,6 +11878,7 @@ export type Database = {
       }
       is_module_enabled: { Args: { p_module_code: string }; Returns: boolean }
       is_setup_completed: { Args: never; Returns: boolean }
+      reset_system_to_initial: { Args: never; Returns: boolean }
       toggle_module: {
         Args: { p_enabled: boolean; p_module_code: string }
         Returns: boolean
