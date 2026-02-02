@@ -44,6 +44,7 @@ import Forensik from "./pages/Forensik";
 import Penunjang from "./pages/Penunjang";
 import Mutu from "./pages/Mutu";
 import Akuntansi from "./pages/Akuntansi";
+import Pendidikan from "./pages/Pendidikan";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
