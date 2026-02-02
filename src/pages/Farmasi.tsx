@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Search, Filter, Pill, Package, AlertTriangle, TrendingUp, Plus, CheckCircle, QrCode, RefreshCw } from "lucide-react";
+import { Search, Filter, Pill, Package, AlertTriangle, TrendingUp, Plus, CheckCircle, QrCode, RefreshCw, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ConfirmationDialog } from "@/components/shared/ConfirmationDialog";
 
 interface Prescription {
   id: string;
@@ -70,6 +71,10 @@ export default function Farmasi() {
   const [detailOpen, setDetailOpen] = useState(false);
   const [selectedPrescription, setSelectedPrescription] = useState<Prescription | null>(null);
   const [processing, setProcessing] = useState(false);
+  
+  // Confirmation dialog
+  const [processConfirmOpen, setProcessConfirmOpen] = useState(false);
+  const [pendingAction, setPendingAction] = useState<{ prescription: Prescription; nextStatus: string } | null>(null);
 
   useEffect(() => {
     fetchData();

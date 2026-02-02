@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Search, UserPlus, Calendar, Clock, Filter, Loader2, Phone } from "lucide-react";
+import { Search, UserPlus, Calendar, Clock, Filter, Loader2, Phone, Trash2, Edit, MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,6 +20,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -27,6 +33,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { PatientFormFields } from "@/components/forms/PatientFormFields";
+import { ConfirmationDialog } from "@/components/shared/ConfirmationDialog";
 
 interface Patient {
   id: string;
@@ -82,6 +89,12 @@ export default function Pendaftaran() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("existing");
+
+  // Confirmation dialogs
+  const [registerConfirmOpen, setRegisterConfirmOpen] = useState(false);
+  const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
+  const [visitToCancel, setVisitToCancel] = useState<Visit | null>(null);
+  const [isCancelling, setIsCancelling] = useState(false);
 
   // Search results for existing patient
   const [searchResults, setSearchResults] = useState<Patient[]>([]);
@@ -450,6 +463,72 @@ export default function Pendaftaran() {
     }
   };
 
+  const handleCancelVisit = async () => {
+    if (!visitToCancel) return;
+    
+    setIsCancelling(true);
+    try {
+      const { error } = await supabase
+        .from("visits")
+        .update({ status: "batal" })
+        .eq("id", visitToCancel.id);
+
+      if (error) throw error;
+
+      toast({ title: "Kunjungan berhasil dibatalkan" });
+      fetchVisits();
+      fetchStats();
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message,
+      });
+    } finally {
+      setIsCancelling(false);
+      setCancelConfirmOpen(false);
+      setVisitToCancel(null);
+    }
+  };
+
+  const openCancelConfirm = (visit: Visit) => {
+    setVisitToCancel(visit);
+    setCancelConfirmOpen(true);
+  };
+
+  const openRegisterConfirm = () => {
+    if (!formData.department_id || !formData.payment_type) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Mohon pilih poliklinik dan jenis pembayaran",
+      });
+      return;
+    }
+
+    if (activeTab === "new") {
+      if (!newPatientData.nik || !newPatientData.full_name || !newPatientData.birth_date || !newPatientData.gender) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Mohon lengkapi data pasien wajib",
+        });
+        return;
+      }
+    }
+
+    if (!selectedPatient && activeTab === "existing") {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Mohon pilih pasien terlebih dahulu",
+      });
+      return;
+    }
+
+    setRegisterConfirmOpen(true);
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "dipanggil":
@@ -748,14 +827,31 @@ export default function Pendaftaran() {
                     <td>
                       <div className="flex items-center gap-2">
                         {visit.status === "menunggu" && (
-                          <Button size="sm" variant="outline" onClick={() => handleCallPatient(visit.id)}>
-                            <Phone className="h-3 w-3 mr-1" />
-                            Panggil
+                          <>
+                            <Button size="sm" variant="outline" onClick={() => handleCallPatient(visit.id)}>
+                              <Phone className="h-3 w-3 mr-1" />
+                              Panggil
+                            </Button>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button size="sm" variant="ghost">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => openCancelConfirm(visit)}>
+                                  <Trash2 className="h-4 w-4 mr-2 text-destructive" />
+                                  Batalkan
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </>
+                        )}
+                        {visit.status !== "menunggu" && (
+                          <Button size="sm" variant="ghost">
+                            Detail
                           </Button>
                         )}
-                        <Button size="sm" variant="ghost">
-                          Detail
-                        </Button>
                       </div>
                     </td>
                   </tr>
@@ -765,6 +861,36 @@ export default function Pendaftaran() {
           </div>
         )}
       </div>
+
+      {/* Confirmation Dialogs */}
+      <ConfirmationDialog
+        open={registerConfirmOpen}
+        onOpenChange={setRegisterConfirmOpen}
+        title="Konfirmasi Pendaftaran"
+        description={
+          activeTab === "new"
+            ? `Daftarkan pasien baru "${newPatientData.full_name}" ke poliklinik?`
+            : `Daftarkan "${selectedPatient?.full_name || ""}" ke poliklinik?`
+        }
+        type="confirm"
+        confirmLabel="Daftarkan"
+        onConfirm={() => {
+          setRegisterConfirmOpen(false);
+          handleRegisterVisit();
+        }}
+        isLoading={isSubmitting}
+      />
+
+      <ConfirmationDialog
+        open={cancelConfirmOpen}
+        onOpenChange={setCancelConfirmOpen}
+        title="Batalkan Kunjungan"
+        description={`Apakah Anda yakin ingin membatalkan kunjungan ${visitToCancel?.patient?.full_name || ""}?`}
+        type="delete"
+        confirmLabel="Ya, Batalkan"
+        onConfirm={handleCancelVisit}
+        isLoading={isCancelling}
+      />
     </div>
   );
 }
