@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
+import { motion, AnimatePresence, type Easing } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { 
@@ -13,78 +14,191 @@ import {
   X
 } from "lucide-react";
 import zenLogo from "@/assets/zen-logo.webp";
+import zenCompanyLogo from "@/assets/zen-company-logo.png";
+
+// Animation variants
+const easeOut: Easing = [0.22, 1, 0.36, 1];
+
+const fadeInUp = {
+  hidden: { opacity: 0, y: 40 },
+  visible: (i: number = 0) => ({
+    opacity: 1,
+    y: 0,
+    transition: { delay: i * 0.1, duration: 0.6, ease: easeOut }
+  })
+};
+
+const fadeInLeft = {
+  hidden: { opacity: 0, x: -40 },
+  visible: (i: number = 0) => ({
+    opacity: 1,
+    x: 0,
+    transition: { delay: i * 0.1, duration: 0.6, ease: easeOut }
+  })
+};
+
+const scaleIn = {
+  hidden: { opacity: 0, scale: 0.8 },
+  visible: (i: number = 0) => ({
+    opacity: 1,
+    scale: 1,
+    transition: { delay: i * 0.1, duration: 0.5, ease: easeOut }
+  })
+};
+
+const staggerContainer = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.08, delayChildren: 0.2 }
+  }
+};
 
 interface Slide {
   id: number;
   title: string;
-  subtitle?: string;
   content: React.ReactNode;
-  background?: string;
 }
 
 const slides: Slide[] = [
   {
     id: 1,
     title: "Cover",
-    background: "from-white to-slate-50",
     content: (
-      <div className="flex flex-col items-center justify-center h-full px-8">
-        <div className="text-center max-w-3xl">
-          <div className="flex items-center justify-center gap-4 mb-12">
-            <img src={zenLogo} alt="ZEN+ Logo" className="h-16 w-16" />
-            <div className="text-left">
-              <p className="text-xs text-slate-400 tracking-widest uppercase">PT Zen Multimedia Indonesia</p>
-              <h2 className="text-xl font-semibold text-slate-800">ZEN⁺ SIMRS</h2>
-            </div>
-          </div>
+      <div className="relative flex flex-col items-center justify-center h-full px-8 overflow-hidden">
+        {/* Animated background elements */}
+        <motion.div
+          className="absolute top-0 right-0 w-[600px] h-[600px] rounded-full bg-gradient-to-br from-primary/20 to-transparent blur-3xl"
+          animate={{ scale: [1, 1.2, 1], rotate: [0, 90, 0] }}
+          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+        />
+        <motion.div
+          className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full bg-gradient-to-tr from-blue-500/10 to-transparent blur-3xl"
+          animate={{ scale: [1.2, 1, 1.2], rotate: [0, -90, 0] }}
+          transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
+        />
+        
+        <div className="relative z-10 text-center max-w-4xl">
+          <motion.img 
+            src={zenCompanyLogo} 
+            alt="PT Zen Multimedia Indonesia" 
+            className="h-12 md:h-16 mx-auto mb-12"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+          />
           
-          <p className="text-xs text-slate-400 tracking-[0.3em] uppercase mb-4">Proposal Penawaran</p>
-          <h1 className="text-3xl md:text-5xl font-light text-slate-900 leading-tight mb-6">
-            Sistem Informasi Manajemen<br />Rumah Sakit Terintegrasi
-          </h1>
-          <div className="w-20 h-px bg-slate-300 mx-auto mb-6" />
-          <p className="text-slate-500 text-sm max-w-lg mx-auto leading-relaxed">
-            Solusi digital komprehensif untuk transformasi pelayanan kesehatan modern dengan integrasi SATU SEHAT dan BPJS Kesehatan
-          </p>
+          <motion.p 
+            className="text-xs text-slate-400 tracking-[0.4em] uppercase mb-6"
+            variants={fadeInUp}
+            initial="hidden"
+            animate="visible"
+            custom={1}
+          >
+            Proposal Penawaran
+          </motion.p>
           
-          <div className="mt-16 pt-8 border-t border-slate-200">
+          <motion.h1 
+            className="text-4xl md:text-6xl lg:text-7xl font-bold bg-gradient-to-r from-slate-900 via-slate-700 to-slate-900 bg-clip-text text-transparent leading-tight mb-8"
+            variants={fadeInUp}
+            initial="hidden"
+            animate="visible"
+            custom={2}
+          >
+            Sistem Informasi<br />Manajemen Rumah Sakit
+          </motion.h1>
+          
+          <motion.div 
+            className="flex justify-center gap-4 mb-8"
+            variants={fadeInUp}
+            initial="hidden"
+            animate="visible"
+            custom={3}
+          >
+            <span className="px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium">SATU SEHAT Ready</span>
+            <span className="px-4 py-2 rounded-full bg-blue-500/10 text-blue-600 text-sm font-medium">BPJS Integrated</span>
+            <span className="px-4 py-2 rounded-full bg-emerald-500/10 text-emerald-600 text-sm font-medium">Cloud Native</span>
+          </motion.div>
+          
+          <motion.div 
+            className="mt-16 pt-8 border-t border-slate-200"
+            variants={fadeInUp}
+            initial="hidden"
+            animate="visible"
+            custom={4}
+          >
             <p className="text-xs text-slate-400 mb-2">Diajukan kepada</p>
-            <p className="text-lg font-medium text-slate-700">RSUD Dr. Moewardi Surakarta</p>
-            <p className="text-sm text-slate-400 mt-4">Februari 2026</p>
-          </div>
+            <p className="text-xl font-semibold text-slate-800">RSUD Dr. Moewardi Surakarta</p>
+            <p className="text-sm text-slate-400 mt-3">Februari 2026</p>
+          </motion.div>
         </div>
       </div>
     ),
   },
   {
     id: 2,
-    title: "Daftar Isi",
-    background: "from-white to-slate-50",
+    title: "Tentang Kami",
     content: (
-      <div className="h-full px-8 md:px-16 py-12">
-        <div className="max-w-2xl mx-auto">
-          <p className="text-xs text-slate-400 tracking-[0.2em] uppercase mb-2">Dokumen Proposal</p>
-          <h2 className="text-2xl font-light text-slate-900 mb-8">Daftar Isi</h2>
-          <div className="w-12 h-px bg-primary mb-10" />
+      <div className="relative h-full px-8 md:px-16 py-12 overflow-hidden">
+        <motion.div
+          className="absolute -top-20 -right-20 w-[400px] h-[400px] rounded-full bg-gradient-to-br from-primary/10 to-transparent blur-3xl"
+          animate={{ rotate: 360 }}
+          transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
+        />
+        
+        <div className="relative z-10 max-w-5xl mx-auto">
+          <motion.div variants={fadeInLeft} initial="hidden" animate="visible">
+            <p className="text-xs text-primary tracking-[0.3em] uppercase mb-2 font-semibold">01 — Pendahuluan</p>
+            <h2 className="text-3xl md:text-5xl font-bold text-slate-900 mb-4">
+              Tentang <span className="text-primary">ZEN⁺</span> SIMRS
+            </h2>
+            <motion.div 
+              className="w-20 h-1 bg-gradient-to-r from-primary to-blue-500 rounded-full mb-8"
+              initial={{ width: 0 }}
+              animate={{ width: 80 }}
+              transition={{ delay: 0.5, duration: 0.8 }}
+            />
+          </motion.div>
           
-          <div className="space-y-4">
-            {[
-              { num: "01", title: "Tentang ZEN⁺ SIMRS", page: "03" },
-              { num: "02", title: "Keunggulan Solusi", page: "04" },
-              { num: "03", title: "Modul & Fitur Lengkap", page: "05" },
-              { num: "04", title: "Integrasi SATU SEHAT", page: "06" },
-              { num: "05", title: "Integrasi BPJS Kesehatan", page: "07" },
-              { num: "06", title: "Arsitektur & Keamanan", page: "08" },
-              { num: "07", title: "Metodologi Implementasi", page: "09" },
-              { num: "08", title: "Referensi Klien", page: "10" },
-            ].map((item) => (
-              <div key={item.num} className="flex items-center group">
-                <span className="text-primary font-medium w-8">{item.num}</span>
-                <span className="flex-1 text-slate-700 group-hover:text-slate-900 transition-colors">{item.title}</span>
-                <span className="text-slate-300 border-b border-dotted border-slate-200 flex-1 mx-4" />
-                <span className="text-slate-400 text-sm">{item.page}</span>
-              </div>
-            ))}
+          <div className="grid md:grid-cols-5 gap-10">
+            <motion.div 
+              className="md:col-span-3"
+              variants={staggerContainer}
+              initial="hidden"
+              animate="visible"
+            >
+              <motion.p variants={fadeInUp} className="text-lg text-slate-600 leading-relaxed mb-6">
+                <strong className="text-slate-900">ZEN⁺ SIMRS</strong> adalah sistem informasi manajemen rumah sakit generasi terbaru yang dikembangkan dengan pendekatan <span className="text-primary font-semibold">cloud-native</span> dan <span className="text-primary font-semibold">user-centric design</span>.
+              </motion.p>
+              <motion.p variants={fadeInUp} className="text-slate-600 leading-relaxed mb-6">
+                Dirancang khusus untuk memenuhi kebutuhan rumah sakit di Indonesia dengan kepatuhan penuh terhadap regulasi Kemenkes RI, standar interoperabilitas SATU SEHAT (HL7 FHIR), dan integrasi BPJS Kesehatan.
+              </motion.p>
+            </motion.div>
+            
+            <motion.div 
+              className="md:col-span-2 space-y-4"
+              variants={staggerContainer}
+              initial="hidden"
+              animate="visible"
+            >
+              {[
+                { value: "100%", label: "Cloud-Based", color: "from-primary to-blue-500" },
+                { value: "24/7", label: "Support", color: "from-blue-500 to-cyan-500" },
+                { value: "99.9%", label: "Uptime SLA", color: "from-cyan-500 to-emerald-500" },
+              ].map((item, idx) => (
+                <motion.div 
+                  key={idx}
+                  variants={scaleIn}
+                  custom={idx}
+                  className="relative overflow-hidden rounded-2xl p-6 bg-white border border-slate-100 shadow-lg shadow-slate-100/50 group hover:shadow-xl hover:shadow-primary/10 transition-all duration-500"
+                  whileHover={{ scale: 1.02, y: -4 }}
+                >
+                  <div className={`absolute top-0 left-0 w-1 h-full bg-gradient-to-b ${item.color}`} />
+                  <p className={`text-3xl font-bold bg-gradient-to-r ${item.color} bg-clip-text text-transparent`}>{item.value}</p>
+                  <p className="text-sm text-slate-500 mt-1">{item.label}</p>
+                </motion.div>
+              ))}
+            </motion.div>
           </div>
         </div>
       </div>
@@ -92,96 +206,123 @@ const slides: Slide[] = [
   },
   {
     id: 3,
-    title: "Tentang ZEN⁺",
-    background: "from-white to-slate-50",
+    title: "Keunggulan",
     content: (
-      <div className="h-full px-8 md:px-16 py-12">
-        <div className="max-w-4xl mx-auto">
-          <p className="text-xs text-slate-400 tracking-[0.2em] uppercase mb-2">01 — Pendahuluan</p>
-          <h2 className="text-2xl font-light text-slate-900 mb-2">Tentang ZEN⁺ SIMRS</h2>
-          <div className="w-12 h-px bg-primary mb-8" />
+      <div className="relative h-full px-8 md:px-16 py-12 overflow-hidden">
+        <motion.div
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full bg-gradient-to-r from-primary/5 via-blue-500/5 to-cyan-500/5 blur-3xl"
+          animate={{ rotate: 360 }}
+          transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
+        />
+        
+        <div className="relative z-10 max-w-6xl mx-auto">
+          <motion.div variants={fadeInUp} initial="hidden" animate="visible" className="text-center mb-12">
+            <p className="text-xs text-primary tracking-[0.3em] uppercase mb-2 font-semibold">02 — Value Proposition</p>
+            <h2 className="text-3xl md:text-5xl font-bold text-slate-900">
+              Mengapa Memilih <span className="text-primary">ZEN⁺</span>?
+            </h2>
+          </motion.div>
           
-          <div className="grid md:grid-cols-2 gap-10">
-            <div>
-              <p className="text-slate-600 leading-relaxed mb-6">
-                <strong className="text-slate-800">ZEN⁺ SIMRS</strong> adalah sistem informasi manajemen rumah sakit generasi terbaru yang dikembangkan oleh PT Zen Multimedia Indonesia dengan pendekatan cloud-native dan user-centric design.
-              </p>
-              <p className="text-slate-600 leading-relaxed mb-6">
-                Dirancang khusus untuk memenuhi kebutuhan rumah sakit di Indonesia dengan kepatuhan penuh terhadap regulasi Kemenkes RI, standar interoperabilitas SATU SEHAT (HL7 FHIR), dan integrasi BPJS Kesehatan.
-              </p>
-              <p className="text-slate-600 leading-relaxed">
-                Dengan pengalaman implementasi di berbagai tipe rumah sakit, ZEN⁺ menawarkan solusi yang scalable, aman, dan mudah diadopsi oleh seluruh tingkatan pengguna.
-              </p>
-            </div>
-            <div className="space-y-4">
-              <div className="border border-slate-200 rounded-lg p-5 bg-white">
-                <p className="text-3xl font-light text-primary mb-1">100%</p>
-                <p className="text-sm text-slate-500">Cloud-Based Architecture</p>
-              </div>
-              <div className="border border-slate-200 rounded-lg p-5 bg-white">
-                <p className="text-3xl font-light text-primary mb-1">24/7</p>
-                <p className="text-sm text-slate-500">Technical Support</p>
-              </div>
-              <div className="border border-slate-200 rounded-lg p-5 bg-white">
-                <p className="text-3xl font-light text-primary mb-1">99.9%</p>
-                <p className="text-sm text-slate-500">Uptime Guarantee (SLA)</p>
-              </div>
-            </div>
-          </div>
+          <motion.div 
+            className="grid md:grid-cols-3 gap-6"
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
+          >
+            {[
+              { icon: "⚡", title: "Performa Tinggi", desc: "Response time <200ms untuk ribuan transaksi harian", gradient: "from-amber-400 to-orange-500" },
+              { icon: "🔗", title: "Terintegrasi", desc: "Native dengan SATU SEHAT, BPJS, dan sistem eksternal", gradient: "from-primary to-blue-500" },
+              { icon: "🔒", title: "Enterprise Security", desc: "Enkripsi end-to-end, RBAC, dan audit trail lengkap", gradient: "from-emerald-400 to-teal-500" },
+              { icon: "☁️", title: "Zero Infrastructure", desc: "Tanpa investasi server, auto-scaling & backup otomatis", gradient: "from-blue-400 to-indigo-500" },
+              { icon: "📊", title: "Business Intelligence", desc: "Dashboard real-time dan laporan otomatis RL 1-5", gradient: "from-purple-400 to-pink-500" },
+              { icon: "🎯", title: "User Friendly", desc: "Antarmuka intuitif, minimal training, adopsi cepat", gradient: "from-rose-400 to-red-500" },
+            ].map((item, idx) => (
+              <motion.div 
+                key={idx}
+                variants={scaleIn}
+                custom={idx}
+                className="group relative overflow-hidden rounded-2xl p-6 bg-white border border-slate-100 shadow-lg hover:shadow-2xl transition-all duration-500"
+                whileHover={{ y: -8 }}
+              >
+                <motion.div 
+                  className={`absolute inset-0 bg-gradient-to-br ${item.gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-500`}
+                />
+                <motion.span 
+                  className="text-4xl block mb-4"
+                  whileHover={{ scale: 1.2, rotate: [0, -10, 10, 0] }}
+                  transition={{ duration: 0.5 }}
+                >
+                  {item.icon}
+                </motion.span>
+                <h3 className="font-bold text-slate-900 mb-2 text-lg">{item.title}</h3>
+                <p className="text-sm text-slate-500 leading-relaxed">{item.desc}</p>
+              </motion.div>
+            ))}
+          </motion.div>
         </div>
       </div>
     ),
   },
   {
     id: 4,
-    title: "Keunggulan",
-    background: "from-white to-slate-50",
+    title: "Modul",
     content: (
-      <div className="h-full px-8 md:px-16 py-12">
-        <div className="max-w-5xl mx-auto">
-          <p className="text-xs text-slate-400 tracking-[0.2em] uppercase mb-2">02 — Value Proposition</p>
-          <h2 className="text-2xl font-light text-slate-900 mb-2">Keunggulan Solusi</h2>
-          <div className="w-12 h-px bg-primary mb-8" />
+      <div className="relative h-full px-8 md:px-16 py-10 overflow-hidden">
+        <div className="relative z-10 max-w-6xl mx-auto">
+          <motion.div variants={fadeInUp} initial="hidden" animate="visible" className="text-center mb-8">
+            <p className="text-xs text-primary tracking-[0.3em] uppercase mb-2 font-semibold">03 — Ruang Lingkup</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-900">
+              Modul <span className="text-primary">Lengkap</span> & Terintegrasi
+            </h2>
+          </motion.div>
           
-          <div className="grid md:grid-cols-3 gap-6">
-            {[
-              { 
-                icon: "⚡", 
-                title: "Performa Tinggi", 
-                desc: "Arsitektur modern dengan response time < 200ms, mendukung operasional RS dengan ribuan transaksi harian tanpa lag." 
-              },
-              { 
-                icon: "🔗", 
-                title: "Interoperabilitas", 
-                desc: "Terintegrasi native dengan SATU SEHAT, BPJS VClaim, E-Claim, Antrean Online, dan sistem eksternal lainnya." 
-              },
-              { 
-                icon: "🔒", 
-                title: "Keamanan Enterprise", 
-                desc: "Enkripsi end-to-end, role-based access control, audit trail lengkap, dan compliance dengan standar keamanan data kesehatan." 
-              },
-              { 
-                icon: "☁️", 
-                title: "Zero Infrastructure", 
-                desc: "Tidak perlu investasi server dan infrastruktur IT. Semua dikelola di cloud dengan auto-scaling dan backup otomatis." 
-              },
-              { 
-                icon: "📊", 
-                title: "Business Intelligence", 
-                desc: "Dashboard eksekutif real-time, analitik prediktif, dan laporan otomatis sesuai standar Kemenkes (RL 1-5)." 
-              },
-              { 
-                icon: "🎯", 
-                title: "User Experience", 
-                desc: "Antarmuka intuitif yang dirancang untuk efisiensi kerja, minimal training, dan adopsi cepat oleh seluruh staf RS." 
-              },
-            ].map((item, idx) => (
-              <div key={idx} className="border border-slate-200 rounded-lg p-6 bg-white hover:shadow-md transition-shadow">
-                <span className="text-2xl mb-4 block">{item.icon}</span>
-                <h3 className="font-medium text-slate-900 mb-2">{item.title}</h3>
-                <p className="text-sm text-slate-500 leading-relaxed">{item.desc}</p>
-              </div>
-            ))}
+          <div className="grid md:grid-cols-2 gap-8">
+            <motion.div 
+              variants={fadeInLeft}
+              initial="hidden"
+              animate="visible"
+              className="relative"
+            >
+              <div className="absolute -left-4 top-0 bottom-0 w-1 bg-gradient-to-b from-primary via-blue-500 to-cyan-500 rounded-full" />
+              <h3 className="text-sm font-bold text-primary uppercase tracking-wide mb-4 ml-4">Pelayanan Klinis</h3>
+              <motion.div className="space-y-2" variants={staggerContainer} initial="hidden" animate="visible">
+                {["Pendaftaran & Antrian Cerdas", "Rawat Jalan (Poliklinik)", "Rawat Inap", "IGD", "Kamar Operasi (IBS)", "ICU/NICU/PICU", "Hemodialisa", "Rehabilitasi Medik", "MCU", "Forensik"].map((item, idx) => (
+                  <motion.div 
+                    key={idx} 
+                    variants={fadeInUp}
+                    className="flex items-center gap-3 p-3 rounded-xl bg-white border border-slate-100 shadow-sm hover:shadow-md hover:border-primary/20 transition-all group"
+                    whileHover={{ x: 8 }}
+                  >
+                    <span className="w-2 h-2 rounded-full bg-gradient-to-r from-primary to-blue-500 group-hover:scale-150 transition-transform" />
+                    <span className="text-sm text-slate-700">{item}</span>
+                  </motion.div>
+                ))}
+              </motion.div>
+            </motion.div>
+            
+            <motion.div 
+              variants={fadeInLeft}
+              initial="hidden"
+              animate="visible"
+              custom={1}
+              className="relative"
+            >
+              <div className="absolute -left-4 top-0 bottom-0 w-1 bg-gradient-to-b from-emerald-500 via-teal-500 to-cyan-500 rounded-full" />
+              <h3 className="text-sm font-bold text-emerald-600 uppercase tracking-wide mb-4 ml-4">Penunjang & Manajemen</h3>
+              <motion.div className="space-y-2" variants={staggerContainer} initial="hidden" animate="visible">
+                {["Farmasi & Apotek", "Laboratorium", "Radiologi & Imaging", "Bank Darah (UTDRS)", "Gizi & Nutrisi", "Rekam Medis Elektronik", "Billing & Kasir", "Inventori & Logistik", "SDM & Payroll", "Akuntansi"].map((item, idx) => (
+                  <motion.div 
+                    key={idx} 
+                    variants={fadeInUp}
+                    className="flex items-center gap-3 p-3 rounded-xl bg-white border border-slate-100 shadow-sm hover:shadow-md hover:border-emerald-500/20 transition-all group"
+                    whileHover={{ x: 8 }}
+                  >
+                    <span className="w-2 h-2 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 group-hover:scale-150 transition-transform" />
+                    <span className="text-sm text-slate-700">{item}</span>
+                  </motion.div>
+                ))}
+              </motion.div>
+            </motion.div>
           </div>
         </div>
       </div>
@@ -189,308 +330,375 @@ const slides: Slide[] = [
   },
   {
     id: 5,
-    title: "Modul",
-    background: "from-white to-slate-50",
+    title: "SATU SEHAT",
     content: (
-      <div className="h-full px-8 md:px-16 py-12 overflow-auto">
-        <div className="max-w-5xl mx-auto">
-          <p className="text-xs text-slate-400 tracking-[0.2em] uppercase mb-2">03 — Ruang Lingkup</p>
-          <h2 className="text-2xl font-light text-slate-900 mb-2">Modul & Fitur Lengkap</h2>
-          <div className="w-12 h-px bg-primary mb-8" />
+      <div className="relative h-full px-8 md:px-16 py-12 overflow-hidden bg-gradient-to-br from-emerald-50 via-white to-teal-50">
+        <motion.div
+          className="absolute top-20 right-20 w-32 h-32 rounded-full border-4 border-emerald-200/50"
+          animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.6, 0.3] }}
+          transition={{ duration: 4, repeat: Infinity }}
+        />
+        <motion.div
+          className="absolute bottom-20 left-20 w-24 h-24 rounded-full border-4 border-teal-200/50"
+          animate={{ scale: [1.2, 1, 1.2], opacity: [0.6, 0.3, 0.6] }}
+          transition={{ duration: 3, repeat: Infinity }}
+        />
+        
+        <div className="relative z-10 max-w-5xl mx-auto">
+          <motion.div variants={fadeInUp} initial="hidden" animate="visible" className="text-center mb-10">
+            <p className="text-xs text-emerald-600 tracking-[0.3em] uppercase mb-2 font-semibold">04 — Interoperabilitas</p>
+            <h2 className="text-3xl md:text-5xl font-bold text-slate-900">
+              Integrasi <span className="text-emerald-600">SATU SEHAT</span>
+            </h2>
+            <p className="text-slate-500 mt-4 max-w-2xl mx-auto">
+              Terintegrasi penuh dengan platform Kemenkes RI menggunakan standar HL7 FHIR R4
+            </p>
+          </motion.div>
           
-          <div className="grid md:grid-cols-2 gap-8">
-            <div>
-              <h3 className="text-sm font-medium text-slate-400 uppercase tracking-wide mb-4">Pelayanan Klinis</h3>
-              <div className="space-y-2">
-                {["Pendaftaran & Antrian Cerdas", "Rawat Jalan (Poliklinik)", "Rawat Inap", "Instalasi Gawat Darurat (IGD)", "Kamar Operasi (IBS)", "ICU/NICU/PICU", "Hemodialisa", "Rehabilitasi Medik", "Medical Check Up (MCU)", "Forensik & Kedokteran Kehakiman"].map((item, idx) => (
-                  <div key={idx} className="flex items-center gap-3 py-2 border-b border-slate-100">
-                    <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                    <span className="text-sm text-slate-700">{item}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div>
-              <h3 className="text-sm font-medium text-slate-400 uppercase tracking-wide mb-4">Penunjang & Manajemen</h3>
-              <div className="space-y-2">
-                {["Farmasi & Apotek", "Laboratorium", "Radiologi & Imaging", "Bank Darah (UTDRS)", "Gizi & Nutrisi", "Rekam Medis Elektronik", "Billing & Kasir", "Inventori & Logistik", "SDM & Payroll", "Akuntansi & Keuangan"].map((item, idx) => (
-                  <div key={idx} className="flex items-center gap-3 py-2 border-b border-slate-100">
-                    <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                    <span className="text-sm text-slate-700">{item}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
+          <motion.div 
+            className="grid grid-cols-2 md:grid-cols-4 gap-4"
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
+          >
+            {[
+              { resource: "Patient", desc: "Data Pasien", icon: "👤" },
+              { resource: "Encounter", desc: "Kunjungan", icon: "🏥" },
+              { resource: "Condition", desc: "Diagnosis", icon: "📋" },
+              { resource: "Observation", desc: "Vital Signs", icon: "💓" },
+              { resource: "Medication", desc: "Obat", icon: "💊" },
+              { resource: "Procedure", desc: "Tindakan", icon: "🔬" },
+              { resource: "Practitioner", desc: "Nakes", icon: "👨‍⚕️" },
+              { resource: "Organization", desc: "Faskes", icon: "🏢" },
+            ].map((item, idx) => (
+              <motion.div 
+                key={idx}
+                variants={scaleIn}
+                custom={idx}
+                className="relative overflow-hidden rounded-2xl p-5 bg-white border border-emerald-100 shadow-lg text-center group"
+                whileHover={{ y: -6, scale: 1.02 }}
+              >
+                <motion.div
+                  className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-teal-500/10 opacity-0 group-hover:opacity-100 transition-opacity"
+                />
+                <motion.span 
+                  className="text-3xl block mb-2"
+                  whileHover={{ scale: 1.3 }}
+                >
+                  {item.icon}
+                </motion.span>
+                <p className="font-bold text-slate-900">{item.resource}</p>
+                <p className="text-xs text-slate-400">{item.desc}</p>
+              </motion.div>
+            ))}
+          </motion.div>
         </div>
       </div>
     ),
   },
   {
     id: 6,
-    title: "SATU SEHAT",
-    background: "from-white to-slate-50",
+    title: "BPJS",
     content: (
-      <div className="h-full px-8 md:px-16 py-12">
-        <div className="max-w-4xl mx-auto">
-          <p className="text-xs text-slate-400 tracking-[0.2em] uppercase mb-2">04 — Interoperabilitas</p>
-          <h2 className="text-2xl font-light text-slate-900 mb-2">Integrasi SATU SEHAT</h2>
-          <div className="w-12 h-px bg-primary mb-8" />
+      <div className="relative h-full px-8 md:px-16 py-12 overflow-hidden bg-gradient-to-br from-blue-50 via-white to-cyan-50">
+        <div className="relative z-10 max-w-5xl mx-auto">
+          <motion.div variants={fadeInUp} initial="hidden" animate="visible" className="text-center mb-10">
+            <p className="text-xs text-blue-600 tracking-[0.3em] uppercase mb-2 font-semibold">05 — Integrasi</p>
+            <h2 className="text-3xl md:text-5xl font-bold text-slate-900">
+              Integrasi <span className="text-blue-600">BPJS</span> Kesehatan
+            </h2>
+          </motion.div>
           
-          <p className="text-slate-600 leading-relaxed mb-8 max-w-2xl">
-            ZEN⁺ telah tersertifikasi dan terintegrasi penuh dengan platform SATU SEHAT Kemenkes RI menggunakan standar HL7 FHIR R4 untuk pertukaran data kesehatan yang aman dan terstandar.
-          </p>
-          
-          <div className="grid md:grid-cols-4 gap-4 mb-8">
+          <motion.div 
+            className="grid md:grid-cols-2 gap-6"
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
+          >
             {[
-              { resource: "Patient", desc: "Data demografis pasien" },
-              { resource: "Encounter", desc: "Riwayat kunjungan" },
-              { resource: "Condition", desc: "Diagnosis (ICD-10)" },
-              { resource: "Observation", desc: "Vital signs & lab" },
-              { resource: "Medication", desc: "Resep & pemberian obat" },
-              { resource: "Procedure", desc: "Tindakan medis" },
-              { resource: "Practitioner", desc: "Data tenaga kesehatan" },
-              { resource: "Organization", desc: "Profil fasilitas" },
+              { 
+                code: "V", 
+                title: "VClaim Service", 
+                items: ["Cek kepesertaan & eligibilitas", "Generate SEP otomatis", "Data rujukan FKTP", "Monitoring status klaim"],
+                gradient: "from-blue-500 to-indigo-500"
+              },
+              { 
+                code: "E", 
+                title: "E-Claim / INA-CBG", 
+                items: ["Grouper INA-CBG terintegrasi", "Pengajuan klaim digital", "Tracking verifikasi", "Analisis potensi dispute"],
+                gradient: "from-indigo-500 to-purple-500"
+              },
+              { 
+                code: "A", 
+                title: "Antrean Online", 
+                items: ["Integrasi Mobile JKN", "Push jadwal & notifikasi", "Reschedule otomatis"],
+                gradient: "from-purple-500 to-pink-500"
+              },
+              { 
+                code: "P", 
+                title: "Aplicares", 
+                items: ["Monitoring tempat tidur", "Update ketersediaan realtime", "Sinkronisasi otomatis"],
+                gradient: "from-pink-500 to-rose-500"
+              },
             ].map((item, idx) => (
-              <div key={idx} className="border border-slate-200 rounded-lg p-4 bg-white text-center">
-                <p className="font-medium text-slate-900 text-sm mb-1">{item.resource}</p>
-                <p className="text-xs text-slate-400">{item.desc}</p>
-              </div>
+              <motion.div 
+                key={idx}
+                variants={scaleIn}
+                custom={idx}
+                className="relative overflow-hidden rounded-2xl p-6 bg-white border border-slate-100 shadow-xl group"
+                whileHover={{ scale: 1.02 }}
+              >
+                <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${item.gradient}`} />
+                <div className="flex items-center gap-4 mb-4">
+                  <motion.div 
+                    className={`w-12 h-12 rounded-xl bg-gradient-to-br ${item.gradient} flex items-center justify-center text-white font-bold text-xl shadow-lg`}
+                    whileHover={{ rotate: [0, -5, 5, 0], scale: 1.1 }}
+                    transition={{ duration: 0.5 }}
+                  >
+                    {item.code}
+                  </motion.div>
+                  <h3 className="font-bold text-slate-900 text-lg">{item.title}</h3>
+                </div>
+                <ul className="space-y-2">
+                  {item.items.map((i, iIdx) => (
+                    <motion.li 
+                      key={iIdx} 
+                      className="flex items-center gap-2 text-sm text-slate-600"
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.3 + iIdx * 0.1 }}
+                    >
+                      <span className={`w-1.5 h-1.5 rounded-full bg-gradient-to-r ${item.gradient}`} />
+                      {i}
+                    </motion.li>
+                  ))}
+                </ul>
+              </motion.div>
             ))}
-          </div>
-          
-          <div className="bg-slate-50 border border-slate-200 rounded-lg p-6">
-            <p className="text-sm text-slate-600">
-              <strong className="text-slate-800">Fitur:</strong> Sinkronisasi otomatis • Validasi data real-time • Retry mechanism • Dashboard monitoring status pengiriman • Log audit lengkap
-            </p>
-          </div>
+          </motion.div>
         </div>
       </div>
     ),
   },
   {
     id: 7,
-    title: "BPJS",
-    background: "from-white to-slate-50",
+    title: "Arsitektur",
     content: (
-      <div className="h-full px-8 md:px-16 py-12">
-        <div className="max-w-4xl mx-auto">
-          <p className="text-xs text-slate-400 tracking-[0.2em] uppercase mb-2">05 — Integrasi</p>
-          <h2 className="text-2xl font-light text-slate-900 mb-2">Integrasi BPJS Kesehatan</h2>
-          <div className="w-12 h-px bg-primary mb-8" />
+      <div className="relative h-full px-8 md:px-16 py-12 overflow-hidden">
+        <motion.div
+          className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5 }}
+        />
+        <motion.div
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-gradient-to-r from-primary/20 to-blue-500/20 blur-3xl"
+          animate={{ scale: [1, 1.1, 1], rotate: 360 }}
+          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+        />
+        
+        <div className="relative z-10 max-w-5xl mx-auto text-white">
+          <motion.div variants={fadeInUp} initial="hidden" animate="visible" className="text-center mb-10">
+            <p className="text-xs text-primary tracking-[0.3em] uppercase mb-2 font-semibold">06 — Infrastruktur</p>
+            <h2 className="text-3xl md:text-5xl font-bold">
+              Arsitektur & <span className="text-primary">Keamanan</span>
+            </h2>
+          </motion.div>
           
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="border border-slate-200 rounded-lg p-6 bg-white">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <span className="text-primary font-semibold">V</span>
-                </div>
-                <h3 className="font-medium text-slate-900">VClaim Service</h3>
-              </div>
-              <ul className="space-y-2 text-sm text-slate-600">
-                <li>• Cek kepesertaan & eligibilitas</li>
-                <li>• Generate SEP otomatis</li>
-                <li>• Data rujukan FKTP</li>
-                <li>• Monitoring status klaim</li>
-              </ul>
+          <motion.div 
+            className="grid md:grid-cols-3 gap-6 mb-10"
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
+          >
+            {[
+              { icon: "☁️", title: "Cloud Native", desc: "Auto-scaling, load balancing" },
+              { icon: "🔐", title: "Security First", desc: "AES-256, TLS 1.3" },
+              { icon: "🔄", title: "High Availability", desc: "99.9% uptime, DR ready" },
+            ].map((item, idx) => (
+              <motion.div 
+                key={idx}
+                variants={scaleIn}
+                custom={idx}
+                className="text-center p-8 rounded-2xl bg-white/5 backdrop-blur border border-white/10 hover:bg-white/10 transition-all"
+                whileHover={{ y: -8 }}
+              >
+                <motion.span 
+                  className="text-5xl block mb-4"
+                  animate={{ y: [0, -8, 0] }}
+                  transition={{ duration: 2, repeat: Infinity, delay: idx * 0.3 }}
+                >
+                  {item.icon}
+                </motion.span>
+                <h3 className="font-bold text-lg mb-2">{item.title}</h3>
+                <p className="text-sm text-slate-400">{item.desc}</p>
+              </motion.div>
+            ))}
+          </motion.div>
+          
+          <motion.div 
+            className="rounded-2xl bg-white/5 backdrop-blur border border-white/10 p-8"
+            variants={fadeInUp}
+            initial="hidden"
+            animate="visible"
+            custom={3}
+          >
+            <h4 className="font-bold mb-6 text-primary">Spesifikasi Teknis</h4>
+            <div className="grid md:grid-cols-2 gap-4">
+              {[
+                { label: "Database", value: "PostgreSQL 15" },
+                { label: "API", value: "RESTful + GraphQL" },
+                { label: "Auth", value: "OAuth 2.0 + JWT" },
+                { label: "Backup", value: "Daily + Point-in-time" },
+              ].map((item, idx) => (
+                <motion.div 
+                  key={idx} 
+                  className="flex justify-between border-b border-white/10 pb-3"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.5 + idx * 0.1 }}
+                >
+                  <span className="text-slate-400">{item.label}</span>
+                  <span className="font-medium">{item.value}</span>
+                </motion.div>
+              ))}
             </div>
-            
-            <div className="border border-slate-200 rounded-lg p-6 bg-white">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <span className="text-primary font-semibold">E</span>
-                </div>
-                <h3 className="font-medium text-slate-900">E-Claim / INA-CBG</h3>
-              </div>
-              <ul className="space-y-2 text-sm text-slate-600">
-                <li>• Grouper INA-CBG terintegrasi</li>
-                <li>• Pengajuan klaim digital</li>
-                <li>• Tracking verifikasi</li>
-                <li>• Analisis potensi dispute</li>
-              </ul>
-            </div>
-            
-            <div className="border border-slate-200 rounded-lg p-6 bg-white">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <span className="text-primary font-semibold">A</span>
-                </div>
-                <h3 className="font-medium text-slate-900">Antrean Online</h3>
-              </div>
-              <ul className="space-y-2 text-sm text-slate-600">
-                <li>• Integrasi Mobile JKN</li>
-                <li>• Push jadwal & notifikasi</li>
-                <li>• Reschedule otomatis</li>
-              </ul>
-            </div>
-            
-            <div className="border border-slate-200 rounded-lg p-6 bg-white">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <span className="text-primary font-semibold">P</span>
-                </div>
-                <h3 className="font-medium text-slate-900">Aplicares</h3>
-              </div>
-              <ul className="space-y-2 text-sm text-slate-600">
-                <li>• Monitoring tempat tidur</li>
-                <li>• Update ketersediaan realtime</li>
-                <li>• Sinkronisasi otomatis</li>
-              </ul>
-            </div>
-          </div>
+          </motion.div>
         </div>
       </div>
     ),
   },
   {
     id: 8,
-    title: "Arsitektur",
-    background: "from-white to-slate-50",
+    title: "Implementasi",
     content: (
-      <div className="h-full px-8 md:px-16 py-12">
-        <div className="max-w-4xl mx-auto">
-          <p className="text-xs text-slate-400 tracking-[0.2em] uppercase mb-2">06 — Infrastruktur</p>
-          <h2 className="text-2xl font-light text-slate-900 mb-2">Arsitektur & Keamanan</h2>
-          <div className="w-12 h-px bg-primary mb-8" />
+      <div className="relative h-full px-8 md:px-16 py-10 overflow-hidden">
+        <div className="relative z-10 max-w-4xl mx-auto">
+          <motion.div variants={fadeInUp} initial="hidden" animate="visible" className="text-center mb-8">
+            <p className="text-xs text-primary tracking-[0.3em] uppercase mb-2 font-semibold">07 — Metodologi</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-900">
+              Tahapan <span className="text-primary">Implementasi</span>
+            </h2>
+          </motion.div>
           
-          <div className="grid md:grid-cols-3 gap-6 mb-8">
-            <div className="text-center p-6 border border-slate-200 rounded-lg bg-white">
-              <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-4">
-                <span className="text-xl">☁️</span>
-              </div>
-              <h3 className="font-medium text-slate-900 mb-2">Cloud Native</h3>
-              <p className="text-xs text-slate-500">Auto-scaling, load balancing, multi-region deployment</p>
-            </div>
-            <div className="text-center p-6 border border-slate-200 rounded-lg bg-white">
-              <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-4">
-                <span className="text-xl">🔐</span>
-              </div>
-              <h3 className="font-medium text-slate-900 mb-2">Security First</h3>
-              <p className="text-xs text-slate-500">Enkripsi AES-256, TLS 1.3, SOC 2 compliance</p>
-            </div>
-            <div className="text-center p-6 border border-slate-200 rounded-lg bg-white">
-              <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-4">
-                <span className="text-xl">🔄</span>
-              </div>
-              <h3 className="font-medium text-slate-900 mb-2">High Availability</h3>
-              <p className="text-xs text-slate-500">99.9% uptime SLA, automated failover, DR ready</p>
-            </div>
-          </div>
-          
-          <div className="bg-slate-900 text-white rounded-lg p-6">
-            <h4 className="font-medium mb-4">Spesifikasi Teknis</h4>
-            <div className="grid md:grid-cols-2 gap-4 text-sm">
-              <div className="flex justify-between border-b border-slate-700 pb-2">
-                <span className="text-slate-400">Database</span>
-                <span>PostgreSQL 15</span>
-              </div>
-              <div className="flex justify-between border-b border-slate-700 pb-2">
-                <span className="text-slate-400">API</span>
-                <span>RESTful + GraphQL</span>
-              </div>
-              <div className="flex justify-between border-b border-slate-700 pb-2">
-                <span className="text-slate-400">Authentication</span>
-                <span>OAuth 2.0 + JWT</span>
-              </div>
-              <div className="flex justify-between border-b border-slate-700 pb-2">
-                <span className="text-slate-400">Backup</span>
-                <span>Daily + Point-in-time</span>
-              </div>
-            </div>
-          </div>
+          <motion.div 
+            className="space-y-4"
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
+          >
+            {[
+              { phase: "01", title: "Assessment", duration: "2 Minggu", items: ["Audit sistem existing", "Gap analysis", "Project charter"], color: "from-amber-400 to-orange-500" },
+              { phase: "02", title: "Persiapan", duration: "3 Minggu", items: ["Setup environment", "Master data", "API bridging"], color: "from-primary to-blue-500" },
+              { phase: "03", title: "Migrasi Data", duration: "2 Minggu", items: ["Data cleansing", "ETL process", "Validation"], color: "from-blue-500 to-indigo-500" },
+              { phase: "04", title: "UAT & Training", duration: "2 Minggu", items: ["User testing", "Training", "Documentation"], color: "from-indigo-500 to-purple-500" },
+              { phase: "05", title: "Go-Live", duration: "2 Minggu", items: ["Cutover", "Hypercare", "Monitoring"], color: "from-purple-500 to-pink-500" },
+            ].map((item, idx) => (
+              <motion.div 
+                key={idx}
+                variants={fadeInLeft}
+                custom={idx}
+                className="flex gap-6 items-start group"
+                whileHover={{ x: 8 }}
+              >
+                <div className="w-20 shrink-0 text-center">
+                  <motion.div 
+                    className={`w-12 h-12 rounded-xl bg-gradient-to-br ${item.color} flex items-center justify-center text-white font-bold shadow-lg mx-auto`}
+                    whileHover={{ scale: 1.1, rotate: 5 }}
+                  >
+                    {item.phase}
+                  </motion.div>
+                  <p className="text-xs text-slate-400 mt-2">{item.duration}</p>
+                </div>
+                <div className="flex-1 rounded-2xl p-5 bg-white border border-slate-100 shadow-lg group-hover:shadow-xl group-hover:border-primary/20 transition-all">
+                  <h3 className="font-bold text-slate-900 mb-3">{item.title}</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {item.items.map((i, iIdx) => (
+                      <span key={iIdx} className="text-xs bg-slate-100 text-slate-600 px-3 py-1.5 rounded-full">{i}</span>
+                    ))}
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
         </div>
       </div>
     ),
   },
   {
     id: 9,
-    title: "Implementasi",
-    background: "from-white to-slate-50",
-    content: (
-      <div className="h-full px-8 md:px-16 py-12">
-        <div className="max-w-4xl mx-auto">
-          <p className="text-xs text-slate-400 tracking-[0.2em] uppercase mb-2">07 — Metodologi</p>
-          <h2 className="text-2xl font-light text-slate-900 mb-2">Tahapan Implementasi</h2>
-          <div className="w-12 h-px bg-primary mb-8" />
-          
-          <div className="space-y-4">
-            {[
-              { 
-                phase: "Phase 1", 
-                title: "Assessment & Planning", 
-                duration: "2 Minggu",
-                items: ["Audit sistem existing", "Gap analysis", "Pemetaan data & proses bisnis", "Project charter & timeline"]
-              },
-              { 
-                phase: "Phase 2", 
-                title: "Persiapan & Konfigurasi", 
-                duration: "3 Minggu",
-                items: ["Setup environment", "Konfigurasi master data", "Integrasi API BPJS & SATU SEHAT", "Customization workflow"]
-              },
-              { 
-                phase: "Phase 3", 
-                title: "Migrasi Data", 
-                duration: "2 Minggu",
-                items: ["Data cleansing & validation", "ETL process", "Parallel verification", "Data integrity check"]
-              },
-              { 
-                phase: "Phase 4", 
-                title: "UAT & Training", 
-                duration: "2 Minggu",
-                items: ["User acceptance testing", "Training end-user", "Documentation", "Bug fixing & refinement"]
-              },
-              { 
-                phase: "Phase 5", 
-                title: "Go-Live & Hypercare", 
-                duration: "2 Minggu",
-                items: ["Cutover weekend", "On-site support", "Performance monitoring", "Knowledge transfer"]
-              },
-            ].map((item, idx) => (
-              <div key={idx} className="flex gap-6 items-start">
-                <div className="w-20 shrink-0">
-                  <p className="text-xs text-primary font-medium">{item.phase}</p>
-                  <p className="text-xs text-slate-400">{item.duration}</p>
-                </div>
-                <div className="flex-1 border border-slate-200 rounded-lg p-4 bg-white">
-                  <h3 className="font-medium text-slate-900 mb-2">{item.title}</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {item.items.map((i, iIdx) => (
-                      <span key={iIdx} className="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded">{i}</span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    ),
-  },
-  {
-    id: 10,
     title: "Penutup",
-    background: "from-white to-slate-50",
     content: (
-      <div className="flex flex-col items-center justify-center h-full px-8">
-        <div className="text-center max-w-2xl">
-          <img src={zenLogo} alt="ZEN+ Logo" className="h-16 w-16 mx-auto mb-8" />
-          <p className="text-xs text-slate-400 tracking-[0.3em] uppercase mb-4">Proposal</p>
-          <h1 className="text-3xl font-light text-slate-900 mb-4">
-            Siap Bertransformasi Digital?
-          </h1>
-          <div className="w-16 h-px bg-primary mx-auto mb-6" />
-          <p className="text-slate-500 leading-relaxed mb-12">
-            Kami siap mendampingi RSUD Dr. Moewardi dalam perjalanan transformasi digital menuju pelayanan kesehatan yang lebih efisien dan terintegrasi.
-          </p>
+      <div className="relative flex flex-col items-center justify-center h-full px-8 overflow-hidden">
+        <motion.div
+          className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-primary/5 via-transparent to-blue-500/5"
+          animate={{ opacity: [0.5, 1, 0.5] }}
+          transition={{ duration: 4, repeat: Infinity }}
+        />
+        <motion.div
+          className="absolute top-20 right-20 w-40 h-40 rounded-full border-2 border-primary/20"
+          animate={{ scale: [1, 1.2, 1], rotate: 180 }}
+          transition={{ duration: 8, repeat: Infinity }}
+        />
+        <motion.div
+          className="absolute bottom-20 left-20 w-32 h-32 rounded-full border-2 border-blue-500/20"
+          animate={{ scale: [1.2, 1, 1.2], rotate: -180 }}
+          transition={{ duration: 6, repeat: Infinity }}
+        />
+        
+        <div className="relative z-10 text-center max-w-2xl">
+          <motion.img 
+            src={zenCompanyLogo} 
+            alt="PT Zen Multimedia Indonesia" 
+            className="h-14 mx-auto mb-10"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8 }}
+          />
           
-          <div className="border-t border-slate-200 pt-8">
-            <p className="text-sm font-medium text-slate-900 mb-4">PT Zen Multimedia Indonesia</p>
-            <div className="flex flex-col items-center gap-2 text-sm text-slate-500">
-              <p>📧 info@zenplus.id</p>
-              <p>📞 (021) 1234-5678</p>
-              <p>🌐 www.zenplus.id</p>
+          <motion.p 
+            className="text-xs text-slate-400 tracking-[0.4em] uppercase mb-4"
+            variants={fadeInUp}
+            initial="hidden"
+            animate="visible"
+          >
+            Proposal
+          </motion.p>
+          
+          <motion.h1 
+            className="text-4xl md:text-5xl font-bold text-slate-900 mb-6"
+            variants={fadeInUp}
+            initial="hidden"
+            animate="visible"
+            custom={1}
+          >
+            Siap <span className="text-primary">Bertransformasi</span> Digital?
+          </motion.h1>
+          
+          <motion.p 
+            className="text-slate-500 leading-relaxed mb-12"
+            variants={fadeInUp}
+            initial="hidden"
+            animate="visible"
+            custom={2}
+          >
+            Kami siap mendampingi RSUD Dr. Moewardi dalam perjalanan transformasi digital menuju pelayanan kesehatan yang lebih efisien dan terintegrasi.
+          </motion.p>
+          
+          <motion.div 
+            className="border-t border-slate-200 pt-8"
+            variants={fadeInUp}
+            initial="hidden"
+            animate="visible"
+            custom={3}
+          >
+            <p className="font-semibold text-slate-900 mb-4">PT Zen Multimedia Indonesia</p>
+            <div className="flex flex-wrap justify-center gap-6 text-sm text-slate-500">
+              <motion.span whileHover={{ scale: 1.05, color: "#0066FF" }} className="cursor-pointer">📧 info@zenplus.id</motion.span>
+              <motion.span whileHover={{ scale: 1.05, color: "#0066FF" }} className="cursor-pointer">📞 (021) 1234-5678</motion.span>
+              <motion.span whileHover={{ scale: 1.05, color: "#0066FF" }} className="cursor-pointer">🌐 www.zenplus.id</motion.span>
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
     ),
@@ -527,7 +735,6 @@ export default function Presentasi() {
     }
   }, []);
 
-  // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "ArrowRight" || e.key === " ") {
@@ -545,7 +752,6 @@ export default function Presentasi() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [nextSlide, prevSlide, toggleFullscreen]);
 
-  // Auto-play
   useEffect(() => {
     if (!isPlaying) return;
 
@@ -555,7 +761,7 @@ export default function Presentasi() {
       } else {
         setIsPlaying(false);
       }
-    }, 5000);
+    }, 6000);
 
     return () => clearInterval(interval);
   }, [isPlaying, currentSlide, nextSlide]);
@@ -564,104 +770,143 @@ export default function Presentasi() {
   const progress = ((currentSlide + 1) / slides.length) * 100;
 
   return (
-    <div className={`relative h-screen w-screen overflow-hidden bg-gradient-to-br ${slide.background}`}>
-      {/* Slide Content */}
-      <div className="h-full w-full">
-        {slide.content}
-      </div>
+    <div className="relative h-screen w-screen overflow-hidden bg-white">
+      {/* Slide Content with Animation */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={currentSlide}
+          initial={{ opacity: 0, x: 100 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -100 }}
+          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          className="h-full w-full"
+        >
+          {slide.content}
+        </motion.div>
+      </AnimatePresence>
 
       {/* Progress Bar */}
       <div className="absolute bottom-0 left-0 right-0">
-        <Progress value={progress} className="h-1 rounded-none bg-white/20" />
+        <div className="h-1 bg-slate-100">
+          <motion.div 
+            className="h-full bg-gradient-to-r from-primary to-blue-500"
+            initial={{ width: 0 }}
+            animate={{ width: `${progress}%` }}
+            transition={{ duration: 0.5 }}
+          />
+        </div>
       </div>
 
       {/* Navigation Controls */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="text-white hover:bg-white/20"
-          onClick={prevSlide}
-          disabled={currentSlide === 0}
-        >
-          <ChevronLeft className="h-6 w-6" />
-        </Button>
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2">
+        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+          <Button
+            variant="outline"
+            size="icon"
+            className="rounded-full bg-white/80 backdrop-blur border-slate-200 hover:bg-white hover:border-primary"
+            onClick={prevSlide}
+            disabled={currentSlide === 0}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+        </motion.div>
         
-        <span className="text-white font-medium px-4">
+        <span className="px-4 py-2 text-sm font-medium text-slate-600 bg-white/80 backdrop-blur rounded-full border border-slate-200">
           {currentSlide + 1} / {slides.length}
         </span>
 
-        <Button
-          variant="ghost"
-          size="icon"
-          className="text-white hover:bg-white/20"
-          onClick={nextSlide}
-          disabled={currentSlide === slides.length - 1}
-        >
-          <ChevronRight className="h-6 w-6" />
-        </Button>
+        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+          <Button
+            variant="outline"
+            size="icon"
+            className="rounded-full bg-white/80 backdrop-blur border-slate-200 hover:bg-white hover:border-primary"
+            onClick={nextSlide}
+            disabled={currentSlide === slides.length - 1}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </motion.div>
       </div>
 
       {/* Top Controls */}
       <div className="absolute top-4 right-4 flex items-center gap-2">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="text-white hover:bg-white/20"
-          onClick={() => setIsPlaying(!isPlaying)}
-        >
-          {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="text-white hover:bg-white/20"
-          onClick={toggleFullscreen}
-        >
-          {isFullscreen ? <Minimize2 className="h-5 w-5" /> : <Maximize2 className="h-5 w-5" />}
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="text-white hover:bg-white/20"
-          onClick={() => setShowNav(!showNav)}
-        >
-          {showNav ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="text-white hover:bg-white/20"
-          onClick={() => window.location.href = "/"}
-        >
-          <Home className="h-5 w-5" />
-        </Button>
+        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+          <Button
+            variant="outline"
+            size="icon"
+            className="rounded-full bg-white/80 backdrop-blur border-slate-200 hover:bg-white"
+            onClick={() => setIsPlaying(!isPlaying)}
+          >
+            {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+          </Button>
+        </motion.div>
+        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+          <Button
+            variant="outline"
+            size="icon"
+            className="rounded-full bg-white/80 backdrop-blur border-slate-200 hover:bg-white"
+            onClick={toggleFullscreen}
+          >
+            {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+          </Button>
+        </motion.div>
+        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+          <Button
+            variant="outline"
+            size="icon"
+            className="rounded-full bg-white/80 backdrop-blur border-slate-200 hover:bg-white"
+            onClick={() => setShowNav(!showNav)}
+          >
+            {showNav ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+          </Button>
+        </motion.div>
+        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+          <Button
+            variant="outline"
+            size="icon"
+            className="rounded-full bg-white/80 backdrop-blur border-slate-200 hover:bg-white"
+            onClick={() => window.location.href = "/"}
+          >
+            <Home className="h-4 w-4" />
+          </Button>
+        </motion.div>
       </div>
 
       {/* Slide Navigator */}
-      {showNav && (
-        <div className="absolute right-4 top-16 w-64 bg-black/80 backdrop-blur rounded-lg p-4 max-h-[calc(100vh-8rem)] overflow-y-auto">
-          <h3 className="text-white font-semibold mb-3">Navigasi Slide</h3>
-          <div className="space-y-2">
-            {slides.map((s, idx) => (
-              <button
-                key={s.id}
-                className={`w-full text-left p-2 rounded text-sm transition-colors ${
-                  idx === currentSlide
-                    ? "bg-primary text-white"
-                    : "text-white/80 hover:bg-white/10"
-                }`}
-                onClick={() => {
-                  goToSlide(idx);
-                  setShowNav(false);
-                }}
-              >
-                {idx + 1}. {s.title}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+      <AnimatePresence>
+        {showNav && (
+          <motion.div 
+            initial={{ opacity: 0, x: 100 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 100 }}
+            transition={{ duration: 0.3 }}
+            className="absolute right-4 top-16 w-64 bg-white/95 backdrop-blur-xl rounded-2xl p-4 max-h-[calc(100vh-8rem)] overflow-y-auto shadow-2xl border border-slate-100"
+          >
+            <h3 className="font-bold text-slate-900 mb-4">Navigasi Slide</h3>
+            <div className="space-y-1">
+              {slides.map((s, idx) => (
+                <motion.button
+                  key={s.id}
+                  className={`w-full text-left p-3 rounded-xl text-sm transition-all ${
+                    idx === currentSlide
+                      ? "bg-primary text-white font-medium"
+                      : "text-slate-600 hover:bg-slate-100"
+                  }`}
+                  onClick={() => {
+                    goToSlide(idx);
+                    setShowNav(false);
+                  }}
+                  whileHover={{ x: 4 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <span className="opacity-50 mr-2">{String(idx + 1).padStart(2, '0')}</span>
+                  {s.title}
+                </motion.button>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Touch/Click Navigation Areas */}
       <button
