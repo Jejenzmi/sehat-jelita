@@ -48,6 +48,8 @@ import Akuntansi from "./pages/Akuntansi";
 import Pendidikan from "./pages/Pendidikan";
 import LaporanKemenkes from "./pages/LaporanKemenkes";
 import Kiosk from "./pages/Kiosk";
+import MigrasiData from "./pages/MigrasiData";
+import Presentasi from "./pages/Presentasi";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -72,6 +74,7 @@ const App = () => (
             <Route path="/patient-auth" element={<PatientAuth />} />
             <Route path="/patient-portal" element={<PatientPortal />} />
             <Route path="/kiosk" element={<Kiosk />} />
+            <Route path="/presentasi" element={<Presentasi />} />
             <Route path="/patient-portal" element={<PatientPortal />} />
             <Route
               path="/setup"
@@ -385,6 +388,14 @@ const App = () => (
               element={
                 <ProtectedPageWithLayout>
                   <LaporanKemenkes />
+                </ProtectedPageWithLayout>
+              }
+            />
+            <Route
+              path="/migrasi-data"
+              element={
+                <ProtectedPageWithLayout>
+                  <MigrasiData />
                 </ProtectedPageWithLayout>
               }
             />
