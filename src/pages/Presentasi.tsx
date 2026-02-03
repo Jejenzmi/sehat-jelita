@@ -572,54 +572,201 @@ const slides: Slide[] = [
     id: 8,
     title: "Implementasi",
     content: (
-      <div className="relative h-full px-8 md:px-16 py-10 overflow-hidden">
-        <div className="relative z-10 max-w-4xl mx-auto">
-          <motion.div variants={fadeInUp} initial="hidden" animate="visible" className="text-center mb-8">
+      <div className="relative h-full px-6 md:px-12 py-8 overflow-hidden">
+        {/* Animated background */}
+        <motion.div
+          className="absolute top-0 right-0 w-[500px] h-[500px] rounded-full bg-gradient-to-br from-primary/10 via-blue-500/5 to-transparent blur-3xl"
+          animate={{ rotate: 360, scale: [1, 1.1, 1] }}
+          transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
+        />
+        
+        <div className="relative z-10 max-w-6xl mx-auto">
+          <motion.div variants={fadeInUp} initial="hidden" animate="visible" className="text-center mb-6">
             <p className="text-xs text-primary tracking-[0.3em] uppercase mb-2 font-semibold">07 — Metodologi</p>
             <h2 className="text-3xl md:text-4xl font-bold text-slate-900">
-              Tahapan <span className="text-primary">Implementasi</span>
+              Timeline Implementasi <span className="text-primary">5 Bulan</span>
             </h2>
+            <p className="text-slate-500 mt-2 text-sm">Pendekatan bertahap untuk menjamin kesuksesan implementasi</p>
           </motion.div>
           
+          {/* Timeline Visual Bar */}
           <motion.div 
-            className="space-y-4"
+            className="relative mb-8"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+          >
+            <div className="flex justify-between items-center mb-3">
+              {["Bulan 1", "Bulan 2", "Bulan 3", "Bulan 4", "Bulan 5"].map((month, idx) => (
+                <motion.div 
+                  key={idx}
+                  className="text-center flex-1"
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 + idx * 0.1 }}
+                >
+                  <div className="relative">
+                    <motion.div 
+                      className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-blue-500 flex items-center justify-center text-white font-bold text-sm mx-auto shadow-lg"
+                      whileHover={{ scale: 1.15 }}
+                    >
+                      {idx + 1}
+                    </motion.div>
+                    <p className="text-xs text-slate-500 mt-2 font-medium">{month}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+            <motion.div 
+              className="h-2 rounded-full bg-slate-100 overflow-hidden"
+              initial={{ scaleX: 0 }}
+              animate={{ scaleX: 1 }}
+              transition={{ delay: 0.5, duration: 0.8 }}
+            >
+              <motion.div 
+                className="h-full bg-gradient-to-r from-amber-400 via-primary via-blue-500 via-indigo-500 to-purple-500"
+                initial={{ width: 0 }}
+                animate={{ width: "100%" }}
+                transition={{ delay: 0.8, duration: 1.5, ease: "easeOut" }}
+              />
+            </motion.div>
+          </motion.div>
+          
+          {/* Phase Cards */}
+          <motion.div 
+            className="grid md:grid-cols-5 gap-3"
             variants={staggerContainer}
             initial="hidden"
             animate="visible"
           >
             {[
-              { phase: "01", title: "Assessment", duration: "2 Minggu", items: ["Audit sistem existing", "Gap analysis", "Project charter"], color: "from-amber-400 to-orange-500" },
-              { phase: "02", title: "Persiapan", duration: "3 Minggu", items: ["Setup environment", "Master data", "API bridging"], color: "from-primary to-blue-500" },
-              { phase: "03", title: "Migrasi Data", duration: "2 Minggu", items: ["Data cleansing", "ETL process", "Validation"], color: "from-blue-500 to-indigo-500" },
-              { phase: "04", title: "UAT & Training", duration: "2 Minggu", items: ["User testing", "Training", "Documentation"], color: "from-indigo-500 to-purple-500" },
-              { phase: "05", title: "Go-Live", duration: "2 Minggu", items: ["Cutover", "Hypercare", "Monitoring"], color: "from-purple-500 to-pink-500" },
+              { 
+                phase: "01", 
+                title: "Assessment & Planning", 
+                duration: "Minggu 1-4", 
+                month: "Bulan 1",
+                items: ["Audit sistem legacy", "Gap analysis", "Pemetaan kebutuhan", "Project charter", "Risk assessment"],
+                color: "from-amber-400 to-orange-500",
+                deliverables: "Dokumen BRD & TRD"
+              },
+              { 
+                phase: "02", 
+                title: "Setup & Konfigurasi", 
+                duration: "Minggu 5-8", 
+                month: "Bulan 2",
+                items: ["Cloud infrastructure", "Master data setup", "Konfigurasi modul", "API bridging", "Security setup"],
+                color: "from-primary to-blue-500",
+                deliverables: "Environment Ready"
+              },
+              { 
+                phase: "03", 
+                title: "Migrasi Data", 
+                duration: "Minggu 9-12", 
+                month: "Bulan 3",
+                items: ["Data cleansing", "ETL proses", "Mapping ICD-10", "Validasi NIK", "Import master"],
+                color: "from-blue-500 to-indigo-500",
+                deliverables: "Data Validated"
+              },
+              { 
+                phase: "04", 
+                title: "UAT & Training", 
+                duration: "Minggu 13-16", 
+                month: "Bulan 4",
+                items: ["User testing", "Bug fixing", "Training admin", "Training user", "SOP finalisasi"],
+                color: "from-indigo-500 to-purple-500",
+                deliverables: "User Certified"
+              },
+              { 
+                phase: "05", 
+                title: "Go-Live & Hypercare", 
+                duration: "Minggu 17-20", 
+                month: "Bulan 5",
+                items: ["Parallel run", "Cutover", "24/7 support", "Monitoring", "Handover"],
+                color: "from-purple-500 to-pink-500",
+                deliverables: "System Live"
+              },
             ].map((item, idx) => (
               <motion.div 
                 key={idx}
-                variants={fadeInLeft}
+                variants={scaleIn}
                 custom={idx}
-                className="flex gap-6 items-start group"
-                whileHover={{ x: 8 }}
+                className="group relative"
               >
-                <div className="w-20 shrink-0 text-center">
+                <motion.div 
+                  className="h-full rounded-2xl p-4 bg-white border border-slate-100 shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden"
+                  whileHover={{ y: -6, scale: 1.02 }}
+                >
+                  {/* Gradient overlay on hover */}
                   <motion.div 
-                    className={`w-12 h-12 rounded-xl bg-gradient-to-br ${item.color} flex items-center justify-center text-white font-bold shadow-lg mx-auto`}
+                    className={`absolute inset-0 bg-gradient-to-br ${item.color} opacity-0 group-hover:opacity-5 transition-opacity duration-500`}
+                  />
+                  
+                  {/* Phase number */}
+                  <motion.div 
+                    className={`w-10 h-10 rounded-xl bg-gradient-to-br ${item.color} flex items-center justify-center text-white font-bold text-sm shadow-lg mb-3`}
                     whileHover={{ scale: 1.1, rotate: 5 }}
                   >
                     {item.phase}
                   </motion.div>
-                  <p className="text-xs text-slate-400 mt-2">{item.duration}</p>
-                </div>
-                <div className="flex-1 rounded-2xl p-5 bg-white border border-slate-100 shadow-lg group-hover:shadow-xl group-hover:border-primary/20 transition-all">
-                  <h3 className="font-bold text-slate-900 mb-3">{item.title}</h3>
-                  <div className="flex flex-wrap gap-2">
+                  
+                  <h3 className="font-bold text-slate-900 text-sm mb-1 leading-tight">{item.title}</h3>
+                  <p className="text-xs text-slate-400 mb-3">{item.duration}</p>
+                  
+                  {/* Items list */}
+                  <div className="space-y-1.5 mb-3">
                     {item.items.map((i, iIdx) => (
-                      <span key={iIdx} className="text-xs bg-slate-100 text-slate-600 px-3 py-1.5 rounded-full">{i}</span>
+                      <motion.div 
+                        key={iIdx} 
+                        className="flex items-center gap-2"
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.5 + idx * 0.1 + iIdx * 0.05 }}
+                      >
+                        <span className={`w-1.5 h-1.5 rounded-full bg-gradient-to-r ${item.color}`} />
+                        <span className="text-xs text-slate-600">{i}</span>
+                      </motion.div>
                     ))}
                   </div>
-                </div>
+                  
+                  {/* Deliverable badge */}
+                  <motion.div 
+                    className={`inline-block px-3 py-1.5 rounded-full bg-gradient-to-r ${item.color} text-white text-xs font-medium shadow-md`}
+                    whileHover={{ scale: 1.05 }}
+                  >
+                    ✓ {item.deliverables}
+                  </motion.div>
+                </motion.div>
               </motion.div>
             ))}
+          </motion.div>
+          
+          {/* Total Duration Badge */}
+          <motion.div 
+            className="flex justify-center mt-6"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.2 }}
+          >
+            <motion.div 
+              className="inline-flex items-center gap-3 px-6 py-3 rounded-full bg-gradient-to-r from-slate-900 to-slate-700 text-white shadow-xl"
+              whileHover={{ scale: 1.02 }}
+            >
+              <span className="text-2xl">🚀</span>
+              <div>
+                <p className="text-xs text-slate-300">Total Durasi</p>
+                <p className="font-bold">5 Bulan (20 Minggu)</p>
+              </div>
+              <div className="w-px h-8 bg-white/20" />
+              <div>
+                <p className="text-xs text-slate-300">Start</p>
+                <p className="font-bold">Maret 2026</p>
+              </div>
+              <div className="w-px h-8 bg-white/20" />
+              <div>
+                <p className="text-xs text-slate-300">Go-Live</p>
+                <p className="font-bold text-emerald-400">Juli 2026</p>
+              </div>
+            </motion.div>
           </motion.div>
         </div>
       </div>
