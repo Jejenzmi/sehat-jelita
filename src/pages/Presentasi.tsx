@@ -909,90 +909,75 @@ const slides: Slide[] = [
             </motion.div>
           </div>
 
-          {/* Cooperation Period Table */}
+          {/* Cooperation Period Table - Compact */}
           <motion.div 
-            className="mb-8 rounded-2xl overflow-hidden border border-slate-200 shadow-lg bg-white"
+            className="mb-4 rounded-xl overflow-hidden border border-slate-200 shadow-lg bg-white"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
           >
-            <div className="px-6 py-4 bg-gradient-to-r from-slate-800 to-slate-900">
-              <h4 className="font-bold text-white flex items-center gap-2">
-                <span className="text-lg">📊</span> Masa Kerjasama Pemanfaatan
+            <div className="px-4 py-2 bg-gradient-to-r from-slate-800 to-slate-900">
+              <h4 className="font-bold text-white flex items-center gap-2 text-sm">
+                <span>📊</span> Masa Kerjasama Pemanfaatan
               </h4>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full text-xs">
                 <thead className="bg-slate-50">
                   <tr>
-                    <th className="px-4 py-3 text-left font-semibold text-slate-600 border-b">Periode</th>
-                    <th className="px-4 py-3 text-left font-semibold text-slate-600 border-b">Status Biaya Rp 1,3 M</th>
-                    <th className="px-4 py-3 text-left font-semibold text-slate-600 border-b">Status Biaya Per Pasien</th>
+                    <th className="px-3 py-2 text-left font-semibold text-slate-600 border-b">Periode</th>
+                    <th className="px-3 py-2 text-left font-semibold text-slate-600 border-b">Status Biaya Rp 1,3 M</th>
+                    <th className="px-3 py-2 text-left font-semibold text-slate-600 border-b">Status Biaya Per Pasien</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <motion.tr 
-                    className="border-b hover:bg-slate-50"
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.7 }}
-                  >
-                    <td className="px-4 py-4 font-medium text-slate-900">Tahun 1</td>
-                    <td className="px-4 py-4">
-                      <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-100 text-amber-700 text-xs font-medium">
+                  <tr className="border-b hover:bg-slate-50">
+                    <td className="px-3 py-2 font-medium text-slate-900">Tahun 1</td>
+                    <td className="px-3 py-2">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-xs font-medium">
                         💳 Pembayaran (Bisa termin)
                       </span>
                     </td>
-                    <td className="px-4 py-4">
-                      <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-medium">
+                    <td className="px-3 py-2">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs font-medium">
                         🚀 Berjalan sejak Go-Live
                       </span>
                     </td>
-                  </motion.tr>
-                  <motion.tr 
-                    className="border-b hover:bg-slate-50"
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.8 }}
-                  >
-                    <td className="px-4 py-4 font-medium text-slate-900">Tahun 2 - 5</td>
-                    <td className="px-4 py-4">
-                      <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-medium">
+                  </tr>
+                  <tr className="border-b hover:bg-slate-50">
+                    <td className="px-3 py-2 font-medium text-slate-900">Tahun 2 - 5</td>
+                    <td className="px-3 py-2">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-xs font-medium">
                         ✅ Rp 0 (Sudah lunas)
                       </span>
                     </td>
-                    <td className="px-4 py-4">
-                      <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-medium">
+                    <td className="px-3 py-2">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs font-medium">
                         🔄 Berjalan (Maintenance & Update)
                       </span>
                     </td>
-                  </motion.tr>
-                  <motion.tr 
-                    className="hover:bg-slate-50"
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.9 }}
-                  >
-                    <td className="px-4 py-4 font-medium text-slate-900">Tahun &gt;5</td>
-                    <td className="px-4 py-4">
-                      <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-medium">
+                  </tr>
+                  <tr className="hover:bg-slate-50">
+                    <td className="px-3 py-2 font-medium text-slate-900">Tahun &gt;5</td>
+                    <td className="px-3 py-2">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-xs font-medium">
                         🏢 Rp 0 (Aset milik RSUD)
                       </span>
                     </td>
-                    <td className="px-4 py-4">
-                      <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-100 text-purple-700 text-xs font-medium">
+                    <td className="px-3 py-2">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 text-xs font-medium">
                         📝 Opsional (Sesuai kesepakatan)
                       </span>
                     </td>
-                  </motion.tr>
+                  </tr>
                 </tbody>
               </table>
             </div>
           </motion.div>
 
-          {/* Post-Contract Scenarios */}
+          {/* Post-Contract Scenarios - Compact side by side */}
           <motion.div 
-            className="grid md:grid-cols-2 gap-6 mb-6"
+            className="grid md:grid-cols-2 gap-4"
             variants={staggerContainer}
             initial="hidden"
             animate="visible"
@@ -1000,24 +985,24 @@ const slides: Slide[] = [
             {/* Scenario A */}
             <motion.div 
               variants={scaleIn}
-              className="rounded-2xl p-6 bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-200"
-              whileHover={{ y: -4 }}
+              className="rounded-xl p-4 bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-200"
+              whileHover={{ y: -2 }}
             >
-              <div className="flex items-center gap-3 mb-4">
-                <span className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 text-white flex items-center justify-center font-bold shadow-lg">A</span>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 text-white flex items-center justify-center font-bold text-sm shadow-lg">A</span>
                 <div>
-                  <h4 className="font-bold text-slate-900">Perpanjangan Layanan</h4>
+                  <h4 className="font-bold text-slate-900 text-sm">Perpanjangan Layanan</h4>
                   <p className="text-xs text-slate-500">Setelah kontrak 5 tahun berakhir</p>
                 </div>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1 text-xs">
                 <div className="flex items-start gap-2">
-                  <span className="text-blue-500 mt-1">→</span>
-                  <p className="text-sm text-slate-600">Biaya investasi Rp 1,3 M <strong>tidak perlu dibayar lagi</strong></p>
+                  <span className="text-blue-500">→</span>
+                  <p className="text-slate-600">Biaya investasi Rp 1,3 M <strong>tidak perlu dibayar lagi</strong></p>
                 </div>
                 <div className="flex items-start gap-2">
-                  <span className="text-blue-500 mt-1">→</span>
-                  <p className="text-sm text-slate-600">RSUD hanya membayar <strong>biaya per pasien</strong> sebagai biaya pemeliharaan</p>
+                  <span className="text-blue-500">→</span>
+                  <p className="text-slate-600">RSUD hanya membayar <strong>biaya per pasien</strong> sebagai biaya pemeliharaan</p>
                 </div>
               </div>
             </motion.div>
@@ -1026,24 +1011,24 @@ const slides: Slide[] = [
             <motion.div 
               variants={scaleIn}
               custom={1}
-              className="rounded-2xl p-6 bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200"
-              whileHover={{ y: -4 }}
+              className="rounded-xl p-4 bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200"
+              whileHover={{ y: -2 }}
             >
-              <div className="flex items-center gap-3 mb-4">
-                <span className="w-10 h-10 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white flex items-center justify-center font-bold shadow-lg">B</span>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="w-8 h-8 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white flex items-center justify-center font-bold text-sm shadow-lg">B</span>
                 <div>
-                  <h4 className="font-bold text-slate-900">Hibah / Hak Milik</h4>
+                  <h4 className="font-bold text-slate-900 text-sm">Hibah / Hak Milik</h4>
                   <p className="text-xs text-slate-500">Di akhir tahun ke-5</p>
                 </div>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1 text-xs">
                 <div className="flex items-start gap-2">
-                  <span className="text-emerald-500 mt-1">→</span>
-                  <p className="text-sm text-slate-600">Lisensi menjadi <strong>hak milik penuh RSUD</strong></p>
+                  <span className="text-emerald-500">→</span>
+                  <p className="text-slate-600">Lisensi menjadi <strong>hak milik penuh RSUD</strong></p>
                 </div>
                 <div className="flex items-start gap-2">
-                  <span className="text-emerald-500 mt-1">→</span>
-                  <p className="text-sm text-slate-600">Biaya per pasien <strong>tetap berjalan</strong> jika menginginkan dukungan teknis & update regulasi</p>
+                  <span className="text-emerald-500">→</span>
+                  <p className="text-slate-600">Biaya per pasien <strong>tetap berjalan</strong> jika menginginkan dukungan teknis</p>
                 </div>
               </div>
             </motion.div>
