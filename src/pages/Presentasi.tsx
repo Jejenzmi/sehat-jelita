@@ -776,7 +776,7 @@ const slides: Slide[] = [
     id: 9,
     title: "Skema Kerjasama",
     content: (
-      <div className="relative h-full px-6 md:px-12 py-8 overflow-hidden">
+      <div className="relative min-h-full px-6 md:px-12 py-8 pb-20">
         {/* Animated background */}
         <motion.div
           className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-emerald-50 via-white to-cyan-50"
@@ -1462,7 +1462,7 @@ export default function Presentasi() {
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -100 }}
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          className="h-full w-full"
+          className="h-full w-full overflow-y-auto pb-16"
         >
           {slide.content}
         </motion.div>
