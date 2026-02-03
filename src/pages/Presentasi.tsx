@@ -774,6 +774,243 @@ const slides: Slide[] = [
   },
   {
     id: 9,
+    title: "Skema Kerjasama",
+    content: (
+      <div className="relative h-full px-6 md:px-12 py-8 overflow-hidden">
+        {/* Animated background */}
+        <motion.div
+          className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-emerald-50 via-white to-cyan-50"
+        />
+        <motion.div
+          className="absolute -top-20 -right-20 w-[500px] h-[500px] rounded-full bg-gradient-to-br from-emerald-500/10 to-transparent blur-3xl"
+          animate={{ rotate: 360 }}
+          transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
+        />
+        <motion.div
+          className="absolute -bottom-20 -left-20 w-[400px] h-[400px] rounded-full bg-gradient-to-tr from-primary/10 to-transparent blur-3xl"
+          animate={{ rotate: -360 }}
+          transition={{ duration: 35, repeat: Infinity, ease: "linear" }}
+        />
+        
+        <div className="relative z-10 max-w-6xl mx-auto">
+          <motion.div variants={fadeInUp} initial="hidden" animate="visible" className="text-center mb-8">
+            <p className="text-xs text-emerald-600 tracking-[0.3em] uppercase mb-2 font-semibold">08 — Investasi</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-900">
+              Skema <span className="text-emerald-600">Opsi Kerjasama</span>
+            </h2>
+            <p className="text-slate-500 mt-2 text-sm">Pilih model kerjasama yang paling sesuai dengan kebutuhan rumah sakit</p>
+          </motion.div>
+          
+          {/* Pricing Cards */}
+          <motion.div 
+            className="grid md:grid-cols-3 gap-6"
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
+          >
+            {/* Option 1 - Subscription */}
+            <motion.div 
+              variants={scaleIn}
+              custom={0}
+              className="group relative"
+            >
+              <motion.div 
+                className="h-full rounded-3xl p-6 bg-white border-2 border-slate-100 shadow-xl hover:shadow-2xl transition-all duration-500 overflow-hidden"
+                whileHover={{ y: -8 }}
+              >
+                <div className="text-center mb-6">
+                  <motion.div 
+                    className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-3xl mx-auto mb-4 shadow-lg"
+                    whileHover={{ scale: 1.1, rotate: 5 }}
+                  >
+                    ☁️
+                  </motion.div>
+                  <h3 className="text-xl font-bold text-slate-900">Cloud Subscription</h3>
+                  <p className="text-sm text-slate-400 mt-1">SaaS Model</p>
+                </div>
+                
+                <div className="text-center mb-6 py-4 border-y border-slate-100">
+                  <p className="text-xs text-slate-400 uppercase tracking-wide">Mulai dari</p>
+                  <div className="flex items-baseline justify-center gap-1 mt-1">
+                    <span className="text-3xl font-bold text-blue-600">Rp 15</span>
+                    <span className="text-lg text-slate-600">Juta</span>
+                    <span className="text-sm text-slate-400">/bulan</span>
+                  </div>
+                </div>
+                
+                <div className="space-y-3 mb-6">
+                  {["Tanpa biaya server & infrastruktur", "Auto scaling & backup", "Update & maintenance gratis", "Support 24/7 included", "Pembayaran bulanan fleksibel"].map((item, idx) => (
+                    <motion.div 
+                      key={idx}
+                      className="flex items-start gap-3"
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.5 + idx * 0.1 }}
+                    >
+                      <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs flex-shrink-0 mt-0.5">✓</span>
+                      <span className="text-sm text-slate-600">{item}</span>
+                    </motion.div>
+                  ))}
+                </div>
+                
+                <motion.div 
+                  className="w-full py-3 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 text-white text-center font-semibold shadow-lg shadow-blue-500/25"
+                  whileHover={{ scale: 1.02 }}
+                >
+                  Rekomendasi 🌟
+                </motion.div>
+              </motion.div>
+            </motion.div>
+            
+            {/* Option 2 - License */}
+            <motion.div 
+              variants={scaleIn}
+              custom={1}
+              className="group relative"
+            >
+              <motion.div 
+                className="h-full rounded-3xl p-6 bg-gradient-to-br from-slate-900 to-slate-800 border-2 border-slate-700 shadow-xl hover:shadow-2xl transition-all duration-500 overflow-hidden"
+                whileHover={{ y: -8 }}
+              >
+                <motion.div
+                  className="absolute top-0 right-0 px-4 py-1 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-xs font-bold rounded-bl-xl"
+                  initial={{ x: 20, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ delay: 0.8 }}
+                >
+                  BEST VALUE
+                </motion.div>
+                
+                <div className="text-center mb-6">
+                  <motion.div 
+                    className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-3xl mx-auto mb-4 shadow-lg"
+                    whileHover={{ scale: 1.1, rotate: 5 }}
+                  >
+                    🏢
+                  </motion.div>
+                  <h3 className="text-xl font-bold text-white">Enterprise License</h3>
+                  <p className="text-sm text-slate-400 mt-1">Perpetual License</p>
+                </div>
+                
+                <div className="text-center mb-6 py-4 border-y border-slate-700">
+                  <p className="text-xs text-slate-400 uppercase tracking-wide">One-Time Investment</p>
+                  <div className="flex items-baseline justify-center gap-1 mt-1">
+                    <span className="text-3xl font-bold text-emerald-400">Rp 850</span>
+                    <span className="text-lg text-slate-300">Juta</span>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-1">+ Annual maintenance 15%</p>
+                </div>
+                
+                <div className="space-y-3 mb-6">
+                  {["Lisensi permanen selamanya", "Full source code escrow", "Unlimited users", "On-premise atau cloud", "Kustomisasi tanpa batas", "Priority support SLA"].map((item, idx) => (
+                    <motion.div 
+                      key={idx}
+                      className="flex items-start gap-3"
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.5 + idx * 0.1 }}
+                    >
+                      <span className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xs flex-shrink-0 mt-0.5">✓</span>
+                      <span className="text-sm text-slate-300">{item}</span>
+                    </motion.div>
+                  ))}
+                </div>
+                
+                <motion.div 
+                  className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 text-white text-center font-semibold shadow-lg shadow-emerald-500/25"
+                  whileHover={{ scale: 1.02 }}
+                >
+                  Pilihan Populer
+                </motion.div>
+              </motion.div>
+            </motion.div>
+            
+            {/* Option 3 - Revenue Sharing */}
+            <motion.div 
+              variants={scaleIn}
+              custom={2}
+              className="group relative"
+            >
+              <motion.div 
+                className="h-full rounded-3xl p-6 bg-white border-2 border-slate-100 shadow-xl hover:shadow-2xl transition-all duration-500 overflow-hidden"
+                whileHover={{ y: -8 }}
+              >
+                <div className="text-center mb-6">
+                  <motion.div 
+                    className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center text-3xl mx-auto mb-4 shadow-lg"
+                    whileHover={{ scale: 1.1, rotate: 5 }}
+                  >
+                    🤝
+                  </motion.div>
+                  <h3 className="text-xl font-bold text-slate-900">Revenue Sharing</h3>
+                  <p className="text-sm text-slate-400 mt-1">Partnership Model</p>
+                </div>
+                
+                <div className="text-center mb-6 py-4 border-y border-slate-100">
+                  <p className="text-xs text-slate-400 uppercase tracking-wide">Investasi Awal</p>
+                  <div className="flex items-baseline justify-center gap-1 mt-1">
+                    <span className="text-3xl font-bold text-purple-600">Rp 0</span>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-1">+ Fee per transaksi</p>
+                </div>
+                
+                <div className="space-y-3 mb-6">
+                  {["Tanpa investasi di muka", "Risiko finansial minimal", "Pembayaran berbasis usage", "Aligned incentives", "Cocok untuk RS baru/kecil"].map((item, idx) => (
+                    <motion.div 
+                      key={idx}
+                      className="flex items-start gap-3"
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.5 + idx * 0.1 }}
+                    >
+                      <span className="w-5 h-5 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center text-xs flex-shrink-0 mt-0.5">✓</span>
+                      <span className="text-sm text-slate-600">{item}</span>
+                    </motion.div>
+                  ))}
+                </div>
+                
+                <motion.div 
+                  className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-500 to-purple-600 text-white text-center font-semibold shadow-lg shadow-purple-500/25"
+                  whileHover={{ scale: 1.02 }}
+                >
+                  Low Risk Option
+                </motion.div>
+              </motion.div>
+            </motion.div>
+          </motion.div>
+          
+          {/* Additional Services */}
+          <motion.div 
+            className="mt-8 grid md:grid-cols-4 gap-4"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1 }}
+          >
+            {[
+              { icon: "🎓", label: "Training", desc: "Included" },
+              { icon: "🔧", label: "Implementasi", desc: "5 Bulan" },
+              { icon: "📞", label: "Support", desc: "24/7" },
+              { icon: "🔄", label: "Update", desc: "Gratis 1 Tahun" },
+            ].map((item, idx) => (
+              <motion.div 
+                key={idx}
+                className="flex items-center gap-3 p-4 rounded-xl bg-white/80 backdrop-blur border border-slate-100 shadow-md"
+                whileHover={{ y: -4, scale: 1.02 }}
+              >
+                <span className="text-2xl">{item.icon}</span>
+                <div>
+                  <p className="text-xs text-slate-400">{item.label}</p>
+                  <p className="font-semibold text-slate-900">{item.desc}</p>
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </div>
+    ),
+  },
+  {
+    id: 10,
     title: "Penutup",
     content: (
       <div className="relative flex flex-col items-center justify-center h-full px-8 overflow-hidden">
