@@ -1057,6 +1057,228 @@ const slides: Slide[] = [
   },
   {
     id: 10,
+    title: "ROI & Efisiensi",
+    content: (
+      <div className="relative h-full px-6 md:px-12 py-8 overflow-hidden">
+        <motion.div
+          className="absolute -top-20 -right-20 w-[500px] h-[500px] rounded-full bg-gradient-to-br from-amber-500/10 to-transparent blur-3xl"
+          animate={{ rotate: 360 }}
+          transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
+        />
+        
+        <div className="relative z-10 max-w-6xl mx-auto">
+          <motion.div variants={fadeInUp} initial="hidden" animate="visible" className="text-center mb-6">
+            <p className="text-xs text-amber-600 tracking-[0.3em] uppercase mb-2 font-semibold">09 — Return on Investment</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-900">
+              Simulasi <span className="text-amber-600">ROI</span> & Efisiensi
+            </h2>
+            <p className="text-slate-500 mt-2 text-sm">Potensi penghematan & balik modal dalam 2 tahun pertama</p>
+          </motion.div>
+          
+          {/* Before vs After Comparison */}
+          <div className="grid md:grid-cols-2 gap-4 mb-6">
+            {/* Before */}
+            <motion.div 
+              className="rounded-2xl p-5 bg-gradient-to-br from-red-50 to-orange-50 border border-red-200"
+              variants={scaleIn}
+              initial="hidden"
+              animate="visible"
+            >
+              <div className="flex items-center gap-2 mb-4">
+                <span className="w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center text-xl">❌</span>
+                <h3 className="font-bold text-red-700">Sebelum Implementasi</h3>
+              </div>
+              <div className="space-y-2 text-sm">
+                {[
+                  { label: "Kebocoran pendapatan (human error)", value: "~5-10% / tahun" },
+                  { label: "Waktu input data manual", value: "30-45 menit / pasien" },
+                  { label: "Klaim BPJS tertolak", value: "~8-15%" },
+                  { label: "Pelaporan Kemenkes", value: "Manual, rawan error" },
+                  { label: "Rekonsiliasi stok obat", value: "Mingguan / bulanan" },
+                ].map((item, idx) => (
+                  <div key={idx} className="flex justify-between items-center py-1 border-b border-red-100">
+                    <span className="text-slate-600">{item.label}</span>
+                    <span className="font-semibold text-red-600">{item.value}</span>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+
+            {/* After */}
+            <motion.div 
+              className="rounded-2xl p-5 bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200"
+              variants={scaleIn}
+              initial="hidden"
+              animate="visible"
+              custom={1}
+            >
+              <div className="flex items-center gap-2 mb-4">
+                <span className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xl">✅</span>
+                <h3 className="font-bold text-emerald-700">Setelah SIMRS ZEN⁺</h3>
+              </div>
+              <div className="space-y-2 text-sm">
+                {[
+                  { label: "Kebocoran pendapatan", value: "<1% (auto-billing)" },
+                  { label: "Waktu input data", value: "5-10 menit / pasien" },
+                  { label: "Klaim BPJS tertolak", value: "<2% (validasi real-time)" },
+                  { label: "Pelaporan Kemenkes", value: "Otomatis RL 1-6" },
+                  { label: "Rekonsiliasi stok obat", value: "Real-time otomatis" },
+                ].map((item, idx) => (
+                  <div key={idx} className="flex justify-between items-center py-1 border-b border-emerald-100">
+                    <span className="text-slate-600">{item.label}</span>
+                    <span className="font-semibold text-emerald-600">{item.value}</span>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          </div>
+
+          {/* ROI Summary */}
+          <motion.div 
+            className="rounded-2xl p-5 bg-gradient-to-r from-amber-500 to-orange-500 text-white"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+          >
+            <div className="grid md:grid-cols-4 gap-4 text-center">
+              <div>
+                <p className="text-amber-100 text-xs uppercase mb-1">Estimasi Kebocoran Dicegah</p>
+                <p className="text-2xl font-bold">Rp 1,5 M+</p>
+                <p className="text-xs text-amber-100">per tahun</p>
+              </div>
+              <div>
+                <p className="text-amber-100 text-xs uppercase mb-1">Efisiensi Waktu Staf</p>
+                <p className="text-2xl font-bold">60%</p>
+                <p className="text-xs text-amber-100">lebih cepat</p>
+              </div>
+              <div>
+                <p className="text-amber-100 text-xs uppercase mb-1">Klaim BPJS Optimal</p>
+                <p className="text-2xl font-bold">+20%</p>
+                <p className="text-xs text-amber-100">peningkatan approval</p>
+              </div>
+              <div className="bg-white/20 rounded-xl p-3">
+                <p className="text-amber-100 text-xs uppercase mb-1">Balik Modal</p>
+                <p className="text-3xl font-bold">≤ 2 Tahun</p>
+                <p className="text-xs text-amber-100">payback period</p>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </div>
+    ),
+  },
+  {
+    id: 11,
+    title: "SLA & Support",
+    content: (
+      <div className="relative h-full px-6 md:px-12 py-8 overflow-hidden">
+        <motion.div
+          className="absolute -bottom-20 -left-20 w-[500px] h-[500px] rounded-full bg-gradient-to-br from-blue-500/10 to-transparent blur-3xl"
+          animate={{ rotate: -360 }}
+          transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
+        />
+        
+        <div className="relative z-10 max-w-6xl mx-auto">
+          <motion.div variants={fadeInUp} initial="hidden" animate="visible" className="text-center mb-6">
+            <p className="text-xs text-blue-600 tracking-[0.3em] uppercase mb-2 font-semibold">10 — Jaminan Layanan</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-900">
+              SLA & <span className="text-blue-600">Dukungan Teknis</span>
+            </h2>
+            <p className="text-slate-500 mt-2 text-sm">Komitmen kami untuk kelangsungan operasional rumah sakit</p>
+          </motion.div>
+          
+          {/* SLA Cards */}
+          <div className="grid md:grid-cols-4 gap-4 mb-6">
+            {[
+              { icon: "🛡️", value: "99.9%", label: "Uptime SLA", desc: "Jaminan ketersediaan sistem" },
+              { icon: "⚡", value: "<15 menit", label: "Response Time", desc: "Untuk issue critical" },
+              { icon: "📞", value: "24/7", label: "Support Hotline", desc: "Tim standby sepanjang waktu" },
+              { icon: "👨‍💼", value: "Dedicated", label: "Account Manager", desc: "PIC khusus untuk RS Anda" },
+            ].map((item, idx) => (
+              <motion.div 
+                key={idx}
+                className="rounded-2xl p-4 bg-white border border-slate-200 shadow-lg text-center"
+                variants={scaleIn}
+                initial="hidden"
+                animate="visible"
+                custom={idx}
+                whileHover={{ y: -4 }}
+              >
+                <span className="text-3xl block mb-2">{item.icon}</span>
+                <p className="text-2xl font-bold text-blue-600">{item.value}</p>
+                <p className="font-semibold text-slate-900 text-sm">{item.label}</p>
+                <p className="text-xs text-slate-500 mt-1">{item.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Support Levels */}
+          <motion.div 
+            className="rounded-2xl overflow-hidden border border-slate-200 shadow-lg bg-white mb-4"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+          >
+            <div className="px-5 py-3 bg-gradient-to-r from-blue-600 to-cyan-600">
+              <h4 className="font-bold text-white text-sm">🎯 Tingkat Prioritas & Response Time</h4>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-slate-50">
+                  <tr>
+                    <th className="px-4 py-2 text-left font-semibold text-slate-600 border-b">Prioritas</th>
+                    <th className="px-4 py-2 text-left font-semibold text-slate-600 border-b">Deskripsi</th>
+                    <th className="px-4 py-2 text-left font-semibold text-slate-600 border-b">Response</th>
+                    <th className="px-4 py-2 text-left font-semibold text-slate-600 border-b">Resolusi</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    { level: "🔴 Critical", desc: "Sistem down total", response: "<15 menit", resolve: "<4 jam" },
+                    { level: "🟠 High", desc: "Modul utama terganggu", response: "<30 menit", resolve: "<8 jam" },
+                    { level: "🟡 Medium", desc: "Fitur minor bermasalah", response: "<2 jam", resolve: "<24 jam" },
+                    { level: "🟢 Low", desc: "Pertanyaan & permintaan", response: "<4 jam", resolve: "<48 jam" },
+                  ].map((item, idx) => (
+                    <tr key={idx} className="border-b hover:bg-slate-50">
+                      <td className="px-4 py-2 font-medium">{item.level}</td>
+                      <td className="px-4 py-2 text-slate-600">{item.desc}</td>
+                      <td className="px-4 py-2 font-semibold text-blue-600">{item.response}</td>
+                      <td className="px-4 py-2 font-semibold text-emerald-600">{item.resolve}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </motion.div>
+
+          {/* Additional Support Features */}
+          <div className="grid md:grid-cols-3 gap-3">
+            {[
+              { icon: "📚", title: "Knowledge Base", desc: "Dokumentasi lengkap & video tutorial" },
+              { icon: "🔄", title: "Update Regulasi", desc: "Patch otomatis saat ada perubahan regulasi Kemenkes/BPJS" },
+              { icon: "📊", title: "Laporan Bulanan", desc: "Report performa sistem & statistik penggunaan" },
+            ].map((item, idx) => (
+              <motion.div 
+                key={idx}
+                className="rounded-xl p-3 bg-blue-50 border border-blue-100 flex items-center gap-3"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.7 + idx * 0.1 }}
+              >
+                <span className="text-2xl">{item.icon}</span>
+                <div>
+                  <p className="font-semibold text-slate-900 text-sm">{item.title}</p>
+                  <p className="text-xs text-slate-600">{item.desc}</p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </div>
+    ),
+  },
+  {
+    id: 12,
     title: "Penutup",
     content: (
       <div className="relative flex flex-col items-center justify-center h-full px-8 overflow-hidden">
@@ -1070,29 +1292,15 @@ const slides: Slide[] = [
           animate={{ scale: [1, 1.2, 1], rotate: 180 }}
           transition={{ duration: 8, repeat: Infinity }}
         />
-        <motion.div
-          className="absolute bottom-20 left-20 w-32 h-32 rounded-full border-2 border-blue-500/20"
-          animate={{ scale: [1.2, 1, 1.2], rotate: -180 }}
-          transition={{ duration: 6, repeat: Infinity }}
-        />
         
-        <div className="relative z-10 text-center max-w-2xl">
-          <motion.img 
-            src={zenCompanyLogo} 
-            alt="PT Zen Multimedia Indonesia" 
-            className="h-14 mx-auto mb-10"
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.8 }}
-          />
-          
+        <div className="relative z-10 text-center max-w-3xl">
           <motion.p 
             className="text-xs text-slate-400 tracking-[0.4em] uppercase mb-4"
             variants={fadeInUp}
             initial="hidden"
             animate="visible"
           >
-            Proposal
+            Next Step
           </motion.p>
           
           <motion.h1 
@@ -1106,27 +1314,72 @@ const slides: Slide[] = [
           </motion.h1>
           
           <motion.p 
-            className="text-slate-500 leading-relaxed mb-12"
+            className="text-slate-500 leading-relaxed mb-8"
             variants={fadeInUp}
             initial="hidden"
             animate="visible"
             custom={2}
           >
-            Kami siap mendampingi RSUD Dr. Moewardi dalam perjalanan transformasi digital menuju pelayanan kesehatan yang lebih efisien dan terintegrasi.
+            Scan QR Code untuk melihat demo langsung atau hubungi tim kami untuk presentasi lebih lanjut
           </motion.p>
           
+          {/* QR Code Section */}
           <motion.div 
-            className="border-t border-slate-200 pt-8"
+            className="flex justify-center gap-8 mb-8"
             variants={fadeInUp}
             initial="hidden"
             animate="visible"
             custom={3}
           >
-            <p className="font-semibold text-slate-900 mb-4">PT Zen Multimedia Indonesia</p>
+            <div className="text-center">
+              <motion.div 
+                className="w-32 h-32 bg-white rounded-2xl shadow-xl p-3 mb-3 mx-auto flex items-center justify-center border-2 border-primary/20"
+                whileHover={{ scale: 1.05 }}
+              >
+                <div className="w-full h-full bg-gradient-to-br from-slate-100 to-slate-200 rounded-lg flex items-center justify-center">
+                  <div className="text-center">
+                    <span className="text-4xl">📱</span>
+                    <p className="text-xs text-slate-500 mt-1">QR Demo</p>
+                  </div>
+                </div>
+              </motion.div>
+              <p className="text-sm font-semibold text-slate-900">Live Demo</p>
+              <p className="text-xs text-slate-500">demo.simrszen.id</p>
+            </div>
+            <div className="text-center">
+              <motion.div 
+                className="w-32 h-32 bg-white rounded-2xl shadow-xl p-3 mb-3 mx-auto flex items-center justify-center border-2 border-emerald-200"
+                whileHover={{ scale: 1.05 }}
+              >
+                <div className="w-full h-full bg-gradient-to-br from-emerald-50 to-teal-50 rounded-lg flex items-center justify-center">
+                  <div className="text-center">
+                    <span className="text-4xl">💬</span>
+                    <p className="text-xs text-emerald-600 mt-1">WhatsApp</p>
+                  </div>
+                </div>
+              </motion.div>
+              <p className="text-sm font-semibold text-slate-900">Konsultasi</p>
+              <p className="text-xs text-slate-500">+62 812-3456-7890</p>
+            </div>
+          </motion.div>
+          
+          <motion.div 
+            className="border-t border-slate-200 pt-6"
+            variants={fadeInUp}
+            initial="hidden"
+            animate="visible"
+            custom={4}
+          >
+            <motion.img 
+              src={zenCompanyLogo} 
+              alt="PT Zen Multimedia Indonesia" 
+              className="h-10 mx-auto mb-4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+            />
             <div className="flex flex-wrap justify-center gap-6 text-sm text-slate-500">
-              <motion.span whileHover={{ scale: 1.05, color: "#0066FF" }} className="cursor-pointer">📧 info@zenplus.id</motion.span>
-              <motion.span whileHover={{ scale: 1.05, color: "#0066FF" }} className="cursor-pointer">📞 (021) 1234-5678</motion.span>
-              <motion.span whileHover={{ scale: 1.05, color: "#0066FF" }} className="cursor-pointer">🌐 www.zenplus.id</motion.span>
+              <motion.span whileHover={{ scale: 1.05, color: "#0066FF" }} className="cursor-pointer">📧 info@simrszen.id</motion.span>
+              <motion.span whileHover={{ scale: 1.05, color: "#0066FF" }} className="cursor-pointer">🌐 www.simrszen.id</motion.span>
             </div>
           </motion.div>
         </div>
