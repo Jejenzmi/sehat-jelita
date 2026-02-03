@@ -27,18 +27,21 @@ const slides: Slide[] = [
     id: 1,
     title: "ZEN⁺ SIMRS",
     subtitle: "Sistem Informasi Manajemen Rumah Sakit Terintegrasi",
-    background: "from-primary via-primary/90 to-primary/80",
+    background: "from-slate-900 via-slate-800 to-slate-900",
     content: (
       <div className="flex flex-col items-center justify-center h-full text-white">
-        <img src={zenLogo} alt="ZEN+ Logo" className="h-32 w-32 mb-8 animate-pulse" />
-        <h1 className="text-5xl md:text-7xl font-bold mb-4 text-center">ZEN⁺ SIMRS</h1>
-        <p className="text-xl md:text-2xl opacity-90 text-center max-w-2xl">
+        <img src={zenLogo} alt="ZEN+ Logo" className="h-28 w-28 mb-10 drop-shadow-2xl" />
+        <h1 className="text-5xl md:text-7xl font-light tracking-tight mb-6 text-center">
+          ZEN<span className="text-primary">⁺</span> SIMRS
+        </h1>
+        <div className="w-24 h-0.5 bg-primary/60 mb-6" />
+        <p className="text-lg md:text-xl text-slate-300 text-center max-w-2xl font-light">
           Sistem Informasi Manajemen Rumah Sakit Modern, Terintegrasi & Cloud-Based
         </p>
-        <div className="mt-8 flex flex-wrap justify-center gap-4">
-          <span className="px-4 py-2 bg-white/20 rounded-full text-sm">✓ SATU SEHAT Ready</span>
-          <span className="px-4 py-2 bg-white/20 rounded-full text-sm">✓ BPJS Integrated</span>
-          <span className="px-4 py-2 bg-white/20 rounded-full text-sm">✓ 100% Cloud</span>
+        <div className="mt-12 flex flex-wrap justify-center gap-6">
+          <span className="px-5 py-2 border border-slate-600 rounded-full text-sm text-slate-300">SATU SEHAT Ready</span>
+          <span className="px-5 py-2 border border-slate-600 rounded-full text-sm text-slate-300">BPJS Integrated</span>
+          <span className="px-5 py-2 border border-slate-600 rounded-full text-sm text-slate-300">100% Cloud</span>
         </div>
       </div>
     ),
@@ -46,11 +49,12 @@ const slides: Slide[] = [
   {
     id: 2,
     title: "Mengapa ZEN⁺?",
-    background: "from-slate-900 to-slate-800",
+    background: "from-slate-900 via-slate-800 to-slate-900",
     content: (
       <div className="text-white p-8 md:p-16">
-        <h2 className="text-4xl md:text-5xl font-bold mb-12 text-center">Mengapa Memilih ZEN⁺?</h2>
-        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+        <h2 className="text-3xl md:text-5xl font-light mb-4 text-center">Mengapa Memilih ZEN⁺?</h2>
+        <div className="w-16 h-0.5 bg-primary/60 mx-auto mb-12" />
+        <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
           {[
             { icon: "🚀", title: "Modern & Cepat", desc: "Berbasis cloud dengan performa tinggi, akses dari mana saja" },
             { icon: "🔗", title: "Terintegrasi", desc: "Terhubung langsung dengan SATU SEHAT, BPJS, dan sistem eksternal" },
@@ -59,10 +63,10 @@ const slides: Slide[] = [
             { icon: "💰", title: "Efisiensi Biaya", desc: "Tanpa investasi infrastruktur server, bayar sesuai penggunaan" },
             { icon: "🎯", title: "User Friendly", desc: "Antarmuka intuitif, minimal training untuk staf RS" },
           ].map((item, idx) => (
-            <div key={idx} className="bg-white/10 rounded-xl p-6 backdrop-blur">
-              <div className="text-4xl mb-4">{item.icon}</div>
-              <h3 className="text-xl font-semibold mb-2">{item.title}</h3>
-              <p className="text-white/80">{item.desc}</p>
+            <div key={idx} className="border border-slate-700 rounded-lg p-6 bg-slate-800/30 hover:bg-slate-800/50 transition-colors">
+              <div className="text-3xl mb-4 opacity-80">{item.icon}</div>
+              <h3 className="text-lg font-medium mb-2 text-white">{item.title}</h3>
+              <p className="text-slate-400 text-sm leading-relaxed">{item.desc}</p>
             </div>
           ))}
         </div>
@@ -72,11 +76,12 @@ const slides: Slide[] = [
   {
     id: 3,
     title: "Modul Lengkap",
-    background: "from-blue-600 to-indigo-700",
+    background: "from-slate-900 via-slate-800 to-slate-900",
     content: (
       <div className="text-white p-8 md:p-16">
-        <h2 className="text-4xl md:text-5xl font-bold mb-8 text-center">Modul Lengkap & Terintegrasi</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-5xl mx-auto">
+        <h2 className="text-3xl md:text-5xl font-light mb-4 text-center">Modul Lengkap & Terintegrasi</h2>
+        <div className="w-16 h-0.5 bg-primary/60 mx-auto mb-10" />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-5xl mx-auto">
           {[
             "Pendaftaran & Antrian",
             "Rawat Jalan",
@@ -103,8 +108,8 @@ const slides: Slide[] = [
             "Telemedicine",
             "Laporan Kemenkes",
           ].map((modul, idx) => (
-            <div key={idx} className="bg-white/20 rounded-lg p-3 text-center text-sm backdrop-blur">
-              ✓ {modul}
+            <div key={idx} className="border border-slate-700 rounded-md p-3 text-center text-sm bg-slate-800/20 text-slate-300 hover:bg-slate-800/40 transition-colors">
+              {modul}
             </div>
           ))}
         </div>
@@ -114,16 +119,17 @@ const slides: Slide[] = [
   {
     id: 4,
     title: "Integrasi SATU SEHAT",
-    background: "from-green-600 to-emerald-700",
+    background: "from-slate-900 via-slate-800 to-slate-900",
     content: (
       <div className="text-white p-8 md:p-16">
-        <h2 className="text-4xl md:text-5xl font-bold mb-8 text-center">Integrasi SATU SEHAT</h2>
+        <h2 className="text-3xl md:text-5xl font-light mb-4 text-center">Integrasi SATU SEHAT</h2>
+        <div className="w-16 h-0.5 bg-primary/60 mx-auto mb-10" />
         <div className="max-w-4xl mx-auto">
-          <div className="bg-white/10 rounded-2xl p-8 backdrop-blur mb-8">
-            <p className="text-xl mb-6 text-center">
+          <div className="border border-slate-700 rounded-xl p-8 bg-slate-800/30 mb-8">
+            <p className="text-lg mb-8 text-center text-slate-300 font-light">
               ZEN⁺ telah terintegrasi penuh dengan platform SATU SEHAT Kemenkes RI
             </p>
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid md:grid-cols-2 gap-4">
               {[
                 "Patient (Data Pasien)",
                 "Encounter (Kunjungan)",
@@ -134,14 +140,14 @@ const slides: Slide[] = [
                 "Practitioner (Tenaga Medis)",
                 "Organization (Faskes)",
               ].map((resource, idx) => (
-                <div key={idx} className="flex items-center gap-3">
-                  <div className="h-8 w-8 rounded-full bg-green-400 flex items-center justify-center">✓</div>
-                  <span>{resource}</span>
+                <div key={idx} className="flex items-center gap-3 p-3 border border-slate-700/50 rounded-lg bg-slate-800/20">
+                  <div className="h-6 w-6 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs">✓</div>
+                  <span className="text-slate-300 text-sm">{resource}</span>
                 </div>
               ))}
             </div>
           </div>
-          <p className="text-center text-white/80">
+          <p className="text-center text-slate-500 text-sm">
             Sinkronisasi otomatis, validasi data, dan monitoring status pengiriman
           </p>
         </div>
@@ -151,40 +157,49 @@ const slides: Slide[] = [
   {
     id: 5,
     title: "Integrasi BPJS",
-    background: "from-teal-600 to-cyan-700",
+    background: "from-slate-900 via-slate-800 to-slate-900",
     content: (
       <div className="text-white p-8 md:p-16">
-        <h2 className="text-4xl md:text-5xl font-bold mb-8 text-center">Integrasi BPJS Kesehatan</h2>
-        <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-          <div className="bg-white/10 rounded-2xl p-6 backdrop-blur">
-            <h3 className="text-2xl font-semibold mb-4">🏥 VClaim</h3>
-            <ul className="space-y-2 text-white/90">
+        <h2 className="text-3xl md:text-5xl font-light mb-4 text-center">Integrasi BPJS Kesehatan</h2>
+        <div className="w-16 h-0.5 bg-primary/60 mx-auto mb-10" />
+        <div className="grid md:grid-cols-2 gap-6 max-w-5xl mx-auto">
+          <div className="border border-slate-700 rounded-xl p-6 bg-slate-800/30">
+            <h3 className="text-xl font-medium mb-4 text-white flex items-center gap-2">
+              <span className="text-primary">●</span> VClaim
+            </h3>
+            <ul className="space-y-2 text-slate-400 text-sm">
               <li>• Cek kepesertaan pasien BPJS</li>
               <li>• Generate SEP otomatis</li>
               <li>• Update & monitoring claim</li>
               <li>• Sinkronisasi data pasien</li>
             </ul>
           </div>
-          <div className="bg-white/10 rounded-2xl p-6 backdrop-blur">
-            <h3 className="text-2xl font-semibold mb-4">📋 E-Claim (INA-CBG)</h3>
-            <ul className="space-y-2 text-white/90">
+          <div className="border border-slate-700 rounded-xl p-6 bg-slate-800/30">
+            <h3 className="text-xl font-medium mb-4 text-white flex items-center gap-2">
+              <span className="text-primary">●</span> E-Claim (INA-CBG)
+            </h3>
+            <ul className="space-y-2 text-slate-400 text-sm">
               <li>• Grouper INA-CBG otomatis</li>
               <li>• Pengajuan klaim digital</li>
               <li>• Tracking status verifikasi</li>
               <li>• Analisis potensi dispute</li>
             </ul>
           </div>
-          <div className="bg-white/10 rounded-2xl p-6 backdrop-blur">
-            <h3 className="text-2xl font-semibold mb-4">🚑 Antrean Online</h3>
-            <ul className="space-y-2 text-white/90">
+          <div className="border border-slate-700 rounded-xl p-6 bg-slate-800/30">
+            <h3 className="text-xl font-medium mb-4 text-white flex items-center gap-2">
+              <span className="text-primary">●</span> Antrean Online
+            </h3>
+            <ul className="space-y-2 text-slate-400 text-sm">
               <li>• Integrasi JKN Mobile</li>
               <li>• Push notifikasi jadwal</li>
               <li>• Reschedule otomatis</li>
             </ul>
           </div>
-          <div className="bg-white/10 rounded-2xl p-6 backdrop-blur">
-            <h3 className="text-2xl font-semibold mb-4">📊 Aplicares</h3>
-            <ul className="space-y-2 text-white/90">
+          <div className="border border-slate-700 rounded-xl p-6 bg-slate-800/30">
+            <h3 className="text-xl font-medium mb-4 text-white flex items-center gap-2">
+              <span className="text-primary">●</span> Aplicares
+            </h3>
+            <ul className="space-y-2 text-slate-400 text-sm">
               <li>• Monitoring tempat tidur</li>
               <li>• Update realtime</li>
               <li>• Sinkronisasi otomatis</li>
@@ -197,32 +212,33 @@ const slides: Slide[] = [
   {
     id: 6,
     title: "Arsitektur Cloud",
-    background: "from-purple-600 to-violet-700",
+    background: "from-slate-900 via-slate-800 to-slate-900",
     content: (
       <div className="text-white p-8 md:p-16">
-        <h2 className="text-4xl md:text-5xl font-bold mb-8 text-center">Arsitektur Cloud Modern</h2>
+        <h2 className="text-3xl md:text-5xl font-light mb-4 text-center">Arsitektur Cloud Modern</h2>
+        <div className="w-16 h-0.5 bg-primary/60 mx-auto mb-10" />
         <div className="max-w-4xl mx-auto">
-          <div className="bg-white/10 rounded-2xl p-8 backdrop-blur">
-            <div className="grid md:grid-cols-3 gap-6 text-center">
+          <div className="border border-slate-700 rounded-xl p-10 bg-slate-800/30">
+            <div className="grid md:grid-cols-3 gap-8 text-center">
               <div>
-                <div className="text-5xl mb-4">☁️</div>
-                <h3 className="text-xl font-semibold mb-2">Cloud Native</h3>
-                <p className="text-white/80">Infrastruktur terkelola, auto-scaling, high availability</p>
+                <div className="text-4xl mb-4 opacity-70">☁️</div>
+                <h3 className="text-lg font-medium mb-2 text-white">Cloud Native</h3>
+                <p className="text-slate-400 text-sm">Infrastruktur terkelola, auto-scaling, high availability</p>
               </div>
               <div>
-                <div className="text-5xl mb-4">🔐</div>
-                <h3 className="text-xl font-semibold mb-2">Security First</h3>
-                <p className="text-white/80">Enkripsi end-to-end, role-based access, audit trail</p>
+                <div className="text-4xl mb-4 opacity-70">🔐</div>
+                <h3 className="text-lg font-medium mb-2 text-white">Security First</h3>
+                <p className="text-slate-400 text-sm">Enkripsi end-to-end, role-based access, audit trail</p>
               </div>
               <div>
-                <div className="text-5xl mb-4">⚡</div>
-                <h3 className="text-xl font-semibold mb-2">Real-time Sync</h3>
-                <p className="text-white/80">Data tersinkronisasi antar unit dalam hitungan detik</p>
+                <div className="text-4xl mb-4 opacity-70">⚡</div>
+                <h3 className="text-lg font-medium mb-2 text-white">Real-time Sync</h3>
+                <p className="text-slate-400 text-sm">Data tersinkronisasi antar unit dalam hitungan detik</p>
               </div>
             </div>
           </div>
-          <div className="mt-8 text-center">
-            <p className="text-xl">99.9% Uptime Guarantee • Backup Otomatis • Disaster Recovery</p>
+          <div className="mt-10 text-center">
+            <p className="text-slate-400 text-sm tracking-wide">99.9% Uptime Guarantee • Backup Otomatis • Disaster Recovery</p>
           </div>
         </div>
       </div>
@@ -231,11 +247,12 @@ const slides: Slide[] = [
   {
     id: 7,
     title: "Migrasi Mudah",
-    background: "from-orange-500 to-amber-600",
+    background: "from-slate-900 via-slate-800 to-slate-900",
     content: (
       <div className="text-white p-8 md:p-16">
-        <h2 className="text-4xl md:text-5xl font-bold mb-8 text-center">Proses Migrasi yang Mudah</h2>
-        <div className="max-w-4xl mx-auto">
+        <h2 className="text-3xl md:text-5xl font-light mb-4 text-center">Proses Migrasi yang Mudah</h2>
+        <div className="w-16 h-0.5 bg-primary/60 mx-auto mb-10" />
+        <div className="max-w-3xl mx-auto">
           <div className="relative">
             {[
               { step: 1, title: "Assessment", desc: "Audit sistem existing, pemetaan data & gap analysis" },
@@ -244,13 +261,13 @@ const slides: Slide[] = [
               { step: 4, title: "Parallel Run", desc: "Operasional paralel, UAT, training pengguna" },
               { step: 5, title: "Go-Live", desc: "Cutover, hypercare support, monitoring performa" },
             ].map((item, idx) => (
-              <div key={idx} className="flex items-start gap-6 mb-6">
-                <div className="h-12 w-12 rounded-full bg-white text-orange-600 flex items-center justify-center font-bold text-xl shrink-0">
+              <div key={idx} className="flex items-start gap-6 mb-4">
+                <div className="h-10 w-10 rounded-full border-2 border-primary/40 bg-slate-800 flex items-center justify-center font-light text-primary shrink-0">
                   {item.step}
                 </div>
-                <div className="bg-white/10 rounded-xl p-4 flex-1 backdrop-blur">
-                  <h3 className="text-xl font-semibold">{item.title}</h3>
-                  <p className="text-white/80">{item.desc}</p>
+                <div className="border border-slate-700 rounded-lg p-4 flex-1 bg-slate-800/30">
+                  <h3 className="text-base font-medium text-white">{item.title}</h3>
+                  <p className="text-slate-400 text-sm">{item.desc}</p>
                 </div>
               </div>
             ))}
@@ -262,23 +279,28 @@ const slides: Slide[] = [
   {
     id: 8,
     title: "Dashboard & Analytics",
-    background: "from-rose-600 to-pink-700",
+    background: "from-slate-900 via-slate-800 to-slate-900",
     content: (
       <div className="text-white p-8 md:p-16">
-        <h2 className="text-4xl md:text-5xl font-bold mb-8 text-center">Dashboard & Analytics</h2>
-        <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-          <div className="bg-white/10 rounded-2xl p-6 backdrop-blur">
-            <h3 className="text-2xl font-semibold mb-4">📊 Executive Dashboard</h3>
-            <ul className="space-y-2 text-white/90">
+        <h2 className="text-3xl md:text-5xl font-light mb-4 text-center">Dashboard & Analytics</h2>
+        <div className="w-16 h-0.5 bg-primary/60 mx-auto mb-10" />
+        <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+          <div className="border border-slate-700 rounded-xl p-6 bg-slate-800/30">
+            <h3 className="text-xl font-medium mb-4 text-white flex items-center gap-2">
+              <span className="text-primary">●</span> Executive Dashboard
+            </h3>
+            <ul className="space-y-2 text-slate-400 text-sm">
               <li>• KPI rumah sakit real-time</li>
               <li>• Trend kunjungan & pendapatan</li>
               <li>• Okupansi tempat tidur</li>
               <li>• Performa unit layanan</li>
             </ul>
           </div>
-          <div className="bg-white/10 rounded-2xl p-6 backdrop-blur">
-            <h3 className="text-2xl font-semibold mb-4">📈 Laporan Otomatis</h3>
-            <ul className="space-y-2 text-white/90">
+          <div className="border border-slate-700 rounded-xl p-6 bg-slate-800/30">
+            <h3 className="text-xl font-medium mb-4 text-white flex items-center gap-2">
+              <span className="text-primary">●</span> Laporan Otomatis
+            </h3>
+            <ul className="space-y-2 text-slate-400 text-sm">
               <li>• RL 1-5 Kemenkes</li>
               <li>• Laporan keuangan</li>
               <li>• Statistik pelayanan</li>
@@ -292,22 +314,35 @@ const slides: Slide[] = [
   {
     id: 9,
     title: "Testimoni",
-    background: "from-indigo-600 to-blue-700",
+    background: "from-slate-900 via-slate-800 to-slate-900",
     content: (
       <div className="text-white p-8 md:p-16">
-        <h2 className="text-4xl md:text-5xl font-bold mb-12 text-center">Dipercaya Rumah Sakit</h2>
+        <h2 className="text-3xl md:text-5xl font-light mb-4 text-center">Dipercaya Rumah Sakit</h2>
+        <div className="w-16 h-0.5 bg-primary/60 mx-auto mb-12" />
         <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-          <div className="bg-white/10 rounded-2xl p-6 backdrop-blur">
-            <p className="text-lg mb-4 italic">
+          <div className="border border-slate-700 rounded-xl p-8 bg-slate-800/30">
+            <p className="text-slate-300 mb-6 italic leading-relaxed">
               "Implementasi ZEN⁺ sangat smooth, tim support responsif. Integrasi BPJS berjalan lancar tanpa kendala berarti."
             </p>
-            <p className="font-semibold">— Dr. Ahmad, Direktur RS</p>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center text-sm">DA</div>
+              <div>
+                <p className="font-medium text-white text-sm">Dr. Ahmad</p>
+                <p className="text-slate-500 text-xs">Direktur RS</p>
+              </div>
+            </div>
           </div>
-          <div className="bg-white/10 rounded-2xl p-6 backdrop-blur">
-            <p className="text-lg mb-4 italic">
+          <div className="border border-slate-700 rounded-xl p-8 bg-slate-800/30">
+            <p className="text-slate-300 mb-6 italic leading-relaxed">
               "Dashboard eksekutif sangat membantu monitoring performa RS. Data akurat dan real-time."
             </p>
-            <p className="font-semibold">— Ibu Sari, Kepala Keuangan</p>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center text-sm">IS</div>
+              <div>
+                <p className="font-medium text-white text-sm">Ibu Sari</p>
+                <p className="text-slate-500 text-xs">Kepala Keuangan</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -316,18 +351,19 @@ const slides: Slide[] = [
   {
     id: 10,
     title: "Terima Kasih",
-    background: "from-primary via-primary/90 to-primary/80",
+    background: "from-slate-900 via-slate-800 to-slate-900",
     content: (
       <div className="flex flex-col items-center justify-center h-full text-white">
-        <img src={zenLogo} alt="ZEN+ Logo" className="h-24 w-24 mb-6" />
-        <h1 className="text-4xl md:text-6xl font-bold mb-4 text-center">Terima Kasih</h1>
-        <p className="text-xl md:text-2xl opacity-90 text-center max-w-2xl mb-8">
+        <img src={zenLogo} alt="ZEN+ Logo" className="h-20 w-20 mb-8 drop-shadow-2xl" />
+        <h1 className="text-4xl md:text-6xl font-light mb-4 text-center">Terima Kasih</h1>
+        <div className="w-16 h-0.5 bg-primary/60 mb-6" />
+        <p className="text-lg text-slate-300 text-center max-w-xl mb-10 font-light">
           Siap bertransformasi digital bersama ZEN⁺ SIMRS?
         </p>
-        <div className="space-y-4 text-center">
-          <p className="text-lg">📧 info@zenplus.id</p>
-          <p className="text-lg">📞 0812-3456-7890</p>
-          <p className="text-lg">🌐 www.zenplus.id</p>
+        <div className="space-y-3 text-center text-slate-400">
+          <p className="text-sm">📧 info@zenplus.id</p>
+          <p className="text-sm">📞 0812-3456-7890</p>
+          <p className="text-sm">🌐 www.zenplus.id</p>
         </div>
       </div>
     ),
