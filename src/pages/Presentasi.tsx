@@ -1344,7 +1344,7 @@ const slides: Slide[] = [
                 </div>
               </motion.div>
               <p className="text-sm font-semibold text-slate-900">Live Demo</p>
-              <p className="text-xs text-slate-500">demo.simrszen.id</p>
+              <p className="text-xs text-slate-500">simrszen.satupintu.app</p>
             </div>
             <div className="text-center">
               <motion.div 
@@ -1359,7 +1359,7 @@ const slides: Slide[] = [
                 </div>
               </motion.div>
               <p className="text-sm font-semibold text-slate-900">Konsultasi</p>
-              <p className="text-xs text-slate-500">+62 812-3456-7890</p>
+              <p className="text-xs text-slate-500">+62 851-2104-5798</p>
             </div>
           </motion.div>
           
@@ -1378,9 +1378,10 @@ const slides: Slide[] = [
               animate={{ opacity: 1 }}
             />
             <div className="flex flex-wrap justify-center gap-6 text-sm text-slate-500">
-              <motion.span whileHover={{ scale: 1.05, color: "#0066FF" }} className="cursor-pointer">📧 info@simrszen.id</motion.span>
-              <motion.span whileHover={{ scale: 1.05, color: "#0066FF" }} className="cursor-pointer">🌐 www.simrszen.id</motion.span>
+              <motion.span whileHover={{ scale: 1.05, color: "#0066FF" }} className="cursor-pointer">📧 info@zenmultimedia.co.id</motion.span>
+              <motion.span whileHover={{ scale: 1.05, color: "#0066FF" }} className="cursor-pointer">🌐 zenmultimedia.co.id</motion.span>
             </div>
+            <p className="text-xs text-slate-400 mt-3">Jl. Taman Pahlawan No.166, Purwamekar, Kec. Purwakarta, Kab. Purwakarta, Jawa Barat 41119</p>
           </motion.div>
         </div>
       </div>
