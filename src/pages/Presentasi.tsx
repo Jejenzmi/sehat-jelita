@@ -230,12 +230,12 @@ const slides: Slide[] = [
             animate="visible"
           >
             {[
+              { icon: "🏥", title: "Multi Tipe Faskes", desc: "Fleksibel untuk RS Tipe A, B, C, D maupun Klinik/FKTP — modul otomatis menyesuaikan", gradient: "from-primary to-blue-500" },
               { icon: "⚡", title: "Performa Tinggi", desc: "Response time <200ms untuk ribuan transaksi harian", gradient: "from-amber-400 to-orange-500" },
-              { icon: "🔗", title: "Terintegrasi", desc: "Native dengan SATU SEHAT, BPJS, dan sistem eksternal", gradient: "from-primary to-blue-500" },
+              { icon: "🔗", title: "Terintegrasi", desc: "Native dengan SATU SEHAT, BPJS, dan sistem eksternal", gradient: "from-cyan-400 to-blue-500" },
               { icon: "🔒", title: "Enterprise Security", desc: "Enkripsi end-to-end, RBAC, dan audit trail lengkap", gradient: "from-emerald-400 to-teal-500" },
               { icon: "☁️", title: "Zero Infrastructure", desc: "Tanpa investasi server, auto-scaling & backup otomatis", gradient: "from-blue-400 to-indigo-500" },
               { icon: "📊", title: "Business Intelligence", desc: "Dashboard real-time dan laporan otomatis RL 1-5", gradient: "from-purple-400 to-pink-500" },
-              { icon: "🎯", title: "User Friendly", desc: "Antarmuka intuitif, minimal training, adopsi cepat", gradient: "from-rose-400 to-red-500" },
             ].map((item, idx) => (
               <motion.div 
                 key={idx}
