@@ -25,6 +25,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   // Redirect to auth if no user or session
   if (!user || !session) {
+    // Use element directly without wrapping in fragment to avoid ref warning
     return <Navigate to="/auth" state={{ from: location }} replace />;
   }
 

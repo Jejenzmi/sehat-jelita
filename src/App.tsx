@@ -67,7 +67,7 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <BrowserRouter>
+        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <Routes>
             {/* Public routes */}
             <Route path="/auth" element={<Auth />} />
@@ -75,7 +75,6 @@ const App = () => (
             <Route path="/patient-portal" element={<PatientPortal />} />
             <Route path="/kiosk" element={<Kiosk />} />
             <Route path="/presentasi" element={<Presentasi />} />
-            <Route path="/patient-portal" element={<PatientPortal />} />
             <Route
               path="/setup"
               element={
