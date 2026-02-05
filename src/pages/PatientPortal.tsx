@@ -19,11 +19,13 @@ import PatientPrescriptions from "@/components/patient-portal/PatientPrescriptio
 import PatientAppointments from "@/components/patient-portal/PatientAppointments";
 import PatientProfile from "@/components/patient-portal/PatientProfile";
 import PatientInsurances from "@/components/patient-portal/PatientInsurances";
+import { ConfirmationDialog } from "@/components/shared/ConfirmationDialog";
 
 export default function PatientPortal() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("profile");
+  const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
 
   const handleSignOut = async () => {
     await signOut();
@@ -46,13 +48,25 @@ export default function PatientPortal() {
                 <p className="text-sm text-muted-foreground">{user?.email}</p>
               </div>
             </div>
-            <Button variant="outline" onClick={handleSignOut}>
+            <Button variant="outline" onClick={() => setLogoutConfirmOpen(true)}>
               <LogOut className="h-4 w-4 mr-2" />
               Keluar
             </Button>
           </div>
         </div>
       </header>
+
+      {/* Logout Confirmation Dialog */}
+      <ConfirmationDialog
+        open={logoutConfirmOpen}
+        onOpenChange={setLogoutConfirmOpen}
+        title="Konfirmasi Keluar"
+        description="Apakah Anda yakin ingin keluar dari Portal Pasien?"
+        confirmLabel="Ya, Keluar"
+        cancelLabel="Batal"
+        type="warning"
+        onConfirm={handleSignOut}
+      />
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-6">

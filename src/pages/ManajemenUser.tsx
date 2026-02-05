@@ -26,6 +26,7 @@ import {
   ROLE_COLORS,
   type UserFormData 
 } from "@/components/forms/UserFormFields";
+import { ConfirmationDialog } from "@/components/shared/ConfirmationDialog";
 
 type AppRole = "admin" | "dokter" | "perawat" | "kasir" | "farmasi" | "laboratorium" | "radiologi" | "pendaftaran" | "keuangan" | "gizi" | "icu" | "bedah" | "rehabilitasi" | "mcu" | "forensik" | "cssd" | "manajemen" | "bank_darah";
 
@@ -94,6 +95,8 @@ export default function ManajemenUser() {
   const [newUserRoles, setNewUserRoles] = useState<AppRole[]>([]);
   const [showPassword, setShowPassword] = useState(false);
   const [isCreatingUser, setIsCreatingUser] = useState(false);
+  const [saveRolesConfirmOpen, setSaveRolesConfirmOpen] = useState(false);
+  const [createUserConfirmOpen, setCreateUserConfirmOpen] = useState(false);
 
   const { data: profiles, isLoading: loadingProfiles } = useUserProfiles();
   const { data: allRoles, isLoading: loadingRoles } = useAllUserRoles();
@@ -506,27 +509,38 @@ export default function ManajemenUser() {
                   Batal
                 </Button>
                 <Button
-                  onClick={() => updateRolesMutation.mutate({
-                    userId: selectedUser.user_id,
-                    roles: selectedRoles,
-                  })}
+                  onClick={() => setSaveRolesConfirmOpen(true)}
                   disabled={updateRolesMutation.isPending}
                   className="gradient-primary"
                 >
-                  {updateRolesMutation.isPending ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Menyimpan...
-                    </>
-                  ) : (
-                    "Simpan Perubahan"
-                  )}
+                  Simpan Perubahan
                 </Button>
               </DialogFooter>
             </div>
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Save Roles Confirmation Dialog */}
+      <ConfirmationDialog
+        open={saveRolesConfirmOpen}
+        onOpenChange={setSaveRolesConfirmOpen}
+        title="Konfirmasi Simpan Role"
+        description={`Apakah Anda yakin ingin menyimpan perubahan hak akses untuk ${selectedUser?.full_name}?`}
+        confirmLabel="Ya, Simpan"
+        cancelLabel="Batal"
+        type="save"
+        isLoading={updateRolesMutation.isPending}
+        onConfirm={() => {
+          if (selectedUser) {
+            updateRolesMutation.mutate({
+              userId: selectedUser.user_id,
+              roles: selectedRoles,
+            });
+            setSaveRolesConfirmOpen(false);
+          }
+        }}
+      />
 
       {/* Add New User Dialog */}
       <Dialog open={isAddUserDialogOpen} onOpenChange={setIsAddUserDialogOpen}>
@@ -624,25 +638,32 @@ export default function ManajemenUser() {
               Batal
             </Button>
             <Button
-              onClick={handleCreateUser}
-              disabled={isCreatingUser}
+              onClick={() => setCreateUserConfirmOpen(true)}
+              disabled={isCreatingUser || !newUserEmail || !newUserPassword || !newUserFullName || newUserRoles.length === 0}
               className="gradient-primary"
             >
-              {isCreatingUser ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Membuat...
-                </>
-              ) : (
-                <>
-                  <UserPlus className="mr-2 h-4 w-4" />
-                  Buat User
-                </>
-              )}
+              <UserPlus className="mr-2 h-4 w-4" />
+              Buat User
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Create User Confirmation Dialog */}
+      <ConfirmationDialog
+        open={createUserConfirmOpen}
+        onOpenChange={setCreateUserConfirmOpen}
+        title="Konfirmasi Buat User Baru"
+        description={`Apakah Anda yakin ingin membuat akun baru untuk ${newUserFullName} dengan ${newUserRoles.length} role?`}
+        confirmLabel="Ya, Buat"
+        cancelLabel="Batal"
+        type="save"
+        isLoading={isCreatingUser}
+        onConfirm={() => {
+          setCreateUserConfirmOpen(false);
+          handleCreateUser();
+        }}
+      />
     </div>
   );
 }

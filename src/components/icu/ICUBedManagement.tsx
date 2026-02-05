@@ -1,12 +1,20 @@
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useICUBeds, useUpdateICUBed } from "@/hooks/useICUData";
 import { BedDouble, Wind, Monitor, CheckCircle, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ConfirmationDialog } from "@/components/shared/ConfirmationDialog";
 
 export function ICUBedManagement() {
   const { data: beds, isLoading } = useICUBeds();
   const updateBed = useUpdateICUBed();
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean;
+    bedId: string;
+    bedNumber: string;
+    currentStatus: boolean | null;
+  }>({ open: false, bedId: "", bedNumber: "", currentStatus: null });
 
   const icuTypeLabels: Record<string, string> = {
     icu: "ICU",
@@ -16,8 +24,13 @@ export function ICUBedManagement() {
     hcu: "HCU",
   };
 
-  const toggleAvailability = (id: string, currentStatus: boolean | null) => {
-    updateBed.mutate({ id, is_available: !currentStatus });
+  const openConfirmDialog = (id: string, bedNumber: string, currentStatus: boolean | null) => {
+    setConfirmDialog({ open: true, bedId: id, bedNumber, currentStatus });
+  };
+
+  const handleConfirmToggle = () => {
+    updateBed.mutate({ id: confirmDialog.bedId, is_available: !confirmDialog.currentStatus });
+    setConfirmDialog({ open: false, bedId: "", bedNumber: "", currentStatus: null });
   };
 
   if (isLoading) {
@@ -52,8 +65,8 @@ export function ICUBedManagement() {
                   key={bed.id}
                   className={`p-4 rounded-lg border-2 ${
                     bed.is_available
-                      ? "border-green-200 bg-green-50"
-                      : "border-red-200 bg-red-50"
+                      ? "border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950"
+                      : "border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950"
                   }`}
                 >
                   <div className="flex items-center justify-between mb-2">
@@ -84,7 +97,7 @@ export function ICUBedManagement() {
                     variant="outline"
                     size="sm"
                     className="w-full"
-                    onClick={() => toggleAvailability(bed.id, bed.is_available)}
+                    onClick={() => openConfirmDialog(bed.id, bed.bed_number, bed.is_available)}
                     disabled={updateBed.isPending}
                   >
                     {bed.is_available ? "Set Terisi" : "Set Tersedia"}
@@ -95,6 +108,19 @@ export function ICUBedManagement() {
           </CardContent>
         </Card>
       ))}
+
+      {/* Confirmation Dialog for Status Change */}
+      <ConfirmationDialog
+        open={confirmDialog.open}
+        onOpenChange={(open) => setConfirmDialog({ ...confirmDialog, open })}
+        title="Konfirmasi Ubah Status Bed"
+        description={`Apakah Anda yakin ingin mengubah status bed ${confirmDialog.bedNumber} menjadi ${confirmDialog.currentStatus ? "Terisi" : "Tersedia"}?`}
+        confirmLabel="Ya, Ubah"
+        cancelLabel="Batal"
+        type="confirm"
+        isLoading={updateBed.isPending}
+        onConfirm={handleConfirmToggle}
+      />
     </div>
   );
 }
