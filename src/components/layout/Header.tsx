@@ -16,11 +16,13 @@ import { Badge } from "@/components/ui/badge";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { StaffChat } from "@/components/chat/StaffChat";
 import { useMedicineStockAlerts, useQueueUpdates } from "@/hooks/useNotifications";
+import { ConfirmationDialog } from "@/components/shared/ConfirmationDialog";
 
 export function Header() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const { user, roles, signOut } = useAuth();
   const navigate = useNavigate();
+  const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
 
   // Enable real-time alerts
   useMedicineStockAlerts();
@@ -121,13 +123,25 @@ export function Header() {
             <DropdownMenuItem>Profil</DropdownMenuItem>
             <DropdownMenuItem>Pengaturan</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
+            <DropdownMenuItem onClick={() => setLogoutConfirmOpen(true)} className="text-destructive">
               <LogOut className="h-4 w-4 mr-2" />
               Keluar
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      {/* Logout Confirmation Dialog */}
+      <ConfirmationDialog
+        open={logoutConfirmOpen}
+        onOpenChange={setLogoutConfirmOpen}
+        title="Konfirmasi Keluar"
+        description="Apakah Anda yakin ingin keluar dari sistem? Sesi Anda akan berakhir."
+        confirmLabel="Ya, Keluar"
+        cancelLabel="Batal"
+        type="warning"
+        onConfirm={handleSignOut}
+      />
     </header>
   );
 }
