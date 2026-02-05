@@ -151,7 +151,7 @@ export default function Pengaturan() {
               </div>
               <div>
                 <p className="font-medium">Database</p>
-                <p className="text-sm text-muted-foreground">SIMRS ZEN⁺ Cloud</p>
+                <p className="text-sm text-muted-foreground">SIMRS ZEN Cloud</p>
               </div>
             </div>
           </CardContent>
