@@ -1,0 +1,750 @@
+// SIMRS ZEN - Prisma Schema
+// Database schema for Hospital Management System
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// ENUMS
+// ============================================
+
+enum AppRole {
+  admin
+  dokter
+  perawat
+  farmasi
+  laboratorium
+  radiologi
+  pendaftaran
+  kasir
+  keuangan
+  hrd
+  manajemen
+  rekam_medis
+  gizi
+  rehabilitasi
+  bedah
+  icu
+  hemodialisa
+  forensik
+  procurement
+  it
+  guest
+}
+
+enum Gender {
+  male
+  female
+}
+
+enum BloodType {
+  A_POSITIVE    @map("A+")
+  A_NEGATIVE    @map("A-")
+  B_POSITIVE    @map("B+")
+  B_NEGATIVE    @map("B-")
+  AB_POSITIVE   @map("AB+")
+  AB_NEGATIVE   @map("AB-")
+  O_POSITIVE    @map("O+")
+  O_NEGATIVE    @map("O-")
+}
+
+enum VisitType {
+  OUTPATIENT
+  INPATIENT
+  EMERGENCY
+  MCU
+  TELEMEDICINE
+}
+
+enum VisitStatus {
+  SCHEDULED
+  WAITING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+enum BedStatus {
+  AVAILABLE
+  OCCUPIED
+  RESERVED
+  CLEANING
+  MAINTENANCE
+}
+
+enum BillingStatus {
+  DRAFT
+  PENDING
+  PARTIAL
+  PAID
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentType {
+  UMUM
+  BPJS
+  ASURANSI
+  PERUSAHAAN
+  GRATIS
+}
+
+enum ClaimStatus {
+  DRAFT
+  SUBMITTED
+  VERIFIED
+  APPROVED
+  REJECTED
+  PAID
+}
+
+// ============================================
+// AUTH & USERS
+// ============================================
+
+model profiles {
+  id            String   @id @default(uuid())
+  user_id       String   @unique
+  email         String   @unique
+  full_name     String
+  phone         String?
+  avatar_url    String?
+  password_hash String?
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  user_roles    user_roles[]
+  employees     employees[]
+  audit_logs    audit_logs[]
+}
+
+model user_roles {
+  id         String   @id @default(uuid())
+  user_id    String
+  role       AppRole
+  created_at DateTime @default(now())
+
+  profile    profiles @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+
+  @@unique([user_id, role])
+}
+
+model menu_access {
+  id          String   @id @default(uuid())
+  role        AppRole
+  menu_path   String
+  can_view    Boolean  @default(false)
+  can_create  Boolean  @default(false)
+  can_edit    Boolean  @default(false)
+  can_delete  Boolean  @default(false)
+  created_at  DateTime @default(now())
+
+  @@unique([role, menu_path])
+}
+
+// ============================================
+// MASTER DATA
+// ============================================
+
+model departments {
+  id          String   @id @default(uuid())
+  code        String   @unique
+  name        String
+  description String?
+  is_active   Boolean  @default(true)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  doctors     doctors[]
+  employees   employees[]
+  rooms       rooms[]
+}
+
+model doctors {
+  id              String   @id @default(uuid())
+  user_id         String?
+  sip_number      String   @unique
+  str_number      String?
+  full_name       String
+  specialization  String?
+  department_id   String?
+  phone           String?
+  email           String?
+  is_active       Boolean  @default(true)
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  department      departments? @relation(fields: [department_id], references: [id])
+  visits          visits[]
+  appointments    appointments[]
+  schedules       doctor_schedules[]
+}
+
+model rooms {
+  id            String   @id @default(uuid())
+  room_number   String
+  room_name     String
+  room_type     String   // WARD, ICU, OR, ER, CLINIC, etc.
+  room_class    String?  // VIP, I, II, III
+  ward_id       String?
+  department_id String?
+  daily_rate    Decimal?
+  is_active     Boolean  @default(true)
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  department    departments? @relation(fields: [department_id], references: [id])
+  beds          beds[]
+}
+
+model beds {
+  id                 String    @id @default(uuid())
+  bed_number         String
+  room_id            String
+  status             BedStatus @default(AVAILABLE)
+  current_patient_id String?
+  notes              String?
+  created_at         DateTime  @default(now())
+  updated_at         DateTime  @updatedAt
+
+  room               rooms     @relation(fields: [room_id], references: [id])
+  patient            patients? @relation(fields: [current_patient_id], references: [id])
+
+  @@unique([room_id, bed_number])
+}
+
+// ============================================
+// PATIENTS
+// ============================================
+
+model patients {
+  id                     String    @id @default(uuid())
+  medical_record_number  String    @unique
+  nik                    String?   @unique
+  full_name              String
+  date_of_birth          DateTime
+  gender                 Gender
+  blood_type             BloodType?
+  address                String?
+  city                   String?
+  province               String?
+  postal_code            String?
+  phone                  String?
+  email                  String?
+  emergency_contact_name String?
+  emergency_contact_phone String?
+  bpjs_number            String?
+  allergies              String[]
+  is_active              Boolean   @default(true)
+  created_at             DateTime  @default(now())
+  updated_at             DateTime  @updatedAt
+
+  visits                 visits[]
+  appointments           appointments[]
+  billings               billings[]
+  beds                   beds[]
+  medical_records        medical_records[]
+  prescriptions          prescriptions[]
+  lab_orders             lab_orders[]
+}
+
+// ============================================
+// VISITS & MEDICAL RECORDS
+// ============================================
+
+model visits {
+  id            String      @id @default(uuid())
+  visit_number  String      @unique
+  patient_id    String
+  doctor_id     String?
+  department_id String?
+  visit_type    VisitType
+  visit_date    DateTime    @default(now())
+  status        VisitStatus @default(WAITING)
+  checkin_time  DateTime?
+  checkout_time DateTime?
+  chief_complaint String?
+  notes         String?
+  created_at    DateTime    @default(now())
+  updated_at    DateTime    @updatedAt
+
+  patient       patients    @relation(fields: [patient_id], references: [id])
+  doctor        doctors?    @relation(fields: [doctor_id], references: [id])
+  billings      billings[]
+  medical_records medical_records[]
+  prescriptions prescriptions[]
+  lab_orders    lab_orders[]
+}
+
+model medical_records {
+  id                String   @id @default(uuid())
+  patient_id        String
+  visit_id          String
+  subjective        String?  // Keluhan
+  objective         String?  // Pemeriksaan Fisik
+  assessment        String?  // Diagnosis
+  plan              String?  // Rencana Tindakan
+  vital_signs       Json?
+  icd10_codes       String[]
+  icd9_codes        String[]
+  created_by        String?
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  patient           patients @relation(fields: [patient_id], references: [id])
+  visit             visits   @relation(fields: [visit_id], references: [id])
+}
+
+// ============================================
+// PHARMACY
+// ============================================
+
+model medicines {
+  id              String   @id @default(uuid())
+  medicine_code   String   @unique
+  medicine_name   String
+  generic_name    String?
+  category        String?
+  form            String?  // Tablet, Syrup, Injection, etc.
+  strength        String?
+  unit            String
+  selling_price   Decimal
+  purchase_price  Decimal?
+  min_stock       Int      @default(0)
+  is_active       Boolean  @default(true)
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  prescription_items prescription_items[]
+  inventory_items    inventory_items[]
+}
+
+model prescriptions {
+  id              String   @id @default(uuid())
+  prescription_number String @unique
+  patient_id      String
+  visit_id        String
+  doctor_id       String?
+  status          String   @default("PENDING") // PENDING, PROCESSING, READY, DISPENSED, CANCELLED
+  notes           String?
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  patient         patients @relation(fields: [patient_id], references: [id])
+  visit           visits   @relation(fields: [visit_id], references: [id])
+  items           prescription_items[]
+}
+
+model prescription_items {
+  id              String   @id @default(uuid())
+  prescription_id String
+  medicine_id     String
+  dosage          String
+  frequency       String
+  duration        String?
+  quantity        Int
+  instructions    String?
+  is_dispensed    Boolean  @default(false)
+  created_at      DateTime @default(now())
+
+  prescription    prescriptions @relation(fields: [prescription_id], references: [id])
+  medicine        medicines     @relation(fields: [medicine_id], references: [id])
+}
+
+// ============================================
+// LABORATORY
+// ============================================
+
+model lab_tests {
+  id            String   @id @default(uuid())
+  test_code     String   @unique
+  test_name     String
+  category      String?
+  sample_type   String?
+  normal_range  String?
+  unit          String?
+  price         Decimal?
+  is_active     Boolean  @default(true)
+  created_at    DateTime @default(now())
+
+  lab_order_items lab_order_items[]
+}
+
+model lab_orders {
+  id            String   @id @default(uuid())
+  order_number  String   @unique
+  patient_id    String
+  visit_id      String
+  ordered_by    String?
+  priority      String   @default("ROUTINE")
+  status        String   @default("ORDERED")
+  notes         String?
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  patient       patients @relation(fields: [patient_id], references: [id])
+  visit         visits   @relation(fields: [visit_id], references: [id])
+  items         lab_order_items[]
+}
+
+model lab_order_items {
+  id            String   @id @default(uuid())
+  order_id      String
+  test_id       String
+  result        String?
+  result_value  Decimal?
+  result_flag   String?  // NORMAL, HIGH, LOW, CRITICAL
+  verified_by   String?
+  verified_at   DateTime?
+  notes         String?
+  created_at    DateTime @default(now())
+
+  order         lab_orders @relation(fields: [order_id], references: [id])
+  test          lab_tests  @relation(fields: [test_id], references: [id])
+}
+
+// ============================================
+// BILLING
+// ============================================
+
+model billings {
+  id              String        @id @default(uuid())
+  invoice_number  String        @unique
+  patient_id      String
+  visit_id        String
+  billing_date    DateTime      @default(now())
+  payment_type    PaymentType
+  subtotal        Decimal       @default(0)
+  discount        Decimal?
+  tax             Decimal?
+  total           Decimal       @default(0)
+  paid_amount     Decimal?
+  status          BillingStatus @default(DRAFT)
+  payment_method  String?
+  payment_date    DateTime?
+  notes           String?
+  created_by      String?
+  created_at      DateTime      @default(now())
+  updated_at      DateTime      @updatedAt
+
+  patient         patients      @relation(fields: [patient_id], references: [id])
+  visit           visits        @relation(fields: [visit_id], references: [id])
+  items           billing_items[]
+}
+
+model billing_items {
+  id            String   @id @default(uuid())
+  billing_id    String
+  item_type     String   // SERVICE, MEDICINE, LAB, RADIOLOGY, ROOM, etc.
+  item_name     String
+  quantity      Int      @default(1)
+  unit_price    Decimal
+  total_price   Decimal
+  notes         String?
+  created_at    DateTime @default(now())
+
+  billing       billings @relation(fields: [billing_id], references: [id])
+}
+
+// ============================================
+// BPJS
+// ============================================
+
+model bpjs_claims {
+  id               String      @id @default(uuid())
+  claim_number     String      @unique
+  patient_id       String
+  visit_id         String
+  sep_number       String
+  claim_date       DateTime    @default(now())
+  claim_amount     Decimal
+  approved_amount  Decimal?
+  inacbg_code      String?
+  inacbg_description String?
+  status           ClaimStatus @default(DRAFT)
+  submission_date  DateTime?
+  verification_date DateTime?
+  rejection_reason String?
+  notes            String?
+  created_by       String?
+  created_at       DateTime    @default(now())
+  updated_at       DateTime    @updatedAt
+}
+
+// ============================================
+// INVENTORY
+// ============================================
+
+model inventory_items {
+  id              String   @id @default(uuid())
+  item_code       String   @unique
+  item_name       String
+  category        String?
+  medicine_id     String?
+  unit            String
+  current_stock   Int      @default(0)
+  minimum_stock   Int      @default(0)
+  maximum_stock   Int?
+  reorder_point   Int?
+  reorder_quantity Int?
+  auto_reorder    Boolean  @default(false)
+  supplier_id     String?
+  is_active       Boolean  @default(true)
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  medicine        medicines? @relation(fields: [medicine_id], references: [id])
+  batches         inventory_batches[]
+  transactions    inventory_transactions[]
+}
+
+model inventory_batches {
+  id                String   @id @default(uuid())
+  item_id           String
+  batch_number      String
+  expiry_date       DateTime
+  initial_quantity  Int
+  remaining_quantity Int
+  purchase_order_id String?
+  created_at        DateTime @default(now())
+
+  item              inventory_items @relation(fields: [item_id], references: [id])
+  transactions      inventory_transactions[]
+
+  @@unique([item_id, batch_number])
+}
+
+model inventory_transactions {
+  id               String   @id @default(uuid())
+  item_id          String
+  batch_id         String?
+  transaction_type String   // PURCHASE, SALE, ADJUSTMENT, TRANSFER, EXPIRED
+  quantity         Int
+  reference_type   String?
+  reference_id     String?
+  reason           String?
+  performed_by     String?
+  created_at       DateTime @default(now())
+
+  item             inventory_items    @relation(fields: [item_id], references: [id])
+  batch            inventory_batches? @relation(fields: [batch_id], references: [id])
+}
+
+model suppliers {
+  id              String   @id @default(uuid())
+  supplier_code   String   @unique
+  supplier_name   String
+  contact_person  String?
+  phone           String?
+  email           String?
+  address         String?
+  payment_terms   String?
+  is_active       Boolean  @default(true)
+  created_by      String?
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  purchase_orders purchase_orders[]
+}
+
+model purchase_orders {
+  id                String   @id @default(uuid())
+  po_number         String   @unique
+  supplier_id       String
+  order_date        DateTime @default(now())
+  expected_delivery DateTime?
+  total_amount      Decimal
+  status            String   @default("DRAFT")
+  submitted_at      DateTime?
+  approved_by       String?
+  approved_at       DateTime?
+  received_at       DateTime?
+  received_by       String?
+  notes             String?
+  created_by        String?
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  supplier          suppliers @relation(fields: [supplier_id], references: [id])
+  items             purchase_order_items[]
+}
+
+model purchase_order_items {
+  id                String   @id @default(uuid())
+  purchase_order_id String
+  item_id           String
+  quantity          Int
+  unit_price        Decimal
+  subtotal          Decimal
+  received_quantity Int?
+  created_at        DateTime @default(now())
+
+  purchase_order    purchase_orders @relation(fields: [purchase_order_id], references: [id])
+}
+
+// ============================================
+// HR
+// ============================================
+
+model employees {
+  id                String   @id @default(uuid())
+  user_id           String?
+  employee_number   String   @unique
+  nik               String?  @unique
+  full_name         String
+  date_of_birth     DateTime?
+  gender            Gender?
+  address           String?
+  phone             String?
+  email             String?
+  department_id     String?
+  position          String?
+  employment_status String   @default("ACTIVE")
+  join_date         DateTime?
+  end_date          DateTime?
+  base_salary       Decimal?
+  allowances        Decimal?
+  created_by        String?
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  profile           profiles?    @relation(fields: [user_id], references: [user_id])
+  department        departments? @relation(fields: [department_id], references: [id])
+  attendance        attendance[]
+  leave_requests    leave_requests[]
+  payroll           payroll[]
+}
+
+model attendance {
+  id              String   @id @default(uuid())
+  employee_id     String
+  attendance_date DateTime @default(now()) @db.Date
+  check_in        DateTime?
+  check_out       DateTime?
+  location_in     String?
+  location_out    String?
+  status          String   @default("PRESENT")
+  notes           String?
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  employee        employees @relation(fields: [employee_id], references: [id])
+
+  @@unique([employee_id, attendance_date])
+}
+
+model leave_requests {
+  id              String   @id @default(uuid())
+  employee_id     String
+  leave_type      String
+  start_date      DateTime
+  end_date        DateTime
+  reason          String?
+  status          String   @default("PENDING")
+  approved_by     String?
+  approved_at     DateTime?
+  approval_notes  String?
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  employee        employees @relation(fields: [employee_id], references: [id])
+}
+
+model payroll {
+  id              String   @id @default(uuid())
+  employee_id     String
+  period_month    Int
+  period_year     Int
+  base_salary     Decimal
+  allowances      Decimal  @default(0)
+  deductions      Decimal  @default(0)
+  overtime        Decimal  @default(0)
+  net_salary      Decimal
+  status          String   @default("DRAFT")
+  paid_at         DateTime?
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  employee        employees @relation(fields: [employee_id], references: [id])
+
+  @@unique([employee_id, period_month, period_year])
+}
+
+// ============================================
+// APPOINTMENTS & SCHEDULING
+// ============================================
+
+model appointments {
+  id                String   @id @default(uuid())
+  patient_id        String
+  doctor_id         String
+  department_id     String?
+  appointment_date  DateTime @db.Date
+  appointment_time  String
+  appointment_type  String   @default("CONSULTATION")
+  status            String   @default("SCHEDULED")
+  chief_complaint   String?
+  notes             String?
+  booking_source    String?
+  reminder_sent     Boolean  @default(false)
+  created_by        String?
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  patient           patients @relation(fields: [patient_id], references: [id])
+  doctor            doctors  @relation(fields: [doctor_id], references: [id])
+}
+
+model doctor_schedules {
+  id              String   @id @default(uuid())
+  doctor_id       String
+  day_of_week     Int      // 0-6 (Sunday-Saturday)
+  start_time      String
+  end_time        String
+  slot_duration   Int      @default(15) // minutes
+  max_patients    Int?
+  is_active       Boolean  @default(true)
+  created_at      DateTime @default(now())
+
+  doctor          doctors  @relation(fields: [doctor_id], references: [id])
+
+  @@unique([doctor_id, day_of_week])
+}
+
+// ============================================
+// AUDIT & SYSTEM
+// ============================================
+
+model audit_logs {
+  id          String   @id @default(uuid())
+  table_name  String
+  action      String   // INSERT, UPDATE, DELETE
+  record_id   String?
+  user_id     String?
+  old_data    Json?
+  new_data    Json?
+  ip_address  String?
+  user_agent  String?
+  created_at  DateTime @default(now())
+
+  user        profiles? @relation(fields: [user_id], references: [user_id])
+
+  @@index([table_name, created_at])
+  @@index([user_id, created_at])
+}
+
+model system_settings {
+  id            String   @id @default(uuid())
+  setting_key   String   @unique
+  setting_value String?
+  description   String?
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+}
