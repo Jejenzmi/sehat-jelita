@@ -1,0 +1,100 @@
+# SIMRS ZEN - Docker Compose Configuration
+# Full stack deployment with PostgreSQL, Redis, and Node.js API
+
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: simrs-zen-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-simrs}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-simrs2024}
+      POSTGRES_DB: ${DB_NAME:-simrs_zen}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-simrs}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis for caching and rate limiting
+  redis:
+    image: redis:7-alpine
+    container_name: simrs-zen-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Node.js API Server
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: simrs-zen-api
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgresql://${DB_USER:-simrs}:${DB_PASSWORD:-simrs2024}@postgres:5432/${DB_NAME:-simrs_zen}
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET}
+      BPJS_CONS_ID: ${BPJS_CONS_ID}
+      BPJS_SECRET_KEY: ${BPJS_SECRET_KEY}
+      BPJS_USER_KEY: ${BPJS_USER_KEY}
+      SATU_SEHAT_CLIENT_ID: ${SATU_SEHAT_CLIENT_ID}
+      SATU_SEHAT_CLIENT_SECRET: ${SATU_SEHAT_CLIENT_SECRET}
+      SATU_SEHAT_ORG_ID: ${SATU_SEHAT_ORG_ID}
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Nginx Reverse Proxy (optional, for production)
+  nginx:
+    image: nginx:alpine
+    container_name: simrs-zen-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - api
+    profiles:
+      - production
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  default:
+    name: simrs-zen-network
+    driver: bridge
