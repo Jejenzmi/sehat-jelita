@@ -1114,7 +1114,7 @@ const slides: Slide[] = [
             >
               <div className="flex items-center gap-2 mb-4">
                 <span className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xl">✅</span>
-                <h3 className="font-bold text-emerald-700">Setelah SIMRS ZEN⁺</h3>
+                <h3 className="font-bold text-emerald-700">Setelah SIMRS ZEN</h3>
               </div>
               <div className="space-y-2 text-sm">
                 {[
