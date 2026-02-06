@@ -51,6 +51,7 @@ import Kiosk from "./pages/Kiosk";
 import MigrasiData from "./pages/MigrasiData";
 import Presentasi from "./pages/Presentasi";
 import DokumentasiSistem from "./pages/DokumentasiSistem";
+import PanduanPenggunaan from "./pages/PanduanPenggunaan";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -77,6 +78,7 @@ const App = () => (
             <Route path="/kiosk" element={<Kiosk />} />
             <Route path="/presentasi" element={<Presentasi />} />
             <Route path="/dokumentasi-sistem" element={<DokumentasiSistem />} />
+            <Route path="/panduan" element={<PanduanPenggunaan />} />
             <Route
               path="/setup"
               element={
