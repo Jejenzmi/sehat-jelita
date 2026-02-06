@@ -1,0 +1,467 @@
+/**
+ * SIMRS ZEN - Visits Controller
+ * Handles all visit/encounter management
+ */
+
+import { z } from 'zod';
+import { prisma } from '../config/database.js';
+import { ApiError } from '../middleware/errorHandler.js';
+
+// Validation schemas
+const createVisitSchema = z.object({
+  patient_id: z.string().uuid(),
+  department_id: z.string().uuid(),
+  doctor_id: z.string().uuid().optional(),
+  visit_type: z.enum(['rawat_jalan', 'igd', 'rawat_inap', 'mcu']),
+  payment_type: z.enum(['umum', 'bpjs', 'asuransi', 'korporasi']),
+  chief_complaint: z.string().optional(),
+  bpjs_sep_number: z.string().optional(),
+  insurance_info: z.object({}).optional(),
+  referral_number: z.string().optional(),
+  notes: z.string().optional()
+});
+
+/**
+ * Generate Visit Number
+ */
+const generateVisitNumber = async (visitType) => {
+  const date = new Date();
+  const prefix = {
+    rawat_jalan: 'RJ',
+    igd: 'IGD',
+    rawat_inap: 'RI',
+    mcu: 'MCU'
+  }[visitType] || 'VIS';
+  
+  const dateStr = date.toISOString().slice(0, 10).replace(/-/g, '');
+  
+  const lastVisit = await prisma.visits.findFirst({
+    where: {
+      visit_number: { startsWith: `${prefix}${dateStr}` }
+    },
+    orderBy: { visit_number: 'desc' }
+  });
+
+  let sequence = 1;
+  if (lastVisit) {
+    const lastSeq = parseInt(lastVisit.visit_number.slice(-4));
+    sequence = lastSeq + 1;
+  }
+
+  return `${prefix}${dateStr}${sequence.toString().padStart(4, '0')}`;
+};
+
+/**
+ * Get all visits with pagination
+ */
+export const getVisits = async (req, res, next) => {
+  try {
+    const {
+      page = 1,
+      limit = 20,
+      patient_id,
+      department_id,
+      doctor_id,
+      visit_type,
+      status,
+      date_from,
+      date_to,
+      sort_by = 'created_at',
+      sort_order = 'desc'
+    } = req.query;
+
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const take = parseInt(limit);
+
+    const where = {};
+
+    if (patient_id) where.patient_id = patient_id;
+    if (department_id) where.department_id = department_id;
+    if (doctor_id) where.doctor_id = doctor_id;
+    if (visit_type) where.visit_type = visit_type;
+    if (status) where.status = status;
+    
+    if (date_from || date_to) {
+      where.visit_date = {};
+      if (date_from) where.visit_date.gte = new Date(date_from);
+      if (date_to) where.visit_date.lte = new Date(date_to);
+    }
+
+    const [total, visits] = await Promise.all([
+      prisma.visits.count({ where }),
+      prisma.visits.findMany({
+        where,
+        skip,
+        take,
+        orderBy: { [sort_by]: sort_order },
+        include: {
+          patient: {
+            select: {
+              id: true,
+              full_name: true,
+              medical_record_number: true,
+              gender: true,
+              date_of_birth: true
+            }
+          },
+          department: true,
+          doctor: {
+            select: {
+              id: true,
+              name: true,
+              specialization: true
+            }
+          }
+        }
+      })
+    ]);
+
+    res.json({
+      success: true,
+      data: visits,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        totalPages: Math.ceil(total / take)
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Get single visit by ID
+ */
+export const getVisit = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const visit = await prisma.visits.findUnique({
+      where: { id },
+      include: {
+        patient: true,
+        department: true,
+        doctor: true,
+        medical_records: true,
+        prescriptions: {
+          include: { prescription_items: true }
+        },
+        lab_orders: {
+          include: { lab_results: true }
+        },
+        radiology_orders: true,
+        billings: {
+          include: { billing_items: true }
+        },
+        vital_signs: {
+          orderBy: { recorded_at: 'desc' },
+          take: 10
+        }
+      }
+    });
+
+    if (!visit) {
+      throw new ApiError(404, 'Kunjungan tidak ditemukan', 'VISIT_NOT_FOUND');
+    }
+
+    res.json({
+      success: true,
+      data: visit
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Create new visit
+ */
+export const createVisit = async (req, res, next) => {
+  try {
+    const data = createVisitSchema.parse(req.body);
+
+    // Verify patient exists
+    const patient = await prisma.patients.findUnique({
+      where: { id: data.patient_id }
+    });
+    if (!patient) {
+      throw new ApiError(404, 'Pasien tidak ditemukan', 'PATIENT_NOT_FOUND');
+    }
+
+    // Generate visit number
+    const visit_number = await generateVisitNumber(data.visit_type);
+
+    // Create visit
+    const visit = await prisma.visits.create({
+      data: {
+        ...data,
+        visit_number,
+        visit_date: new Date(),
+        status: 'waiting',
+        created_by: req.user?.id
+      },
+      include: {
+        patient: true,
+        department: true,
+        doctor: true
+      }
+    });
+
+    // Create initial queue entry
+    await prisma.queue_entries.create({
+      data: {
+        visit_id: visit.id,
+        department_id: data.department_id,
+        queue_number: await getNextQueueNumber(data.department_id),
+        status: 'waiting'
+      }
+    });
+
+    // Audit log
+    await prisma.audit_logs.create({
+      data: {
+        table_name: 'visits',
+        action: 'CREATE',
+        record_id: visit.id,
+        user_id: req.user?.id,
+        new_data: visit
+      }
+    });
+
+    // Emit socket event for queue updates
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`department:${data.department_id}`).emit('queue:updated', {
+        type: 'new_patient',
+        visit
+      });
+    }
+
+    res.status(201).json({
+      success: true,
+      data: visit,
+      message: 'Kunjungan berhasil didaftarkan'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Update visit
+ */
+export const updateVisit = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const updateData = req.body;
+
+    const existing = await prisma.visits.findUnique({ where: { id } });
+    if (!existing) {
+      throw new ApiError(404, 'Kunjungan tidak ditemukan', 'VISIT_NOT_FOUND');
+    }
+
+    const visit = await prisma.visits.update({
+      where: { id },
+      data: {
+        ...updateData,
+        updated_at: new Date()
+      },
+      include: {
+        patient: true,
+        department: true,
+        doctor: true
+      }
+    });
+
+    // Audit log
+    await prisma.audit_logs.create({
+      data: {
+        table_name: 'visits',
+        action: 'UPDATE',
+        record_id: id,
+        user_id: req.user?.id,
+        old_data: existing,
+        new_data: visit
+      }
+    });
+
+    res.json({
+      success: true,
+      data: visit,
+      message: 'Kunjungan berhasil diperbarui'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Check-in patient (start consultation)
+ */
+export const checkinVisit = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const visit = await prisma.visits.update({
+      where: { id },
+      data: {
+        status: 'in_progress',
+        checkin_time: new Date()
+      }
+    });
+
+    // Update queue entry
+    await prisma.queue_entries.updateMany({
+      where: { visit_id: id },
+      data: { status: 'in_progress', called_at: new Date() }
+    });
+
+    res.json({
+      success: true,
+      data: visit,
+      message: 'Pasien mulai konsultasi'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Check-out patient (end consultation)
+ */
+export const checkoutVisit = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const visit = await prisma.visits.update({
+      where: { id },
+      data: {
+        status: 'completed',
+        checkout_time: new Date()
+      }
+    });
+
+    // Update queue entry
+    await prisma.queue_entries.updateMany({
+      where: { visit_id: id },
+      data: { status: 'completed', completed_at: new Date() }
+    });
+
+    res.json({
+      success: true,
+      data: visit,
+      message: 'Konsultasi selesai'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Record vital signs
+ */
+export const recordVitalSigns = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const vitalData = req.body;
+
+    const visit = await prisma.visits.findUnique({ where: { id } });
+    if (!visit) {
+      throw new ApiError(404, 'Kunjungan tidak ditemukan', 'VISIT_NOT_FOUND');
+    }
+
+    const vitalSigns = await prisma.vital_signs.create({
+      data: {
+        visit_id: id,
+        patient_id: visit.patient_id,
+        ...vitalData,
+        recorded_by: req.user?.id,
+        recorded_at: new Date()
+      }
+    });
+
+    res.status(201).json({
+      success: true,
+      data: vitalSigns,
+      message: 'Tanda vital berhasil dicatat'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Get today's visits summary
+ */
+export const getTodaySummary = async (req, res, next) => {
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const [
+      totalVisits,
+      waitingVisits,
+      inProgressVisits,
+      completedVisits,
+      visitsByDepartment,
+      visitsByType
+    ] = await Promise.all([
+      prisma.visits.count({
+        where: { visit_date: { gte: today, lt: tomorrow } }
+      }),
+      prisma.visits.count({
+        where: { visit_date: { gte: today, lt: tomorrow }, status: 'waiting' }
+      }),
+      prisma.visits.count({
+        where: { visit_date: { gte: today, lt: tomorrow }, status: 'in_progress' }
+      }),
+      prisma.visits.count({
+        where: { visit_date: { gte: today, lt: tomorrow }, status: 'completed' }
+      }),
+      prisma.visits.groupBy({
+        by: ['department_id'],
+        where: { visit_date: { gte: today, lt: tomorrow } },
+        _count: true
+      }),
+      prisma.visits.groupBy({
+        by: ['visit_type'],
+        where: { visit_date: { gte: today, lt: tomorrow } },
+        _count: true
+      })
+    ]);
+
+    res.json({
+      success: true,
+      data: {
+        total: totalVisits,
+        waiting: waitingVisits,
+        inProgress: inProgressVisits,
+        completed: completedVisits,
+        byDepartment: visitsByDepartment,
+        byType: visitsByType
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Helper function to get next queue number
+async function getNextQueueNumber(departmentId) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const lastQueue = await prisma.queue_entries.findFirst({
+    where: {
+      department_id: departmentId,
+      created_at: { gte: today }
+    },
+    orderBy: { queue_number: 'desc' }
+  });
+
+  return (lastQueue?.queue_number || 0) + 1;
+}

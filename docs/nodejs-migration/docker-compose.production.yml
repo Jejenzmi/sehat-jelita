@@ -1,0 +1,255 @@
+# SIMRS ZEN - Production Docker Compose
+# Optimized for production deployment with full stack
+
+version: '3.8'
+
+services:
+  # ==========================================
+  # PostgreSQL Database
+  # ==========================================
+  postgres:
+    image: postgres:15-alpine
+    container_name: simrs-zen-db
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER:-simrs_admin}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME:-simrs_zen_production}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+      - ./backups:/backups
+    ports:
+      - "127.0.0.1:5432:5432"  # Only localhost access
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-simrs_admin} -d ${DB_NAME:-simrs_zen_production}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 512M
+    networks:
+      - simrs-network
+
+  # ==========================================
+  # Redis Cache
+  # ==========================================
+  redis:
+    image: redis:7-alpine
+    container_name: simrs-zen-redis
+    restart: always
+    command: >
+      redis-server
+      --appendonly yes
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+      --requirepass ${REDIS_PASSWORD:-simrs_redis_2024}
+    volumes:
+      - redis_data:/data
+    ports:
+      - "127.0.0.1:6379:6379"  # Only localhost access
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-simrs_redis_2024}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 128M
+    networks:
+      - simrs-network
+
+  # ==========================================
+  # Node.js API Server
+  # ==========================================
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.production
+      args:
+        NODE_ENV: production
+    container_name: simrs-zen-api
+    restart: always
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgresql://${DB_USER:-simrs_admin}:${DB_PASSWORD}@postgres:5432/${DB_NAME:-simrs_zen_production}
+      REDIS_URL: redis://:${REDIS_PASSWORD:-simrs_redis_2024}@redis:6379
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-30d}
+      FRONTEND_URL: ${FRONTEND_URL:-https://simrszen.id}
+      
+      # BPJS Integration
+      BPJS_CONS_ID: ${BPJS_CONS_ID}
+      BPJS_SECRET_KEY: ${BPJS_SECRET_KEY}
+      BPJS_USER_KEY: ${BPJS_USER_KEY}
+      BPJS_BASE_URL: ${BPJS_BASE_URL:-https://apijkn.bpjs-kesehatan.go.id}
+      
+      # SATU SEHAT
+      SATU_SEHAT_CLIENT_ID: ${SATU_SEHAT_CLIENT_ID}
+      SATU_SEHAT_CLIENT_SECRET: ${SATU_SEHAT_CLIENT_SECRET}
+      SATU_SEHAT_ORG_ID: ${SATU_SEHAT_ORG_ID}
+      SATU_SEHAT_ENV: ${SATU_SEHAT_ENV:-production}
+      
+      # Email
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASS: ${SMTP_PASS}
+      SMTP_FROM: ${SMTP_FROM}
+      
+      # Storage
+      STORAGE_TYPE: ${STORAGE_TYPE:-local}
+      STORAGE_PATH: /app/storage
+    volumes:
+      - api_storage:/app/storage
+      - api_logs:/app/logs
+    expose:
+      - "3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '2'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+    networks:
+      - simrs-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+
+  # ==========================================
+  # Nginx Reverse Proxy (Production)
+  # ==========================================
+  nginx:
+    image: nginx:alpine
+    container_name: simrs-zen-nginx
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+      - nginx_logs:/var/log/nginx
+      - certbot_www:/var/www/certbot:ro
+    depends_on:
+      - api
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 64M
+    networks:
+      - simrs-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+
+  # ==========================================
+  # Certbot for SSL Auto-Renewal
+  # ==========================================
+  certbot:
+    image: certbot/certbot
+    container_name: simrs-zen-certbot
+    volumes:
+      - ./ssl:/etc/letsencrypt
+      - certbot_www:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    networks:
+      - simrs-network
+
+  # ==========================================
+  # Database Backup Service
+  # ==========================================
+  backup:
+    image: postgres:15-alpine
+    container_name: simrs-zen-backup
+    restart: "no"
+    environment:
+      PGPASSWORD: ${DB_PASSWORD}
+    volumes:
+      - ./backups:/backups
+      - ./scripts:/scripts:ro
+    entrypoint: ["/bin/sh", "-c"]
+    command: 
+      - |
+        while true; do
+          DATE=$$(date +%Y%m%d_%H%M%S)
+          pg_dump -h postgres -U ${DB_USER:-simrs_admin} ${DB_NAME:-simrs_zen_production} | gzip > /backups/backup_$$DATE.sql.gz
+          find /backups -name "*.sql.gz" -mtime +7 -delete
+          echo "Backup completed: backup_$$DATE.sql.gz"
+          sleep 86400
+        done
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - simrs-network
+    profiles:
+      - backup
+
+# ==========================================
+# Volumes
+# ==========================================
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  api_storage:
+    driver: local
+  api_logs:
+    driver: local
+  nginx_logs:
+    driver: local
+  certbot_www:
+    driver: local
+
+# ==========================================
+# Networks
+# ==========================================
+networks:
+  simrs-network:
+    name: simrs-zen-network
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
