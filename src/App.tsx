@@ -50,6 +50,7 @@ import LaporanKemenkes from "./pages/LaporanKemenkes";
 import Kiosk from "./pages/Kiosk";
 import MigrasiData from "./pages/MigrasiData";
 import Presentasi from "./pages/Presentasi";
+import DokumentasiSistem from "./pages/DokumentasiSistem";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -75,6 +76,7 @@ const App = () => (
             <Route path="/patient-portal" element={<PatientPortal />} />
             <Route path="/kiosk" element={<Kiosk />} />
             <Route path="/presentasi" element={<Presentasi />} />
+            <Route path="/dokumentasi-sistem" element={<DokumentasiSistem />} />
             <Route
               path="/setup"
               element={
