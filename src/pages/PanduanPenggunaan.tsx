@@ -1712,26 +1712,3513 @@ const PanduanPenggunaan = () => {
       ),
     },
 
-    // Continue adding more slides for each module...
-    // For brevity, I'll add placeholder content for remaining slides
-
-    ...Array.from({ length: 72 }, (_, i) => ({
-      id: `slide-${i + 25}`,
+    // ========== SLIDE 25: Farmasi - Overview ==========
+    {
+      id: "farmasi-overview",
       content: (
         <div className="px-12 py-8">
-          <h2 className="text-3xl font-bold text-primary mb-6">
-            {sections[Math.floor((i + 25) / 3)]?.title || "Slide"} - Detail {((i + 25) % 3) + 1}
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <Pill className="h-8 w-8" />
+            Modul Farmasi
           </h2>
-          <div className="flex items-center justify-center h-96">
-            <div className="text-center text-muted-foreground">
-              <BookOpen className="h-16 w-16 mx-auto mb-4 opacity-50" />
-              <p className="text-lg">Konten slide {i + 25} akan ditampilkan di sini</p>
-              <p className="text-sm">Modul: {sections[Math.floor((i + 25) / 3)]?.title}</p>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <p className="text-lg text-foreground">
+                Modul Farmasi mengelola seluruh proses dispensing obat, dari penerimaan resep hingga penyerahan ke pasien.
+              </p>
+              <div className="space-y-3">
+                <h4 className="font-semibold">Fitur Utama:</h4>
+                {[
+                  "Penerimaan & validasi resep elektronik",
+                  "Dispensing obat dengan barcode scanner",
+                  "Cek stok real-time per item",
+                  "Warning interaksi & alergi obat",
+                  "Cetak label obat & etiket",
+                  "Retur obat pasien rawat inap",
+                  "Laporan penggunaan obat",
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-primary" />
+                    <span className="text-sm">{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-4">
+              <h4 className="font-semibold">Alur Kerja Farmasi:</h4>
+              <div className="space-y-3">
+                {[
+                  { step: 1, text: "Resep masuk ke antrian farmasi" },
+                  { step: 2, text: "Apoteker memvalidasi resep" },
+                  { step: 3, text: "Asisten menyiapkan obat" },
+                  { step: 4, text: "Scan barcode setiap item" },
+                  { step: 5, text: "Cetak label & etiket obat" },
+                  { step: 6, text: "Apoteker verifikasi akhir" },
+                  { step: 7, text: "Serahkan ke pasien + edukasi" },
+                ].map((item) => (
+                  <div key={item.step} className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-bold">
+                      {item.step}
+                    </div>
+                    <span className="text-sm">{item.text}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
       ),
-    })),
+    },
+
+    // ========== SLIDE 26: Farmasi - Dispensing ==========
+    {
+      id: "farmasi-dispensing",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <Scan className="h-8 w-8" />
+            Proses Dispensing Obat
+          </h2>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <div className="space-y-3">
+                {[
+                  { step: 1, title: "Buka Antrian Resep", desc: "Klik menu Farmasi > Antrian Resep. Pilih resep yang akan diproses." },
+                  { step: 2, title: "Review Resep", desc: "Periksa nama pasien, obat, dosis, dan jumlah. Cek warning alergi/interaksi." },
+                  { step: 3, title: "Siapkan Obat", desc: "Ambil obat dari rak sesuai daftar. Pastikan nama & expired date benar." },
+                  { step: 4, title: "Scan Barcode", desc: "Scan barcode setiap obat. Sistem otomatis memotong stok." },
+                  { step: 5, title: "Cetak Label", desc: "Klik 'Cetak Label' untuk mencetak etiket aturan pakai." },
+                  { step: 6, title: "Verifikasi Apoteker", desc: "Apoteker mengecek kesesuaian obat dengan resep." },
+                  { step: 7, title: "Serahkan ke Pasien", desc: "Berikan obat, jelaskan aturan pakai, klik 'Selesai'." },
+                ].map((item) => (
+                  <div key={item.step} className="flex gap-4 p-3 bg-muted rounded-lg">
+                    <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold flex-shrink-0">
+                      {item.step}
+                    </div>
+                    <div>
+                      <p className="font-semibold text-sm">{item.title}</p>
+                      <p className="text-xs text-muted-foreground">{item.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                <h4 className="font-semibold text-amber-800 flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5" />
+                  Perhatian!
+                </h4>
+                <ul className="text-sm text-amber-700 mt-2 space-y-1">
+                  <li>• Selalu cek 5 BENAR: Pasien, Obat, Dosis, Cara, Waktu</li>
+                  <li>• Jangan override warning tanpa konfirmasi dokter</li>
+                  <li>• Double check obat LASA (Look-Alike Sound-Alike)</li>
+                </ul>
+              </div>
+              <div className="p-4 bg-muted rounded-lg">
+                <h4 className="font-semibold mb-3">Contoh Label Obat:</h4>
+                <div className="bg-white p-3 rounded border text-xs font-mono">
+                  <p className="font-bold">AMOXICILLIN 500 MG</p>
+                  <p>3 x 1 tablet (Sesudah Makan)</p>
+                  <p className="text-muted-foreground mt-2">An. Budi Santoso</p>
+                  <p className="text-muted-foreground">No. RM: 000123</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+
+    // ========== SLIDE 27: Farmasi - Stok ==========
+    {
+      id: "farmasi-stok",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <Package className="h-8 w-8" />
+            Manajemen Stok Farmasi
+          </h2>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <p className="text-foreground">
+                Pantau stok obat, cek expired date, dan kelola permintaan ke gudang.
+              </p>
+              <div className="space-y-3">
+                <h4 className="font-semibold">Fitur Stok:</h4>
+                {[
+                  "Lihat stok real-time per item",
+                  "Alert stok minimum & expired",
+                  "Permintaan ke gudang farmasi",
+                  "Retur obat rusak/expired",
+                  "Transfer antar depo/apotek",
+                  "Kartu stok digital per batch",
+                  "Laporan mutasi stok",
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-primary" />
+                    <span className="text-sm">{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                <h4 className="font-semibold text-red-800">Alert Stok Kritis:</h4>
+                <div className="mt-2 space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span>Amoxicillin 500mg</span>
+                    <Badge variant="destructive">5 box</Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Paracetamol 500mg</span>
+                    <Badge variant="destructive">3 box</Badge>
+                  </div>
+                </div>
+              </div>
+              <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                <h4 className="font-semibold text-amber-800">Mendekati Expired:</h4>
+                <div className="mt-2 space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span>Cefixime 100mg</span>
+                    <span className="text-amber-700">Exp: 15/03/2025</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Metformin 500mg</span>
+                    <span className="text-amber-700">Exp: 20/03/2025</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+
+    // ========== SLIDE 28: Laboratorium - Overview ==========
+    {
+      id: "lab-overview",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <FlaskConical className="h-8 w-8" />
+            Modul Laboratorium
+          </h2>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <p className="text-lg text-foreground">
+                Modul Laboratorium mengelola permintaan pemeriksaan lab, input hasil, dan validasi oleh dokter/analis.
+              </p>
+              <div className="space-y-3">
+                <h4 className="font-semibold">Jenis Pemeriksaan:</h4>
+                {[
+                  "Hematologi (Darah Lengkap, LED, dll)",
+                  "Kimia Klinik (Gula Darah, Lipid Profile, dll)",
+                  "Urinalisa",
+                  "Serologi & Imunologi",
+                  "Mikrobiologi & Kultur",
+                  "Patologi Anatomi",
+                  "Pemeriksaan Khusus",
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <Microscope className="h-4 w-4 text-primary" />
+                    <span className="text-sm">{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-4">
+              <h4 className="font-semibold">Alur Pemeriksaan Lab:</h4>
+              <div className="space-y-3">
+                {[
+                  { step: 1, text: "Dokter membuat order pemeriksaan" },
+                  { step: 2, text: "Pasien ke lab, petugas ambil sampel" },
+                  { step: 3, text: "Sampel diproses sesuai SOP" },
+                  { step: 4, text: "Analis input hasil pemeriksaan" },
+                  { step: 5, text: "Validasi oleh Analis Senior/Dokter" },
+                  { step: 6, text: "Hasil tersedia di rekam medis" },
+                  { step: 7, text: "Cetak/kirim hasil ke dokter" },
+                ].map((item) => (
+                  <div key={item.step} className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-bold">
+                      {item.step}
+                    </div>
+                    <span className="text-sm">{item.text}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+
+    // ========== SLIDE 29: Laboratorium - Input Hasil ==========
+    {
+      id: "lab-input",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <FileCheck className="h-8 w-8" />
+            Input & Validasi Hasil Lab
+          </h2>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <div className="space-y-3">
+                {[
+                  { step: 1, title: "Buka Order Lab", desc: "Menu Lab > Order Aktif. Pilih order yang akan diinput hasilnya." },
+                  { step: 2, title: "Klik 'Input Hasil'", desc: "Tombol di kolom aksi sebelah kanan." },
+                  { step: 3, title: "Isikan Nilai", desc: "Input nilai hasil setiap parameter. Sistem otomatis flag nilai abnormal." },
+                  { step: 4, title: "Tambah Catatan", desc: "Tambahkan catatan/interpretasi jika diperlukan." },
+                  { step: 5, title: "Simpan Draft", desc: "Klik Simpan untuk menyimpan sebagai draft." },
+                  { step: 6, title: "Validasi", desc: "Analis senior/dokter klik 'Validasi' untuk finalisasi." },
+                ].map((item) => (
+                  <div key={item.step} className="flex gap-4 p-3 bg-muted rounded-lg">
+                    <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold flex-shrink-0">
+                      {item.step}
+                    </div>
+                    <div>
+                      <p className="font-semibold text-sm">{item.title}</p>
+                      <p className="text-xs text-muted-foreground">{item.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div className="p-4 bg-muted rounded-lg">
+                <h4 className="font-semibold mb-3">Contoh Hasil Darah Lengkap:</h4>
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left py-1">Parameter</th>
+                      <th className="text-left py-1">Hasil</th>
+                      <th className="text-left py-1">Normal</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="border-b">
+                      <td className="py-1">Hemoglobin</td>
+                      <td className="py-1 text-red-600 font-bold">10.2 g/dL</td>
+                      <td className="py-1 text-muted-foreground">12-16</td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="py-1">Leukosit</td>
+                      <td className="py-1">8.500 /uL</td>
+                      <td className="py-1 text-muted-foreground">4.000-11.000</td>
+                    </tr>
+                    <tr>
+                      <td className="py-1">Trombosit</td>
+                      <td className="py-1">250.000 /uL</td>
+                      <td className="py-1 text-muted-foreground">150.000-400.000</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-blue-800">
+                  <strong>💡 Tips:</strong> Nilai abnormal otomatis ditandai merah. Klik untuk melihat referensi nilai normal.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+
+    // ========== SLIDE 30: Radiologi - Overview ==========
+    {
+      id: "radiologi-overview",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <Radio className="h-8 w-8" />
+            Modul Radiologi
+          </h2>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <p className="text-lg text-foreground">
+                Modul Radiologi mengelola order pemeriksaan imaging, upload hasil, dan integrasi PACS.
+              </p>
+              <div className="space-y-3">
+                <h4 className="font-semibold">Jenis Pemeriksaan:</h4>
+                {[
+                  "Rontgen (X-Ray) Konvensional",
+                  "USG (Ultrasonography)",
+                  "CT-Scan",
+                  "MRI",
+                  "Mammografi",
+                  "Fluoroskopi",
+                  "Angiografi",
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <Scan className="h-4 w-4 text-primary" />
+                    <span className="text-sm">{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-4">
+              <h4 className="font-semibold">Alur Pemeriksaan Radiologi:</h4>
+              <div className="space-y-3">
+                {[
+                  { step: 1, text: "Dokter membuat order radiologi" },
+                  { step: 2, text: "Pasien ke unit radiologi" },
+                  { step: 3, text: "Radiografer melakukan pemeriksaan" },
+                  { step: 4, text: "Upload gambar ke sistem/PACS" },
+                  { step: 5, text: "Radiolog membaca & expertise" },
+                  { step: 6, text: "Validasi & tandatangan digital" },
+                  { step: 7, text: "Hasil tersedia di rekam medis" },
+                ].map((item) => (
+                  <div key={item.step} className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-bold">
+                      {item.step}
+                    </div>
+                    <span className="text-sm">{item.text}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+
+    // ========== SLIDE 31: Radiologi - Expertise ==========
+    {
+      id: "radiologi-expertise",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <Eye className="h-8 w-8" />
+            Input Expertise Radiologi
+          </h2>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <div className="space-y-3">
+                {[
+                  { step: 1, title: "Buka Order", desc: "Menu Radiologi > Order Aktif. Pilih pemeriksaan yang akan di-expertise." },
+                  { step: 2, title: "Lihat Gambar", desc: "Klik thumbnail untuk membuka viewer gambar radiologi." },
+                  { step: 3, title: "Input Expertise", desc: "Tulis deskripsi temuan, kesimpulan, dan saran." },
+                  { step: 4, title: "Gunakan Template", desc: "Pilih template sesuai jenis pemeriksaan untuk mempercepat input." },
+                  { step: 5, title: "Validasi", desc: "Radiolog klik 'Validasi' untuk finalisasi hasil." },
+                ].map((item) => (
+                  <div key={item.step} className="flex gap-4 p-3 bg-muted rounded-lg">
+                    <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold flex-shrink-0">
+                      {item.step}
+                    </div>
+                    <div>
+                      <p className="font-semibold text-sm">{item.title}</p>
+                      <p className="text-xs text-muted-foreground">{item.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="p-4 bg-muted rounded-lg">
+              <h4 className="font-semibold mb-3">Contoh Expertise Thorax PA:</h4>
+              <div className="bg-card p-3 rounded border text-sm space-y-2">
+                <div>
+                  <p className="font-semibold">Deskripsi:</p>
+                  <p className="text-muted-foreground text-xs">Cor: bentuk dan ukuran normal. Pulmo: tak tampak infiltrat, corakan bronkovaskuler normal. Sinus costophrenicus dan diafragma bilateral normal. Tulang-tulang intak.</p>
+                </div>
+                <div>
+                  <p className="font-semibold">Kesan:</p>
+                  <p className="text-muted-foreground text-xs">Foto thorax dalam batas normal.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+
+    // ========== SLIDE 32: Kamar Operasi - Overview ==========
+    {
+      id: "bedah-overview",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <Scissors className="h-8 w-8" />
+            Modul Kamar Operasi
+          </h2>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <p className="text-lg text-foreground">
+                Modul Kamar Operasi mengelola jadwal operasi, tim bedah, dan dokumentasi perioperatif.
+              </p>
+              <div className="space-y-3">
+                <h4 className="font-semibold">Fitur Utama:</h4>
+                {[
+                  "Penjadwalan operasi elektif & cito",
+                  "Manajemen ruang OK & ketersediaan",
+                  "WHO Surgical Safety Checklist",
+                  "Dokumentasi pre, intra, post operatif",
+                  "Catatan anestesi lengkap",
+                  "Time tracking (incision, closing)",
+                  "Laporan operasi terstruktur",
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-primary" />
+                    <span className="text-sm">{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-4">
+              <h4 className="font-semibold">WHO Surgical Safety Checklist:</h4>
+              <div className="space-y-2">
+                {[
+                  { phase: "Sign In", desc: "Sebelum induksi anestesi", color: "bg-blue-100 text-blue-800" },
+                  { phase: "Time Out", desc: "Sebelum insisi kulit", color: "bg-yellow-100 text-yellow-800" },
+                  { phase: "Sign Out", desc: "Sebelum pasien keluar OK", color: "bg-green-100 text-green-800" },
+                ].map((item, i) => (
+                  <div key={i} className="p-3 border rounded-lg">
+                    <Badge className={item.color}>{item.phase}</Badge>
+                    <p className="text-sm text-muted-foreground mt-1">{item.desc}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-blue-800">
+                  <strong>💡 Tips:</strong> Semua fase checklist WAJIB dilengkapi sebelum melanjutkan ke tahap berikutnya.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+
+    // ========== SLIDE 33: Kamar Operasi - Jadwal ==========
+    {
+      id: "bedah-jadwal",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <Calendar className="h-8 w-8" />
+            Penjadwalan Operasi
+          </h2>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <div className="space-y-3">
+                {[
+                  { step: 1, title: "Buat Jadwal Baru", desc: "Klik tombol '+ Jadwalkan Operasi' di halaman Kamar Operasi." },
+                  { step: 2, title: "Pilih Pasien", desc: "Cari pasien dengan No. RM atau nama. Pastikan sudah ada order operasi." },
+                  { step: 3, title: "Tentukan Tanggal & Waktu", desc: "Pilih tanggal dan estimasi jam mulai operasi." },
+                  { step: 4, title: "Pilih Ruang OK", desc: "Sistem menampilkan ruang OK yang tersedia pada waktu tersebut." },
+                  { step: 5, title: "Tentukan Tim", desc: "Pilih operator utama, asisten, anestesiolog, dan perawat OK." },
+                  { step: 6, title: "Konfirmasi", desc: "Review dan klik 'Simpan Jadwal'." },
+                ].map((item) => (
+                  <div key={item.step} className="flex gap-4 p-3 bg-muted rounded-lg">
+                    <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold flex-shrink-0">
+                      {item.step}
+                    </div>
+                    <div>
+                      <p className="font-semibold text-sm">{item.title}</p>
+                      <p className="text-xs text-muted-foreground">{item.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div className="p-4 bg-muted rounded-lg">
+                <h4 className="font-semibold mb-3">Status Jadwal:</h4>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline">Terjadwal</Badge>
+                    <span className="text-sm text-muted-foreground">Sudah dijadwalkan</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge className="bg-blue-500">Persiapan</Badge>
+                    <span className="text-sm text-muted-foreground">Pasien di ruang persiapan</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge className="bg-yellow-500">Berlangsung</Badge>
+                    <span className="text-sm text-muted-foreground">Operasi sedang berjalan</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge className="bg-green-500">Selesai</Badge>
+                    <span className="text-sm text-muted-foreground">Operasi selesai</span>
+                  </div>
+                </div>
+              </div>
+              <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                <h4 className="font-semibold text-red-800">Operasi CITO:</h4>
+                <p className="text-sm text-red-700 mt-1">Untuk operasi darurat, pilih 'CITO' saat membuat jadwal. Jadwal akan diprioritaskan.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+
+    // ========== SLIDE 34: ICU - Overview ==========
+    {
+      id: "icu-overview",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <HeartPulse className="h-8 w-8" />
+            Modul ICU / NICU / PICU
+          </h2>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <p className="text-lg text-foreground">
+                Modul perawatan intensif untuk monitoring pasien kritis dengan dukungan ventilator dan scoring system.
+              </p>
+              <div className="space-y-3">
+                <h4 className="font-semibold">Fitur Khusus:</h4>
+                {[
+                  "Monitoring vital sign real-time",
+                  "Grafik trend parameter vital",
+                  "Ventilator tracking & setting",
+                  "APACHE II / SOFA Score",
+                  "Fluid balance harian",
+                  "Catatan perawatan intensif",
+                  "Integrasi lab & farmasi",
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-primary" />
+                    <span className="text-sm">{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div className="p-4 bg-muted rounded-lg">
+                <h4 className="font-semibold mb-3">Unit Perawatan Intensif:</h4>
+                <div className="space-y-2">
+                  {[
+                    { name: "ICU", desc: "Dewasa", beds: 8 },
+                    { name: "NICU", desc: "Neonatus", beds: 6 },
+                    { name: "PICU", desc: "Pediatrik", beds: 4 },
+                    { name: "ICCU", desc: "Kardiak", beds: 4 },
+                  ].map((item, i) => (
+                    <div key={i} className="flex justify-between items-center p-2 bg-card rounded border">
+                      <div>
+                        <p className="font-medium">{item.name}</p>
+                        <p className="text-xs text-muted-foreground">{item.desc}</p>
+                      </div>
+                      <Badge variant="outline">{item.beds} bed</Badge>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+
+    // ========== SLIDE 35: ICU - Monitoring ==========
+    {
+      id: "icu-monitoring",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <Activity className="h-8 w-8" />
+            Monitoring Pasien ICU
+          </h2>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <p className="text-foreground">
+                Input dan pantau parameter vital pasien ICU secara berkala.
+              </p>
+              <div className="space-y-3">
+                <h4 className="font-semibold">Parameter yang Dipantau:</h4>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    "Tekanan Darah", "Heart Rate", "SpO2", "Suhu",
+                    "RR", "CVP", "MAP", "Urine Output",
+                  ].map((item, i) => (
+                    <div key={i} className="flex items-center gap-2 p-2 bg-muted rounded text-sm">
+                      <Activity className="h-4 w-4 text-primary" />
+                      {item}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="p-4 bg-muted rounded-lg">
+                <h4 className="font-semibold mb-2">Frekuensi Input:</h4>
+                <ul className="text-sm space-y-1">
+                  <li>• Vital sign: Setiap 1-2 jam</li>
+                  <li>• Intake/output: Setiap shift</li>
+                  <li>• Ventilator setting: Setiap perubahan</li>
+                  <li>• Scoring: Harian</li>
+                </ul>
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div className="p-4 bg-card border rounded-lg">
+                <h4 className="font-semibold mb-3">Contoh Dashboard Pasien:</h4>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div className="p-2 bg-muted rounded text-center">
+                    <p className="text-muted-foreground text-xs">BP</p>
+                    <p className="font-bold text-lg">120/80</p>
+                  </div>
+                  <div className="p-2 bg-muted rounded text-center">
+                    <p className="text-muted-foreground text-xs">HR</p>
+                    <p className="font-bold text-lg">82</p>
+                  </div>
+                  <div className="p-2 bg-muted rounded text-center">
+                    <p className="text-muted-foreground text-xs">SpO2</p>
+                    <p className="font-bold text-lg text-green-600">98%</p>
+                  </div>
+                  <div className="p-2 bg-muted rounded text-center">
+                    <p className="text-muted-foreground text-xs">Temp</p>
+                    <p className="font-bold text-lg">36.8°C</p>
+                  </div>
+                </div>
+              </div>
+              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-blue-800">
+                  <strong>💡 APACHE II Score:</strong> Skor 0-71 untuk prediksi mortalitas. Input otomatis dari data lab dan vital sign.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+
+    // ========== SLIDE 36: Hemodialisa - Overview ==========
+    {
+      id: "hd-overview",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <Droplets className="h-8 w-8" />
+            Modul Hemodialisa
+          </h2>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <p className="text-lg text-foreground">
+                Modul untuk pengelolaan unit hemodialisa, penjadwalan sesi, dan monitoring adekuasi dialisis.
+              </p>
+              <div className="space-y-3">
+                <h4 className="font-semibold">Fitur Utama:</h4>
+                {[
+                  "Penjadwalan sesi HD rutin",
+                  "Manajemen mesin HD",
+                  "Monitoring intra-dialitik",
+                  "Kalkulasi Kt/V (adekuasi)",
+                  "Catatan akses vaskuler",
+                  "Pemberian EPO & obat HD",
+                  "Laporan bulanan HD",
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-primary" />
+                    <span className="text-sm">{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div className="p-4 bg-muted rounded-lg">
+                <h4 className="font-semibold mb-3">Jadwal Sesi Mingguan:</h4>
+                <div className="grid grid-cols-3 gap-2 text-sm">
+                  {["Senin", "Rabu", "Jumat"].map((day) => (
+                    <div key={day} className="p-2 bg-card rounded border text-center">
+                      <p className="font-medium">{day}</p>
+                      <p className="text-xs text-muted-foreground">Shift I: 07.00</p>
+                      <p className="text-xs text-muted-foreground">Shift II: 13.00</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                <h4 className="font-semibold text-green-800">Target Adekuasi:</h4>
+                <p className="text-sm text-green-700 mt-1">Kt/V ≥ 1.2 atau URR ≥ 65%</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+
+    // ========== SLIDE 37: Hemodialisa - Sesi ==========
+    {
+      id: "hd-session",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <Clock className="h-8 w-8" />
+            Dokumentasi Sesi HD
+          </h2>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <div className="space-y-3">
+                {[
+                  { step: 1, title: "Pre-Dialisis", desc: "Input BB pre, TD, HR, keluhan, akses vaskuler." },
+                  { step: 2, title: "Setting Mesin", desc: "QB, QD, UF goal, durasi, dialisat." },
+                  { step: 3, title: "Monitoring Intra", desc: "Catat TD, HR setiap 1 jam. Catat kejadian khusus." },
+                  { step: 4, title: "Post-Dialisis", desc: "BB post, TD post, UFR aktual, komplikasi." },
+                  { step: 5, title: "Kalkulasi", desc: "Sistem hitung Kt/V, URR otomatis." },
+                ].map((item) => (
+                  <div key={item.step} className="flex gap-4 p-3 bg-muted rounded-lg">
+                    <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold flex-shrink-0">
+                      {item.step}
+                    </div>
+                    <div>
+                      <p className="font-semibold text-sm">{item.title}</p>
+                      <p className="text-xs text-muted-foreground">{item.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                <h4 className="font-semibold text-amber-800">Komplikasi Intra-Dialitik:</h4>
+                <ul className="text-sm text-amber-700 mt-2 space-y-1">
+                  <li>• Hipotensi</li>
+                  <li>• Kram otot</li>
+                  <li>• Mual/muntah</li>
+                  <li>• Nyeri dada</li>
+                  <li>• Clotting</li>
+                </ul>
+              </div>
+              <div className="p-4 bg-muted rounded-lg">
+                <h4 className="font-semibold mb-2">Contoh Setting:</h4>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div className="p-2 bg-card rounded border">
+                    <p className="text-muted-foreground text-xs">QB</p>
+                    <p className="font-bold">250 ml/min</p>
+                  </div>
+                  <div className="p-2 bg-card rounded border">
+                    <p className="text-muted-foreground text-xs">QD</p>
+                    <p className="font-bold">500 ml/min</p>
+                  </div>
+                  <div className="p-2 bg-card rounded border">
+                    <p className="text-muted-foreground text-xs">UF Goal</p>
+                    <p className="font-bold">2.5 L</p>
+                  </div>
+                  <div className="p-2 bg-card rounded border">
+                    <p className="text-muted-foreground text-xs">Durasi</p>
+                    <p className="font-bold">4 jam</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+
+    // ========== SLIDE 38: Bank Darah - Overview ==========
+    {
+      id: "bloodbank-overview",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <Heart className="h-8 w-8" />
+            Modul Bank Darah (BDRS)
+          </h2>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <p className="text-lg text-foreground">
+                Modul Bank Darah Rumah Sakit untuk manajemen stok darah, permintaan transfusi, dan uji silang.
+              </p>
+              <div className="space-y-3">
+                <h4 className="font-semibold">Fitur Utama:</h4>
+                {[
+                  "Manajemen stok per golongan darah",
+                  "Penerimaan darah dari PMI/UTD",
+                  "Permintaan transfusi dari ruangan",
+                  "Uji silang (crossmatch)",
+                  "Screening infeksi (HIV, HBsAg, HCV)",
+                  "Pelacakan darah (traceability)",
+                  "Laporan penggunaan darah",
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-primary" />
+                    <span className="text-sm">{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div className="p-4 bg-muted rounded-lg">
+                <h4 className="font-semibold mb-3">Stok Per Golongan:</h4>
+                <div className="grid grid-cols-4 gap-2">
+                  {[
+                    { type: "A+", count: 12 },
+                    { type: "A-", count: 3 },
+                    { type: "B+", count: 8 },
+                    { type: "B-", count: 2 },
+                    { type: "O+", count: 15 },
+                    { type: "O-", count: 4 },
+                    { type: "AB+", count: 5 },
+                    { type: "AB-", count: 1 },
+                  ].map((item) => (
+                    <div key={item.type} className="p-2 bg-card rounded border text-center">
+                      <p className="font-bold text-primary">{item.type}</p>
+                      <p className="text-sm">{item.count} bag</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                <h4 className="font-semibold text-red-800">Stok Kritis:</h4>
+                <p className="text-sm text-red-700 mt-1">O- dan AB- tersisa &lt; 5 bag. Segera order ke PMI.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+
+    // ========== SLIDE 39: Bank Darah - Crossmatch ==========
+    {
+      id: "bloodbank-crossmatch",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <FlaskConical className="h-8 w-8" />
+            Uji Silang (Crossmatch)
+          </h2>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <div className="space-y-3">
+                {[
+                  { step: 1, title: "Terima Permintaan", desc: "Order transfusi masuk dari ruangan dengan sampel darah pasien." },
+                  { step: 2, title: "Cek Golongan Darah", desc: "Verifikasi/ulang pemeriksaan golongan darah pasien." },
+                  { step: 3, title: "Pilih Kantong Darah", desc: "Pilih kantong yang sesuai golongan dan paling mendekati expired." },
+                  { step: 4, title: "Lakukan Crossmatch", desc: "Mayor dan minor crossmatch. Input hasil (Compatible/Incompatible)." },
+                  { step: 5, title: "Validasi", desc: "Supervisor memvalidasi hasil crossmatch." },
+                  { step: 6, title: "Release", desc: "Darah siap diserahkan ke ruangan untuk transfusi." },
+                ].map((item) => (
+                  <div key={item.step} className="flex gap-4 p-3 bg-muted rounded-lg">
+                    <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold flex-shrink-0">
+                      {item.step}
+                    </div>
+                    <div>
+                      <p className="font-semibold text-sm">{item.title}</p>
+                      <p className="text-xs text-muted-foreground">{item.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                <h4 className="font-semibold text-green-800 flex items-center gap-2">
+                  <Check className="h-5 w-5" />
+                  Compatible
+                </h4>
+                <p className="text-sm text-green-700 mt-1">Tidak ada reaksi aglutinasi. Darah aman ditransfusikan.</p>
+              </div>
+              <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                <h4 className="font-semibold text-red-800 flex items-center gap-2">
+                  <X className="h-5 w-5" />
+                  Incompatible
+                </h4>
+                <p className="text-sm text-red-700 mt-1">Terdapat reaksi aglutinasi. JANGAN ditransfusikan. Pilih kantong lain.</p>
+              </div>
+              <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                <h4 className="font-semibold text-amber-800">Masa Berlaku Crossmatch:</h4>
+                <p className="text-sm text-amber-700 mt-1">Hasil crossmatch berlaku 72 jam. Lewat masa ini harus diulang.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+
+    // ========== SLIDE 40: Gizi - Overview ==========
+    {
+      id: "gizi-overview",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <Utensils className="h-8 w-8" />
+            Modul Gizi / Dietary
+          </h2>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <p className="text-lg text-foreground">
+                Modul Gizi untuk pengelolaan diet pasien rawat inap, asesmen gizi, dan perencanaan menu.
+              </p>
+              <div className="space-y-3">
+                <h4 className="font-semibold">Fitur Utama:</h4>
+                {[
+                  "Asesmen status gizi pasien",
+                  "Penentuan kebutuhan kalori",
+                  "Perencanaan diet individual",
+                  "Manajemen alergi makanan",
+                  "Jadwal distribusi makanan",
+                  "Konsultasi gizi",
+                  "Edukasi diet pulang",
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-primary" />
+                    <span className="text-sm">{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div className="p-4 bg-muted rounded-lg">
+                <h4 className="font-semibold mb-3">Jenis Diet Tersedia:</h4>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  {[
+                    "Diet Biasa", "Diet Lunak", "Diet Saring", "Diet Cair",
+                    "Diet DM", "Diet Rendah Garam", "Diet Rendah Protein", "Diet Jantung",
+                  ].map((item, i) => (
+                    <div key={i} className="flex items-center gap-2 p-2 bg-card rounded border">
+                      <Apple className="h-4 w-4 text-primary" />
+                      {item}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                <h4 className="font-semibold text-amber-800">Perhatian Alergi:</h4>
+                <p className="text-sm text-amber-700 mt-1">Sistem akan warning jika menu mengandung bahan yang pasien alergi.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+
+    // ========== SLIDE 41: Gizi - Meal Plan ==========
+    {
+      id: "gizi-mealplan",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <Apple className="h-8 w-8" />
+            Perencanaan Menu Pasien
+          </h2>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <div className="space-y-3">
+                {[
+                  { step: 1, title: "Asesmen Gizi", desc: "Ahli gizi melakukan asesmen: BB, TB, IMT, kondisi klinis." },
+                  { step: 2, title: "Hitung Kebutuhan", desc: "Kalkulasi kebutuhan kalori, protein, lemak, karbohidrat." },
+                  { step: 3, title: "Tentukan Jenis Diet", desc: "Pilih jenis diet sesuai diagnosis & kondisi." },
+                  { step: 4, title: "Susun Menu", desc: "Buat menu harian: makan pagi, siang, malam, snack." },
+                  { step: 5, title: "Order ke Dapur", desc: "Kirim order menu ke dapur untuk disiapkan." },
+                ].map((item) => (
+                  <div key={item.step} className="flex gap-4 p-3 bg-muted rounded-lg">
+                    <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold flex-shrink-0">
+                      {item.step}
+                    </div>
+                    <div>
+                      <p className="font-semibold text-sm">{item.title}</p>
+                      <p className="text-xs text-muted-foreground">{item.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="p-4 bg-muted rounded-lg">
+              <h4 className="font-semibold mb-3">Contoh Menu Diet DM 1500 kkal:</h4>
+              <div className="space-y-3 text-sm">
+                <div className="p-2 bg-card rounded border">
+                  <p className="font-medium">Makan Pagi (07.00)</p>
+                  <p className="text-muted-foreground text-xs">Nasi merah 100gr, telur rebus 1 butir, sayur bening, teh tawar</p>
+                </div>
+                <div className="p-2 bg-card rounded border">
+                  <p className="font-medium">Snack (10.00)</p>
+                  <p className="text-muted-foreground text-xs">Buah pepaya 100gr</p>
+                </div>
+                <div className="p-2 bg-card rounded border">
+                  <p className="font-medium">Makan Siang (12.00)</p>
+                  <p className="text-muted-foreground text-xs">Nasi merah 150gr, ikan panggang, tumis kangkung, buah</p>
+                </div>
+                <div className="p-2 bg-card rounded border">
+                  <p className="font-medium">Makan Malam (18.00)</p>
+                  <p className="text-muted-foreground text-xs">Nasi merah 100gr, ayam kukus, sayur sop</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+
+    // ========== SLIDE 42: Rehabilitasi - Overview ==========
+    {
+      id: "rehab-overview",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <Dumbbell className="h-8 w-8" />
+            Modul Rehabilitasi Medik
+          </h2>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <p className="text-lg text-foreground">
+                Modul untuk pelayanan rehabilitasi medik dan fisioterapi pasien.
+              </p>
+              <div className="space-y-3">
+                <h4 className="font-semibold">Layanan Rehabilitasi:</h4>
+                {[
+                  "Fisioterapi",
+                  "Okupasi Terapi",
+                  "Terapi Wicara",
+                  "Ortotik Prostetik",
+                  "Hidroterapi",
+                  "Elektroterapi",
+                  "Terapi Latihan",
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <Dumbbell className="h-4 w-4 text-primary" />
+                    <span className="text-sm">{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-4">
+              <h4 className="font-semibold">Alur Pelayanan:</h4>
+              <div className="space-y-3">
+                {[
+                  { step: 1, text: "Konsultasi dokter Sp.KFR" },
+                  { step: 2, text: "Asesmen oleh fisioterapis" },
+                  { step: 3, text: "Buat program terapi" },
+                  { step: 4, text: "Jadwalkan sesi terapi" },
+                  { step: 5, text: "Eksekusi terapi + dokumentasi" },
+                  { step: 6, text: "Evaluasi kemajuan berkala" },
+                ].map((item) => (
+                  <div key={item.step} className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-bold">
+                      {item.step}
+                    </div>
+                    <span className="text-sm">{item.text}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+
+    // ========== SLIDE 43: Rehabilitasi - Sesi ==========
+    {
+      id: "rehab-session",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <Calendar className="h-8 w-8" />
+            Jadwal & Dokumentasi Terapi
+          </h2>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <div className="space-y-3">
+                {[
+                  { step: 1, title: "Lihat Jadwal", desc: "Buka menu Rehabilitasi > Jadwal. Lihat sesi hari ini." },
+                  { step: 2, title: "Panggil Pasien", desc: "Klik nama pasien untuk memulai sesi terapi." },
+                  { step: 3, title: "Dokumentasi", desc: "Catat jenis terapi yang dilakukan, durasi, respons pasien." },
+                  { step: 4, title: "Evaluasi", desc: "Input skor kemajuan (VAS, ROM, Barthel Index, dll)." },
+                  { step: 5, title: "Selesai", desc: "Simpan catatan, jadwalkan sesi berikutnya." },
+                ].map((item) => (
+                  <div key={item.step} className="flex gap-4 p-3 bg-muted rounded-lg">
+                    <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold flex-shrink-0">
+                      {item.step}
+                    </div>
+                    <div>
+                      <p className="font-semibold text-sm">{item.title}</p>
+                      <p className="text-xs text-muted-foreground">{item.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div className="p-4 bg-muted rounded-lg">
+                <h4 className="font-semibold mb-3">Jenis Modalitas:</h4>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  {[
+                    "TENS", "Ultrasound", "SWD", "MWD",
+                    "IRR", "Paraffin Bath", "Traksi", "CPM",
+                  ].map((item, i) => (
+                    <div key={i} className="p-2 bg-card rounded border text-center">
+                      {item}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-blue-800">
+                  <strong>💡 Tips:</strong> Gunakan foto/video untuk dokumentasi kemajuan ROM pasien.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+
+    // ========== SLIDE 44: MCU - Overview ==========
+    {
+      id: "mcu-overview",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <ClipboardCheck className="h-8 w-8" />
+            Modul Medical Check Up (MCU)
+          </h2>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <p className="text-lg text-foreground">
+                Modul untuk pelayanan pemeriksaan kesehatan berkala perorangan maupun korporasi.
+              </p>
+              <div className="space-y-3">
+                <h4 className="font-semibold">Fitur Utama:</h4>
+                {[
+                  "Manajemen paket MCU",
+                  "Pendaftaran MCU perorangan/grup",
+                  "Penjadwalan pemeriksaan",
+                  "Integrasi lab & radiologi",
+                  "Generate hasil MCU otomatis",
+                  "Manajemen klien korporasi",
+                  "Laporan MCU & statistik",
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-primary" />
+                    <span className="text-sm">{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div className="p-4 bg-muted rounded-lg">
+                <h4 className="font-semibold mb-3">Paket MCU Tersedia:</h4>
+                <div className="space-y-2 text-sm">
+                  {[
+                    { name: "Paket Bronze", price: "Rp 500.000", items: "Lab dasar, EKG, Dokter" },
+                    { name: "Paket Silver", price: "Rp 1.000.000", items: "+ Rontgen, USG Abdomen" },
+                    { name: "Paket Gold", price: "Rp 2.000.000", items: "+ Treadmill, Lab lengkap" },
+                    { name: "Paket Executive", price: "Rp 5.000.000", items: "+ CT Scan, Endoskopi" },
+                  ].map((pkg, i) => (
+                    <div key={i} className="p-2 bg-card rounded border">
+                      <div className="flex justify-between">
+                        <span className="font-medium">{pkg.name}</span>
+                        <span className="text-primary font-bold">{pkg.price}</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">{pkg.items}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+
+    // ========== SLIDE 45: MCU - Proses ==========
+    {
+      id: "mcu-process",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <FileCheck className="h-8 w-8" />
+            Proses MCU
+          </h2>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <div className="space-y-3">
+                {[
+                  { step: 1, title: "Registrasi MCU", desc: "Daftarkan peserta, pilih paket, jadwalkan tanggal." },
+                  { step: 2, title: "Check-In", desc: "Peserta datang, verifikasi identitas, cetak checklist." },
+                  { step: 3, title: "Pemeriksaan Fisik", desc: "Vital sign, TB/BB, visus, audiometri." },
+                  { step: 4, title: "Lab & Radiologi", desc: "Pengambilan sampel, foto rontgen sesuai paket." },
+                  { step: 5, title: "Pemeriksaan Dokter", desc: "Dokter melakukan anamnesis & pemeriksaan." },
+                  { step: 6, title: "Generate Hasil", desc: "Sistem kompilasi hasil, dokter review & TTD." },
+                  { step: 7, title: "Penyerahan Hasil", desc: "Hasil MCU diserahkan ke peserta/perusahaan." },
+                ].map((item) => (
+                  <div key={item.step} className="flex gap-4 p-3 bg-muted rounded-lg">
+                    <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold flex-shrink-0">
+                      {item.step}
+                    </div>
+                    <div>
+                      <p className="font-semibold text-sm">{item.title}</p>
+                      <p className="text-xs text-muted-foreground">{item.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div className="p-4 bg-muted rounded-lg">
+                <h4 className="font-semibold mb-3">Kategori Hasil MCU:</h4>
+                <div className="space-y-2">
+                  {[
+                    { cat: "Fit", desc: "Sehat, layak bekerja", color: "bg-green-100 text-green-800" },
+                    { cat: "Fit with Note", desc: "Layak dengan catatan", color: "bg-yellow-100 text-yellow-800" },
+                    { cat: "Temporary Unfit", desc: "Sementara tidak layak", color: "bg-orange-100 text-orange-800" },
+                    { cat: "Unfit", desc: "Tidak layak bekerja", color: "bg-red-100 text-red-800" },
+                  ].map((item, i) => (
+                    <div key={i} className="flex items-center gap-3 p-2 border rounded">
+                      <Badge className={item.color}>{item.cat}</Badge>
+                      <span className="text-sm text-muted-foreground">{item.desc}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+
+    // ========== SLIDE 46: Forensik - Overview ==========
+    {
+      id: "forensik-overview",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <Skull className="h-8 w-8" />
+            Modul Forensik & Kamar Jenazah
+          </h2>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <p className="text-lg text-foreground">
+                Modul untuk pelayanan forensik klinik, kamar jenazah, dan autopsi.
+              </p>
+              <div className="space-y-3">
+                <h4 className="font-semibold">Layanan:</h4>
+                {[
+                  "Visum et Repertum",
+                  "Pengelolaan kamar jenazah",
+                  "Autopsi (untuk RS Pendidikan)",
+                  "Surat keterangan kematian",
+                  "Dokumentasi forensik",
+                  "Koordinasi dengan kepolisian",
+                  "Penyerahan jenazah ke keluarga",
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-primary" />
+                    <span className="text-sm">{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div className="p-4 bg-muted rounded-lg">
+                <h4 className="font-semibold mb-3">Kapasitas Kamar Jenazah:</h4>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-3 bg-card rounded border text-center">
+                    <p className="text-2xl font-bold text-primary">8</p>
+                    <p className="text-sm text-muted-foreground">Total Kapasitas</p>
+                  </div>
+                  <div className="p-3 bg-card rounded border text-center">
+                    <p className="text-2xl font-bold">3</p>
+                    <p className="text-sm text-muted-foreground">Terisi</p>
+                  </div>
+                </div>
+              </div>
+              <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                <h4 className="font-semibold text-amber-800">Catatan Penting:</h4>
+                <p className="text-sm text-amber-700 mt-1">Semua kasus forensik memerlukan koordinasi dengan pihak berwenang.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+
+    // ========== SLIDE 47: Forensik - Visum ==========
+    {
+      id: "forensik-visum",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <FileText className="h-8 w-8" />
+            Pembuatan Visum et Repertum
+          </h2>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <div className="space-y-3">
+                {[
+                  { step: 1, title: "Terima Permintaan", desc: "Permintaan visum dari kepolisian dengan surat resmi." },
+                  { step: 2, title: "Identifikasi Korban", desc: "Catat identitas korban dari dokumen/surat pengantar." },
+                  { step: 3, title: "Pemeriksaan", desc: "Dokter forensik melakukan pemeriksaan fisik lengkap." },
+                  { step: 4, title: "Dokumentasi", desc: "Foto luka/cedera, ukuran, lokasi anatomis." },
+                  { step: 5, title: "Penulisan Visum", desc: "Tulis hasil pemeriksaan dengan bahasa medis-legal." },
+                  { step: 6, title: "Validasi & TTD", desc: "Dokter validasi dan tanda tangan visum." },
+                  { step: 7, title: "Serahkan", desc: "Serahkan visum ke penyidik dengan tanda terima." },
+                ].map((item) => (
+                  <div key={item.step} className="flex gap-4 p-3 bg-muted rounded-lg">
+                    <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold flex-shrink-0">
+                      {item.step}
+                    </div>
+                    <div>
+                      <p className="font-semibold text-sm">{item.title}</p>
+                      <p className="text-xs text-muted-foreground">{item.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div className="p-4 bg-muted rounded-lg">
+                <h4 className="font-semibold mb-3">Jenis Visum:</h4>
+                <div className="space-y-2 text-sm">
+                  <div className="p-2 bg-card rounded border">
+                    <p className="font-medium">Visum Hidup</p>
+                    <p className="text-xs text-muted-foreground">Untuk korban masih hidup (KDRT, penganiayaan, kecelakaan)</p>
+                  </div>
+                  <div className="p-2 bg-card rounded border">
+                    <p className="font-medium">Visum Mati (Jenazah)</p>
+                    <p className="text-xs text-muted-foreground">Untuk korban meninggal dunia</p>
+                  </div>
+                  <div className="p-2 bg-card rounded border">
+                    <p className="font-medium">Visum Psikiatri</p>
+                    <p className="text-xs text-muted-foreground">Untuk pemeriksaan kejiwaan tersangka</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+
+    // ========== SLIDE 48: Billing - Overview ==========
+    {
+      id: "billing-overview",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <CreditCard className="h-8 w-8" />
+            Modul Billing
+          </h2>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <p className="text-lg text-foreground">
+                Modul Billing mengelola seluruh proses penagihan dan pembayaran pasien.
+              </p>
+              <div className="space-y-3">
+                <h4 className="font-semibold">Fitur Utama:</h4>
+                {[
+                  "Kalkulasi biaya otomatis dari pelayanan",
+                  "Multi jaminan (BPJS, Asuransi, Umum)",
+                  "Split billing per jaminan",
+                  "Pembayaran tunai/non-tunai",
+                  "Cetak kwitansi & invoice",
+                  "Rincian biaya terperinci",
+                  "Laporan pendapatan",
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-primary" />
+                    <span className="text-sm">{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div className="p-4 bg-muted rounded-lg">
+                <h4 className="font-semibold mb-3">Komponen Biaya:</h4>
+                <div className="space-y-2 text-sm">
+                  {[
+                    { item: "Jasa Dokter", amount: "Rp 150.000" },
+                    { item: "Tindakan Medis", amount: "Rp 75.000" },
+                    { item: "Obat & BMHP", amount: "Rp 250.000" },
+                    { item: "Laboratorium", amount: "Rp 180.000" },
+                    { item: "Administrasi", amount: "Rp 25.000" },
+                  ].map((item, i) => (
+                    <div key={i} className="flex justify-between p-2 bg-card rounded border">
+                      <span>{item.item}</span>
+                      <span className="font-bold">{item.amount}</span>
+                    </div>
+                  ))}
+                  <div className="flex justify-between p-2 bg-primary/10 rounded font-bold">
+                    <span>TOTAL</span>
+                    <span className="text-primary">Rp 680.000</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+
+    // ========== SLIDE 49: Billing - Pembayaran ==========
+    {
+      id: "billing-payment",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <Wallet className="h-8 w-8" />
+            Proses Pembayaran
+          </h2>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <div className="space-y-3">
+                {[
+                  { step: 1, title: "Buka Tagihan", desc: "Menu Billing > Tagihan Aktif. Cari pasien dengan No. RM atau nama." },
+                  { step: 2, title: "Review Rincian", desc: "Periksa semua item tagihan. Pastikan sudah lengkap." },
+                  { step: 3, title: "Tentukan Jaminan", desc: "Pilih jaminan: BPJS, Asuransi, Umum, atau kombinasi." },
+                  { step: 4, title: "Hitung Tanggungan", desc: "Sistem otomatis hitung porsi jaminan dan tanggungan pasien." },
+                  { step: 5, title: "Terima Pembayaran", desc: "Input nominal bayar, pilih metode (tunai/EDC/transfer)." },
+                  { step: 6, title: "Cetak Kwitansi", desc: "Cetak kwitansi pembayaran untuk pasien." },
+                ].map((item) => (
+                  <div key={item.step} className="flex gap-4 p-3 bg-muted rounded-lg">
+                    <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold flex-shrink-0">
+                      {item.step}
+                    </div>
+                    <div>
+                      <p className="font-semibold text-sm">{item.title}</p>
+                      <p className="text-xs text-muted-foreground">{item.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div className="p-4 bg-muted rounded-lg">
+                <h4 className="font-semibold mb-3">Metode Pembayaran:</h4>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { method: "Tunai", icon: <Wallet className="h-4 w-4" /> },
+                    { method: "Debit/Credit", icon: <CreditCard className="h-4 w-4" /> },
+                    { method: "Transfer", icon: <Building className="h-4 w-4" /> },
+                    { method: "QRIS", icon: <Scan className="h-4 w-4" /> },
+                  ].map((item, i) => (
+                    <div key={i} className="flex items-center gap-2 p-3 bg-card rounded border">
+                      <span className="text-primary">{item.icon}</span>
+                      <span className="text-sm">{item.method}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                <h4 className="font-semibold text-green-800">Sudah Lunas</h4>
+                <p className="text-sm text-green-700 mt-1">Setelah lunas, status berubah dan pasien bisa mengambil obat.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+
+    // ========== SLIDE 50: Billing - Laporan ==========
+    {
+      id: "billing-reports",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <BarChart3 className="h-8 w-8" />
+            Laporan Pendapatan
+          </h2>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <p className="text-foreground">
+                Akses berbagai laporan pendapatan dan penerimaan kas.
+              </p>
+              <div className="space-y-3">
+                <h4 className="font-semibold">Jenis Laporan:</h4>
+                {[
+                  "Laporan Penerimaan Harian",
+                  "Laporan per Jenis Jaminan",
+                  "Laporan per Unit/Departemen",
+                  "Laporan Piutang Pasien",
+                  "Laporan Piutang Asuransi",
+                  "Rekap Pendapatan Bulanan",
+                  "Analisis Trend Pendapatan",
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <FileBarChart className="h-4 w-4 text-primary" />
+                    <span className="text-sm">{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="p-4 bg-muted rounded-lg">
+              <h4 className="font-semibold mb-3">Ringkasan Hari Ini:</h4>
+              <div className="space-y-3">
+                <div className="p-3 bg-card rounded border">
+                  <p className="text-sm text-muted-foreground">Total Penerimaan</p>
+                  <p className="text-2xl font-bold text-primary">Rp 45.750.000</p>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-sm">
+                  <div className="p-2 bg-card rounded border text-center">
+                    <p className="text-muted-foreground text-xs">Tunai</p>
+                    <p className="font-bold">Rp 12.5 jt</p>
+                  </div>
+                  <div className="p-2 bg-card rounded border text-center">
+                    <p className="text-muted-foreground text-xs">BPJS</p>
+                    <p className="font-bold">Rp 28 jt</p>
+                  </div>
+                  <div className="p-2 bg-card rounded border text-center">
+                    <p className="text-muted-foreground text-xs">Asuransi</p>
+                    <p className="font-bold">Rp 5.25 jt</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+
+    // ========== SLIDE 51-95: More detailed content ==========
+    // Continue with BPJS, Asuransi, SATU SEHAT, Antrian, Booking, Telemedicine, Inventory, SDM, Akuntansi, Laporan, Master Data, User Management, Pengaturan, Portal Pasien, Mutu, Penunjang, Pendidikan, Kemenkes, FAQ
+
+    // ========== SLIDE 51: BPJS - Overview ==========
+    {
+      id: "bpjs-overview",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <Shield className="h-8 w-8" />
+            Modul BPJS Kesehatan
+          </h2>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <p className="text-lg text-foreground">
+                Integrasi lengkap dengan layanan BPJS Kesehatan untuk bridging dan klaim.
+              </p>
+              <div className="space-y-3">
+                <h4 className="font-semibold">Layanan BPJS Terintegrasi:</h4>
+                {[
+                  "VClaim - Penerbitan SEP",
+                  "Antrean Online BPJS",
+                  "PCare (untuk FKTP)",
+                  "iCare - Monitoring Klaim",
+                  "E-Claim - Pengajuan Klaim",
+                  "Fingerprint BPJS",
+                  "Cek Kepesertaan Real-time",
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-primary" />
+                    <span className="text-sm">{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div className="p-4 bg-muted rounded-lg">
+                <h4 className="font-semibold mb-3">Status Koneksi:</h4>
+                <div className="space-y-2">
+                  {[
+                    { service: "VClaim", status: "Connected", ok: true },
+                    { service: "Antrean", status: "Connected", ok: true },
+                    { service: "E-Claim", status: "Connected", ok: true },
+                  ].map((item, i) => (
+                    <div key={i} className="flex justify-between items-center p-2 bg-card rounded border">
+                      <span className="text-sm">{item.service}</span>
+                      <Badge className={item.ok ? "bg-green-500" : "bg-red-500"}>{item.status}</Badge>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-blue-800">
+                  <strong>💡 Info:</strong> Kredensial BPJS dikonfigurasi di menu Pengaturan &gt; Integrasi Eksternal.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+
+    // ========== SLIDE 52: BPJS - SEP ==========
+    {
+      id: "bpjs-sep",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <FileText className="h-8 w-8" />
+            Penerbitan SEP (Surat Eligibilitas Peserta)
+          </h2>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <div className="space-y-3">
+                {[
+                  { step: 1, title: "Cek Kepesertaan", desc: "Input No. Kartu BPJS atau NIK. Klik 'Cek'. Pastikan status aktif." },
+                  { step: 2, title: "Pilih Jenis Pelayanan", desc: "Rawat Jalan / Rawat Inap / IGD." },
+                  { step: 3, title: "Input Data Rujukan", desc: "Untuk FKRTL: input nomor rujukan dari FKTP." },
+                  { step: 4, title: "Pilih Poli & Dokter", desc: "Pilih poli tujuan dan dokter yang akan menangani." },
+                  { step: 5, title: "Input Diagnosa Awal", desc: "Pilih kode ICD-10 untuk diagnosa awal." },
+                  { step: 6, title: "Terbitkan SEP", desc: "Klik 'Buat SEP'. Sistem akan menghubungi VClaim BPJS." },
+                  { step: 7, title: "Cetak SEP", desc: "Setelah berhasil, cetak SEP untuk pasien." },
+                ].map((item) => (
+                  <div key={item.step} className="flex gap-4 p-3 bg-muted rounded-lg">
+                    <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold flex-shrink-0">
+                      {item.step}
+                    </div>
+                    <div>
+                      <p className="font-semibold text-sm">{item.title}</p>
+                      <p className="text-xs text-muted-foreground">{item.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                <h4 className="font-semibold text-amber-800">Syarat Penerbitan SEP:</h4>
+                <ul className="text-sm text-amber-700 mt-2 space-y-1">
+                  <li>• Kepesertaan BPJS aktif</li>
+                  <li>• Rujukan valid (untuk FKRTL)</li>
+                  <li>• Tidak ada SEP ganda di tanggal sama</li>
+                </ul>
+              </div>
+              <div className="p-4 bg-muted rounded-lg">
+                <h4 className="font-semibold mb-2">Contoh No. SEP:</h4>
+                <p className="font-mono text-lg">0301R0011223V000001</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+
+    // ========== SLIDE 53: BPJS - Klaim ==========
+    {
+      id: "bpjs-claim",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <Receipt className="h-8 w-8" />
+            Pengajuan Klaim BPJS
+          </h2>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <p className="text-foreground">
+                Proses pengajuan klaim ke BPJS setelah pelayanan selesai.
+              </p>
+              <div className="space-y-3">
+                {[
+                  { step: 1, title: "Lengkapi Diagnosa", desc: "Pastikan ICD-10 (diagnosa) dan ICD-9 (prosedur) sudah di-input." },
+                  { step: 2, title: "Grouping INA-CBG", desc: "Sistem otomatis grouping. Cek kode dan tarif INA-CBG." },
+                  { step: 3, title: "Review Berkas", desc: "Verifikasi kelengkapan: SEP, resume medis, penunjang." },
+                  { step: 4, title: "Kirim Klaim", desc: "Klik 'Kirim ke E-Claim' untuk mengajukan klaim." },
+                  { step: 5, title: "Monitor Status", desc: "Pantau status klaim di menu Monitoring Klaim." },
+                ].map((item) => (
+                  <div key={item.step} className="flex gap-4 p-3 bg-muted rounded-lg">
+                    <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold flex-shrink-0">
+                      {item.step}
+                    </div>
+                    <div>
+                      <p className="font-semibold text-sm">{item.title}</p>
+                      <p className="text-xs text-muted-foreground">{item.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div className="p-4 bg-muted rounded-lg">
+                <h4 className="font-semibold mb-3">Status Klaim:</h4>
+                <div className="space-y-2">
+                  {[
+                    { status: "Layak", desc: "Klaim disetujui", color: "bg-green-500" },
+                    { status: "Pending", desc: "Menunggu verifikasi", color: "bg-yellow-500" },
+                    { status: "Dispute", desc: "Ada ketidaksesuaian", color: "bg-orange-500" },
+                    { status: "Tidak Layak", desc: "Klaim ditolak", color: "bg-red-500" },
+                  ].map((item, i) => (
+                    <div key={i} className="flex items-center gap-3 p-2 border rounded">
+                      <Badge className={item.color}>{item.status}</Badge>
+                      <span className="text-sm text-muted-foreground">{item.desc}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+
+    // ========== SLIDE 54-95: Continue with remaining modules ==========
+    // Adding summary slides for remaining modules
+
+    // SLIDE 54: Asuransi Overview
+    {
+      id: "asuransi-overview",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <Building className="h-8 w-8" />
+            Modul Asuransi & Jaminan Lain
+          </h2>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <p className="text-lg text-foreground">Kelola berbagai jenis jaminan selain BPJS.</p>
+              <div className="space-y-3">
+                <h4 className="font-semibold">Jenis Jaminan:</h4>
+                {["Asuransi Swasta (Prudential, Allianz, dll)", "Jasa Raharja (Kecelakaan)", "Perusahaan/Korporasi", "CoB (Coordination of Benefit)", "Umum/Pribadi"].map((item, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-primary" />
+                    <span className="text-sm">{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="p-4 bg-muted rounded-lg">
+              <h4 className="font-semibold mb-3">Fitur:</h4>
+              <ul className="text-sm space-y-2">
+                <li>• Cek eligibilitas ke provider asuransi</li>
+                <li>• Letter of Guarantee (LoG)</li>
+                <li>• Klaim cashless & reimbursement</li>
+                <li>• Tracking status klaim</li>
+                <li>• Laporan piutang per asuransi</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+
+    // SLIDE 55: Asuransi Klaim
+    {
+      id: "asuransi-klaim",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <FileCheck className="h-8 w-8" />
+            Proses Klaim Asuransi
+          </h2>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              {[
+                { step: 1, title: "Verifikasi Polis", desc: "Cek nomor polis, masa aktif, dan plafon." },
+                { step: 2, title: "Minta LoG", desc: "Ajukan Letter of Guarantee ke asuransi." },
+                { step: 3, title: "Pelayanan", desc: "Berikan pelayanan sesuai cakupan." },
+                { step: 4, title: "Ajukan Klaim", desc: "Kirim berkas klaim ke asuransi." },
+                { step: 5, title: "Terima Pembayaran", desc: "Rekonsiliasi pembayaran dari asuransi." },
+              ].map((item) => (
+                <div key={item.step} className="flex gap-4 p-3 bg-muted rounded-lg">
+                  <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold flex-shrink-0">{item.step}</div>
+                  <div>
+                    <p className="font-semibold text-sm">{item.title}</p>
+                    <p className="text-xs text-muted-foreground">{item.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <h4 className="font-semibold text-blue-800">Dokumen Klaim:</h4>
+              <ul className="text-sm text-blue-700 mt-2 space-y-1">
+                <li>• Formulir klaim</li>
+                <li>• Resume medis</li>
+                <li>• Rincian biaya</li>
+                <li>• Hasil penunjang (lab/radiologi)</li>
+                <li>• Kwitansi asli</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+
+    // SLIDE 56-95: Add remaining detailed slides for each module
+    // For brevity, I'll add key slides and summaries
+
+    // SATU SEHAT slides
+    {
+      id: "satusehat-overview",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <Activity className="h-8 w-8" />
+            Integrasi SATU SEHAT
+          </h2>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <p className="text-lg text-foreground">Platform data kesehatan nasional berbasis FHIR R4.</p>
+              <div className="space-y-3">
+                <h4 className="font-semibold">Resource yang Disinkronkan:</h4>
+                {["Patient", "Encounter", "Condition", "Observation", "Medication", "ServiceRequest", "DiagnosticReport", "Composition (Bundle RME)"].map((item, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-mono">{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div className="p-4 bg-muted rounded-lg">
+                <h4 className="font-semibold mb-3">Status Sinkronisasi:</h4>
+                <div className="space-y-2">
+                  <div className="flex justify-between p-2 bg-card rounded border">
+                    <span className="text-sm">Terkirim Hari Ini</span>
+                    <Badge className="bg-green-500">247</Badge>
+                  </div>
+                  <div className="flex justify-between p-2 bg-card rounded border">
+                    <span className="text-sm">Gagal</span>
+                    <Badge variant="destructive">3</Badge>
+                  </div>
+                  <div className="flex justify-between p-2 bg-card rounded border">
+                    <span className="text-sm">Pending</span>
+                    <Badge variant="outline">12</Badge>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+
+    {
+      id: "satusehat-config",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <Settings className="h-8 w-8" />
+            Konfigurasi SATU SEHAT
+          </h2>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              {[
+                { step: 1, title: "Daftar di SATU SEHAT", desc: "Daftarkan faskes di satusehat.kemkes.go.id" },
+                { step: 2, title: "Dapatkan Kredensial", desc: "Client ID dan Client Secret dari SATU SEHAT." },
+                { step: 3, title: "Input di Pengaturan", desc: "Menu Pengaturan > SATU SEHAT. Masukkan kredensial." },
+                { step: 4, title: "Pilih Environment", desc: "Development untuk testing, Production untuk live." },
+                { step: 5, title: "Test Koneksi", desc: "Klik 'Test Koneksi' untuk verifikasi." },
+              ].map((item) => (
+                <div key={item.step} className="flex gap-4 p-3 bg-muted rounded-lg">
+                  <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold flex-shrink-0">{item.step}</div>
+                  <div>
+                    <p className="font-semibold text-sm">{item.title}</p>
+                    <p className="text-xs text-muted-foreground">{item.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+              <h4 className="font-semibold text-amber-800">Penting:</h4>
+              <ul className="text-sm text-amber-700 mt-2 space-y-1">
+                <li>• Gunakan environment Development untuk testing</li>
+                <li>• Jangan share Client Secret</li>
+                <li>• Token akan auto-refresh</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+
+    {
+      id: "satusehat-sync",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <Activity className="h-8 w-8" />
+            Sinkronisasi Data ke SATU SEHAT
+          </h2>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <p className="text-foreground">Data otomatis dikirim ke SATU SEHAT setelah kunjungan selesai.</p>
+              <div className="space-y-3">
+                <h4 className="font-semibold">Alur Sinkronisasi:</h4>
+                {[
+                  "Kunjungan pasien selesai",
+                  "Data di-bundle dalam format FHIR",
+                  "Sistem mengirim ke API SATU SEHAT",
+                  "Response diterima & dicatat",
+                  "Jika gagal, masuk antrian retry",
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <div className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xs font-bold">{i + 1}</div>
+                    <span className="text-sm">{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="p-4 bg-muted rounded-lg">
+              <h4 className="font-semibold mb-3">Log Sinkronisasi:</h4>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between p-2 bg-green-50 rounded border border-green-200">
+                  <span>RM-000123 - Encounter</span>
+                  <Badge className="bg-green-500">Success</Badge>
+                </div>
+                <div className="flex justify-between p-2 bg-green-50 rounded border border-green-200">
+                  <span>RM-000124 - Condition</span>
+                  <Badge className="bg-green-500">Success</Badge>
+                </div>
+                <div className="flex justify-between p-2 bg-red-50 rounded border border-red-200">
+                  <span>RM-000125 - Encounter</span>
+                  <Badge variant="destructive">Failed</Badge>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+
+    // Continue with Antrian, Booking, Telemedicine, Inventory, SDM, Akuntansi, dll
+    // For brevity, adding summary slides for remaining modules
+
+    {
+      id: "antrian-overview",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <Clock className="h-8 w-8" />
+            Sistem Antrian
+          </h2>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <p className="text-lg text-foreground">Manajemen antrian pasien terintegrasi dengan BPJS Antrean.</p>
+              <div className="space-y-3">
+                <h4 className="font-semibold">Fitur Antrian:</h4>
+                {["Ambil nomor antrian (on-site/online)", "Display antrian per poli", "Panggil pasien dari sistem", "Estimasi waktu tunggu", "Integrasi BPJS Antrean Online", "Laporan waktu tunggu"].map((item, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-primary" />
+                    <span className="text-sm">{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="p-4 bg-muted rounded-lg">
+              <h4 className="font-semibold mb-3">Status Antrian Hari Ini:</h4>
+              <div className="space-y-2">
+                {[
+                  { poli: "Poli Umum", current: "A-025", waiting: 12 },
+                  { poli: "Poli Penyakit Dalam", current: "B-018", waiting: 8 },
+                  { poli: "Poli Anak", current: "C-010", waiting: 5 },
+                ].map((item, i) => (
+                  <div key={i} className="flex justify-between items-center p-2 bg-card rounded border">
+                    <span className="text-sm">{item.poli}</span>
+                    <div className="flex gap-2">
+                      <Badge variant="outline">{item.current}</Badge>
+                      <Badge>{item.waiting} menunggu</Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+
+    {
+      id: "antrian-usage",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <Bell className="h-8 w-8" />
+            Penggunaan Sistem Antrian
+          </h2>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <h4 className="font-semibold">Untuk Petugas Loket:</h4>
+              {[
+                { step: 1, title: "Generate Antrian", desc: "Setelah daftar, klik 'Cetak Antrian'." },
+                { step: 2, title: "Monitor Display", desc: "Pantau jumlah antrian di display loket." },
+                { step: 3, title: "Update Status", desc: "Update jika ada pembatalan/reschedule." },
+              ].map((item) => (
+                <div key={item.step} className="flex gap-4 p-3 bg-muted rounded-lg">
+                  <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold flex-shrink-0">{item.step}</div>
+                  <div>
+                    <p className="font-semibold text-sm">{item.title}</p>
+                    <p className="text-xs text-muted-foreground">{item.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="space-y-4">
+              <h4 className="font-semibold">Untuk Poli/Unit:</h4>
+              {[
+                { step: 1, title: "Lihat Antrian", desc: "Buka halaman antrian poli Anda." },
+                { step: 2, title: "Panggil Pasien", desc: "Klik 'Panggil' untuk memanggil nomor berikutnya." },
+                { step: 3, title: "Lewati/Skip", desc: "Klik 'Skip' jika pasien tidak hadir." },
+              ].map((item) => (
+                <div key={item.step} className="flex gap-4 p-3 bg-muted rounded-lg">
+                  <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold flex-shrink-0">{item.step}</div>
+                  <div>
+                    <p className="font-semibold text-sm">{item.title}</p>
+                    <p className="text-xs text-muted-foreground">{item.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      ),
+    },
+
+    // Booking
+    {
+      id: "booking-overview",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <Calendar className="h-8 w-8" />
+            Booking & Jadwal Dokter
+          </h2>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <p className="text-lg text-foreground">Sistem booking online untuk reservasi jadwal dokter.</p>
+              <div className="space-y-3">
+                <h4 className="font-semibold">Fitur Booking:</h4>
+                {["Lihat jadwal praktek dokter", "Booking slot waktu", "Reminder otomatis (SMS/WA)", "Reschedule/cancel booking", "Integrasi dengan antrian", "Laporan booking harian"].map((item, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-primary" />
+                    <span className="text-sm">{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="p-4 bg-muted rounded-lg">
+              <h4 className="font-semibold mb-3">Jadwal Hari Ini:</h4>
+              <div className="space-y-2 text-sm">
+                {[
+                  { doc: "dr. Ahmad, Sp.PD", time: "08:00-12:00", booked: 15 },
+                  { doc: "dr. Siti, Sp.A", time: "09:00-13:00", booked: 12 },
+                  { doc: "dr. Budi, Sp.B", time: "10:00-14:00", booked: 8 },
+                ].map((item, i) => (
+                  <div key={i} className="p-2 bg-card rounded border">
+                    <p className="font-medium">{item.doc}</p>
+                    <div className="flex justify-between text-muted-foreground text-xs">
+                      <span>{item.time}</span>
+                      <span>{item.booked} booking</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+
+    {
+      id: "booking-usage",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <Calendar className="h-8 w-8" />
+            Cara Booking Jadwal
+          </h2>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              {[
+                { step: 1, title: "Pilih Poli/Dokter", desc: "Cari dokter atau pilih dari daftar poli." },
+                { step: 2, title: "Lihat Jadwal", desc: "Lihat slot yang tersedia di kalender." },
+                { step: 3, title: "Pilih Waktu", desc: "Klik slot waktu yang diinginkan." },
+                { step: 4, title: "Input Data Pasien", desc: "Masukkan data pasien atau cari dengan No. RM." },
+                { step: 5, title: "Konfirmasi", desc: "Review dan klik 'Konfirmasi Booking'." },
+                { step: 6, title: "Kirim Reminder", desc: "Sistem akan mengirim reminder ke pasien." },
+              ].map((item) => (
+                <div key={item.step} className="flex gap-4 p-3 bg-muted rounded-lg">
+                  <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold flex-shrink-0">{item.step}</div>
+                  <div>
+                    <p className="font-semibold text-sm">{item.title}</p>
+                    <p className="text-xs text-muted-foreground">{item.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <h4 className="font-semibold text-blue-800">Tips:</h4>
+              <ul className="text-sm text-blue-700 mt-2 space-y-1">
+                <li>• Booking dapat dilakukan H-7</li>
+                <li>• Pasien akan menerima kode booking</li>
+                <li>• Tunjukkan kode saat check-in</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+
+    // Telemedicine
+    {
+      id: "telemedicine-overview",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <Video className="h-8 w-8" />
+            Modul Telemedicine
+          </h2>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <p className="text-lg text-foreground">Layanan konsultasi jarak jauh via video call.</p>
+              <div className="space-y-3">
+                <h4 className="font-semibold">Fitur Telemedicine:</h4>
+                {["Video call HD", "Chat real-time", "Share screen/dokumen", "Rekam sesi (opsional)", "E-prescription langsung", "Integrasi rekam medis"].map((item, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-primary" />
+                    <span className="text-sm">{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div className="p-4 bg-muted rounded-lg">
+                <h4 className="font-semibold mb-3">Alur Telemedicine:</h4>
+                {["Pasien booking jadwal telekonsul", "Pasien login ke portal", "Dokter memulai video call", "Konsultasi & pemeriksaan", "Dokter buat resep (jika perlu)", "Pasien bayar & ambil obat"].map((item, i) => (
+                  <div key={i} className="flex items-center gap-2 text-sm">
+                    <div className="w-5 h-5 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xs">{i + 1}</div>
+                    <span>{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+
+    {
+      id: "telemedicine-usage",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <Video className="h-8 w-8" />
+            Memulai Sesi Telemedicine
+          </h2>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <h4 className="font-semibold">Untuk Dokter:</h4>
+              {[
+                { step: 1, title: "Buka Menu Telemedicine", desc: "Lihat jadwal konsultasi hari ini." },
+                { step: 2, title: "Klik 'Mulai Sesi'", desc: "Sistem akan menghubungkan ke pasien." },
+                { step: 3, title: "Lakukan Konsultasi", desc: "Video call dengan pasien, catat temuan." },
+                { step: 4, title: "Buat Resep", desc: "Jika perlu, buat e-prescription." },
+                { step: 5, title: "Akhiri Sesi", desc: "Simpan catatan dan akhiri sesi." },
+              ].map((item) => (
+                <div key={item.step} className="flex gap-4 p-3 bg-muted rounded-lg">
+                  <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold flex-shrink-0">{item.step}</div>
+                  <div>
+                    <p className="font-semibold text-sm">{item.title}</p>
+                    <p className="text-xs text-muted-foreground">{item.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+              <h4 className="font-semibold text-amber-800">Persyaratan Teknis:</h4>
+              <ul className="text-sm text-amber-700 mt-2 space-y-1">
+                <li>• Koneksi internet stabil (min 2 Mbps)</li>
+                <li>• Webcam & microphone aktif</li>
+                <li>• Browser Chrome/Firefox terbaru</li>
+                <li>• Izinkan akses kamera & mikrofon</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+
+    // Inventory
+    {
+      id: "inventory-overview",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <Package className="h-8 w-8" />
+            Modul Inventory
+          </h2>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <p className="text-lg text-foreground">Manajemen stok obat, alat kesehatan, dan BHP.</p>
+              <div className="space-y-3">
+                <h4 className="font-semibold">Fitur Inventory:</h4>
+                {["Manajemen stok per gudang/depo", "Purchase Order (PO)", "Penerimaan barang (GRN)", "Transfer antar gudang", "Retur barang", "Kartu stok digital", "Alert stok minimum & expired"].map((item, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-primary" />
+                    <span className="text-sm">{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="p-4 bg-muted rounded-lg">
+              <h4 className="font-semibold mb-3">Ringkasan Stok:</h4>
+              <div className="space-y-2">
+                <div className="p-2 bg-card rounded border">
+                  <p className="text-sm text-muted-foreground">Total Item</p>
+                  <p className="text-xl font-bold">2,458</p>
+                </div>
+                <div className="p-2 bg-red-50 rounded border border-red-200">
+                  <p className="text-sm text-red-700">Stok Kritis</p>
+                  <p className="text-xl font-bold text-red-700">23</p>
+                </div>
+                <div className="p-2 bg-amber-50 rounded border border-amber-200">
+                  <p className="text-sm text-amber-700">Mendekati Expired</p>
+                  <p className="text-xl font-bold text-amber-700">45</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+
+    {
+      id: "inventory-po",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <FileCheck className="h-8 w-8" />
+            Membuat Purchase Order
+          </h2>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              {[
+                { step: 1, title: "Buat PO Baru", desc: "Menu Inventory > PO > Tambah PO." },
+                { step: 2, title: "Pilih Supplier", desc: "Pilih supplier dari daftar vendor." },
+                { step: 3, title: "Tambah Item", desc: "Cari dan tambahkan item yang akan dipesan." },
+                { step: 4, title: "Input Jumlah & Harga", desc: "Masukkan qty dan harga per item." },
+                { step: 5, title: "Simpan Draft", desc: "Simpan sebagai draft untuk review." },
+                { step: 6, title: "Approval", desc: "Kirim untuk approval atasan." },
+                { step: 7, title: "Kirim ke Supplier", desc: "Setelah approved, kirim PO ke supplier." },
+              ].map((item) => (
+                <div key={item.step} className="flex gap-4 p-3 bg-muted rounded-lg">
+                  <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold flex-shrink-0">{item.step}</div>
+                  <div>
+                    <p className="font-semibold text-sm">{item.title}</p>
+                    <p className="text-xs text-muted-foreground">{item.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="p-4 bg-muted rounded-lg">
+              <h4 className="font-semibold mb-3">Status PO:</h4>
+              <div className="space-y-2">
+                {[
+                  { status: "Draft", color: "bg-gray-500" },
+                  { status: "Pending Approval", color: "bg-yellow-500" },
+                  { status: "Approved", color: "bg-blue-500" },
+                  { status: "Sent", color: "bg-purple-500" },
+                  { status: "Received", color: "bg-green-500" },
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <Badge className={item.color}>{item.status}</Badge>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+
+    {
+      id: "inventory-receive",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <Package className="h-8 w-8" />
+            Penerimaan Barang
+          </h2>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              {[
+                { step: 1, title: "Pilih PO", desc: "Buka PO yang akan diterima barangnya." },
+                { step: 2, title: "Klik 'Terima Barang'", desc: "Mulai proses penerimaan barang." },
+                { step: 3, title: "Input Qty Diterima", desc: "Masukkan jumlah aktual yang diterima per item." },
+                { step: 4, title: "Input Batch/Expired", desc: "Catat nomor batch dan tanggal expired." },
+                { step: 5, title: "Verifikasi Fisik", desc: "Cek kondisi barang, kemasan, suhu (jika perlu)." },
+                { step: 6, title: "Konfirmasi", desc: "Simpan penerimaan. Stok otomatis bertambah." },
+              ].map((item) => (
+                <div key={item.step} className="flex gap-4 p-3 bg-muted rounded-lg">
+                  <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold flex-shrink-0">{item.step}</div>
+                  <div>
+                    <p className="font-semibold text-sm">{item.title}</p>
+                    <p className="text-xs text-muted-foreground">{item.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <h4 className="font-semibold text-blue-800">Penting:</h4>
+              <ul className="text-sm text-blue-700 mt-2 space-y-1">
+                <li>• Selalu cek kesesuaian dengan faktur</li>
+                <li>• Catat jika ada selisih qty</li>
+                <li>• Simpan bukti penerimaan</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+
+    // SDM/HRD
+    {
+      id: "sdm-overview",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <UserCog className="h-8 w-8" />
+            Modul SDM / HRD
+          </h2>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <p className="text-lg text-foreground">Manajemen sumber daya manusia rumah sakit.</p>
+              <div className="space-y-3">
+                <h4 className="font-semibold">Fitur SDM:</h4>
+                {["Data karyawan lengkap", "Absensi & kehadiran", "Manajemen cuti", "Penggajian (payroll)", "Lembur", "Penilaian kinerja", "Pelatihan & sertifikasi", "Jadwal shift & roster"].map((item, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-primary" />
+                    <span className="text-sm">{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="p-4 bg-muted rounded-lg">
+              <h4 className="font-semibold mb-3">Statistik Karyawan:</h4>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="p-2 bg-card rounded border text-center">
+                  <p className="text-2xl font-bold text-primary">342</p>
+                  <p className="text-xs text-muted-foreground">Total Karyawan</p>
+                </div>
+                <div className="p-2 bg-card rounded border text-center">
+                  <p className="text-2xl font-bold text-green-600">325</p>
+                  <p className="text-xs text-muted-foreground">Hadir Hari Ini</p>
+                </div>
+                <div className="p-2 bg-card rounded border text-center">
+                  <p className="text-2xl font-bold text-yellow-600">12</p>
+                  <p className="text-xs text-muted-foreground">Cuti</p>
+                </div>
+                <div className="p-2 bg-card rounded border text-center">
+                  <p className="text-2xl font-bold text-red-600">5</p>
+                  <p className="text-xs text-muted-foreground">Sakit</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+
+    {
+      id: "sdm-attendance",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <Clock className="h-8 w-8" />
+            Absensi & Kehadiran
+          </h2>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <p className="text-foreground">Kelola absensi karyawan dengan berbagai metode.</p>
+              <div className="space-y-3">
+                <h4 className="font-semibold">Metode Absensi:</h4>
+                {["Fingerprint", "Face Recognition", "Kartu RFID", "Absensi Online (GPS)", "Manual Entry (approval)"].map((item, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-primary" />
+                    <span className="text-sm">{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="p-4 bg-muted rounded-lg">
+              <h4 className="font-semibold mb-3">Laporan Kehadiran:</h4>
+              <ul className="text-sm space-y-2">
+                <li>• Rekap harian per unit</li>
+                <li>• Rekap bulanan per karyawan</li>
+                <li>• Analisis keterlambatan</li>
+                <li>• Laporan lembur</li>
+                <li>• Export untuk payroll</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+
+    {
+      id: "sdm-payroll",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <Wallet className="h-8 w-8" />
+            Penggajian (Payroll)
+          </h2>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              {[
+                { step: 1, title: "Import Data Kehadiran", desc: "Tarik data absensi bulan berjalan." },
+                { step: 2, title: "Hitung Komponen", desc: "Sistem hitung gaji pokok, tunjangan, lembur." },
+                { step: 3, title: "Hitung Potongan", desc: "BPJS Kesehatan, BPJS TK, PPh 21." },
+                { step: 4, title: "Review", desc: "Atasan review dan approve payroll." },
+                { step: 5, title: "Generate Slip Gaji", desc: "Buat slip gaji per karyawan." },
+                { step: 6, title: "Transfer Gaji", desc: "Proses transfer ke rekening karyawan." },
+              ].map((item) => (
+                <div key={item.step} className="flex gap-4 p-3 bg-muted rounded-lg">
+                  <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold flex-shrink-0">{item.step}</div>
+                  <div>
+                    <p className="font-semibold text-sm">{item.title}</p>
+                    <p className="text-xs text-muted-foreground">{item.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="p-4 bg-muted rounded-lg">
+              <h4 className="font-semibold mb-3">Komponen Gaji:</h4>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between p-2 bg-card rounded border">
+                  <span>Gaji Pokok</span>
+                  <span className="font-bold">+ Rp 5.000.000</span>
+                </div>
+                <div className="flex justify-between p-2 bg-card rounded border">
+                  <span>Tunjangan</span>
+                  <span className="font-bold">+ Rp 1.500.000</span>
+                </div>
+                <div className="flex justify-between p-2 bg-card rounded border">
+                  <span>Lembur</span>
+                  <span className="font-bold">+ Rp 450.000</span>
+                </div>
+                <div className="flex justify-between p-2 bg-red-50 rounded border">
+                  <span>BPJS</span>
+                  <span className="font-bold text-red-600">- Rp 200.000</span>
+                </div>
+                <div className="flex justify-between p-2 bg-red-50 rounded border">
+                  <span>PPh 21</span>
+                  <span className="font-bold text-red-600">- Rp 150.000</span>
+                </div>
+                <div className="flex justify-between p-2 bg-primary/10 rounded border font-bold">
+                  <span>Take Home Pay</span>
+                  <span className="text-primary">Rp 6.600.000</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+
+    // Akuntansi
+    {
+      id: "akuntansi-overview",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <Calculator className="h-8 w-8" />
+            Modul Akuntansi
+          </h2>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <p className="text-lg text-foreground">Sistem akuntansi terintegrasi dengan double-entry bookkeeping.</p>
+              <div className="space-y-3">
+                <h4 className="font-semibold">Fitur Akuntansi:</h4>
+                {["Chart of Accounts (COA)", "Jurnal Umum", "Buku Besar", "Neraca Saldo", "Laporan Laba Rugi", "Laporan Neraca", "Laporan Arus Kas", "Jurnal otomatis dari Billing & Payroll"].map((item, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-primary" />
+                    <span className="text-sm">{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="p-4 bg-muted rounded-lg">
+              <h4 className="font-semibold mb-3">Ringkasan Keuangan:</h4>
+              <div className="space-y-2">
+                <div className="p-2 bg-card rounded border">
+                  <p className="text-xs text-muted-foreground">Pendapatan Bulan Ini</p>
+                  <p className="text-xl font-bold text-green-600">Rp 2.5 M</p>
+                </div>
+                <div className="p-2 bg-card rounded border">
+                  <p className="text-xs text-muted-foreground">Beban Operasional</p>
+                  <p className="text-xl font-bold text-red-600">Rp 1.8 M</p>
+                </div>
+                <div className="p-2 bg-primary/10 rounded border">
+                  <p className="text-xs text-muted-foreground">Laba Bersih</p>
+                  <p className="text-xl font-bold text-primary">Rp 700 jt</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+
+    {
+      id: "akuntansi-jurnal",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <FileText className="h-8 w-8" />
+            Jurnal Umum
+          </h2>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              {[
+                { step: 1, title: "Buat Jurnal Baru", desc: "Menu Akuntansi > Jurnal > Tambah Jurnal." },
+                { step: 2, title: "Input Tanggal & Keterangan", desc: "Tentukan tanggal transaksi dan deskripsi." },
+                { step: 3, title: "Pilih Akun Debit", desc: "Pilih akun yang akan di-debit, input nominal." },
+                { step: 4, title: "Pilih Akun Kredit", desc: "Pilih akun yang akan di-kredit, pastikan balance." },
+                { step: 5, title: "Simpan", desc: "Review dan simpan jurnal." },
+              ].map((item) => (
+                <div key={item.step} className="flex gap-4 p-3 bg-muted rounded-lg">
+                  <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold flex-shrink-0">{item.step}</div>
+                  <div>
+                    <p className="font-semibold text-sm">{item.title}</p>
+                    <p className="text-xs text-muted-foreground">{item.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="p-4 bg-muted rounded-lg">
+              <h4 className="font-semibold mb-3">Contoh Jurnal:</h4>
+              <div className="bg-card p-3 rounded border text-sm">
+                <p className="font-medium mb-2">Penerimaan Pembayaran Pasien</p>
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left py-1">Akun</th>
+                      <th className="text-right py-1">Debit</th>
+                      <th className="text-right py-1">Kredit</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td className="py-1">Kas</td>
+                      <td className="text-right">500.000</td>
+                      <td className="text-right">-</td>
+                    </tr>
+                    <tr>
+                      <td className="py-1">Pendapatan Jasa</td>
+                      <td className="text-right">-</td>
+                      <td className="text-right">500.000</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+
+    {
+      id: "akuntansi-laporan",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <PieChart className="h-8 w-8" />
+            Laporan Keuangan
+          </h2>
+          <div className="grid grid-cols-3 gap-6">
+            <div className="p-4 bg-muted rounded-lg">
+              <h4 className="font-semibold mb-3 flex items-center gap-2">
+                <FileBarChart className="h-5 w-5 text-primary" />
+                Neraca
+              </h4>
+              <ul className="text-sm space-y-1">
+                <li>• Posisi Aset</li>
+                <li>• Posisi Liabilitas</li>
+                <li>• Posisi Ekuitas</li>
+                <li>• Per tanggal tertentu</li>
+              </ul>
+            </div>
+            <div className="p-4 bg-muted rounded-lg">
+              <h4 className="font-semibold mb-3 flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 text-primary" />
+                Laba Rugi
+              </h4>
+              <ul className="text-sm space-y-1">
+                <li>• Pendapatan</li>
+                <li>• Beban Operasional</li>
+                <li>• Laba Kotor/Bersih</li>
+                <li>• Periode tertentu</li>
+              </ul>
+            </div>
+            <div className="p-4 bg-muted rounded-lg">
+              <h4 className="font-semibold mb-3 flex items-center gap-2">
+                <Activity className="h-5 w-5 text-primary" />
+                Arus Kas
+              </h4>
+              <ul className="text-sm space-y-1">
+                <li>• Operasional</li>
+                <li>• Investasi</li>
+                <li>• Pendanaan</li>
+                <li>• Saldo Akhir</li>
+              </ul>
+            </div>
+          </div>
+          <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-sm text-blue-800">
+              <strong>💡 Tips:</strong> Semua laporan dapat di-export ke PDF dan Excel untuk keperluan audit.
+            </p>
+          </div>
+        </div>
+      ),
+    },
+
+    // Laporan
+    {
+      id: "laporan-overview",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <BarChart3 className="h-8 w-8" />
+            Modul Laporan
+          </h2>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <p className="text-lg text-foreground">Berbagai laporan operasional dan manajerial.</p>
+              <div className="space-y-3">
+                <h4 className="font-semibold">Kategori Laporan:</h4>
+                {["Laporan Kunjungan", "Laporan Pendapatan", "Laporan Pelayanan", "Laporan Farmasi", "Laporan SDM", "Laporan Inventory", "Laporan Indikator Mutu", "Dashboard Eksekutif"].map((item, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <FileBarChart className="h-4 w-4 text-primary" />
+                    <span className="text-sm">{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="p-4 bg-muted rounded-lg">
+              <h4 className="font-semibold mb-3">Format Export:</h4>
+              <div className="grid grid-cols-2 gap-2">
+                {["PDF", "Excel", "CSV", "Print"].map((format, i) => (
+                  <div key={i} className="p-2 bg-card rounded border text-center">
+                    <span className="text-sm font-medium">{format}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+
+    {
+      id: "laporan-generate",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <Printer className="h-8 w-8" />
+            Generate Laporan
+          </h2>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              {[
+                { step: 1, title: "Pilih Jenis Laporan", desc: "Pilih kategori dan jenis laporan yang dibutuhkan." },
+                { step: 2, title: "Tentukan Periode", desc: "Pilih rentang tanggal atau periode laporan." },
+                { step: 3, title: "Filter (Opsional)", desc: "Filter berdasarkan unit, dokter, jaminan, dll." },
+                { step: 4, title: "Generate", desc: "Klik 'Generate' dan tunggu proses selesai." },
+                { step: 5, title: "Review & Export", desc: "Lihat preview, lalu export sesuai format." },
+              ].map((item) => (
+                <div key={item.step} className="flex gap-4 p-3 bg-muted rounded-lg">
+                  <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold flex-shrink-0">{item.step}</div>
+                  <div>
+                    <p className="font-semibold text-sm">{item.title}</p>
+                    <p className="text-xs text-muted-foreground">{item.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <h4 className="font-semibold text-blue-800">Jadwal Laporan Otomatis:</h4>
+              <p className="text-sm text-blue-700 mt-2">Anda dapat mengatur laporan tertentu untuk di-generate dan dikirim via email secara otomatis (harian/mingguan/bulanan).</p>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+
+    // Master Data
+    {
+      id: "master-data-overview",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <Database className="h-8 w-8" />
+            Master Data
+          </h2>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <p className="text-lg text-foreground">Kelola data referensi sistem.</p>
+              <div className="space-y-3">
+                <h4 className="font-semibold">Data Master:</h4>
+                {["Data Dokter", "Data Ruangan/Kamar", "Tarif Layanan", "Katalog Obat", "Katalog Tindakan (ICD-9)", "Katalog Diagnosis (ICD-10)", "Data Supplier", "Data Asuransi Rekanan"].map((item, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <Database className="h-4 w-4 text-primary" />
+                    <span className="text-sm">{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+              <h4 className="font-semibold text-amber-800">Perhatian:</h4>
+              <p className="text-sm text-amber-700 mt-2">Perubahan data master berdampak luas ke sistem. Pastikan Anda memiliki hak akses dan melakukan perubahan dengan hati-hati.</p>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+
+    {
+      id: "master-data-tarif",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <Receipt className="h-8 w-8" />
+            Manajemen Tarif
+          </h2>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              {[
+                { step: 1, title: "Buka Master Tarif", desc: "Menu Master Data > Tarif Layanan." },
+                { step: 2, title: "Cari/Tambah Tarif", desc: "Cari tarif existing atau klik Tambah." },
+                { step: 3, title: "Input Detail", desc: "Nama layanan, kategori, tarif per kelas." },
+                { step: 4, title: "Komponen Tarif", desc: "Tentukan jasa dokter, RS, BHP." },
+                { step: 5, title: "Simpan", desc: "Simpan dan tarif siap digunakan." },
+              ].map((item) => (
+                <div key={item.step} className="flex gap-4 p-3 bg-muted rounded-lg">
+                  <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold flex-shrink-0">{item.step}</div>
+                  <div>
+                    <p className="font-semibold text-sm">{item.title}</p>
+                    <p className="text-xs text-muted-foreground">{item.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="p-4 bg-muted rounded-lg">
+              <h4 className="font-semibold mb-3">Contoh Tarif:</h4>
+              <div className="space-y-2 text-sm">
+                {[
+                  { item: "Konsultasi Dokter Umum", kelas3: "75.000", kelas2: "100.000", kelas1: "150.000" },
+                  { item: "Konsultasi Sp.PD", kelas3: "150.000", kelas2: "200.000", kelas1: "300.000" },
+                ].map((row, i) => (
+                  <div key={i} className="p-2 bg-card rounded border">
+                    <p className="font-medium">{row.item}</p>
+                    <div className="flex gap-2 mt-1 text-xs text-muted-foreground">
+                      <span>III: Rp {row.kelas3}</span>
+                      <span>II: Rp {row.kelas2}</span>
+                      <span>I: Rp {row.kelas1}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+
+    // User Management
+    {
+      id: "user-management-overview",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <Users className="h-8 w-8" />
+            Manajemen User
+          </h2>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <p className="text-lg text-foreground">Kelola akun pengguna dan hak akses sistem.</p>
+              <div className="space-y-3">
+                <h4 className="font-semibold">Fitur:</h4>
+                {["Tambah/Edit/Hapus User", "Assign Role", "Reset Password", "Aktivasi/Nonaktifkan", "Log Aktivitas User", "Hak Akses per Menu"].map((item, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-primary" />
+                    <span className="text-sm">{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="p-4 bg-muted rounded-lg">
+              <h4 className="font-semibold mb-3">Statistik User:</h4>
+              <div className="space-y-2">
+                <div className="flex justify-between p-2 bg-card rounded border">
+                  <span className="text-sm">Total User</span>
+                  <Badge>156</Badge>
+                </div>
+                <div className="flex justify-between p-2 bg-card rounded border">
+                  <span className="text-sm">User Aktif</span>
+                  <Badge className="bg-green-500">148</Badge>
+                </div>
+                <div className="flex justify-between p-2 bg-card rounded border">
+                  <span className="text-sm">User Nonaktif</span>
+                  <Badge variant="secondary">8</Badge>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+
+    {
+      id: "user-management-create",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <UserPlus className="h-8 w-8" />
+            Membuat User Baru
+          </h2>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              {[
+                { step: 1, title: "Klik Tambah User", desc: "Menu Manajemen User > Tambah User." },
+                { step: 2, title: "Input Data User", desc: "Nama, email, username, password awal." },
+                { step: 3, title: "Pilih Role", desc: "Pilih role sesuai fungsi kerja." },
+                { step: 4, title: "Atur Hak Akses", desc: "Tentukan menu yang dapat diakses." },
+                { step: 5, title: "Simpan", desc: "User siap digunakan untuk login." },
+              ].map((item) => (
+                <div key={item.step} className="flex gap-4 p-3 bg-muted rounded-lg">
+                  <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold flex-shrink-0">{item.step}</div>
+                  <div>
+                    <p className="font-semibold text-sm">{item.title}</p>
+                    <p className="text-xs text-muted-foreground">{item.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <h4 className="font-semibold text-blue-800">Tips Keamanan:</h4>
+              <ul className="text-sm text-blue-700 mt-2 space-y-1">
+                <li>• Gunakan password minimal 8 karakter</li>
+                <li>• Kombinasi huruf, angka, simbol</li>
+                <li>• Wajibkan ganti password saat login pertama</li>
+                <li>• Nonaktifkan user yang sudah tidak bekerja</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+
+    // Pengaturan
+    {
+      id: "pengaturan-overview",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <Settings className="h-8 w-8" />
+            Pengaturan Sistem
+          </h2>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <p className="text-lg text-foreground">Konfigurasi sistem dan integrasi.</p>
+              <div className="space-y-3">
+                <h4 className="font-semibold">Pengaturan Tersedia:</h4>
+                {["Profil Rumah Sakit", "Integrasi BPJS", "Integrasi SATU SEHAT", "Konfigurasi Email", "Konfigurasi Printer", "Konfigurasi Modul", "Backup & Restore"].map((item, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <Cog className="h-4 w-4 text-primary" />
+                    <span className="text-sm">{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+              <h4 className="font-semibold text-amber-800">Perhatian:</h4>
+              <p className="text-sm text-amber-700 mt-2">Hanya administrator yang dapat mengakses menu pengaturan. Perubahan konfigurasi dapat berdampak ke seluruh sistem.</p>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+
+    {
+      id: "pengaturan-integrasi",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <Cog className="h-8 w-8" />
+            Konfigurasi Integrasi
+          </h2>
+          <div className="grid grid-cols-3 gap-6">
+            <div className="p-4 bg-muted rounded-lg">
+              <h4 className="font-semibold mb-3 flex items-center gap-2">
+                <Shield className="h-5 w-5 text-primary" />
+                BPJS
+              </h4>
+              <ul className="text-sm space-y-1">
+                <li>• Cons ID</li>
+                <li>• Secret Key</li>
+                <li>• User Key</li>
+                <li>• Kode PPK</li>
+              </ul>
+            </div>
+            <div className="p-4 bg-muted rounded-lg">
+              <h4 className="font-semibold mb-3 flex items-center gap-2">
+                <Activity className="h-5 w-5 text-primary" />
+                SATU SEHAT
+              </h4>
+              <ul className="text-sm space-y-1">
+                <li>• Organization ID</li>
+                <li>• Client ID</li>
+                <li>• Client Secret</li>
+                <li>• Environment</li>
+              </ul>
+            </div>
+            <div className="p-4 bg-muted rounded-lg">
+              <h4 className="font-semibold mb-3 flex items-center gap-2">
+                <MessageSquare className="h-5 w-5 text-primary" />
+                Notifikasi
+              </h4>
+              <ul className="text-sm space-y-1">
+                <li>• SMTP Email</li>
+                <li>• WhatsApp API</li>
+                <li>• SMS Gateway</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+
+    // Portal Pasien
+    {
+      id: "portal-pasien-overview",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <Smartphone className="h-8 w-8" />
+            Portal Pasien
+          </h2>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <p className="text-lg text-foreground">Layanan mandiri untuk pasien via web/mobile.</p>
+              <div className="space-y-3">
+                <h4 className="font-semibold">Fitur Portal:</h4>
+                {["Lihat hasil lab", "Lihat rekam medis", "Lihat resep & riwayat obat", "Booking jadwal dokter", "Lihat tagihan", "Update profil", "QR Code untuk check-in"].map((item, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-primary" />
+                    <span className="text-sm">{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="p-4 bg-muted rounded-lg">
+              <h4 className="font-semibold mb-3">Cara Registrasi:</h4>
+              {["Buka portal.simrszen.id", "Klik 'Daftar'", "Input NIK dan data pribadi", "Verifikasi email/WA", "Login dengan NIK + password"].map((item, i) => (
+                <div key={i} className="flex items-center gap-2 text-sm mb-2">
+                  <div className="w-5 h-5 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xs">{i + 1}</div>
+                  <span>{item}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      ),
+    },
+
+    {
+      id: "portal-pasien-usage",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <Smartphone className="h-8 w-8" />
+            Penggunaan Portal Pasien
+          </h2>
+          <div className="grid grid-cols-3 gap-6">
+            <div className="p-4 bg-muted rounded-lg">
+              <h4 className="font-semibold mb-3">Lihat Hasil Lab</h4>
+              <ul className="text-sm space-y-1">
+                <li>• Login ke portal</li>
+                <li>• Menu 'Hasil Lab'</li>
+                <li>• Pilih tanggal</li>
+                <li>• Download PDF</li>
+              </ul>
+            </div>
+            <div className="p-4 bg-muted rounded-lg">
+              <h4 className="font-semibold mb-3">Booking Online</h4>
+              <ul className="text-sm space-y-1">
+                <li>• Menu 'Booking'</li>
+                <li>• Pilih dokter/poli</li>
+                <li>• Pilih tanggal & jam</li>
+                <li>• Konfirmasi</li>
+              </ul>
+            </div>
+            <div className="p-4 bg-muted rounded-lg">
+              <h4 className="font-semibold mb-3">QR Check-in</h4>
+              <ul className="text-sm space-y-1">
+                <li>• Buka menu 'QR Code'</li>
+                <li>• Tunjukkan ke loket</li>
+                <li>• Langsung terdata</li>
+                <li>• Lebih cepat!</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+
+    // Mutu
+    {
+      id: "mutu-overview",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <Award className="h-8 w-8" />
+            Manajemen Mutu
+          </h2>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <p className="text-lg text-foreground">Modul untuk mendukung akreditasi dan peningkatan mutu.</p>
+              <div className="space-y-3">
+                <h4 className="font-semibold">Komponen Mutu:</h4>
+                {["Tracker Akreditasi SNARS", "Indikator Mutu SISMADAK", "Pelaporan Insiden Keselamatan", "Informed Consent Digital", "INA-CBG Grouper", "Audit Klinis"].map((item, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <Award className="h-4 w-4 text-primary" />
+                    <span className="text-sm">{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="p-4 bg-muted rounded-lg">
+              <h4 className="font-semibold mb-3">Skor Akreditasi:</h4>
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">Kelengkapan Dokumen</span>
+                  <Badge className="bg-green-500">85%</Badge>
+                </div>
+                <Progress value={85} className="h-2" />
+                <div className="flex justify-between items-center mt-3">
+                  <span className="text-sm">Kepatuhan SOP</span>
+                  <Badge className="bg-yellow-500">72%</Badge>
+                </div>
+                <Progress value={72} className="h-2" />
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+
+    {
+      id: "mutu-indikator",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <TrendingUp className="h-8 w-8" />
+            Indikator Mutu
+          </h2>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <h4 className="font-semibold">Indikator Nasional:</h4>
+              {[
+                { name: "Kepatuhan Identifikasi Pasien", target: "100%", actual: "98%" },
+                { name: "Waktu Tanggap IGD", target: "≤5 menit", actual: "4.2 menit" },
+                { name: "Kepatuhan Cuci Tangan", target: "≥85%", actual: "89%" },
+                { name: "Kepatuhan Penggunaan Formularium", target: "≥80%", actual: "82%" },
+              ].map((item, i) => (
+                <div key={i} className="p-3 bg-muted rounded-lg">
+                  <p className="font-medium text-sm">{item.name}</p>
+                  <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                    <span>Target: {item.target}</span>
+                    <span className="text-green-600 font-bold">Aktual: {item.actual}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <h4 className="font-semibold text-blue-800">Input Indikator:</h4>
+              <ul className="text-sm text-blue-700 mt-2 space-y-1">
+                <li>1. Buka Menu Mutu &gt; Indikator</li>
+                <li>2. Pilih periode pelaporan</li>
+                <li>3. Input data numerator/denominator</li>
+                <li>4. Sistem hitung persentase</li>
+                <li>5. Submit untuk review</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+
+    {
+      id: "mutu-insiden",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <AlertTriangle className="h-8 w-8" />
+            Pelaporan Insiden Keselamatan
+          </h2>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              {[
+                { step: 1, title: "Buat Laporan", desc: "Menu Mutu > Insiden > Lapor Insiden Baru." },
+                { step: 2, title: "Isi Detail", desc: "Tanggal, lokasi, jenis insiden, kronologi." },
+                { step: 3, title: "Grading", desc: "Sistem tentukan grading (biru/hijau/kuning/merah)." },
+                { step: 4, title: "Investigasi", desc: "Tim mutu melakukan investigasi (RCA jika perlu)." },
+                { step: 5, title: "Tindak Lanjut", desc: "Tentukan CAPA (Corrective & Preventive Action)." },
+                { step: 6, title: "Monitoring", desc: "Pantau implementasi dan efektivitas." },
+              ].map((item) => (
+                <div key={item.step} className="flex gap-4 p-3 bg-muted rounded-lg">
+                  <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold flex-shrink-0">{item.step}</div>
+                  <div>
+                    <p className="font-semibold text-sm">{item.title}</p>
+                    <p className="text-xs text-muted-foreground">{item.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="p-4 bg-muted rounded-lg">
+              <h4 className="font-semibold mb-3">Grading Insiden:</h4>
+              <div className="space-y-2">
+                {[
+                  { color: "bg-blue-500", grade: "Biru", desc: "KNC (Kondisi berpotensi cidera)" },
+                  { color: "bg-green-500", grade: "Hijau", desc: "KTC (Tidak cidera)" },
+                  { color: "bg-yellow-500", grade: "Kuning", desc: "KPC (Cidera ringan)" },
+                  { color: "bg-red-500", grade: "Merah", desc: "Sentinel (Cidera berat/kematian)" },
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center gap-2 p-2 border rounded">
+                    <Badge className={item.color}>{item.grade}</Badge>
+                    <span className="text-xs text-muted-foreground">{item.desc}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+
+    // Penunjang
+    {
+      id: "penunjang-overview",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <Wrench className="h-8 w-8" />
+            Modul Penunjang
+          </h2>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <p className="text-lg text-foreground">Manajemen unit penunjang non-medis.</p>
+              <div className="space-y-3">
+                <h4 className="font-semibold">Unit Penunjang:</h4>
+                {["CSSD (Sterilisasi)", "Laundry/Linen", "Pemeliharaan/Maintenance", "Limbah Medis", "Vendor/Outsourcing"].map((item, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <Wrench className="h-4 w-4 text-primary" />
+                    <span className="text-sm">{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="p-4 bg-muted rounded-lg">
+              <h4 className="font-semibold mb-3">Fitur per Unit:</h4>
+              <ul className="text-sm space-y-2">
+                <li>• Jadwal pemeliharaan alat</li>
+                <li>• Work order & tracking</li>
+                <li>• Jadwal sterilisasi</li>
+                <li>• Manifest limbah B3</li>
+                <li>• Manajemen kontrak vendor</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+
+    {
+      id: "penunjang-maintenance",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <Wrench className="h-8 w-8" />
+            Pemeliharaan & Kalibrasi
+          </h2>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              {[
+                { step: 1, title: "Daftar Alat", desc: "Lihat daftar alat kesehatan yang harus dikalibrasi." },
+                { step: 2, title: "Jadwal Kalibrasi", desc: "Lihat jadwal kalibrasi per alat." },
+                { step: 3, title: "Buat Work Order", desc: "Buat WO untuk pelaksanaan kalibrasi." },
+                { step: 4, title: "Eksekusi", desc: "Teknisi melakukan kalibrasi, input hasil." },
+                { step: 5, title: "Upload Sertifikat", desc: "Upload sertifikat kalibrasi dari vendor." },
+              ].map((item) => (
+                <div key={item.step} className="flex gap-4 p-3 bg-muted rounded-lg">
+                  <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold flex-shrink-0">{item.step}</div>
+                  <div>
+                    <p className="font-semibold text-sm">{item.title}</p>
+                    <p className="text-xs text-muted-foreground">{item.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+              <h4 className="font-semibold text-amber-800">Alert Kalibrasi:</h4>
+              <p className="text-sm text-amber-700 mt-2">Sistem akan memberikan notifikasi 30 hari sebelum jadwal kalibrasi alat berakhir.</p>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+
+    // Pendidikan
+    {
+      id: "pendidikan-overview",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <GraduationCap className="h-8 w-8" />
+            Modul Pendidikan
+          </h2>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <p className="text-lg text-foreground">Untuk RS Pendidikan: kelola trainee, rotasi, dan riset.</p>
+              <div className="space-y-3">
+                <h4 className="font-semibold">Fitur:</h4>
+                {["Data trainee (Koas, PPDS, Internsip)", "Jadwal rotasi klinis", "Evaluasi kompetensi", "Log tindakan", "Proyek penelitian", "Kegiatan akademis/CME"].map((item, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <GraduationCap className="h-4 w-4 text-primary" />
+                    <span className="text-sm">{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="p-4 bg-muted rounded-lg">
+              <h4 className="font-semibold mb-3">Trainee Aktif:</h4>
+              <div className="space-y-2">
+                {[
+                  { program: "Koas", count: 45 },
+                  { program: "PPDS", count: 28 },
+                  { program: "Internsip", count: 12 },
+                ].map((item, i) => (
+                  <div key={i} className="flex justify-between p-2 bg-card rounded border">
+                    <span className="text-sm">{item.program}</span>
+                    <Badge>{item.count} orang</Badge>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+
+    {
+      id: "pendidikan-rotasi",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <Calendar className="h-8 w-8" />
+            Manajemen Rotasi Klinis
+          </h2>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              {[
+                { step: 1, title: "Buat Jadwal Rotasi", desc: "Tentukan trainee, stase, tanggal mulai & selesai." },
+                { step: 2, title: "Assign Supervisor", desc: "Tentukan dokter pembimbing per stase." },
+                { step: 3, title: "Aktifkan Rotasi", desc: "Trainee mulai rotasi di departemen tujuan." },
+                { step: 4, title: "Log Aktivitas", desc: "Trainee mencatat tindakan yang dilakukan." },
+                { step: 5, title: "Evaluasi", desc: "Supervisor melakukan evaluasi di akhir rotasi." },
+              ].map((item) => (
+                <div key={item.step} className="flex gap-4 p-3 bg-muted rounded-lg">
+                  <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold flex-shrink-0">{item.step}</div>
+                  <div>
+                    <p className="font-semibold text-sm">{item.title}</p>
+                    <p className="text-xs text-muted-foreground">{item.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="p-4 bg-muted rounded-lg">
+              <h4 className="font-semibold mb-3">Contoh Jadwal Rotasi:</h4>
+              <div className="space-y-2 text-sm">
+                {[
+                  { dept: "Penyakit Dalam", period: "1 Jan - 28 Feb" },
+                  { dept: "Bedah", period: "1 Mar - 30 Apr" },
+                  { dept: "Anak", period: "1 Mei - 30 Jun" },
+                ].map((item, i) => (
+                  <div key={i} className="p-2 bg-card rounded border">
+                    <p className="font-medium">{item.dept}</p>
+                    <p className="text-xs text-muted-foreground">{item.period}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+
+    // Kemenkes
+    {
+      id: "kemenkes-overview",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <FileBarChart className="h-8 w-8" />
+            Laporan Kemenkes (RL)
+          </h2>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <p className="text-lg text-foreground">Generate laporan wajib untuk Kemenkes RI.</p>
+              <div className="space-y-3">
+                <h4 className="font-semibold">Laporan RL:</h4>
+                {[
+                  "RL 1 - Data Dasar RS",
+                  "RL 2 - Ketenagaan",
+                  "RL 3 - Pelayanan (BOR, ALOS, TOI, BTO)",
+                  "RL 4 - Morbiditas/Mortalitas",
+                  "RL 5 - Kunjungan",
+                  "RL 6 - Khusus",
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <FileBarChart className="h-4 w-4 text-primary" />
+                    <span className="text-sm">{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="p-4 bg-muted rounded-lg">
+              <h4 className="font-semibold mb-3">Indikator Kinerja RS:</h4>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { name: "BOR", value: "78%", desc: "Bed Occupancy Rate" },
+                  { name: "ALOS", value: "4.2 hari", desc: "Avg Length of Stay" },
+                  { name: "TOI", value: "1.5 hari", desc: "Turn Over Interval" },
+                  { name: "BTO", value: "45x", desc: "Bed Turn Over" },
+                ].map((item, i) => (
+                  <div key={i} className="p-2 bg-card rounded border text-center">
+                    <p className="text-xl font-bold text-primary">{item.value}</p>
+                    <p className="text-xs font-medium">{item.name}</p>
+                    <p className="text-xs text-muted-foreground">{item.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+
+    {
+      id: "kemenkes-generate",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <Download className="h-8 w-8" />
+            Generate Laporan RL
+          </h2>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              {[
+                { step: 1, title: "Pilih Jenis RL", desc: "Menu Laporan Kemenkes > Pilih jenis RL." },
+                { step: 2, title: "Tentukan Periode", desc: "Pilih bulan/triwulan/tahun pelaporan." },
+                { step: 3, title: "Generate", desc: "Sistem akan mengkalkulasi dari data operasional." },
+                { step: 4, title: "Review", desc: "Periksa data dan koreksi jika perlu." },
+                { step: 5, title: "Export", desc: "Export ke format Excel untuk upload ke SIRS Online." },
+              ].map((item) => (
+                <div key={item.step} className="flex gap-4 p-3 bg-muted rounded-lg">
+                  <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold flex-shrink-0">{item.step}</div>
+                  <div>
+                    <p className="font-semibold text-sm">{item.title}</p>
+                    <p className="text-xs text-muted-foreground">{item.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <h4 className="font-semibold text-blue-800">Deadline Pelaporan:</h4>
+              <ul className="text-sm text-blue-700 mt-2 space-y-1">
+                <li>• RL Bulanan: Tanggal 10 bulan berikutnya</li>
+                <li>• RL Triwulanan: Tanggal 15 bulan pertama triwulan berikutnya</li>
+                <li>• RL Tahunan: Tanggal 31 Januari tahun berikutnya</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+
+    // FAQ
+    {
+      id: "faq-1",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <HelpCircle className="h-8 w-8" />
+            FAQ - Pertanyaan Umum
+          </h2>
+          <div className="space-y-4">
+            {[
+              { q: "Bagaimana jika lupa password?", a: "Klik 'Lupa Password' di halaman login, masukkan email, lalu cek email untuk link reset password." },
+              { q: "Bagaimana cara menambah user baru?", a: "Hanya admin yang bisa menambah user. Menu Manajemen User > Tambah User." },
+              { q: "Apakah data pasien aman?", a: "Ya, sistem menggunakan enkripsi dan role-based access control untuk melindungi data." },
+              { q: "Bagaimana jika sistem error?", a: "Refresh halaman. Jika masih error, hubungi IT helpdesk dengan screenshot error." },
+              { q: "Apakah bisa akses dari HP?", a: "Ya, sistem responsive dan dapat diakses dari browser HP. Untuk pengalaman terbaik, gunakan laptop/PC." },
+            ].map((item, i) => (
+              <div key={i} className="p-4 bg-muted rounded-lg">
+                <p className="font-semibold flex items-center gap-2">
+                  <HelpCircle className="h-4 w-4 text-primary" />
+                  {item.q}
+                </p>
+                <p className="text-sm text-muted-foreground mt-2 ml-6">{item.a}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      ),
+    },
+
+    {
+      id: "faq-2",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <HelpCircle className="h-8 w-8" />
+            FAQ - Troubleshooting
+          </h2>
+          <div className="space-y-4">
+            {[
+              { q: "Printer tidak mencetak, apa yang harus dilakukan?", a: "Cek koneksi printer, pastikan driver terinstall, cek antrian print di komputer. Jika masih gagal, hubungi IT." },
+              { q: "Data pasien tidak muncul di pencarian?", a: "Pastikan ejaan nama benar. Coba cari dengan No. RM atau NIK. Data mungkin belum di-input." },
+              { q: "Tidak bisa buat SEP BPJS?", a: "Cek koneksi BPJS di Pengaturan. Pastikan kepesertaan aktif dan rujukan valid." },
+              { q: "Resep tidak terkirim ke farmasi?", a: "Pastikan sudah klik 'Kirim Resep'. Cek antrian di modul Farmasi. Refresh halaman." },
+              { q: "Laporan menampilkan data kosong?", a: "Pastikan periode yang dipilih benar. Data mungkin belum di-input untuk periode tersebut." },
+            ].map((item, i) => (
+              <div key={i} className="p-4 bg-muted rounded-lg">
+                <p className="font-semibold flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4 text-amber-600" />
+                  {item.q}
+                </p>
+                <p className="text-sm text-muted-foreground mt-2 ml-6">{item.a}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      ),
+    },
+
+    {
+      id: "faq-3",
+      content: (
+        <div className="px-12 py-8">
+          <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
+            <LifeBuoy className="h-8 w-8" />
+            Kontak Bantuan
+          </h2>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <div className="p-4 bg-muted rounded-lg">
+                <h4 className="font-semibold flex items-center gap-2">
+                  <Headphones className="h-5 w-5 text-primary" />
+                  IT Helpdesk
+                </h4>
+                <ul className="text-sm space-y-2 mt-3">
+                  <li>📞 Ext. 1234 (Internal)</li>
+                  <li>📱 0812-3456-7890 (WhatsApp)</li>
+                  <li>📧 it.helpdesk@rs.co.id</li>
+                  <li>⏰ Senin-Jumat: 08.00-17.00</li>
+                </ul>
+              </div>
+              <div className="p-4 bg-muted rounded-lg">
+                <h4 className="font-semibold flex items-center gap-2">
+                  <MessageSquare className="h-5 w-5 text-primary" />
+                  Vendor Support
+                </h4>
+                <ul className="text-sm space-y-2 mt-3">
+                  <li>📞 (021) 1234-5678</li>
+                  <li>📧 support@simrszen.id</li>
+                  <li>🌐 help.simrszen.id</li>
+                </ul>
+              </div>
+            </div>
+            <div className="p-4 bg-primary/5 rounded-lg flex flex-col items-center justify-center text-center">
+              <img src={zenLogo} alt="SIMRS ZEN" className="h-20 mb-4" />
+              <h3 className="text-xl font-bold text-primary">SIMRS ZEN</h3>
+              <p className="text-muted-foreground">Sistem Informasi Manajemen Rumah Sakit Terintegrasi</p>
+              <p className="text-sm text-muted-foreground mt-4">© 2025 - Semua Hak Dilindungi</p>
+            </div>
+          </div>
+        </div>
+      ),
+    },
   ];
 
   const totalSlides = slides.length;
