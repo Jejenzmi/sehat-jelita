@@ -14,6 +14,7 @@ import PurchaseOrders from "@/components/inventory/PurchaseOrders";
 import ExpiringMedicines from "@/components/inventory/ExpiringMedicines";
 import AutoReorderSettings from "@/components/inventory/AutoReorderSettings";
 import SupplierManagement from "@/components/inventory/SupplierManagement";
+import { PurchaseRequestApproval } from "@/components/inventory/PurchaseRequestApproval";
 
 interface InventoryStats {
   totalMedicines: number;
@@ -147,7 +148,7 @@ export default function Inventory() {
 
       {/* Main Content */}
       <Tabs defaultValue="stock" className="space-y-4">
-        <TabsList className="grid grid-cols-7 w-full max-w-5xl">
+        <TabsList className="grid grid-cols-8 w-full max-w-6xl">
           <TabsTrigger value="stock" className="flex items-center gap-2">
             <Package className="h-4 w-4" />
             <span className="hidden sm:inline">Stok</span>
@@ -175,6 +176,10 @@ export default function Inventory() {
           <TabsTrigger value="settings" className="flex items-center gap-2">
             <CheckCircle className="h-4 w-4" />
             <span className="hidden sm:inline">Auto-Reorder</span>
+          </TabsTrigger>
+          <TabsTrigger value="purchase-request" className="flex items-center gap-2">
+            <ShoppingCart className="h-4 w-4" />
+            <span className="hidden sm:inline">PR Approval</span>
           </TabsTrigger>
         </TabsList>
 
@@ -204,6 +209,10 @@ export default function Inventory() {
 
         <TabsContent value="settings">
           <AutoReorderSettings />
+        </TabsContent>
+
+        <TabsContent value="purchase-request">
+          <PurchaseRequestApproval />
         </TabsContent>
       </Tabs>
     </div>

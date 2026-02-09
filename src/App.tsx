@@ -56,6 +56,8 @@ import FormBuilder from "./pages/FormBuilder";
 import ReportBuilder from "./pages/ReportBuilder";
 import SmartDisplay from "./pages/SmartDisplay";
 import DICOMIntegration from "./pages/DICOMIntegration";
+import HomeCare from "./pages/HomeCare";
+import AmbulanceCenter from "./pages/AmbulanceCenter";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -435,6 +437,22 @@ const App = () => (
               element={
                 <ProtectedPageWithLayout>
                   <DICOMIntegration />
+                </ProtectedPageWithLayout>
+              }
+            />
+            <Route
+              path="/home-care"
+              element={
+                <ProtectedPageWithLayout>
+                  <HomeCare />
+                </ProtectedPageWithLayout>
+              }
+            />
+            <Route
+              path="/ambulance-center"
+              element={
+                <ProtectedPageWithLayout>
+                  <AmbulanceCenter />
                 </ProtectedPageWithLayout>
               }
             />
