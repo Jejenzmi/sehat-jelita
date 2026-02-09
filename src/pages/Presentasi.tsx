@@ -792,6 +792,40 @@ const slides: Slide[] = [
               </div>
             </motion.div>
           </motion.div>
+
+          {/* Mengapa 5 Bulan Section */}
+          <motion.div 
+            className="mt-6 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 p-5"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.4 }}
+          >
+            <h4 className="font-bold text-slate-900 text-sm mb-3 flex items-center gap-2">
+              <span className="text-lg">💡</span> Mengapa Harus 5 Bulan?
+            </h4>
+            <div className="grid md:grid-cols-2 gap-3">
+              {[
+                { icon: "📋", title: "Regulasi & Birokrasi", desc: "Approval integrasi BPJS dan SATU SEHAT membutuhkan proses administratif yang tidak bisa dipercepat" },
+                { icon: "🛡️", title: "Keamanan Data", desc: "Migrasi terburu-buru berisiko data hilang/korup — berpotensi gagal klaim BPJS & pelaporan Kemenkes" },
+                { icon: "👥", title: "Faktor SDM", desc: "21 role × puluhan user perlu dilatih bertahap. Parallel run wajib untuk memastikan zero data loss" },
+                { icon: "✅", title: "Best Practice Industri", desc: "Standar migrasi SIMRS di Indonesia adalah 4-6 bulan — selaras dengan siklus Renstra daerah" },
+              ].map((item, idx) => (
+                <motion.div 
+                  key={idx} 
+                  className="flex items-start gap-2.5 bg-white/70 rounded-xl p-3"
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 1.5 + idx * 0.1 }}
+                >
+                  <span className="text-lg flex-shrink-0">{item.icon}</span>
+                  <div>
+                    <p className="font-semibold text-slate-800 text-xs">{item.title}</p>
+                    <p className="text-xs text-slate-500 leading-relaxed">{item.desc}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
         </div>
       </div>
     ),
