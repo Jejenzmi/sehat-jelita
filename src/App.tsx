@@ -52,6 +52,10 @@ import MigrasiData from "./pages/MigrasiData";
 import Presentasi from "./pages/Presentasi";
 import DokumentasiSistem from "./pages/DokumentasiSistem";
 import PanduanPenggunaan from "./pages/PanduanPenggunaan";
+import FormBuilder from "./pages/FormBuilder";
+import ReportBuilder from "./pages/ReportBuilder";
+import SmartDisplay from "./pages/SmartDisplay";
+import DICOMIntegration from "./pages/DICOMIntegration";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -399,6 +403,38 @@ const App = () => (
               element={
                 <ProtectedPageWithLayout>
                   <MigrasiData />
+                </ProtectedPageWithLayout>
+              }
+            />
+            <Route
+              path="/form-builder"
+              element={
+                <ProtectedPageWithLayout>
+                  <FormBuilder />
+                </ProtectedPageWithLayout>
+              }
+            />
+            <Route
+              path="/report-builder"
+              element={
+                <ProtectedPageWithLayout>
+                  <ReportBuilder />
+                </ProtectedPageWithLayout>
+              }
+            />
+            <Route
+              path="/smart-display"
+              element={
+                <ProtectedPageWithLayout>
+                  <SmartDisplay />
+                </ProtectedPageWithLayout>
+              }
+            />
+            <Route
+              path="/dicom"
+              element={
+                <ProtectedPageWithLayout>
+                  <DICOMIntegration />
                 </ProtectedPageWithLayout>
               }
             />
