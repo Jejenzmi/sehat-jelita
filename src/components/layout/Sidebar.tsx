@@ -6,7 +6,7 @@ import {
   UserPlus,
   Stethoscope,
   BedDouble,
-  Ambulance,
+  Ambulance as AmbulanceIcon,
   Pill,
   FlaskConical,
   Radio,
@@ -40,6 +40,8 @@ import {
   BarChart2,
   Tv,
   ArrowRightLeft,
+  Home,
+  Truck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import zenLogo from "@/assets/zen-logo.webp";
@@ -75,7 +77,7 @@ const allNavigationGroups: NavGroup[] = [
     items: [
       { icon: Stethoscope, label: "Rawat Jalan", path: "/rawat-jalan" },
       { icon: BedDouble, label: "Rawat Inap", path: "/rawat-inap" },
-      { icon: Ambulance, label: "IGD", path: "/igd", badge: "24H" },
+      { icon: AmbulanceIcon, label: "IGD", path: "/igd", badge: "24H" },
       { icon: Syringe, label: "Kamar Operasi", path: "/kamar-operasi" },
       { icon: HeartPulseIcon, label: "ICU/NICU/PICU", path: "/icu", badge: "ICU" },
       { icon: Video, label: "Telemedicine", path: "/telemedicine" },
@@ -94,6 +96,7 @@ const allNavigationGroups: NavGroup[] = [
       { icon: Activity, label: "Rehabilitasi", path: "/rehabilitasi" },
       { icon: ClipboardCheck, label: "Medical Check Up", path: "/mcu" },
       { icon: Skull, label: "Forensik", path: "/forensik" },
+      { icon: Home, label: "Home Care", path: "/home-care", badge: "NEW" },
     ],
   },
   {
@@ -110,6 +113,7 @@ const allNavigationGroups: NavGroup[] = [
     title: "Manajemen",
     items: [
       { icon: Package, label: "Inventory", path: "/inventory" },
+      { icon: Truck, label: "Ambulance Center", path: "/ambulance-center", badge: "NEW" },
       { icon: Wrench, label: "Penunjang", path: "/penunjang" },
       { icon: Award, label: "Mutu & Akreditasi", path: "/mutu" },
       { icon: KeyRound, label: "Pendidikan", path: "/pendidikan" },

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { CreditCard, Receipt, TrendingUp, Clock, CheckCircle, Search, Filter, Plus, Printer, Eye, X } from "lucide-react";
+import { CreditCard, Receipt, TrendingUp, Clock, CheckCircle, Search, Filter, Plus, Printer, Eye, X, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { PaymentGateway } from "@/components/billing/PaymentGateway";
 
 type BillingStatus = "pending" | "lunas" | "batal" | "partial";
 type PaymentType = "umum" | "bpjs" | "asuransi";
@@ -188,6 +189,8 @@ export default function Billing() {
     }).format(amount);
   };
 
+  const [mainTab, setMainTab] = useState("billing");
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -196,7 +199,20 @@ export default function Billing() {
           <h1 className="text-2xl font-bold">Kasir / Billing</h1>
           <p className="text-muted-foreground">Manajemen pembayaran dan tagihan</p>
         </div>
+        <div className="flex gap-2">
+          <Button variant={mainTab === "billing" ? "default" : "outline"} onClick={() => setMainTab("billing")}>
+            <CreditCard className="h-4 w-4 mr-2" />Billing
+          </Button>
+          <Button variant={mainTab === "gateway" ? "default" : "outline"} onClick={() => setMainTab("gateway")}>
+            <Globe className="h-4 w-4 mr-2" />Payment Gateway
+          </Button>
+        </div>
       </div>
+
+      {mainTab === "gateway" ? (
+        <PaymentGateway />
+      ) : (
+      <>
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
@@ -601,6 +617,8 @@ export default function Billing() {
           </div>
         </DialogContent>
       </Dialog>
+      </>
+      )}
     </div>
   );
 }
