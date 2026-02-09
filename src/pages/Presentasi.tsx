@@ -1461,36 +1461,6 @@ export default function Presentasi() {
         </div>
       </div>
 
-      {/* Navigation Controls */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2">
-        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-          <Button
-            variant="outline"
-            size="icon"
-            className="rounded-full bg-white/80 backdrop-blur border-slate-200 hover:bg-white hover:border-primary"
-            onClick={prevSlide}
-            disabled={currentSlide === 0}
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-        </motion.div>
-        
-        <span className="px-4 py-2 text-sm font-medium text-slate-600 bg-white/80 backdrop-blur rounded-full border border-slate-200">
-          {currentSlide + 1} / {slides.length}
-        </span>
-
-        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-          <Button
-            variant="outline"
-            size="icon"
-            className="rounded-full bg-white/80 backdrop-blur border-slate-200 hover:bg-white hover:border-primary"
-            onClick={nextSlide}
-            disabled={currentSlide === slides.length - 1}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </motion.div>
-      </div>
 
       {/* Top Controls */}
       <div className="absolute top-4 right-4 flex items-center gap-2">
