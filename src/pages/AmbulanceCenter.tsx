@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -9,21 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Ambulance, Plus, Search, MapPin, Clock, Phone, AlertTriangle, CheckCircle, Truck, Users, Wrench } from "lucide-react";
-import { toast } from "sonner";
-
-const mockFleet = [
-  { id: "AMB-01", plateNumber: "D 1234 RS", type: "ALS", status: "available", driver: "Pak Joko", crew: "Ns. Andi, EMT Budi", lastService: "2026-01-15", nextService: "2026-04-15", equipment: "Lengkap" },
-  { id: "AMB-02", plateNumber: "D 5678 RS", type: "BLS", status: "on_mission", driver: "Pak Heru", crew: "EMT Deni", lastService: "2026-01-20", nextService: "2026-04-20", equipment: "Lengkap" },
-  { id: "AMB-03", plateNumber: "D 9012 RS", type: "ALS", status: "maintenance", driver: "-", crew: "-", lastService: "2026-02-01", nextService: "2026-02-10", equipment: "Dalam Perbaikan" },
-  { id: "AMB-04", plateNumber: "D 3456 RS", type: "Transport", status: "available", driver: "Pak Rudi", crew: "EMT Sari", lastService: "2026-01-25", nextService: "2026-04-25", equipment: "Lengkap" },
-];
-
-const mockDispatches = [
-  { id: "DSP-001", ambulanceId: "AMB-02", patient: "Darurat - Kecelakaan", pickup: "Jl. Soekarno Hatta Km 5", destination: "IGD RS ZEN", requestTime: "08:30", dispatchTime: "08:32", arrivalTime: "08:45", status: "en_route", priority: "emergency", caller: "Polsek Buah Batu", callerPhone: "022-7501234" },
-  { id: "DSP-002", ambulanceId: "AMB-04", patient: "Aminah (Transfer)", pickup: "RS Borromeus", destination: "RS ZEN - ICU", requestTime: "09:00", dispatchTime: "09:10", arrivalTime: "-", status: "dispatched", priority: "urgent", caller: "IGD RS Borromeus", callerPhone: "022-2504321" },
-  { id: "DSP-003", ambulanceId: "AMB-01", patient: "Budi Hartono (Pulang)", pickup: "RS ZEN Lt.3", destination: "Jl. Pasteur No. 88", requestTime: "10:00", dispatchTime: "-", arrivalTime: "-", status: "pending", priority: "normal", caller: "Perawat Lt.3", callerPhone: "ext.301" },
-];
+import { Ambulance, AlertTriangle, CheckCircle, Truck, Wrench, MapPin, Clock, Phone } from "lucide-react";
+import { useAmbulanceFleet, useAmbulanceDispatches, useCreateDispatch, generateDispatchNumber } from "@/hooks/useAmbulanceData";
 
 const fleetStatusMap: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   available: { label: "Tersedia", variant: "default" },
@@ -46,7 +33,41 @@ const priorityMap: Record<string, { label: string; variant: "default" | "seconda
 };
 
 export default function AmbulanceCenter() {
-  const [search, setSearch] = useState("");
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [form, setForm] = useState({ priority: "emergency", caller_name: "", caller_phone: "", pickup_location: "", destination: "IGD RS ZEN", ambulance_id: "", patient_info: "", notes: "" });
+
+  const { data: fleet = [], isLoading: fleetLoading } = useAmbulanceFleet();
+  const { data: dispatches = [], isLoading: dispatchLoading } = useAmbulanceDispatches();
+  const createDispatch = useCreateDispatch();
+
+  const availableFleet = fleet.filter(f => f.status === "available");
+
+  const handleDispatch = async () => {
+    const dispatchNumber = await generateDispatchNumber();
+    createDispatch.mutate({
+      dispatch_number: dispatchNumber,
+      ambulance_id: form.ambulance_id || null,
+      patient_info: form.patient_info,
+      pickup_location: form.pickup_location,
+      destination: form.destination,
+      priority: form.priority,
+      status: "dispatched",
+      caller_name: form.caller_name,
+      caller_phone: form.caller_phone,
+      request_time: new Date().toISOString(),
+      dispatch_time: new Date().toISOString(),
+      arrival_time: null,
+      completion_time: null,
+      notes: form.notes || null,
+    }, {
+      onSuccess: () => {
+        setDialogOpen(false);
+        setForm({ priority: "emergency", caller_name: "", caller_phone: "", pickup_location: "", destination: "IGD RS ZEN", ambulance_id: "", patient_info: "", notes: "" });
+      }
+    });
+  };
+
+  const activeDispatches = dispatches.filter(d => !["completed"].includes(d.status));
 
   return (
     <div className="space-y-6">
@@ -57,7 +78,7 @@ export default function AmbulanceCenter() {
           </h1>
           <p className="text-muted-foreground">Manajemen armada & dispatch ambulans</p>
         </div>
-        <Dialog>
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button variant="destructive"><AlertTriangle className="h-4 w-4 mr-2" /> Dispatch Darurat</Button>
           </DialogTrigger>
@@ -65,7 +86,7 @@ export default function AmbulanceCenter() {
             <DialogHeader><DialogTitle>Dispatch Ambulans Darurat</DialogTitle></DialogHeader>
             <div className="space-y-4">
               <div><Label>Prioritas</Label>
-                <Select defaultValue="emergency">
+                <Select value={form.priority} onValueChange={v => setForm(f => ({ ...f, priority: v }))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="emergency">🔴 DARURAT</SelectItem>
@@ -74,51 +95,51 @@ export default function AmbulanceCenter() {
                   </SelectContent>
                 </Select>
               </div>
+              <div><Label>Info Pasien</Label><Input placeholder="Nama/kondisi pasien" value={form.patient_info} onChange={e => setForm(f => ({ ...f, patient_info: e.target.value }))} /></div>
               <div className="grid grid-cols-2 gap-4">
-                <div><Label>Nama Pemanggil</Label><Input placeholder="Nama" /></div>
-                <div><Label>No. Telepon</Label><Input placeholder="08xxx" /></div>
+                <div><Label>Nama Pemanggil</Label><Input placeholder="Nama" value={form.caller_name} onChange={e => setForm(f => ({ ...f, caller_name: e.target.value }))} /></div>
+                <div><Label>No. Telepon</Label><Input placeholder="08xxx" value={form.caller_phone} onChange={e => setForm(f => ({ ...f, caller_phone: e.target.value }))} /></div>
               </div>
-              <div><Label>Lokasi Jemput</Label><Textarea placeholder="Alamat lengkap lokasi jemput" /></div>
-              <div><Label>Tujuan</Label><Input placeholder="RS ZEN / Alamat tujuan" /></div>
+              <div><Label>Lokasi Jemput</Label><Textarea placeholder="Alamat lengkap" value={form.pickup_location} onChange={e => setForm(f => ({ ...f, pickup_location: e.target.value }))} /></div>
+              <div><Label>Tujuan</Label><Input placeholder="RS ZEN / Alamat tujuan" value={form.destination} onChange={e => setForm(f => ({ ...f, destination: e.target.value }))} /></div>
               <div><Label>Ambulans</Label>
-                <Select>
+                <Select value={form.ambulance_id} onValueChange={v => setForm(f => ({ ...f, ambulance_id: v }))}>
                   <SelectTrigger><SelectValue placeholder="Pilih ambulans tersedia" /></SelectTrigger>
                   <SelectContent>
-                    {mockFleet.filter(f => f.status === "available").map(f => (
-                      <SelectItem key={f.id} value={f.id}>{f.id} - {f.type} ({f.plateNumber})</SelectItem>
+                    {availableFleet.map(f => (
+                      <SelectItem key={f.id} value={f.id}>{f.ambulance_code} - {f.ambulance_type} ({f.plate_number})</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-              <div><Label>Keterangan</Label><Textarea placeholder="Informasi kondisi pasien" /></div>
-              <Button className="w-full" variant="destructive" onClick={() => toast.success("Ambulans berhasil di-dispatch!")}>
-                <Ambulance className="h-4 w-4 mr-2" /> DISPATCH SEKARANG
+              <div><Label>Keterangan</Label><Textarea placeholder="Info tambahan" value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} /></div>
+              <Button className="w-full" variant="destructive" onClick={handleDispatch} disabled={createDispatch.isPending || !form.patient_info || !form.pickup_location}>
+                <Ambulance className="h-4 w-4 mr-2" /> {createDispatch.isPending ? "Mengirim..." : "DISPATCH SEKARANG"}
               </Button>
             </div>
           </DialogContent>
         </Dialog>
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card className="border-green-500/30 bg-green-500/5"><CardContent className="pt-6 text-center">
           <CheckCircle className="h-6 w-6 text-green-600 mx-auto mb-1" />
-          <p className="text-2xl font-bold">{mockFleet.filter(f => f.status === "available").length}</p>
+          <p className="text-2xl font-bold">{fleet.filter(f => f.status === "available").length}</p>
           <p className="text-sm text-muted-foreground">Tersedia</p>
         </CardContent></Card>
         <Card className="border-blue-500/30 bg-blue-500/5"><CardContent className="pt-6 text-center">
           <Truck className="h-6 w-6 text-blue-600 mx-auto mb-1" />
-          <p className="text-2xl font-bold">{mockFleet.filter(f => f.status === "on_mission").length}</p>
+          <p className="text-2xl font-bold">{fleet.filter(f => f.status === "on_mission").length}</p>
           <p className="text-sm text-muted-foreground">Dalam Misi</p>
         </CardContent></Card>
         <Card className="border-orange-500/30 bg-orange-500/5"><CardContent className="pt-6 text-center">
           <Wrench className="h-6 w-6 text-orange-600 mx-auto mb-1" />
-          <p className="text-2xl font-bold">{mockFleet.filter(f => f.status === "maintenance").length}</p>
+          <p className="text-2xl font-bold">{fleet.filter(f => f.status === "maintenance").length}</p>
           <p className="text-sm text-muted-foreground">Perawatan</p>
         </CardContent></Card>
         <Card className="border-red-500/30 bg-red-500/5"><CardContent className="pt-6 text-center">
           <AlertTriangle className="h-6 w-6 text-red-600 mx-auto mb-1" />
-          <p className="text-2xl font-bold">{mockDispatches.filter(d => d.priority === "emergency").length}</p>
+          <p className="text-2xl font-bold">{dispatches.filter(d => d.priority === "emergency" && d.status !== "completed").length}</p>
           <p className="text-sm text-muted-foreground">Dispatch Darurat</p>
         </CardContent></Card>
       </div>
@@ -131,29 +152,32 @@ export default function AmbulanceCenter() {
         </TabsList>
 
         <TabsContent value="dispatch" className="space-y-4">
-          {mockDispatches.map(d => (
+          {dispatchLoading ? (
+            <div className="text-center py-8 text-muted-foreground">Memuat data...</div>
+          ) : activeDispatches.length === 0 ? (
+            <Card><CardContent className="pt-6 text-center text-muted-foreground py-12">Tidak ada dispatch aktif</CardContent></Card>
+          ) : activeDispatches.map(d => (
             <Card key={d.id} className={d.priority === "emergency" ? "border-red-500/50" : ""}>
               <CardContent className="pt-6">
                 <div className="flex justify-between items-start mb-3">
                   <div className="flex items-center gap-3">
                     <Badge variant={priorityMap[d.priority]?.variant}>{priorityMap[d.priority]?.label}</Badge>
-                    <span className="font-mono text-sm">{d.id}</span>
+                    <span className="font-mono text-sm">{d.dispatch_number}</span>
                     <Badge variant={dispatchStatusMap[d.status]?.variant}>{dispatchStatusMap[d.status]?.label}</Badge>
                   </div>
-                  <span className="text-sm text-muted-foreground">{d.ambulanceId}</span>
                 </div>
                 <div className="grid md:grid-cols-3 gap-4 text-sm">
                   <div>
-                    <p className="font-medium">{d.patient}</p>
-                    <p className="text-muted-foreground flex items-center gap-1"><Phone className="h-3 w-3" />{d.caller} - {d.callerPhone}</p>
+                    <p className="font-medium">{d.patient_info}</p>
+                    <p className="text-muted-foreground flex items-center gap-1"><Phone className="h-3 w-3" />{d.caller_name} - {d.caller_phone}</p>
                   </div>
                   <div>
-                    <p className="flex items-center gap-1"><MapPin className="h-3 w-3 text-green-600" /><span className="font-medium">Dari:</span> {d.pickup}</p>
+                    <p className="flex items-center gap-1"><MapPin className="h-3 w-3 text-green-600" /><span className="font-medium">Dari:</span> {d.pickup_location}</p>
                     <p className="flex items-center gap-1"><MapPin className="h-3 w-3 text-red-600" /><span className="font-medium">Ke:</span> {d.destination}</p>
                   </div>
                   <div>
-                    <p className="flex items-center gap-1"><Clock className="h-3 w-3" />Request: {d.requestTime}</p>
-                    <p className="flex items-center gap-1"><Clock className="h-3 w-3" />Dispatch: {d.dispatchTime}</p>
+                    <p className="flex items-center gap-1"><Clock className="h-3 w-3" />Request: {new Date(d.request_time).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}</p>
+                    {d.dispatch_time && <p className="flex items-center gap-1"><Clock className="h-3 w-3" />Dispatch: {new Date(d.dispatch_time).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}</p>}
                   </div>
                 </div>
               </CardContent>
@@ -163,42 +187,68 @@ export default function AmbulanceCenter() {
 
         <TabsContent value="fleet">
           <Card>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>ID</TableHead>
-                  <TableHead>Plat Nomor</TableHead>
-                  <TableHead>Tipe</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Pengemudi</TableHead>
-                  <TableHead>Kru</TableHead>
-                  <TableHead>Peralatan</TableHead>
-                  <TableHead>Service Berikutnya</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {mockFleet.map(f => (
-                  <TableRow key={f.id}>
-                    <TableCell className="font-mono">{f.id}</TableCell>
-                    <TableCell className="font-medium">{f.plateNumber}</TableCell>
-                    <TableCell><Badge variant="outline">{f.type}</Badge></TableCell>
-                    <TableCell><Badge variant={fleetStatusMap[f.status]?.variant}>{fleetStatusMap[f.status]?.label}</Badge></TableCell>
-                    <TableCell>{f.driver}</TableCell>
-                    <TableCell>{f.crew}</TableCell>
-                    <TableCell>{f.equipment}</TableCell>
-                    <TableCell>{f.nextService}</TableCell>
+            {fleetLoading ? (
+              <div className="p-8 text-center text-muted-foreground">Memuat data...</div>
+            ) : fleet.length === 0 ? (
+              <div className="p-8 text-center text-muted-foreground">Belum ada data armada ambulans</div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Kode</TableHead>
+                    <TableHead>Plat Nomor</TableHead>
+                    <TableHead>Tipe</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Pengemudi</TableHead>
+                    <TableHead>Kru</TableHead>
+                    <TableHead>Peralatan</TableHead>
+                    <TableHead>Service Berikutnya</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {fleet.map(f => (
+                    <TableRow key={f.id}>
+                      <TableCell className="font-mono">{f.ambulance_code}</TableCell>
+                      <TableCell className="font-medium">{f.plate_number}</TableCell>
+                      <TableCell><Badge variant="outline">{f.ambulance_type}</Badge></TableCell>
+                      <TableCell><Badge variant={fleetStatusMap[f.status]?.variant}>{fleetStatusMap[f.status]?.label}</Badge></TableCell>
+                      <TableCell>{f.driver_name || "-"}</TableCell>
+                      <TableCell>{f.crew_names || "-"}</TableCell>
+                      <TableCell>{f.equipment_status}</TableCell>
+                      <TableCell>{f.next_service_date || "-"}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
           </Card>
         </TabsContent>
 
         <TabsContent value="history">
-          <Card><CardContent className="pt-6 text-center text-muted-foreground py-12">
-            <Truck className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>Riwayat dispatch akan ditampilkan setelah data terakumulasi.</p>
-          </CardContent></Card>
+          <Card>
+            {dispatches.filter(d => d.status === "completed").length === 0 ? (
+              <CardContent className="pt-6 text-center text-muted-foreground py-12">
+                <Truck className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>Belum ada riwayat dispatch.</p>
+              </CardContent>
+            ) : (
+              <Table>
+                <TableHeader><TableRow><TableHead>No.</TableHead><TableHead>Pasien</TableHead><TableHead>Dari</TableHead><TableHead>Ke</TableHead><TableHead>Prioritas</TableHead><TableHead>Waktu</TableHead></TableRow></TableHeader>
+                <TableBody>
+                  {dispatches.filter(d => d.status === "completed").map(d => (
+                    <TableRow key={d.id}>
+                      <TableCell className="font-mono text-sm">{d.dispatch_number}</TableCell>
+                      <TableCell>{d.patient_info}</TableCell>
+                      <TableCell>{d.pickup_location}</TableCell>
+                      <TableCell>{d.destination}</TableCell>
+                      <TableCell><Badge variant={priorityMap[d.priority]?.variant}>{priorityMap[d.priority]?.label}</Badge></TableCell>
+                      <TableCell>{new Date(d.request_time).toLocaleDateString("id-ID")}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </Card>
         </TabsContent>
       </Tabs>
     </div>

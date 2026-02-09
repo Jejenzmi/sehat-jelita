@@ -287,6 +287,125 @@ export type Database = {
         }
         Relationships: []
       }
+      ambulance_dispatches: {
+        Row: {
+          ambulance_id: string | null
+          arrival_time: string | null
+          caller_name: string | null
+          caller_phone: string | null
+          completion_time: string | null
+          created_at: string
+          destination: string
+          dispatch_number: string
+          dispatch_time: string | null
+          dispatched_by: string | null
+          id: string
+          notes: string | null
+          patient_info: string
+          pickup_location: string
+          priority: string
+          request_time: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          ambulance_id?: string | null
+          arrival_time?: string | null
+          caller_name?: string | null
+          caller_phone?: string | null
+          completion_time?: string | null
+          created_at?: string
+          destination: string
+          dispatch_number: string
+          dispatch_time?: string | null
+          dispatched_by?: string | null
+          id?: string
+          notes?: string | null
+          patient_info: string
+          pickup_location: string
+          priority?: string
+          request_time?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          ambulance_id?: string | null
+          arrival_time?: string | null
+          caller_name?: string | null
+          caller_phone?: string | null
+          completion_time?: string | null
+          created_at?: string
+          destination?: string
+          dispatch_number?: string
+          dispatch_time?: string | null
+          dispatched_by?: string | null
+          id?: string
+          notes?: string | null
+          patient_info?: string
+          pickup_location?: string
+          priority?: string
+          request_time?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ambulance_dispatches_ambulance_id_fkey"
+            columns: ["ambulance_id"]
+            isOneToOne: false
+            referencedRelation: "ambulance_fleet"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ambulance_fleet: {
+        Row: {
+          ambulance_code: string
+          ambulance_type: string
+          created_at: string
+          crew_names: string | null
+          driver_name: string | null
+          equipment_status: string | null
+          id: string
+          last_service_date: string | null
+          next_service_date: string | null
+          notes: string | null
+          plate_number: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          ambulance_code: string
+          ambulance_type?: string
+          created_at?: string
+          crew_names?: string | null
+          driver_name?: string | null
+          equipment_status?: string | null
+          id?: string
+          last_service_date?: string | null
+          next_service_date?: string | null
+          notes?: string | null
+          plate_number: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          ambulance_code?: string
+          ambulance_type?: string
+          created_at?: string
+          crew_names?: string | null
+          driver_name?: string | null
+          equipment_status?: string | null
+          id?: string
+          last_service_date?: string | null
+          next_service_date?: string | null
+          notes?: string | null
+          plate_number?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       anesthesia_records: {
         Row: {
           airway_assessment: Json | null
@@ -3415,6 +3534,97 @@ export type Database = {
             columns: ["fiscal_period_id"]
             isOneToOne: false
             referencedRelation: "fiscal_periods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      home_care_visits: {
+        Row: {
+          address: string
+          completed_at: string | null
+          completion_notes: string | null
+          created_at: string
+          created_by: string | null
+          doctor_id: string | null
+          doctor_name: string | null
+          id: string
+          notes: string | null
+          nurse_id: string | null
+          nurse_name: string
+          patient_id: string | null
+          patient_name: string
+          patient_phone: string | null
+          service_type: string
+          status: string
+          updated_at: string
+          visit_date: string
+          visit_number: string
+          visit_time: string
+        }
+        Insert: {
+          address: string
+          completed_at?: string | null
+          completion_notes?: string | null
+          created_at?: string
+          created_by?: string | null
+          doctor_id?: string | null
+          doctor_name?: string | null
+          id?: string
+          notes?: string | null
+          nurse_id?: string | null
+          nurse_name: string
+          patient_id?: string | null
+          patient_name: string
+          patient_phone?: string | null
+          service_type: string
+          status?: string
+          updated_at?: string
+          visit_date: string
+          visit_number: string
+          visit_time: string
+        }
+        Update: {
+          address?: string
+          completed_at?: string | null
+          completion_notes?: string | null
+          created_at?: string
+          created_by?: string | null
+          doctor_id?: string | null
+          doctor_name?: string | null
+          id?: string
+          notes?: string | null
+          nurse_id?: string | null
+          nurse_name?: string
+          patient_id?: string | null
+          patient_name?: string
+          patient_phone?: string | null
+          service_type?: string
+          status?: string
+          updated_at?: string
+          visit_date?: string
+          visit_number?: string
+          visit_time?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "home_care_visits_doctor_id_fkey"
+            columns: ["doctor_id"]
+            isOneToOne: false
+            referencedRelation: "doctors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "home_care_visits_nurse_id_fkey"
+            columns: ["nurse_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "home_care_visits_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
             referencedColumns: ["id"]
           },
         ]
@@ -7822,6 +8032,142 @@ export type Database = {
         }
         Relationships: []
       }
+      purchase_request_approvals: {
+        Row: {
+          approval_level: number
+          approved_at: string | null
+          approver_id: string | null
+          approver_name: string | null
+          created_at: string
+          id: string
+          pr_id: string
+          rejection_reason: string | null
+          role_name: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          approval_level: number
+          approved_at?: string | null
+          approver_id?: string | null
+          approver_name?: string | null
+          created_at?: string
+          id?: string
+          pr_id: string
+          rejection_reason?: string | null
+          role_name: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          approval_level?: number
+          approved_at?: string | null
+          approver_id?: string | null
+          approver_name?: string | null
+          created_at?: string
+          id?: string
+          pr_id?: string
+          rejection_reason?: string | null
+          role_name?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_request_approvals_pr_id_fkey"
+            columns: ["pr_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_request_items: {
+        Row: {
+          created_at: string
+          estimated_price: number
+          id: string
+          item_name: string
+          notes: string | null
+          pr_id: string
+          quantity: number
+          unit: string
+        }
+        Insert: {
+          created_at?: string
+          estimated_price?: number
+          id?: string
+          item_name: string
+          notes?: string | null
+          pr_id: string
+          quantity?: number
+          unit?: string
+        }
+        Update: {
+          created_at?: string
+          estimated_price?: number
+          id?: string
+          item_name?: string
+          notes?: string | null
+          pr_id?: string
+          quantity?: number
+          unit?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_request_items_pr_id_fkey"
+            columns: ["pr_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_requests: {
+        Row: {
+          created_at: string
+          department: string
+          id: string
+          notes: string | null
+          pr_number: string
+          request_date: string
+          requester_id: string | null
+          requester_name: string
+          status: string
+          total_estimate: number
+          updated_at: string
+          urgency: string
+        }
+        Insert: {
+          created_at?: string
+          department: string
+          id?: string
+          notes?: string | null
+          pr_number: string
+          request_date?: string
+          requester_id?: string | null
+          requester_name: string
+          status?: string
+          total_estimate?: number
+          updated_at?: string
+          urgency?: string
+        }
+        Update: {
+          created_at?: string
+          department?: string
+          id?: string
+          notes?: string | null
+          pr_number?: string
+          request_date?: string
+          requester_id?: string | null
+          requester_name?: string
+          status?: string
+          total_estimate?: number
+          updated_at?: string
+          urgency?: string
+        }
+        Relationships: []
+      }
       quality_improvement_actions: {
         Row: {
           action_plan: string | null
@@ -12020,7 +12366,9 @@ export type Database = {
       generate_claim_number: { Args: never; Returns: string }
       generate_consent_number: { Args: never; Returns: string }
       generate_dialysis_session_number: { Args: never; Returns: string }
+      generate_dispatch_number: { Args: never; Returns: string }
       generate_employee_number: { Args: never; Returns: string }
+      generate_home_care_visit_number: { Args: never; Returns: string }
       generate_icu_admission_number: { Args: never; Returns: string }
       generate_incident_number: { Args: never; Returns: string }
       generate_insurance_claim_number: { Args: never; Returns: string }
@@ -12032,6 +12380,7 @@ export type Database = {
       generate_medical_record_number: { Args: never; Returns: string }
       generate_mortuary_case_number: { Args: never; Returns: string }
       generate_po_number: { Args: never; Returns: string }
+      generate_pr_number: { Args: never; Returns: string }
       generate_queue_number: {
         Args: { p_service_type: string }
         Returns: string
