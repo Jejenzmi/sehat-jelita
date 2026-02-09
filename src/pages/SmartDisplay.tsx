@@ -3,12 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
+import { useQueueData, useBedData, usePharmacyQueueData, useDoctorScheduleData } from "@/hooks/useSmartDisplayData";
 import {
   Monitor,
   Tv,
@@ -18,9 +16,6 @@ import {
   Volume2,
   Maximize2,
   Settings2,
-  Play,
-  Pause,
-  Plus,
   RefreshCw,
   Megaphone,
   Stethoscope,
@@ -28,32 +23,6 @@ import {
   CalendarDays,
   Bell,
 } from "lucide-react";
-
-// Mock queue data
-const mockQueueData = [
-  { number: "A001", name: "Ahmad Suryadi", poli: "Poli Umum", doctor: "dr. Budi Santoso", status: "dipanggil", counter: "Loket 1" },
-  { number: "A002", name: "Siti Nurhaliza", poli: "Poli Anak", doctor: "dr. Indah, Sp.A", status: "menunggu", counter: "-" },
-  { number: "A003", name: "Joko Widodo", poli: "Poli Mata", doctor: "dr. Riana, Sp.M", status: "menunggu", counter: "-" },
-  { number: "B001", name: "Fatimah Zahra", poli: "Poli Gigi", doctor: "drg. Ovilya", status: "menunggu", counter: "-" },
-  { number: "B002", name: "Rizky Pratama", poli: "Poli Bedah", doctor: "dr. Asep, Sp.B", status: "selesai", counter: "Loket 2" },
-  { number: "C001", name: "Dewi Lestari", poli: "Poli Dalam", doctor: "dr. Arzan, Sp.PD", status: "dipanggil", counter: "Loket 3" },
-];
-
-const mockPharmacyQueue = [
-  { number: "R001", name: "Ahmad Suryadi", type: "Racikan", status: "proses", eta: "15 menit" },
-  { number: "R002", name: "Siti Nurhaliza", type: "Non-Racikan", status: "siap", eta: "-" },
-  { number: "R003", name: "Joko Widodo", type: "Non-Racikan", status: "proses", eta: "5 menit" },
-  { number: "R004", name: "Fatimah Zahra", type: "Racikan", status: "menunggu", eta: "20 menit" },
-];
-
-const mockDoctorSchedule = [
-  { name: "dr. Budi Santoso", poli: "Poli Umum", time: "08:00 - 14:00", status: "praktek", patients: 12 },
-  { name: "dr. Indah Dina, Sp.A", poli: "Poli Anak", time: "09:00 - 15:00", status: "praktek", patients: 8 },
-  { name: "dr. Riana Azmi, Sp.M", poli: "Poli Mata", time: "10:00 - 16:00", status: "belum mulai", patients: 0 },
-  { name: "dr. H. Asep, Sp.B", poli: "Poli Bedah", time: "08:00 - 12:00", status: "praktek", patients: 5 },
-  { name: "dr. Arzan, Sp.PD", poli: "Poli Dalam", time: "13:00 - 18:00", status: "praktek", patients: 15 },
-  { name: "dr. Ratna, Sp.OG", poli: "Poli Obgyn", time: "14:00 - 20:00", status: "belum mulai", patients: 0 },
-];
 
 const mockPromos = [
   { title: "Paket MCU Executive", desc: "Diskon 30% untuk Medical Check Up lengkap", color: "bg-blue-500" },
@@ -77,6 +46,8 @@ function CurrentTime() {
 
 // Lobby Display Component
 function LobbyDisplay() {
+  const { data: queueData = [] } = useQueueData();
+  const { data: scheduleData = [] } = useDoctorScheduleData();
   const [promoIdx, setPromoIdx] = useState(0);
   useEffect(() => {
     const interval = setInterval(() => setPromoIdx(prev => (prev + 1) % mockPromos.length), 5000);
@@ -109,16 +80,19 @@ function LobbyDisplay() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {mockQueueData.filter(q => q.status === "dipanggil").map(q => (
-                  <div key={q.number} className="flex items-center gap-3 p-3 bg-primary/10 rounded-lg border border-primary/20">
-                    <div className="text-3xl font-bold text-primary">{q.number}</div>
+                {queueData.filter((q: any) => q.status === "dipanggil").map((q: any) => (
+                  <div key={q.id} className="flex items-center gap-3 p-3 bg-primary/10 rounded-lg border border-primary/20">
+                    <div className="text-3xl font-bold text-primary">{q.ticket_number}</div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold truncate">{q.name}</p>
-                      <p className="text-xs text-muted-foreground">{q.poli} • {q.doctor}</p>
+                      <p className="font-semibold truncate">{q.patients?.full_name || q.patient_name || "-"}</p>
+                      <p className="text-xs text-muted-foreground">{q.departments?.name || q.service_type || "-"}</p>
                     </div>
-                    <Badge>{q.counter}</Badge>
+                    <Badge>{q.counter_number || "-"}</Badge>
                   </div>
                 ))}
+                {queueData.filter((q: any) => q.status === "dipanggil").length === 0 && (
+                  <p className="text-sm text-muted-foreground col-span-2 text-center py-4">Belum ada antrian dipanggil</p>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -132,16 +106,18 @@ function LobbyDisplay() {
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                {mockQueueData.filter(q => q.status === "menunggu").map(q => (
-                  <div key={q.number} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50">
-                    <div className="text-lg font-bold text-muted-foreground w-16">{q.number}</div>
+                {queueData.filter((q: any) => q.status === "menunggu").map((q: any) => (
+                  <div key={q.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50">
+                    <div className="text-lg font-bold text-muted-foreground w-16">{q.ticket_number}</div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{q.name}</p>
-                      <p className="text-xs text-muted-foreground">{q.poli}</p>
+                      <p className="text-sm font-medium truncate">{q.patients?.full_name || q.patient_name || "-"}</p>
+                      <p className="text-xs text-muted-foreground">{q.departments?.name || q.service_type || "-"}</p>
                     </div>
-                    <Badge variant="outline">{q.doctor}</Badge>
                   </div>
                 ))}
+                {queueData.filter((q: any) => q.status === "menunggu").length === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-4">Belum ada antrian menunggu</p>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -158,16 +134,16 @@ function LobbyDisplay() {
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                {mockDoctorSchedule.map((doc, i) => (
+                {scheduleData.map((doc: any, i: number) => (
                   <div key={i} className="flex items-center gap-2 text-sm">
-                    <div className={`w-2 h-2 rounded-full ${doc.status === "praktek" ? "bg-emerald-500" : "bg-slate-300"}`} />
+                    <div className="w-2 h-2 rounded-full bg-emerald-500" />
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-xs truncate">{doc.name}</p>
-                      <p className="text-[10px] text-muted-foreground">{doc.poli} • {doc.time}</p>
+                      <p className="font-medium text-xs truncate">{doc.doctors?.full_name || "-"}</p>
+                      <p className="text-[10px] text-muted-foreground">{doc.departments?.name || "-"} • {doc.start_time} - {doc.end_time}</p>
                     </div>
-                    {doc.status === "praktek" && <Badge variant="outline" className="text-[10px]">{doc.patients} pasien</Badge>}
                   </div>
                 ))}
+                {scheduleData.length === 0 && <p className="text-xs text-muted-foreground text-center py-3">Belum ada jadwal</p>}
               </div>
             </CardContent>
           </Card>
@@ -196,16 +172,16 @@ function LobbyDisplay() {
 
 // Ward Display Component
 function WardDisplay() {
-  const bedData = [
-    { room: "VIP-01", patient: "Tn. Suryadi", doctor: "dr. Budi", admitDate: "02 Feb 2026", status: "terisi" },
-    { room: "VIP-02", patient: "-", doctor: "-", admitDate: "-", status: "kosong" },
-    { room: "101-A", patient: "Ny. Fatimah", doctor: "dr. Indah", admitDate: "05 Feb 2026", status: "terisi" },
-    { room: "101-B", patient: "Tn. Joko", doctor: "dr. Arzan", admitDate: "07 Feb 2026", status: "terisi" },
-    { room: "102-A", patient: "-", doctor: "-", admitDate: "-", status: "maintenance" },
-    { room: "102-B", patient: "Ny. Dewi", doctor: "dr. Ratna", admitDate: "08 Feb 2026", status: "terisi" },
-    { room: "103-A", patient: "-", doctor: "-", admitDate: "-", status: "kosong" },
-    { room: "103-B", patient: "Tn. Rizky", doctor: "dr. Asep", admitDate: "06 Feb 2026", status: "terisi" },
-  ];
+  const { data: bedDataRaw = [] } = useBedData();
+  const bedData = bedDataRaw.map((b: any) => ({
+    room: b.rooms?.room_number ? `${b.rooms.room_number}-${b.bed_number}` : b.bed_number,
+    patient: b.patients?.full_name || "-",
+    status: b.status === "available" ? "kosong" : b.status === "occupied" ? "terisi" : b.status,
+  }));
+  const total = bedData.length;
+  const occupied = bedData.filter((b: any) => b.status === "terisi").length;
+  const available = bedData.filter((b: any) => b.status === "kosong").length;
+  const maintenance = bedData.filter((b: any) => b.status === "maintenance").length;
 
   return (
     <div className="space-y-4">
@@ -274,6 +250,7 @@ function WardDisplay() {
 
 // Pharmacy Display Component
 function PharmacyDisplay() {
+  const { data: pharmacyData = [] } = usePharmacyQueueData();
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between bg-emerald-50 dark:bg-emerald-950/30 rounded-xl p-4">
@@ -286,9 +263,7 @@ function PharmacyDisplay() {
         </div>
         <CurrentTime />
       </div>
-
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Resep Siap */}
         <Card className="border-emerald-200">
           <CardHeader className="pb-2 bg-emerald-50/50 dark:bg-emerald-950/20">
             <CardTitle className="text-sm text-emerald-700 dark:text-emerald-400 flex items-center gap-2">
@@ -296,20 +271,20 @@ function PharmacyDisplay() {
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-3">
-            {mockPharmacyQueue.filter(q => q.status === "siap").map(q => (
-              <div key={q.number} className="flex items-center gap-3 p-3 bg-emerald-100/50 rounded-lg mb-2">
-                <div className="text-2xl font-bold text-emerald-600">{q.number}</div>
+            {pharmacyData.filter((q: any) => q.status === "siap").map((q: any) => (
+              <div key={q.id} className="flex items-center gap-3 p-3 bg-emerald-100/50 rounded-lg mb-2">
+                <div className="text-2xl font-bold text-emerald-600">{q.prescription_number || q.id?.slice(0,8)}</div>
                 <div className="flex-1">
-                  <p className="font-semibold">{q.name}</p>
-                  <p className="text-xs text-muted-foreground">{q.type}</p>
+                  <p className="font-semibold">{q.patients?.full_name || "-"}</p>
                 </div>
                 <Badge className="bg-emerald-500">SIAP</Badge>
               </div>
             ))}
+            {pharmacyData.filter((q: any) => q.status === "siap").length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-4">Belum ada resep siap</p>
+            )}
           </CardContent>
         </Card>
-
-        {/* Resep Dalam Proses */}
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
@@ -317,19 +292,18 @@ function PharmacyDisplay() {
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-3 space-y-2">
-            {mockPharmacyQueue.filter(q => q.status === "proses" || q.status === "menunggu").map(q => (
-              <div key={q.number} className="flex items-center gap-3 p-2 rounded-lg border">
-                <div className="text-lg font-bold text-muted-foreground">{q.number}</div>
+            {pharmacyData.filter((q: any) => q.status === "diproses" || q.status === "menunggu").map((q: any) => (
+              <div key={q.id} className="flex items-center gap-3 p-2 rounded-lg border">
+                <div className="text-lg font-bold text-muted-foreground">{q.prescription_number || q.id?.slice(0,8)}</div>
                 <div className="flex-1">
-                  <p className="text-sm font-medium">{q.name}</p>
-                  <p className="text-xs text-muted-foreground">{q.type}</p>
+                  <p className="text-sm font-medium">{q.patients?.full_name || "-"}</p>
                 </div>
-                <div className="text-right">
-                  <Badge variant={q.status === "proses" ? "secondary" : "outline"} className="text-[10px]">{q.status}</Badge>
-                  <p className="text-[10px] text-muted-foreground mt-1">Est. {q.eta}</p>
-                </div>
+                <Badge variant={q.status === "diproses" ? "secondary" : "outline"} className="text-[10px]">{q.status}</Badge>
               </div>
             ))}
+            {pharmacyData.filter((q: any) => q.status === "diproses" || q.status === "menunggu").length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-4">Belum ada resep diproses</p>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -340,6 +314,7 @@ function PharmacyDisplay() {
 export default function SmartDisplay() {
   const [activeDisplay, setActiveDisplay] = useState("lobby");
   const [autoRefresh, setAutoRefresh] = useState(true);
+  const { data: scheduleDataMain = [] } = useDoctorScheduleData();
 
   return (
     <div className="space-y-4">
@@ -389,28 +364,25 @@ export default function SmartDisplay() {
               <CurrentTime />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {mockDoctorSchedule.map((doc, i) => (
-                <Card key={i} className={doc.status === "praktek" ? "border-emerald-200" : ""}>
+              {scheduleDataMain.map((doc: any, i: number) => (
+                <Card key={i} className="border-emerald-200">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-2 mb-2">
-                      <div className={`w-3 h-3 rounded-full ${doc.status === "praktek" ? "bg-emerald-500 animate-pulse" : "bg-slate-300"}`} />
-                      <Badge variant={doc.status === "praktek" ? "default" : "secondary"} className="text-[10px]">{doc.status}</Badge>
+                      <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse" />
+                      <Badge className="text-[10px]">Praktek</Badge>
                     </div>
-                    <h3 className="font-bold">{doc.name}</h3>
-                    <p className="text-sm text-muted-foreground">{doc.poli}</p>
+                    <h3 className="font-bold">{doc.doctors?.full_name || "-"}</h3>
+                    <p className="text-sm text-muted-foreground">{doc.departments?.name || "-"}</p>
                     <div className="flex items-center gap-1 mt-2 text-sm">
                       <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-                      <span>{doc.time}</span>
+                      <span>{doc.start_time} - {doc.end_time}</span>
                     </div>
-                    {doc.patients > 0 && (
-                      <div className="flex items-center gap-1 mt-1 text-sm text-muted-foreground">
-                        <Users className="h-3.5 w-3.5" />
-                        <span>{doc.patients} pasien terdaftar</span>
-                      </div>
-                    )}
                   </CardContent>
                 </Card>
               ))}
+              {scheduleDataMain.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-8 col-span-3">Belum ada jadwal dokter hari ini</p>
+              )}
             </div>
           </div>
         </TabsContent>

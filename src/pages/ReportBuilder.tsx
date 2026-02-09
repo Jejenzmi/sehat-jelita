@@ -1,4 +1,5 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
+import { useReportBuilderData, useReportData } from "@/hooks/useReportBuilderData";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -139,31 +140,16 @@ interface ReportFilter {
   value: string;
 }
 
-// Generate sample data
-function generateSampleData(source: string, columns: ReportColumn[]): Record<string, string | number>[] {
-  const visibleCols = columns.filter(c => c.visible);
-  if (visibleCols.length === 0) return [];
-  const rows: Record<string, string | number>[] = [];
-  for (let i = 0; i < 8; i++) {
-    const row: Record<string, string | number> = {};
-    visibleCols.forEach(col => {
-      const srcCol = sourceColumns[source]?.find(s => s.value === col.sourceColumn);
-      if (srcCol?.type === "number") row[col.sourceColumn] = Math.floor(Math.random() * 1000000) + 10000;
-      else if (srcCol?.type === "date") row[col.sourceColumn] = new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1).toLocaleDateString("id-ID");
-      else row[col.sourceColumn] = `Sample ${col.label} ${i + 1}`;
-    });
-    rows.push(row);
-  }
-  return rows;
-}
-
 export default function ReportBuilder() {
+  const { templates: dbTemplates, saveTemplate: saveToDb } = useReportBuilderData();
   const [reportName, setReportName] = useState("Laporan Baru");
   const [dataSource, setDataSource] = useState("visits");
   const [columns, setColumns] = useState<ReportColumn[]>([]);
   const [filters, setFilters] = useState<ReportFilter[]>([]);
   const [activeTab, setActiveTab] = useState("config");
   const [chartType, setChartType] = useState<"table" | "bar" | "pie" | "line">("table");
+
+  const { data: realData = [], isLoading: loadingData } = useReportData(dataSource);
 
   const availableColumns = sourceColumns[dataSource] || [];
 
@@ -196,8 +182,31 @@ export default function ReportBuilder() {
 
   const removeFilter = (id: string) => setFilters(prev => prev.filter(f => f.id !== id));
 
-  const sampleData = generateSampleData(dataSource, columns);
+  // Use real data, filtered by visible columns
   const visibleColumns = columns.filter(c => c.visible);
+  const displayData = useMemo(() => {
+    if (realData.length === 0) return [];
+    // Apply filters
+    let filtered = [...realData];
+    filters.forEach(f => {
+      if (!f.value) return;
+      filtered = filtered.filter((row: any) => {
+        const val = String(row[f.column] || "").toLowerCase();
+        return val.includes(f.value.toLowerCase());
+      });
+    });
+    return filtered;
+  }, [realData, filters]);
+
+  const handleSave = useCallback(() => {
+    saveToDb.mutate({
+      name: reportName,
+      data_source: dataSource,
+      columns,
+      filters,
+      chart_type: chartType,
+    });
+  }, [reportName, dataSource, columns, filters, chartType, saveToDb]);
 
   return (
     <div className="space-y-4">
@@ -216,7 +225,7 @@ export default function ReportBuilder() {
           <Button variant="outline" size="sm" onClick={() => toast.success("Laporan diekspor ke PDF")}>
             <FileDown className="h-4 w-4 mr-1" /> PDF
           </Button>
-          <Button size="sm" onClick={() => toast.success("Laporan disimpan!")}>
+          <Button size="sm" onClick={handleSave}>
             <Save className="h-4 w-4 mr-1" /> Simpan
           </Button>
         </div>
@@ -362,7 +371,7 @@ export default function ReportBuilder() {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle>{reportName}</CardTitle>
-                  <p className="text-sm text-muted-foreground">Sumber: {dataSources.find(d => d.value === dataSource)?.label} • {sampleData.length} data</p>
+                  <p className="text-sm text-muted-foreground">Sumber: {dataSources.find(d => d.value === dataSource)?.label} • {loadingData ? "Memuat..." : `${displayData.length} data`}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   {([["table", TableIcon], ["bar", BarChart3], ["pie", PieChart], ["line", TrendingUp]] as const).map(([type, Icon]) => (
@@ -396,7 +405,7 @@ export default function ReportBuilder() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {sampleData.map((row, i) => (
+                      {displayData.map((row: any, i: number) => (
                         <TableRow key={i}>
                           <TableCell className="text-muted-foreground">{i + 1}</TableCell>
                           {visibleColumns.map(col => (
@@ -417,7 +426,7 @@ export default function ReportBuilder() {
                   {chartType === "pie" && <PieChart className="h-16 w-16 text-primary/40 mb-4" />}
                   {chartType === "line" && <TrendingUp className="h-16 w-16 text-primary/40 mb-4" />}
                   <p className="text-muted-foreground font-medium">Visualisasi {chartType.toUpperCase()} Chart</p>
-                  <p className="text-sm text-muted-foreground mt-1">{visibleColumns.length} kolom • {sampleData.length} baris data</p>
+                  <p className="text-sm text-muted-foreground mt-1">{visibleColumns.length} kolom • {displayData.length} baris data</p>
                 </div>
               )}
             </CardContent>

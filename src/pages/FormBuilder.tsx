@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
+import { useFormBuilderData, FormField } from "@/hooks/useFormBuilderData";
 import {
   Plus,
   Trash2,
@@ -47,18 +48,9 @@ const fieldTypes = [
   { value: "separator", label: "Garis Pemisah", icon: AlignLeft },
 ];
 
-interface FormField {
-  id: string;
-  type: string;
-  label: string;
-  placeholder?: string;
-  required: boolean;
-  options?: string[];
-  description?: string;
-  width: "full" | "half";
-}
+// FormField type imported from hook
 
-interface FormTemplate {
+interface FormTemplateLocal {
   id: string;
   name: string;
   description: string;
@@ -68,7 +60,7 @@ interface FormTemplate {
 }
 
 // Preset templates
-const presetTemplates: Omit<FormTemplate, "id" | "createdAt">[] = [
+const presetTemplates: Omit<FormTemplateLocal, "id" | "createdAt">[] = [
   {
     name: "Asesmen Awal Rawat Inap",
     description: "Formulir asesmen awal medis untuk rawat inap",
@@ -98,13 +90,13 @@ const presetTemplates: Omit<FormTemplate, "id" | "createdAt">[] = [
 ];
 
 export default function FormBuilder() {
+  const { templates: dbTemplates, isLoading: loadingTemplates, saveTemplate: saveToDb, deleteTemplate } = useFormBuilderData();
   const [activeTab, setActiveTab] = useState("builder");
   const [formName, setFormName] = useState("Formulir Baru");
   const [formDescription, setFormDescription] = useState("");
   const [formCategory, setFormCategory] = useState("rawat_jalan");
   const [fields, setFields] = useState<FormField[]>([]);
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
-  const [savedTemplates, setSavedTemplates] = useState<FormTemplate[]>([]);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
   const addField = useCallback((type: string) => {
@@ -142,21 +134,17 @@ export default function FormBuilder() {
   const saveTemplate = useCallback(() => {
     if (!formName.trim()) { toast.error("Nama formulir wajib diisi"); return; }
     if (fields.length === 0) { toast.error("Formulir harus memiliki minimal 1 field"); return; }
-    const template: FormTemplate = {
-      id: `tmpl_${Date.now()}`,
+    saveToDb.mutate({
       name: formName,
       description: formDescription,
       category: formCategory,
       fields: [...fields],
-      createdAt: new Date().toISOString(),
-    };
-    setSavedTemplates(prev => [...prev, template]);
-    toast.success("Template berhasil disimpan!");
-  }, [formName, formDescription, formCategory, fields]);
+    });
+  }, [formName, formDescription, formCategory, fields, saveToDb]);
 
-  const loadTemplate = useCallback((template: Omit<FormTemplate, "id" | "createdAt">) => {
+  const loadTemplate = useCallback((template: { name: string; description: string | null; category: string; fields: FormField[] }) => {
     setFormName(template.name);
-    setFormDescription(template.description);
+    setFormDescription(template.description || "");
     setFormCategory(template.category);
     setFields(template.fields.map(f => ({ ...f, id: `field_${Date.now()}_${Math.random().toString(36).slice(2)}` })));
     setActiveTab("builder");
@@ -435,8 +423,8 @@ export default function FormBuilder() {
                 </CardContent>
               </Card>
             ))}
-            {/* User saved templates */}
-            {savedTemplates.map(tmpl => (
+            {/* User saved templates from database */}
+            {dbTemplates.map(tmpl => (
               <Card key={tmpl.id} className="hover:border-primary/50 transition-colors cursor-pointer" onClick={() => loadTemplate(tmpl)}>
                 <CardHeader className="pb-2">
                   <div className="flex items-center gap-2">
@@ -447,7 +435,7 @@ export default function FormBuilder() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-xs text-muted-foreground mb-2">{tmpl.description}</p>
-                  <p className="text-xs text-muted-foreground">{tmpl.fields.length} field • {new Date(tmpl.createdAt).toLocaleDateString("id-ID")}</p>
+                  <p className="text-xs text-muted-foreground">{tmpl.fields.length} field • {new Date(tmpl.created_at).toLocaleDateString("id-ID")}</p>
                 </CardContent>
               </Card>
             ))}

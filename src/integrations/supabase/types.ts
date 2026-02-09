@@ -1577,6 +1577,84 @@ export type Database = {
           },
         ]
       }
+      custom_form_templates: {
+        Row: {
+          category: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          fields: Json
+          id: string
+          is_active: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          fields?: Json
+          id?: string
+          is_active?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          fields?: Json
+          id?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      custom_report_templates: {
+        Row: {
+          chart_type: string
+          columns: Json
+          created_at: string
+          created_by: string | null
+          data_source: string
+          description: string | null
+          filters: Json
+          id: string
+          is_active: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          chart_type?: string
+          columns?: Json
+          created_at?: string
+          created_by?: string | null
+          data_source: string
+          description?: string | null
+          filters?: Json
+          id?: string
+          is_active?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          chart_type?: string
+          columns?: Json
+          created_at?: string
+          created_by?: string | null
+          data_source?: string
+          description?: string | null
+          filters?: Json
+          id?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       death_certificates: {
         Row: {
           address: string | null
@@ -2136,6 +2214,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      dicom_server_configs: {
+        Row: {
+          ae_title: string | null
+          created_at: string
+          created_by: string | null
+          host: string
+          id: string
+          is_active: boolean
+          last_checked_at: string | null
+          last_status: string | null
+          port: number
+          protocol: string | null
+          server_name: string
+          server_type: string
+          updated_at: string
+        }
+        Insert: {
+          ae_title?: string | null
+          created_at?: string
+          created_by?: string | null
+          host: string
+          id?: string
+          is_active?: boolean
+          last_checked_at?: string | null
+          last_status?: string | null
+          port?: number
+          protocol?: string | null
+          server_name: string
+          server_type?: string
+          updated_at?: string
+        }
+        Update: {
+          ae_title?: string | null
+          created_at?: string
+          created_by?: string | null
+          host?: string
+          id?: string
+          is_active?: boolean
+          last_checked_at?: string | null
+          last_status?: string | null
+          port?: number
+          protocol?: string | null
+          server_name?: string
+          server_type?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       diet_types: {
         Row: {
@@ -9519,6 +9645,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      smart_display_configs: {
+        Row: {
+          auto_refresh_seconds: number
+          created_at: string
+          created_by: string | null
+          display_name: string
+          display_type: string
+          id: string
+          is_active: boolean
+          location: string | null
+          settings: Json
+          updated_at: string
+        }
+        Insert: {
+          auto_refresh_seconds?: number
+          created_at?: string
+          created_by?: string | null
+          display_name: string
+          display_type?: string
+          id?: string
+          is_active?: boolean
+          location?: string | null
+          settings?: Json
+          updated_at?: string
+        }
+        Update: {
+          auto_refresh_seconds?: number
+          created_at?: string
+          created_by?: string | null
+          display_name?: string
+          display_type?: string
+          id?: string
+          is_active?: boolean
+          location?: string | null
+          settings?: Json
+          updated_at?: string
+        }
+        Relationships: []
       }
       sterilization_batches: {
         Row: {
