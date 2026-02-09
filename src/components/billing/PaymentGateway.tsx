@@ -1,44 +1,61 @@
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { CreditCard, Smartphone, QrCode, Globe, CheckCircle, Settings, Search, ArrowUpDown } from "lucide-react";
+import { CreditCard, Smartphone, QrCode, Globe, CheckCircle, Settings, Search, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 const gateways = [
-  { id: "midtrans", name: "Midtrans", logo: "🏦", methods: ["QRIS", "VA BCA", "VA Mandiri", "VA BNI", "GoPay", "OVO", "Dana", "Kartu Kredit"], status: "active", transactions: 1250, volume: 845000000 },
-  { id: "xendit", name: "Xendit", logo: "💳", methods: ["VA", "E-Wallet", "Kartu Kredit", "Retail Outlet"], status: "inactive", transactions: 0, volume: 0 },
-  { id: "doku", name: "DOKU", logo: "🔒", methods: ["VA", "E-Wallet", "Kartu Kredit"], status: "inactive", transactions: 0, volume: 0 },
-];
-
-const mockOnlinePayments = [
-  { id: "PAY-001", invoice: "INV-20260209-001", patient: "Siti Rahayu", amount: 1500000, method: "QRIS", gateway: "Midtrans", status: "success", paidAt: "2026-02-09 10:30", expiredAt: null },
-  { id: "PAY-002", invoice: "INV-20260209-002", patient: "Hadi Santoso", amount: 3200000, method: "VA BCA", gateway: "Midtrans", status: "pending", paidAt: null, expiredAt: "2026-02-09 22:00" },
-  { id: "PAY-003", invoice: "INV-20260208-005", patient: "Aminah Wati", amount: 750000, method: "GoPay", gateway: "Midtrans", status: "success", paidAt: "2026-02-08 14:15", expiredAt: null },
-  { id: "PAY-004", invoice: "INV-20260208-006", patient: "Bambang P.", amount: 2100000, method: "VA Mandiri", gateway: "Midtrans", status: "expired", paidAt: null, expiredAt: "2026-02-08 23:59" },
+  { id: "midtrans", name: "Midtrans", logo: "🏦", methods: ["QRIS", "VA BCA", "VA Mandiri", "VA BNI", "GoPay", "OVO", "Dana", "Kartu Kredit"], status: "active" },
+  { id: "xendit", name: "Xendit", logo: "💳", methods: ["VA", "E-Wallet", "Kartu Kredit", "Retail Outlet"], status: "inactive" },
+  { id: "doku", name: "DOKU", logo: "🔒", methods: ["VA", "E-Wallet", "Kartu Kredit"], status: "inactive" },
 ];
 
 const payStatusMap: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  success: { label: "Berhasil", variant: "default" },
+  paid: { label: "Berhasil", variant: "default" },
   pending: { label: "Menunggu", variant: "outline" },
-  expired: { label: "Kedaluwarsa", variant: "destructive" },
-  failed: { label: "Gagal", variant: "destructive" },
+  cancelled: { label: "Dibatalkan", variant: "destructive" },
+  partial: { label: "Sebagian", variant: "secondary" },
 };
 
 export function PaymentGateway() {
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState<"transactions" | "settings">("transactions");
 
-  const filtered = mockOnlinePayments.filter(p =>
+  const { data: payments = [], isLoading } = useQuery({
+    queryKey: ["payment-gateway-transactions"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("billings")
+        .select("id, invoice_number, total, status, payment_method, payment_date, billing_date, paid_amount, patients(full_name)")
+        .order("billing_date", { ascending: false })
+        .limit(100);
+      
+      if (error) throw error;
+      return (data || []).map((b: any) => ({
+        id: b.id,
+        invoice: b.invoice_number,
+        patient: b.patients?.full_name || "-",
+        amount: b.total || 0,
+        method: b.payment_method || "Tunai",
+        status: b.status as string,
+        paidAt: b.payment_date,
+        billingDate: b.billing_date,
+      }));
+    },
+  });
+
+  const filtered = payments.filter(p =>
     p.patient.toLowerCase().includes(search.toLowerCase()) || p.invoice.toLowerCase().includes(search.toLowerCase())
   );
 
-  const totalSuccess = mockOnlinePayments.filter(p => p.status === "success").reduce((s, p) => s + p.amount, 0);
+  const totalSuccess = payments.filter(p => p.status === "paid").reduce((s, p) => s + p.amount, 0);
 
   return (
     <div className="space-y-4">
@@ -54,12 +71,12 @@ export function PaymentGateway() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card><CardContent className="pt-6 text-center">
           <QrCode className="h-6 w-6 mx-auto mb-1 text-primary" />
-          <p className="text-2xl font-bold">{mockOnlinePayments.length}</p>
+          <p className="text-2xl font-bold">{payments.length}</p>
           <p className="text-sm text-muted-foreground">Total Transaksi</p>
         </CardContent></Card>
         <Card><CardContent className="pt-6 text-center">
           <CheckCircle className="h-6 w-6 mx-auto mb-1 text-green-600" />
-          <p className="text-2xl font-bold">{mockOnlinePayments.filter(p => p.status === "success").length}</p>
+          <p className="text-2xl font-bold">{payments.filter(p => p.status === "paid").length}</p>
           <p className="text-sm text-muted-foreground">Berhasil</p>
         </CardContent></Card>
         <Card><CardContent className="pt-6 text-center">
@@ -69,7 +86,7 @@ export function PaymentGateway() {
         </CardContent></Card>
         <Card><CardContent className="pt-6 text-center">
           <Smartphone className="h-6 w-6 mx-auto mb-1 text-orange-600" />
-          <p className="text-2xl font-bold">{mockOnlinePayments.filter(p => p.status === "pending").length}</p>
+          <p className="text-2xl font-bold">{payments.filter(p => p.status === "pending").length}</p>
           <p className="text-sm text-muted-foreground">Menunggu Bayar</p>
         </CardContent></Card>
       </div>
@@ -78,32 +95,44 @@ export function PaymentGateway() {
         <div className="space-y-4">
           <div className="relative"><Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" /><Input placeholder="Cari transaksi..." className="pl-9" value={search} onChange={e => setSearch(e.target.value)} /></div>
           <Card>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>ID</TableHead>
-                  <TableHead>Invoice</TableHead>
-                  <TableHead>Pasien</TableHead>
-                  <TableHead>Metode</TableHead>
-                  <TableHead>Jumlah</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Waktu Bayar</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filtered.map(p => (
-                  <TableRow key={p.id}>
-                    <TableCell className="font-mono text-sm">{p.id}</TableCell>
-                    <TableCell className="font-mono text-sm">{p.invoice}</TableCell>
-                    <TableCell className="font-medium">{p.patient}</TableCell>
-                    <TableCell><Badge variant="outline">{p.method}</Badge></TableCell>
-                    <TableCell className="font-medium">Rp {p.amount.toLocaleString("id-ID")}</TableCell>
-                    <TableCell><Badge variant={payStatusMap[p.status]?.variant}>{payStatusMap[p.status]?.label}</Badge></TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{p.paidAt || p.expiredAt || "-"}</TableCell>
+            {isLoading ? (
+              <div className="flex items-center justify-center p-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Invoice</TableHead>
+                    <TableHead>Pasien</TableHead>
+                    <TableHead>Metode</TableHead>
+                    <TableHead>Jumlah</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Waktu Bayar</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {filtered.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                        {search ? "Tidak ada transaksi yang cocok" : "Belum ada data transaksi pembayaran"}
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filtered.map(p => (
+                      <TableRow key={p.id}>
+                        <TableCell className="font-mono text-sm">{p.invoice}</TableCell>
+                        <TableCell className="font-medium">{p.patient}</TableCell>
+                        <TableCell><Badge variant="outline">{p.method}</Badge></TableCell>
+                        <TableCell className="font-medium">Rp {p.amount.toLocaleString("id-ID")}</TableCell>
+                        <TableCell><Badge variant={payStatusMap[p.status]?.variant || "outline"}>{payStatusMap[p.status]?.label || p.status}</Badge></TableCell>
+                        <TableCell className="text-sm text-muted-foreground">{p.paidAt || p.billingDate || "-"}</TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            )}
           </Card>
         </div>
       )}
@@ -123,25 +152,11 @@ export function PaymentGateway() {
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-4">
-                    {gw.status === "active" && (
-                      <div className="text-right text-sm">
-                        <p><span className="text-muted-foreground">Transaksi:</span> {gw.transactions.toLocaleString()}</p>
-                        <p><span className="text-muted-foreground">Volume:</span> Rp {(gw.volume / 1000000).toFixed(0)}jt</p>
-                      </div>
-                    )}
-                    <div className="flex items-center gap-2">
-                      <Label className="text-sm">{gw.status === "active" ? "Aktif" : "Nonaktif"}</Label>
-                      <Switch checked={gw.status === "active"} onCheckedChange={() => toast.info(`Konfigurasi ${gw.name} memerlukan API Key`)} />
-                    </div>
+                  <div className="flex items-center gap-2">
+                    <Label className="text-sm">{gw.status === "active" ? "Aktif" : "Nonaktif"}</Label>
+                    <Switch checked={gw.status === "active"} onCheckedChange={() => toast.info(`Konfigurasi ${gw.name} memerlukan API Key yang dikonfigurasi di Pengaturan`)} />
                   </div>
                 </div>
-                {gw.status === "active" && (
-                  <div className="mt-4 p-3 rounded-lg bg-muted/30 grid grid-cols-2 gap-4">
-                    <div><Label className="text-xs">Server Key</Label><Input type="password" value="SB-Mid-server-xxxx" disabled className="mt-1" /></div>
-                    <div><Label className="text-xs">Client Key</Label><Input type="password" value="SB-Mid-client-xxxx" disabled className="mt-1" /></div>
-                  </div>
-                )}
               </CardContent>
             </Card>
           ))}
