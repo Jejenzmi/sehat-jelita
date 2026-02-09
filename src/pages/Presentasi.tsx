@@ -902,6 +902,149 @@ const slides: Slide[] = [
   },
   {
     id: 10,
+    title: "Kiosk & Telemedicine",
+    content: (
+      <div className="relative h-full px-8 md:px-16 py-12 overflow-hidden bg-gradient-to-br from-violet-50 via-white to-cyan-50">
+        <motion.div
+          className="absolute top-20 right-20 w-[400px] h-[400px] rounded-full bg-gradient-to-br from-violet-500/10 to-transparent blur-3xl"
+          animate={{ rotate: 360 }}
+          transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
+        />
+        <motion.div
+          className="absolute bottom-10 left-10 w-[300px] h-[300px] rounded-full bg-gradient-to-tr from-cyan-500/10 to-transparent blur-3xl"
+          animate={{ rotate: -360 }}
+          transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
+        />
+        
+        <div className="relative z-10 max-w-6xl mx-auto">
+          <motion.div variants={fadeInUp} initial="hidden" animate="visible" className="text-center mb-10">
+            <p className="text-xs text-violet-600 tracking-[0.3em] uppercase mb-2 font-semibold">09 — Inovasi Digital</p>
+            <h2 className="text-3xl md:text-5xl font-bold text-slate-900">
+              <span className="text-violet-600">Kiosk</span> Mandiri & <span className="text-cyan-600">Telemedicine</span>
+            </h2>
+            <p className="text-slate-500 mt-4 max-w-2xl mx-auto">
+              Dua fitur unggulan yang meningkatkan pengalaman pasien dan efisiensi pelayanan rumah sakit
+            </p>
+          </motion.div>
+          
+          <div className="grid md:grid-cols-2 gap-8">
+            {/* Kiosk Section */}
+            <motion.div 
+              className="rounded-2xl p-6 bg-white border border-violet-100 shadow-xl overflow-hidden group"
+              variants={scaleIn}
+              initial="hidden"
+              animate="visible"
+              whileHover={{ y: -4 }}
+            >
+              <div className="flex items-center gap-3 mb-5">
+                <motion.div 
+                  className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-3xl shadow-lg"
+                  whileHover={{ scale: 1.1, rotate: 5 }}
+                >
+                  🖥️
+                </motion.div>
+                <div>
+                  <h3 className="text-xl font-bold text-slate-900">Kiosk Mandiri</h3>
+                  <p className="text-xs text-violet-500 font-medium">Self-Service Check-in</p>
+                </div>
+              </div>
+              
+              <p className="text-sm text-slate-600 mb-4 leading-relaxed">
+                Mesin pendaftaran mandiri berbasis layar sentuh yang memungkinkan pasien mendaftar dan mengambil antrean tanpa harus antri di loket pendaftaran.
+              </p>
+              
+              <div className="space-y-2 mb-5">
+                {[
+                  { icon: "🔍", text: "Pencarian pasien via NIK, No. RM, atau Telepon" },
+                  { icon: "📋", text: "Pendaftaran antrean poli & penunjang otomatis" },
+                  { icon: "🎫", text: "Cetak tiket antrean dengan nomor & estimasi waktu" },
+                  { icon: "⌨️", text: "Keyboard virtual untuk layar sentuh (touchscreen)" },
+                  { icon: "⏱️", text: "Auto-reset setelah 60 detik idle (keamanan)" },
+                  { icon: "📡", text: "Sinkronisasi real-time dengan sistem antrian utama" },
+                ].map((item, idx) => (
+                  <motion.div 
+                    key={idx} 
+                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-violet-50 transition-colors"
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.3 + idx * 0.08 }}
+                  >
+                    <span className="text-lg">{item.icon}</span>
+                    <span className="text-xs text-slate-700">{item.text}</span>
+                  </motion.div>
+                ))}
+              </div>
+              
+              <motion.div 
+                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-violet-500 to-purple-600 text-white text-xs font-medium text-center shadow-md"
+                whileHover={{ scale: 1.02 }}
+              >
+                ✓ Kurangi antrian loket hingga 70%
+              </motion.div>
+            </motion.div>
+
+            {/* Telemedicine Section */}
+            <motion.div 
+              className="rounded-2xl p-6 bg-white border border-cyan-100 shadow-xl overflow-hidden group"
+              variants={scaleIn}
+              initial="hidden"
+              animate="visible"
+              custom={1}
+              whileHover={{ y: -4 }}
+            >
+              <div className="flex items-center gap-3 mb-5">
+                <motion.div 
+                  className="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-3xl shadow-lg"
+                  whileHover={{ scale: 1.1, rotate: -5 }}
+                >
+                  📹
+                </motion.div>
+                <div>
+                  <h3 className="text-xl font-bold text-slate-900">Telemedicine</h3>
+                  <p className="text-xs text-cyan-500 font-medium">Video Consultation</p>
+                </div>
+              </div>
+              
+              <p className="text-sm text-slate-600 mb-4 leading-relaxed">
+                Layanan konsultasi jarak jauh melalui video call yang menghubungkan dokter dan pasien secara langsung dari mana saja, kapan saja.
+              </p>
+              
+              <div className="space-y-2 mb-5">
+                {[
+                  { icon: "🎥", text: "Video call HD dokter-pasien (WebRTC P2P)" },
+                  { icon: "🎤", text: "Kontrol audio & video (mute, camera on/off)" },
+                  { icon: "📝", text: "Catatan konsultasi terintegrasi rekam medis" },
+                  { icon: "💊", text: "E-Prescription langsung dari sesi telemedicine" },
+                  { icon: "📅", text: "Booking jadwal online & reminder otomatis" },
+                  { icon: "🔒", text: "Enkripsi end-to-end untuk privasi pasien" },
+                ].map((item, idx) => (
+                  <motion.div 
+                    key={idx} 
+                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-cyan-50 transition-colors"
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.3 + idx * 0.08 }}
+                  >
+                    <span className="text-lg">{item.icon}</span>
+                    <span className="text-xs text-slate-700">{item.text}</span>
+                  </motion.div>
+                ))}
+              </div>
+              
+              <motion.div 
+                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white text-xs font-medium text-center shadow-md"
+                whileHover={{ scale: 1.02 }}
+              >
+                ✓ Jangkau pasien di seluruh Indonesia
+              </motion.div>
+            </motion.div>
+          </div>
+        </div>
+      </div>
+    ),
+  },
+  {
+    id: 11,
     title: "Penutup",
     content: (
       <div className="relative flex flex-col items-center justify-center h-full px-8 overflow-hidden">
