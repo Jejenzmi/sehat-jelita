@@ -1293,6 +1293,139 @@ const slides: Slide[] = [
   },
   {
     id: 13,
+    title: "Migrasi MySQL/PHP",
+    content: (
+      <div className="relative flex flex-col min-h-full px-8 py-12 overflow-hidden">
+        <motion.div className="absolute inset-0 bg-gradient-to-br from-orange-50/50 via-transparent to-blue-50/50" />
+        
+        <div className="relative z-10 max-w-6xl mx-auto w-full">
+          <motion.p 
+            className="text-xs text-slate-400 tracking-[0.3em] uppercase mb-2"
+            variants={fadeInUp} initial="hidden" animate="visible"
+          >
+            Legacy System Migration
+          </motion.p>
+          <motion.h2 
+            className="text-2xl md:text-3xl font-bold text-slate-900 mb-2"
+            variants={fadeInUp} initial="hidden" animate="visible" custom={1}
+          >
+            Migrasi dari <span className="text-primary">MySQL & PHP 5</span>
+          </motion.h2>
+          <motion.p 
+            className="text-sm text-slate-500 mb-6"
+            variants={fadeInUp} initial="hidden" animate="visible" custom={2}
+          >
+            Sistem legacy berbasis PHP 5 dan MySQL dapat dimigrasikan secara penuh ke arsitektur modern
+          </motion.p>
+
+          {/* Migration Flow */}
+          <motion.div 
+            className="flex flex-wrap items-center justify-center gap-3 mb-6"
+            variants={fadeInUp} initial="hidden" animate="visible" custom={3}
+          >
+            {[
+              { label: "MySQL Database", sub: "Legacy", icon: "🗄️", color: "from-orange-400 to-amber-500" },
+              { label: "Export CSV/Excel", sub: "Extract", icon: "📤", color: "from-slate-400 to-slate-500" },
+              { label: "Migration Tool", sub: "Transform", icon: "🔄", color: "from-primary to-blue-500" },
+              { label: "PostgreSQL Cloud", sub: "Load", icon: "☁️", color: "from-emerald-400 to-teal-500" },
+            ].map((step, idx) => (
+              <div key={idx} className="flex items-center gap-3">
+                <motion.div 
+                  className="text-center"
+                  whileHover={{ scale: 1.05, y: -4 }}
+                >
+                  <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${step.color} flex items-center justify-center text-2xl shadow-lg mb-1`}>
+                    {step.icon}
+                  </div>
+                  <p className="text-xs font-bold text-slate-800">{step.label}</p>
+                  <p className="text-xs text-slate-400">{step.sub}</p>
+                </motion.div>
+                {idx < 3 && <span className="text-xl text-slate-300 font-bold">→</span>}
+              </div>
+            ))}
+          </motion.div>
+
+          {/* Mapping Table */}
+          <motion.div 
+            className="grid md:grid-cols-2 gap-4 mb-6"
+            variants={staggerContainer} initial="hidden" animate="visible"
+          >
+            <motion.div variants={scaleIn} className="rounded-2xl bg-white border border-slate-100 shadow-lg p-4">
+              <h4 className="font-bold text-slate-900 text-sm mb-3 flex items-center gap-2">
+                <span className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center text-white text-sm">✓</span>
+                Yang Bisa Dimigrasikan
+              </h4>
+              <div className="space-y-2">
+                {[
+                  { from: "Tabel Pasien MySQL", to: "patients (PostgreSQL)", icon: "👤" },
+                  { from: "Data Rekam Medis", to: "medical_records + diagnoses", icon: "📋" },
+                  { from: "Master Obat/Tarif", to: "medicines + tariffs", icon: "💊" },
+                  { from: "Data Keuangan", to: "billings + journal_entries", icon: "💰" },
+                  { from: "Data Karyawan", to: "employees + doctors", icon: "👥" },
+                  { from: "Inventori", to: "inventory_items + batches", icon: "📦" },
+                ].map((item, idx) => (
+                  <div key={idx} className="flex items-center gap-2 text-xs bg-emerald-50/50 rounded-lg p-2">
+                    <span>{item.icon}</span>
+                    <span className="text-slate-500 line-through">{item.from}</span>
+                    <span className="text-emerald-500 font-bold">→</span>
+                    <span className="text-slate-800 font-medium">{item.to}</span>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+
+            <motion.div variants={scaleIn} custom={1} className="rounded-2xl bg-white border border-slate-100 shadow-lg p-4">
+              <h4 className="font-bold text-slate-900 text-sm mb-3 flex items-center gap-2">
+                <span className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white text-sm">⚠️</span>
+                Yang Perlu Diperhatikan
+              </h4>
+              <div className="space-y-2.5">
+                {[
+                  { title: "Encoding", desc: "MySQL latin1 → UTF-8 konversi otomatis saat import" },
+                  { title: "Auto-increment → UUID", desc: "ID lama di-mapping ke UUID baru dengan tabel referensi silang" },
+                  { title: "Logic PHP → Cloud", desc: "Business logic di PHP di-review & dipastikan ter-cover di sistem baru" },
+                  { title: "Parallel Run", desc: "Sistem lama tetap jalan bersamaan selama masa transisi (Bulan 4-5)" },
+                  { title: "Validasi Data", desc: "NIK 16 digit, format tanggal, ICD-10 code di-cleansing otomatis" },
+                ].map((item, idx) => (
+                  <div key={idx} className="bg-amber-50/50 rounded-lg p-2">
+                    <p className="text-xs font-semibold text-slate-800">{item.title}</p>
+                    <p className="text-xs text-slate-500">{item.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          </motion.div>
+
+          {/* Bottom assurance */}
+          <motion.div 
+            className="flex flex-wrap justify-center gap-3"
+            variants={fadeInUp} initial="hidden" animate="visible" custom={5}
+          >
+            {[
+              { icon: "🛡️", label: "Zero Data Loss", desc: "Validasi integritas sebelum cutover" },
+              { icon: "⏱️", label: "Downtime Minimal", desc: "Parallel run menjamin kontinuitas" },
+              { icon: "📊", label: "180+ Tabel Siap", desc: "Struktur target sudah lengkap" },
+              { icon: "🔧", label: "Migration Tool", desc: "Mapping interaktif & preview data" },
+            ].map((item, idx) => (
+              <motion.div 
+                key={idx}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-slate-100 shadow-md"
+                whileHover={{ scale: 1.03, y: -2 }}
+              >
+                <span className="text-lg">{item.icon}</span>
+                <div>
+                  <p className="text-xs font-bold text-slate-800">{item.label}</p>
+                  <p className="text-xs text-slate-400">{item.desc}</p>
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </div>
+    ),
+  },
+  {
+    id: 14,
     title: "Penutup",
     content: (
       <div className="relative flex flex-col items-center justify-center min-h-full px-8 py-12 overflow-hidden">
