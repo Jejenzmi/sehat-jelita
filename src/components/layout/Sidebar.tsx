@@ -36,6 +36,10 @@ import {
   Wrench,
   Award,
   KeyRound,
+  Paintbrush,
+  BarChart2,
+  Tv,
+  ArrowRightLeft,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import zenLogo from "@/assets/zen-logo.webp";
@@ -114,6 +118,10 @@ const allNavigationGroups: NavGroup[] = [
       { icon: FileBarChart, label: "Kemenkes", path: "/laporan-kemenkes", badge: "RL" },
       { icon: Database, label: "Master Data", path: "/master-data" },
       { icon: Shield, label: "Manajemen User", path: "/manajemen-user", badge: "RBAC" },
+      { icon: Paintbrush, label: "Form Builder", path: "/form-builder", badge: "NEW" },
+      { icon: BarChart2, label: "Report Builder", path: "/report-builder", badge: "NEW" },
+      { icon: Tv, label: "Smart Display", path: "/smart-display", badge: "NEW" },
+      { icon: ArrowRightLeft, label: "DICOM/PACS", path: "/dicom", badge: "NEW" },
       { icon: Settings, label: "Pengaturan", path: "/pengaturan" },
     ],
   },

@@ -1045,6 +1045,35 @@ const slides: Slide[] = [
   },
   {
     id: 11,
+    title: "Inovasi Digital",
+    content: (
+      <div className="relative flex flex-col items-center justify-center h-full px-8 overflow-hidden">
+        <motion.div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-transparent to-cyan-500/5" animate={{ opacity: [0.5, 1, 0.5] }} transition={{ duration: 4, repeat: Infinity }} />
+        <div className="relative z-10 max-w-5xl w-full">
+          <motion.p className="text-xs text-slate-400 tracking-[0.4em] uppercase mb-4 text-center" variants={fadeInUp} initial="hidden" animate="visible">Fitur Unggulan Tambahan</motion.p>
+          <motion.h1 className="text-3xl md:text-4xl font-bold text-slate-900 mb-8 text-center" variants={fadeInUp} initial="hidden" animate="visible" custom={1}>
+            <span className="text-indigo-600">Dynamic Builder</span> & <span className="text-cyan-600">Smart Integration</span>
+          </motion.h1>
+          <motion.div className="grid grid-cols-1 md:grid-cols-2 gap-4" variants={staggerContainer} initial="hidden" animate="visible">
+            {[
+              { icon: "🎨", title: "Dynamic Form Builder", desc: "Buat formulir EMR custom tanpa coding dalam <1 jam. Drag & drop field, template preset, ekspor PDF, dan pengaturan hak akses.", color: "from-violet-500 to-purple-600" },
+              { icon: "📊", title: "Dynamic Report Builder", desc: "Buat laporan custom dengan filtering dinamis. Pilih sumber data, kolom, filter, dan visualisasi (tabel/chart). Ekspor Excel & PDF.", color: "from-blue-500 to-cyan-600" },
+              { icon: "🖥️", title: "Smart Hospital Display", desc: "Layar informasi untuk lobby (antrian & promo), ward (status bed real-time), farmasi (antrian resep), dan jadwal dokter.", color: "from-emerald-500 to-teal-600" },
+              { icon: "🔗", title: "HL7 / DICOM / PACS", desc: "Integrasi standar imaging internasional. Koneksi PACS, RIS, LIS, DICOM Viewer, dan HL7 message routing terintegrasi.", color: "from-amber-500 to-orange-600" },
+            ].map((item, i) => (
+              <motion.div key={i} variants={scaleIn} custom={i} className="rounded-2xl bg-white shadow-lg border border-slate-100 p-5 hover:shadow-xl transition-shadow">
+                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${item.color} flex items-center justify-center text-2xl mb-3 shadow-lg`}>{item.icon}</div>
+                <h3 className="font-bold text-slate-900 mb-2">{item.title}</h3>
+                <p className="text-sm text-slate-500 leading-relaxed">{item.desc}</p>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </div>
+    ),
+  },
+  {
+    id: 12,
     title: "Penutup",
     content: (
       <div className="relative flex flex-col items-center justify-center h-full px-8 overflow-hidden">
