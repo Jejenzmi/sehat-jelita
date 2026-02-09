@@ -285,7 +285,7 @@ const slides: Slide[] = [
               <div className="absolute -left-4 top-0 bottom-0 w-1 bg-gradient-to-b from-primary via-blue-500 to-cyan-500 rounded-full" />
               <h3 className="text-sm font-bold text-primary uppercase tracking-wide mb-4 ml-4">Pelayanan Klinis</h3>
               <motion.div className="space-y-2" variants={staggerContainer} initial="hidden" animate="visible">
-                {["Pendaftaran & Antrian Cerdas", "Rawat Jalan (Poliklinik)", "Rawat Inap", "IGD", "Kamar Operasi (IBS)", "ICU/NICU/PICU", "Hemodialisa", "Rehabilitasi Medik", "MCU", "Forensik"].map((item, idx) => (
+                {["Pendaftaran & Antrian Cerdas", "Rawat Jalan (Poliklinik)", "Rawat Inap", "IGD", "Kamar Operasi (IBS)", "ICU/NICU/PICU", "Hemodialisa", "Rehabilitasi Medik", "MCU", "Forensik", "Home Care", "Telemedicine"].map((item, idx) => (
                   <motion.div 
                     key={idx} 
                     variants={fadeInUp}
@@ -294,6 +294,9 @@ const slides: Slide[] = [
                   >
                     <span className="w-2 h-2 rounded-full bg-gradient-to-r from-primary to-blue-500 group-hover:scale-150 transition-transform" />
                     <span className="text-sm text-slate-700">{item}</span>
+                    {(item === "Home Care" || item === "Telemedicine") && (
+                      <span className="ml-auto px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-100 text-emerald-600">NEW</span>
+                    )}
                   </motion.div>
                 ))}
               </motion.div>
@@ -309,7 +312,7 @@ const slides: Slide[] = [
               <div className="absolute -left-4 top-0 bottom-0 w-1 bg-gradient-to-b from-emerald-500 via-teal-500 to-cyan-500 rounded-full" />
               <h3 className="text-sm font-bold text-emerald-600 uppercase tracking-wide mb-4 ml-4">Penunjang & Manajemen</h3>
               <motion.div className="space-y-2" variants={staggerContainer} initial="hidden" animate="visible">
-                {["Farmasi & Apotek", "Laboratorium", "Radiologi & Imaging", "Bank Darah (UTDRS)", "Gizi & Nutrisi", "Rekam Medis Elektronik", "Billing & Kasir", "Inventori & Logistik", "SDM & Payroll", "Akuntansi"].map((item, idx) => (
+                {["Farmasi & Apotek", "Laboratorium", "Radiologi & Imaging", "Bank Darah (UTDRS)", "Gizi & Nutrisi", "Rekam Medis Elektronik", "Billing & Kasir", "Inventori & Logistik", "Ambulance Center", "PR Approval Workflow", "SDM & Payroll", "Akuntansi"].map((item, idx) => (
                   <motion.div 
                     key={idx} 
                     variants={fadeInUp}
@@ -318,6 +321,9 @@ const slides: Slide[] = [
                   >
                     <span className="w-2 h-2 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 group-hover:scale-150 transition-transform" />
                     <span className="text-sm text-slate-700">{item}</span>
+                    {(item === "Ambulance Center" || item === "PR Approval Workflow") && (
+                      <span className="ml-auto px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-100 text-emerald-600">NEW</span>
+                    )}
                   </motion.div>
                 ))}
               </motion.div>
@@ -1050,19 +1056,27 @@ const slides: Slide[] = [
       <div className="relative flex flex-col items-center justify-center h-full px-8 overflow-hidden">
         <motion.div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-transparent to-cyan-500/5" animate={{ opacity: [0.5, 1, 0.5] }} transition={{ duration: 4, repeat: Infinity }} />
         <div className="relative z-10 max-w-5xl w-full">
-          <motion.p className="text-xs text-slate-400 tracking-[0.4em] uppercase mb-4 text-center" variants={fadeInUp} initial="hidden" animate="visible">Fitur Unggulan Tambahan</motion.p>
+          <motion.p className="text-xs text-slate-400 tracking-[0.4em] uppercase mb-4 text-center" variants={fadeInUp} initial="hidden" animate="visible">Fitur Unggulan Terbaru</motion.p>
           <motion.h1 className="text-3xl md:text-4xl font-bold text-slate-900 mb-8 text-center" variants={fadeInUp} initial="hidden" animate="visible" custom={1}>
-            <span className="text-indigo-600">Dynamic Builder</span> & <span className="text-cyan-600">Smart Integration</span>
+            <span className="text-indigo-600">Fitur Baru</span> — Home Care, Ambulance & <span className="text-cyan-600">Smart Tools</span>
           </motion.h1>
           <motion.div className="grid grid-cols-1 md:grid-cols-2 gap-4" variants={staggerContainer} initial="hidden" animate="visible">
             {[
+              { icon: "🏠", title: "Home Care", desc: "Layanan kesehatan ke rumah pasien dengan penjadwalan, tracking status kunjungan, dan penugasan tenaga medis — terintegrasi database real-time.", color: "from-rose-500 to-pink-600", badge: "DB" },
+              { icon: "🚑", title: "Ambulance Center", desc: "Manajemen armada ambulans & dispatch darurat. Tracking status kendaraan, prioritas panggilan, dan auto-update ketersediaan.", color: "from-red-500 to-orange-600", badge: "DB" },
+              { icon: "✅", title: "PR Approval Workflow", desc: "Alur persetujuan pengadaan 3 level (Kepala Unit → Manajer Logistik → Direktur) dengan tracking status dan notifikasi otomatis.", color: "from-indigo-500 to-purple-600", badge: "DB" },
               { icon: "🎨", title: "Dynamic Form Builder", desc: "Buat formulir EMR custom tanpa coding dalam <1 jam. Drag & drop field, template preset, ekspor PDF, dan pengaturan hak akses.", color: "from-violet-500 to-purple-600" },
               { icon: "📊", title: "Dynamic Report Builder", desc: "Buat laporan custom dengan filtering dinamis. Pilih sumber data, kolom, filter, dan visualisasi (tabel/chart). Ekspor Excel & PDF.", color: "from-blue-500 to-cyan-600" },
               { icon: "🖥️", title: "Smart Hospital Display", desc: "Layar informasi untuk lobby (antrian & promo), ward (status bed real-time), farmasi (antrian resep), dan jadwal dokter.", color: "from-emerald-500 to-teal-600" },
               { icon: "🔗", title: "HL7 / DICOM / PACS", desc: "Integrasi standar imaging internasional. Koneksi PACS, RIS, LIS, DICOM Viewer, dan HL7 message routing terintegrasi.", color: "from-amber-500 to-orange-600" },
             ].map((item, i) => (
               <motion.div key={i} variants={scaleIn} custom={i} className="rounded-2xl bg-white shadow-lg border border-slate-100 p-5 hover:shadow-xl transition-shadow">
-                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${item.color} flex items-center justify-center text-2xl mb-3 shadow-lg`}>{item.icon}</div>
+                <div className="flex items-center gap-2 mb-3">
+                  <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${item.color} flex items-center justify-center text-2xl shadow-lg`}>{item.icon}</div>
+                  {"badge" in item && item.badge && (
+                    <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-100 text-emerald-700">{item.badge}</span>
+                  )}
+                </div>
                 <h3 className="font-bold text-slate-900 mb-2">{item.title}</h3>
                 <p className="text-sm text-slate-500 leading-relaxed">{item.desc}</p>
               </motion.div>
