@@ -64,7 +64,7 @@ const slides: Slide[] = [
     id: 1,
     title: "Cover",
     content: (
-      <div className="relative flex flex-col items-center justify-center h-full px-8 overflow-hidden">
+      <div className="relative flex flex-col items-center justify-center min-h-full px-8 py-12 overflow-hidden">
         {/* Animated background elements */}
         <motion.div
           className="absolute top-0 right-0 w-[600px] h-[600px] rounded-full bg-gradient-to-br from-primary/20 to-transparent blur-3xl"
@@ -138,7 +138,7 @@ const slides: Slide[] = [
     id: 2,
     title: "Tentang Kami",
     content: (
-      <div className="relative h-full px-8 md:px-16 py-12 overflow-hidden">
+      <div className="relative min-h-full px-8 md:px-16 py-12 overflow-hidden">
         <motion.div
           className="absolute -top-20 -right-20 w-[400px] h-[400px] rounded-full bg-gradient-to-br from-primary/10 to-transparent blur-3xl"
           animate={{ rotate: 360 }}
@@ -207,7 +207,7 @@ const slides: Slide[] = [
     id: 3,
     title: "Keunggulan",
     content: (
-      <div className="relative h-full px-8 md:px-16 py-12 overflow-hidden">
+      <div className="relative min-h-full px-8 md:px-16 py-12 overflow-hidden">
         <motion.div
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full bg-gradient-to-r from-primary/5 via-blue-500/5 to-cyan-500/5 blur-3xl"
           animate={{ rotate: 360 }}
@@ -266,7 +266,7 @@ const slides: Slide[] = [
     id: 4,
     title: "Modul",
     content: (
-      <div className="relative h-full px-8 md:px-16 py-10 overflow-hidden">
+      <div className="relative min-h-full px-8 md:px-16 py-10 overflow-hidden">
         <div className="relative z-10 max-w-6xl mx-auto">
           <motion.div variants={fadeInUp} initial="hidden" animate="visible" className="text-center mb-8">
             <p className="text-xs text-primary tracking-[0.3em] uppercase mb-2 font-semibold">03 — Ruang Lingkup</p>
@@ -337,7 +337,7 @@ const slides: Slide[] = [
     id: 5,
     title: "SATU SEHAT",
     content: (
-      <div className="relative h-full px-8 md:px-16 py-12 overflow-hidden bg-gradient-to-br from-emerald-50 via-white to-teal-50">
+      <div className="relative min-h-full px-8 md:px-16 py-12 overflow-hidden bg-gradient-to-br from-emerald-50 via-white to-teal-50">
         <motion.div
           className="absolute top-20 right-20 w-32 h-32 rounded-full border-4 border-emerald-200/50"
           animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.6, 0.3] }}
@@ -405,7 +405,7 @@ const slides: Slide[] = [
     id: 6,
     title: "BPJS",
     content: (
-      <div className="relative h-full px-8 md:px-16 py-12 overflow-hidden bg-gradient-to-br from-blue-50 via-white to-cyan-50">
+      <div className="relative min-h-full px-8 md:px-16 py-12 overflow-hidden bg-gradient-to-br from-blue-50 via-white to-cyan-50">
         <div className="relative z-10 max-w-5xl mx-auto">
           <motion.div variants={fadeInUp} initial="hidden" animate="visible" className="text-center mb-10">
             <p className="text-xs text-blue-600 tracking-[0.3em] uppercase mb-2 font-semibold">05 — Integrasi</p>
@@ -489,7 +489,7 @@ const slides: Slide[] = [
     id: 7,
     title: "Arsitektur",
     content: (
-      <div className="relative h-full px-8 md:px-16 py-12 overflow-hidden">
+      <div className="relative min-h-full px-8 md:px-16 py-12 overflow-hidden">
         <motion.div
           className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900"
           initial={{ opacity: 0 }}
@@ -577,7 +577,7 @@ const slides: Slide[] = [
     id: 8,
     title: "Migrasi & Implementasi",
     content: (
-      <div className="relative h-full px-6 md:px-12 py-8 overflow-hidden">
+      <div className="relative min-h-full px-6 md:px-12 py-8 overflow-hidden">
         {/* Animated background */}
         <motion.div
           className="absolute top-0 right-0 w-[500px] h-[500px] rounded-full bg-gradient-to-br from-primary/10 via-blue-500/5 to-transparent blur-3xl"
@@ -800,7 +800,7 @@ const slides: Slide[] = [
     id: 9,
     title: "SLA & Support",
     content: (
-      <div className="relative h-full px-6 md:px-12 py-8 overflow-hidden">
+      <div className="relative min-h-full px-6 md:px-12 py-8 overflow-hidden">
         <motion.div
           className="absolute -bottom-20 -left-20 w-[500px] h-[500px] rounded-full bg-gradient-to-br from-blue-500/10 to-transparent blur-3xl"
           animate={{ rotate: -360 }}
@@ -910,7 +910,7 @@ const slides: Slide[] = [
     id: 10,
     title: "Kiosk & Telemedicine",
     content: (
-      <div className="relative h-full px-8 md:px-16 py-12 overflow-hidden bg-gradient-to-br from-violet-50 via-white to-cyan-50">
+      <div className="relative min-h-full px-8 md:px-16 py-12 overflow-hidden bg-gradient-to-br from-violet-50 via-white to-cyan-50">
         <motion.div
           className="absolute top-20 right-20 w-[400px] h-[400px] rounded-full bg-gradient-to-br from-violet-500/10 to-transparent blur-3xl"
           animate={{ rotate: 360 }}
@@ -1053,7 +1053,7 @@ const slides: Slide[] = [
     id: 11,
     title: "Inovasi Digital",
     content: (
-      <div className="relative flex flex-col items-center justify-center h-full px-8 overflow-hidden">
+      <div className="relative flex flex-col items-center justify-center min-h-full px-8 py-12 overflow-hidden">
         <motion.div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-transparent to-cyan-500/5" animate={{ opacity: [0.5, 1, 0.5] }} transition={{ duration: 4, repeat: Infinity }} />
         <div className="relative z-10 max-w-5xl w-full">
           <motion.p className="text-xs text-slate-400 tracking-[0.4em] uppercase mb-4 text-center" variants={fadeInUp} initial="hidden" animate="visible">Fitur Unggulan Terbaru</motion.p>
@@ -1090,7 +1090,7 @@ const slides: Slide[] = [
     id: 12,
     title: "Kepatuhan Regulasi",
     content: (
-      <div className="relative h-full px-6 md:px-12 py-8 overflow-hidden bg-gradient-to-br from-rose-50 via-white to-amber-50">
+      <div className="relative min-h-full px-6 md:px-12 py-8 pb-20 overflow-hidden bg-gradient-to-br from-rose-50 via-white to-amber-50">
         <motion.div
           className="absolute top-10 right-10 w-[400px] h-[400px] rounded-full bg-gradient-to-br from-rose-500/10 to-transparent blur-3xl"
           animate={{ rotate: 360 }}
@@ -1261,7 +1261,7 @@ const slides: Slide[] = [
     id: 13,
     title: "Penutup",
     content: (
-      <div className="relative flex flex-col items-center justify-center h-full px-8 overflow-hidden">
+      <div className="relative flex flex-col items-center justify-center min-h-full px-8 py-12 overflow-hidden">
         <motion.div
           className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-primary/5 via-transparent to-blue-500/5"
           animate={{ opacity: [0.5, 1, 0.5] }}
