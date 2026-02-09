@@ -1088,6 +1088,177 @@ const slides: Slide[] = [
   },
   {
     id: 12,
+    title: "Kepatuhan Regulasi",
+    content: (
+      <div className="relative h-full px-6 md:px-12 py-8 overflow-hidden bg-gradient-to-br from-rose-50 via-white to-amber-50">
+        <motion.div
+          className="absolute top-10 right-10 w-[400px] h-[400px] rounded-full bg-gradient-to-br from-rose-500/10 to-transparent blur-3xl"
+          animate={{ rotate: 360 }}
+          transition={{ duration: 35, repeat: Infinity, ease: "linear" }}
+        />
+        
+        <div className="relative z-10 max-w-6xl mx-auto">
+          <motion.div variants={fadeInUp} initial="hidden" animate="visible" className="text-center mb-6">
+            <p className="text-xs text-rose-600 tracking-[0.3em] uppercase mb-2 font-semibold">10 — Regulatory Compliance</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-900">
+              Kepatuhan <span className="text-rose-600">Regulasi</span> & Standar
+            </h2>
+            <p className="text-slate-500 mt-2 text-sm">Memenuhi seluruh regulasi nasional & internasional untuk operasional rumah sakit</p>
+          </motion.div>
+          
+          <motion.div 
+            className="grid md:grid-cols-2 lg:grid-cols-3 gap-4"
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
+          >
+            {[
+              {
+                icon: "🏛️",
+                title: "Kemenkes RI",
+                subtitle: "Permenkes & Standar Nasional",
+                items: [
+                  "Laporan RL 1.1 – RL 5.4 (otomatis)",
+                  "ASPAK (Aplikasi Sarana Prasarana Alkes)",
+                  "SISMADAK (Indikator Mutu Nasional)",
+                  "Standar Akreditasi SNARS Ed. 1.1",
+                  "Format Rekam Medis Elektronik (RME)",
+                  "Kode ICD-10 & ICD-9-CM terintegrasi"
+                ],
+                color: "from-rose-500 to-red-600",
+                borderColor: "border-rose-200"
+              },
+              {
+                icon: "🌐",
+                title: "SATU SEHAT",
+                subtitle: "Interoperabilitas HL7 FHIR R4",
+                items: [
+                  "11 Resource FHIR R4 (Patient, Encounter, dll.)",
+                  "OAuth 2.0 Authentication",
+                  "Bundle Composition untuk RME",
+                  "Sinkronisasi bi-directional",
+                  "Practitioner & Organization mapping",
+                  "Audit log setiap transaksi FHIR"
+                ],
+                color: "from-emerald-500 to-teal-600",
+                borderColor: "border-emerald-200"
+              },
+              {
+                icon: "💳",
+                title: "BPJS Kesehatan",
+                subtitle: "Bridging Sistem Lengkap",
+                items: [
+                  "VClaim (SEP, Eligibilitas, Rujukan)",
+                  "E-Claim / INA-CBG Grouper",
+                  "Antrean Online (Mobile JKN)",
+                  "iCare JKN (Monitoring Klaim)",
+                  "Aplicares (Ketersediaan TT)",
+                  "Enkripsi HMAC-SHA256 & AES-256"
+                ],
+                color: "from-blue-500 to-indigo-600",
+                borderColor: "border-blue-200"
+              },
+              {
+                icon: "🔒",
+                title: "UU PDP No. 27/2022",
+                subtitle: "Perlindungan Data Pribadi",
+                items: [
+                  "Row Level Security (RLS) pada 180+ tabel",
+                  "RBAC 21 peran (Role-Based Access Control)",
+                  "Audit trail seluruh aksi pengguna",
+                  "Enkripsi data sensitif (AES-256)",
+                  "Hak hapus data hanya untuk Admin",
+                  "Informed Consent digital terintegrasi"
+                ],
+                color: "from-amber-500 to-orange-600",
+                borderColor: "border-amber-200"
+              },
+              {
+                icon: "🌍",
+                title: "WHO & Standar Internasional",
+                subtitle: "Klasifikasi & Protokol Global",
+                items: [
+                  "ICD-10 (Diagnosis) — WHO Classification",
+                  "ICD-9-CM (Prosedur Medis)",
+                  "HL7 FHIR R4 (Interoperabilitas)",
+                  "DICOM (Medical Imaging)",
+                  "SNOMED CT compatible",
+                  "Patient Safety Goals (IPSG)"
+                ],
+                color: "from-violet-500 to-purple-600",
+                borderColor: "border-violet-200"
+              },
+              {
+                icon: "✅",
+                title: "Permenkes 24/2022",
+                subtitle: "Rekam Medis Elektronik",
+                items: [
+                  "Format SOAP standar (S/O/A/P)",
+                  "Tanda tangan digital dokter",
+                  "Retensi data sesuai ketentuan",
+                  "Hak akses berdasarkan peran klinis",
+                  "Integritas & keaslian data terjamin",
+                  "Backup & disaster recovery"
+                ],
+                color: "from-cyan-500 to-blue-600",
+                borderColor: "border-cyan-200"
+              },
+            ].map((item, idx) => (
+              <motion.div 
+                key={idx}
+                variants={scaleIn}
+                custom={idx}
+                className={`rounded-2xl p-5 bg-white border ${item.borderColor} shadow-lg hover:shadow-xl transition-all group overflow-hidden`}
+                whileHover={{ y: -4, scale: 1.01 }}
+              >
+                <motion.div className={`absolute inset-0 bg-gradient-to-br ${item.color} opacity-0 group-hover:opacity-5 transition-opacity duration-500`} />
+                <div className="flex items-center gap-3 mb-3">
+                  <motion.div 
+                    className={`w-11 h-11 rounded-xl bg-gradient-to-br ${item.color} flex items-center justify-center text-2xl shadow-lg`}
+                    whileHover={{ scale: 1.1, rotate: 5 }}
+                  >
+                    {item.icon}
+                  </motion.div>
+                  <div>
+                    <h3 className="font-bold text-slate-900 text-sm">{item.title}</h3>
+                    <p className="text-xs text-slate-400">{item.subtitle}</p>
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  {item.items.map((i, iIdx) => (
+                    <motion.div 
+                      key={iIdx} 
+                      className="flex items-center gap-2"
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.3 + idx * 0.05 + iIdx * 0.04 }}
+                    >
+                      <span className={`w-1.5 h-1.5 rounded-full bg-gradient-to-r ${item.color} flex-shrink-0`} />
+                      <span className="text-xs text-slate-600">{i}</span>
+                    </motion.div>
+                  ))}
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+
+          {/* Compliance Badge */}
+          <motion.div 
+            className="mt-5 p-4 rounded-2xl bg-gradient-to-r from-slate-900 to-slate-800 text-white text-center"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.8 }}
+          >
+            <p className="text-sm font-medium">
+              🛡️ SIMRS Lintas Link telah dirancang <strong>compliance-by-design</strong> — seluruh aspek regulasi terintegrasi sejak arsitektur awal, bukan ditambahkan kemudian.
+            </p>
+          </motion.div>
+        </div>
+      </div>
+    ),
+  },
+  {
+    id: 13,
     title: "Penutup",
     content: (
       <div className="relative flex flex-col items-center justify-center h-full px-8 overflow-hidden">
