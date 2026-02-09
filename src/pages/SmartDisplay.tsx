@@ -236,8 +236,6 @@ function WardDisplay() {
               {bed.status === "terisi" && (
                 <div className="text-xs space-y-1">
                   <p className="font-medium">{bed.patient}</p>
-                  <p className="text-muted-foreground">{bed.doctor}</p>
-                  <p className="text-muted-foreground">Masuk: {bed.admitDate}</p>
                 </div>
               )}
             </CardContent>
