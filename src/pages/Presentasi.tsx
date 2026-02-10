@@ -59,7 +59,7 @@ interface Slide {
   content: React.ReactNode;
 }
 
-const slides: Slide[] = [
+const _rawSlides: Slide[] = [
   {
     id: 1,
     title: "Cover",
@@ -1756,6 +1756,14 @@ const slides: Slide[] = [
     ),
   },
 ];
+
+// Reorder slides into a logical presentation flow:
+// Intro → Product overview → Technical → Compliance → Migration → Support → Close
+const slideOrder = [1, 2, 3, 4, 10, 11, 17, 7, 5, 6, 12, 15, 14, 13, 8, 9, 16];
+const slides: Slide[] = slideOrder.map((originalId, idx) => ({
+  ..._rawSlides.find(s => s.id === originalId)!,
+  id: idx + 1,
+}));
 
 export default function Presentasi() {
   const [currentSlide, setCurrentSlide] = useState(0);
