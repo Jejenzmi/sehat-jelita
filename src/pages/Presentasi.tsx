@@ -1756,11 +1756,153 @@ const _rawSlides: Slide[] = [
       </div>
     ),
   },
+  {
+    id: 18,
+    title: "E-Klaim IDRG",
+    content: (
+      <div className="relative min-h-full px-8 md:px-16 py-12 overflow-hidden bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+        <motion.div
+          className="absolute top-10 right-10 w-[300px] h-[300px] rounded-full bg-gradient-to-br from-indigo-200/30 to-purple-200/30 blur-3xl"
+          animate={{ scale: [1, 1.15, 1], rotate: [0, 180, 360] }}
+          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+        />
+        
+        <div className="relative z-10 max-w-6xl mx-auto">
+          <motion.div variants={fadeInUp} initial="hidden" animate="visible" className="text-center mb-8">
+            <p className="text-xs text-indigo-600 tracking-[0.3em] uppercase mb-2 font-semibold">10 — Bridging E-Klaim</p>
+            <h2 className="text-3xl md:text-5xl font-bold text-slate-900">
+              Full Bridging <span className="text-indigo-600">E-Klaim IDRG</span>
+            </h2>
+            <p className="text-slate-500 mt-3 max-w-2xl mx-auto text-sm">
+              Implementasi lengkap 31 endpoint API E-Klaim sesuai Juknis Onboarding Full Bridging iDRG
+            </p>
+          </motion.div>
+          
+          {/* Workflow Steps */}
+          <motion.div 
+            className="mb-8 p-5 rounded-2xl bg-white border border-indigo-100 shadow-lg"
+            variants={fadeInUp}
+            initial="hidden"
+            animate="visible"
+            custom={1}
+          >
+            <h4 className="font-bold text-slate-900 mb-4 text-sm uppercase tracking-wide">Alur Klaim IDRG End-to-End</h4>
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              {[
+                { step: "00", label: "New Claim" },
+                { step: "01", label: "Set Data" },
+                { step: "02", label: "Diagnosa" },
+                { step: "04", label: "Procedure" },
+                { step: "06", label: "Grouper IDRG" },
+                { step: "07", label: "Final IDRG" },
+                { step: "09", label: "Import INACBG" },
+                { step: "14", label: "Grouper INACBG" },
+                { step: "18", label: "Claim Final" },
+                { step: "20", label: "Claim Send" },
+              ].map((item, idx) => (
+                <motion.div key={idx} className="flex items-center gap-1.5"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.3 + idx * 0.08 }}
+                >
+                  <div className="px-2 py-1.5 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500 text-white text-[10px] font-bold shadow-md">
+                    #{item.step}
+                  </div>
+                  <span className="text-xs text-slate-600 font-medium">{item.label}</span>
+                  {idx < 9 && <span className="text-indigo-300 font-bold">→</span>}
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+
+          {/* API Categories Grid */}
+          <motion.div 
+            className="grid md:grid-cols-3 gap-4"
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
+          >
+            {[
+              {
+                title: "Manajemen Klaim",
+                gradient: "from-indigo-500 to-blue-500",
+                icon: "📋",
+                items: ["#00 New Claim", "#01 Set Claim Data", "#21 Get Claim Data", "#18 Claim Final", "#19 Claim Re-Edit", "#20 Claim Send", "#26 Cetak Klaim"]
+              },
+              {
+                title: "IDRG Processing",
+                gradient: "from-purple-500 to-pink-500",
+                icon: "🔬",
+                items: ["#02 Diagnosa Set", "#03 Diagnosa Get", "#04 Procedure Set", "#05 Procedure Get", "#06 Grouping IDRG", "#07 Final IDRG", "#08 Re-Edit IDRG", "#09 Import ke INACBG"]
+              },
+              {
+                title: "INACBG Processing",
+                gradient: "from-pink-500 to-rose-500",
+                icon: "🏥",
+                items: ["#10 Diagnosa Set", "#11 Diagnosa Get", "#12 Procedure Set", "#13 Procedure Get", "#14 Grouper Stage 1", "#15 Grouper Stage 2", "#16 Final", "#17 Re-Edit"]
+              },
+              {
+                title: "Search & Referensi",
+                gradient: "from-amber-500 to-orange-500",
+                icon: "🔍",
+                items: ["#22 Search Diagnosa IDRG", "#23 Search Procedure IDRG", "#24 Search Diagnosa INACBG", "#25 Search Procedure INACBG"]
+              },
+              {
+                title: "Utilitas",
+                gradient: "from-emerald-500 to-teal-500",
+                icon: "🔧",
+                items: ["Update Patient", "Delete Patient", "Delete Claim Data"]
+              },
+              {
+                title: "Rekam Medis Elektronik",
+                gradient: "from-cyan-500 to-blue-500",
+                icon: "💾",
+                items: ["Set Encounter RME", "Enkripsi AES-256-CBC", "Debug Mode Support"]
+              },
+            ].map((cat, idx) => (
+              <motion.div 
+                key={idx}
+                variants={scaleIn}
+                custom={idx}
+                className="relative overflow-hidden rounded-2xl p-5 bg-white border border-slate-100 shadow-lg group"
+                whileHover={{ y: -4 }}
+              >
+                <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${cat.gradient}`} />
+                <div className="flex items-center gap-3 mb-3">
+                  <span className="text-2xl">{cat.icon}</span>
+                  <h3 className="font-bold text-slate-900 text-sm">{cat.title}</h3>
+                </div>
+                <ul className="space-y-1">
+                  {cat.items.map((item, iIdx) => (
+                    <li key={iIdx} className="flex items-center gap-2 text-xs text-slate-600">
+                      <span className={`w-1 h-1 rounded-full bg-gradient-to-r ${cat.gradient}`} />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </motion.div>
+            ))}
+          </motion.div>
+
+          <motion.div 
+            className="mt-6 text-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1 }}
+          >
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 border border-indigo-200 rounded-full">
+              <span className="text-xs font-medium text-indigo-700">✦ Sesuai Juknis Onboarding Full Bridging iDRG — Kemenkes RI</span>
+            </div>
+          </motion.div>
+        </div>
+      </div>
+    ),
+  },
 ];
 
 // Reorder slides into a logical presentation flow:
 // Intro → Product overview → Technical → Compliance → Migration → Support → Close
-const slideOrder = [1, 2, 3, 4, 10, 11, 17, 7, 5, 6, 12, 15, 14, 13, 8, 9, 16];
+const slideOrder = [1, 2, 3, 4, 10, 11, 17, 7, 5, 6, 18, 12, 15, 14, 13, 8, 9, 16];
 const slides: Slide[] = slideOrder.map((originalId, idx) => ({
   ..._rawSlides.find(s => s.id === originalId)!,
   id: idx + 1,

@@ -43,11 +43,20 @@ export interface BPJSAntreanConfig {
   environment: "development" | "production";
 }
 
+export interface EklaimIDRGConfig {
+  enabled: boolean;
+  base_url: string;
+  encryption_key: string;
+  kode_tarif: string;
+  debug_mode: boolean;
+}
+
 export interface AllIntegrationsConfig {
   satusehat: SatuSehatConfig;
   bpjs: BPJSConfig;
   sisrute: SISRUTEConfig;
   bpjs_antrean: BPJSAntreanConfig;
+  eklaim_idrg: EklaimIDRGConfig;
 }
 
 const defaultConfigs: AllIntegrationsConfig = {
@@ -78,6 +87,13 @@ const defaultConfigs: AllIntegrationsConfig = {
     user_key: "",
     environment: "development",
   },
+  eklaim_idrg: {
+    enabled: false,
+    base_url: "",
+    encryption_key: "",
+    kode_tarif: "",
+    debug_mode: true,
+  },
 };
 
 export function useExternalIntegrations() {
@@ -96,6 +112,7 @@ export function useExternalIntegrations() {
           "integration_bpjs",
           "integration_sisrute",
           "integration_bpjs_antrean",
+          "integration_eklaim_idrg",
         ]);
 
       if (error) throw error;
@@ -111,6 +128,8 @@ export function useExternalIntegrations() {
           result.sisrute = { ...defaultConfigs.sisrute, ...setting.setting_value };
         } else if (setting.setting_key === "integration_bpjs_antrean") {
           result.bpjs_antrean = { ...defaultConfigs.bpjs_antrean, ...setting.setting_value };
+        } else if (setting.setting_key === "integration_eklaim_idrg") {
+          result.eklaim_idrg = { ...defaultConfigs.eklaim_idrg, ...setting.setting_value };
         }
       });
 
@@ -232,6 +251,17 @@ export function useExternalIntegrations() {
         enabled: configs.sisrute.enabled,
         status: configs.sisrute.enabled
           ? configs.sisrute.hospital_code
+            ? "connected"
+            : "pending"
+          : "disconnected",
+      },
+      {
+        id: "eklaim_idrg",
+        name: "E-Klaim IDRG",
+        code: "eklaim_idrg",
+        enabled: configs.eklaim_idrg.enabled,
+        status: configs.eklaim_idrg.enabled
+          ? configs.eklaim_idrg.base_url
             ? "connected"
             : "pending"
           : "disconnected",
