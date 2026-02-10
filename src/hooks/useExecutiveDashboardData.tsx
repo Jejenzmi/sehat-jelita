@@ -139,11 +139,7 @@ export function useExecutiveKPIs() {
         },
         { 
           label: "Pendapatan", 
-          value: totalRevenueThisMonth >= 1000000000
-            ? `Rp ${(totalRevenueThisMonth / 1000000000).toFixed(1)} M`
-            : totalRevenueThisMonth >= 1000000
-            ? `Rp ${(totalRevenueThisMonth / 1000000).toFixed(1)} jt`
-            : new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(totalRevenueThisMonth),
+          value: new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(totalRevenueThisMonth),
           change: `${revenueChange >= 0 ? "+" : ""}${revenueChange}%`, 
           trend: revenueChange >= 0 ? "up" : "down" 
         },
