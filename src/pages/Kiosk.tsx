@@ -25,7 +25,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
-import zenLogo from "@/assets/zen-logo.png";
+import lintaslinkLogo from "@/assets/lintaslink-logo.png";
 
 type KioskStep = "home" | "service-select" | "patient-search" | "department-select" | "confirmation" | "ticket";
 
@@ -362,7 +362,7 @@ export default function Kiosk() {
       {/* Header */}
       <div className="bg-primary text-primary-foreground p-4 flex items-center justify-between shadow-lg">
         <div className="flex items-center gap-4">
-          <img src={zenLogo} alt="Logo" className="h-12 w-auto" />
+          <img src={lintaslinkLogo} alt="Logo" className="h-12 w-auto" />
           <div>
             <h1 className="text-2xl font-bold">Self-Service Kiosk</h1>
             <p className="text-primary-foreground/80">Layanan Mandiri Pasien</p>

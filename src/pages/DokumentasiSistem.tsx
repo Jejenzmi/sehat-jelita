@@ -37,7 +37,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import zenLogo from "@/assets/zen-logo.webp";
+import lintaslinkLogo from "@/assets/lintaslink-logo.png";
 
 interface Slide {
   id: number;
@@ -60,8 +60,8 @@ const DokumentasiSistem = () => {
       content: (
         <div className="flex flex-col items-center justify-center h-full text-white text-center px-8">
           <motion.img 
-            src={zenLogo} 
-            alt="SIMRS ZEN" 
+            src={lintaslinkLogo} 
+            alt="SIMRS Lintas Link" 
             className="w-32 h-32 mb-8"
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
@@ -98,8 +98,8 @@ const DokumentasiSistem = () => {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.9 }}
           >
-            <p className="font-semibold">PT Zen Multimedia Indonesia</p>
-            <p className="text-sm">Purwakarta, Jawa Barat</p>
+            <p className="font-semibold">PT Lintaslink Media Teknologi</p>
+            <p className="text-sm">Menara MTH, Jakarta</p>
           </motion.div>
         </div>
       )
@@ -720,8 +720,8 @@ const DokumentasiSistem = () => {
           <div className="max-w-2xl mx-auto w-full">
             <div className="bg-white/10 backdrop-blur rounded-2xl p-8 mb-8">
               <div className="text-center mb-6">
-                <img src={zenLogo} alt="PT Zen Multimedia" className="w-20 h-20 mx-auto mb-4" />
-                <h3 className="text-2xl font-bold">PT Zen Multimedia Indonesia</h3>
+                <img src={lintaslinkLogo} alt="PT Lintaslink Media Teknologi" className="w-20 h-20 mx-auto mb-4" />
+                <h3 className="text-2xl font-bold">PT Lintaslink Media Teknologi</h3>
               </div>
               <div className="space-y-4">
                 <div className="flex items-center gap-4">
@@ -744,7 +744,7 @@ const DokumentasiSistem = () => {
             </div>
             <div className="text-center text-slate-400">
               <p>Demo Online: <span className="text-teal-400">https://simrszen.id</span></p>
-              <p className="mt-4 text-sm">© 2026 PT Zen Multimedia Indonesia. All rights reserved.</p>
+              <p className="mt-4 text-sm">© 2026 PT Lintaslink Media Teknologi. All rights reserved.</p>
             </div>
           </div>
         </div>
@@ -762,7 +762,7 @@ const DokumentasiSistem = () => {
             animate={{ scale: 1 }}
             transition={{ type: "spring", duration: 0.8 }}
           >
-            <img src={zenLogo} alt="SIMRS ZEN" className="w-24 h-24 mb-8" />
+            <img src={lintaslinkLogo} alt="SIMRS Lintas Link" className="w-24 h-24 mb-8" />
           </motion.div>
           <motion.h1 
             className="text-5xl md:text-6xl font-bold mb-4"
