@@ -82,7 +82,7 @@ import {
   Headphones,
   LifeBuoy,
 } from "lucide-react";
-import zenLogo from "@/assets/zen-logo.png";
+import lintaslinkLogo from "@/assets/lintaslink-logo.png";
 
 interface SlideSection {
   id: string;
@@ -148,8 +148,8 @@ const PanduanPenggunaan = () => {
       content: (
         <div className="flex flex-col items-center justify-center h-full text-center px-8">
           <motion.img
-            src={zenLogo}
-            alt="SIMRS ZEN Logo"
+            src={lintaslinkLogo}
+            alt="SIMRS Lintas Link Logo"
             className="h-32 mb-8"
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
@@ -401,7 +401,7 @@ const PanduanPenggunaan = () => {
             <div className="bg-gradient-to-br from-primary/10 to-primary/5 rounded-xl p-8 flex flex-col items-center justify-center">
               <div className="w-full max-w-sm bg-card border rounded-lg p-6 shadow-lg">
                 <div className="flex justify-center mb-6">
-                  <img src={zenLogo} alt="Logo" className="h-12" />
+                  <img src={lintaslinkLogo} alt="Logo" className="h-12" />
                 </div>
                 <div className="space-y-4">
                   <div>
@@ -5210,8 +5210,8 @@ const PanduanPenggunaan = () => {
               </div>
             </div>
             <div className="p-4 bg-primary/5 rounded-lg flex flex-col items-center justify-center text-center">
-              <img src={zenLogo} alt="SIMRS ZEN" className="h-20 mb-4" />
-              <h3 className="text-xl font-bold text-primary">SIMRS ZEN</h3>
+              <img src={lintaslinkLogo} alt="SIMRS Lintas Link" className="h-20 mb-4" />
+              <h3 className="text-xl font-bold text-primary">SIMRS Lintas Link</h3>
               <p className="text-muted-foreground">Sistem Informasi Manajemen Rumah Sakit Terintegrasi</p>
               <p className="text-sm text-muted-foreground mt-4">© 2025 - Semua Hak Dilindungi</p>
             </div>
@@ -5312,9 +5312,9 @@ const PanduanPenggunaan = () => {
             >
               <Menu className="h-5 w-5" />
             </Button>
-            <img src={zenLogo} alt="SIMRS ZEN" className="h-8" />
+            <img src={lintaslinkLogo} alt="SIMRS Lintas Link" className="h-8" />
             <div>
-              <h1 className="font-semibold text-sm">Panduan Penggunaan SIMRS ZEN</h1>
+              <h1 className="font-semibold text-sm">Panduan Penggunaan SIMRS Lintas Link</h1>
               <p className="text-xs text-muted-foreground">
                 {getCurrentSection()?.title} • Slide {currentSlide + 1} / {totalSlides}
               </p>

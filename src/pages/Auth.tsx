@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Mail, Lock, Eye, EyeOff, Loader2 } from "lucide-react";
-import zenLogo from "@/assets/zen-logo.webp";
+import lintaslinkLogo from "@/assets/lintaslink-logo.png";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -87,7 +87,7 @@ export default function Auth() {
     } else {
           toast({
             title: "Login Berhasil",
-            description: "Selamat datang di SIMRS ZEN",
+            description: "Selamat datang di SIMRS Lintas Link",
           });
     }
   };
@@ -98,9 +98,9 @@ export default function Auth() {
       <div className="hidden lg:flex lg:w-1/2 gradient-hero items-center justify-center p-12">
         <div className="max-w-md text-center text-primary-foreground">
           <div className="mb-8">
-            <img src={zenLogo} alt="PT. Zen Multimedia Indonesia" className="h-16 mx-auto" />
+            <img src={lintaslinkLogo} alt="PT Lintaslink Media Teknologi" className="h-16 mx-auto" />
           </div>
-          <h1 className="text-4xl font-bold mb-4">SIMRS ZEN</h1>
+          <h1 className="text-4xl font-bold mb-4">SIMRS Lintas Link</h1>
           <p className="text-xl mb-6 opacity-90">Sistem Informasi Manajemen Rumah Sakit</p>
           <p className="text-sm opacity-75">
             Platform terintegrasi untuk pengelolaan rumah sakit modern. 
@@ -128,14 +128,14 @@ export default function Auth() {
       <div className="flex-1 flex items-center justify-center p-8 bg-background">
         <div className="w-full max-w-md">
           <div className="lg:hidden text-center mb-8">
-            <img src={zenLogo} alt="PT. Zen Multimedia Indonesia" className="h-12 mx-auto mb-4" />
-            <h1 className="text-2xl font-bold">SIMRS ZEN</h1>
+            <img src={lintaslinkLogo} alt="PT Lintaslink Media Teknologi" className="h-12 mx-auto mb-4" />
+            <h1 className="text-2xl font-bold">SIMRS Lintas Link</h1>
           </div>
 
           <div className="space-y-6">
             <div>
               <h2 className="text-2xl font-bold">Selamat Datang</h2>
-              <p className="text-muted-foreground">Masuk ke akun SIMRS ZEN Anda</p>
+              <p className="text-muted-foreground">Masuk ke akun SIMRS Lintas Link Anda</p>
             </div>
 
             <form onSubmit={handleLogin} className="space-y-4">
@@ -192,7 +192,7 @@ export default function Auth() {
           </div>
 
           <p className="mt-8 text-center text-sm text-muted-foreground">
-            Dengan masuk, Anda menyetujui Syarat & Ketentuan dan Kebijakan Privasi SIMRS ZEN.
+            Dengan masuk, Anda menyetujui Syarat & Ketentuan dan Kebijakan Privasi SIMRS Lintas Link.
           </p>
         </div>
       </div>
