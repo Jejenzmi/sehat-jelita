@@ -38,13 +38,12 @@ export default function Dashboard() {
   const hasAnyAccess = menuAccess.length > 0 || isAdmin;
 
   const formatCurrency = (amount: number) => {
-    if (amount >= 1000000000) {
-      return `Rp ${(amount / 1000000000).toFixed(1)}M`;
-    }
-    if (amount >= 1000000) {
-      return `Rp ${(amount / 1000000).toFixed(1)}jt`;
-    }
-    return `Rp ${amount.toLocaleString("id-ID")}`;
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
   };
 
   // Calculate grid columns based on visible stats

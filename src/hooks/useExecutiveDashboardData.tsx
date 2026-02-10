@@ -139,7 +139,7 @@ export function useExecutiveKPIs() {
         },
         { 
           label: "Pendapatan", 
-          value: `Rp ${(totalRevenueThisMonth / 1000000).toFixed(1)}M`, 
+          value: new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(totalRevenueThisMonth), 
           change: `${revenueChange >= 0 ? "+" : ""}${revenueChange}%`, 
           trend: revenueChange >= 0 ? "up" : "down" 
         },
