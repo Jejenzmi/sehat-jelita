@@ -61,9 +61,12 @@ export default function Laporan() {
   const isLoading = statsLoading || visitsLoading || revenueLoading;
 
   const formatCurrency = (amount: number) => {
-    if (amount >= 1000000000) return `Rp ${(amount / 1000000000).toFixed(1)}M`;
-    if (amount >= 1000000) return `Rp ${(amount / 1000000).toFixed(1)}jt`;
-    return `Rp ${amount.toLocaleString("id-ID")}`;
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
   };
 
   const exportToPDF = () => {
