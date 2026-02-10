@@ -15,7 +15,7 @@ import {
   ExternalLink, Key, Globe, Shield, Info, Network, Wifi, WifiOff,
   Hospital, Stethoscope, Ambulance, ClipboardList
 } from "lucide-react";
-import { useExternalIntegrations, SatuSehatConfig, BPJSConfig, SISRUTEConfig, BPJSAntreanConfig } from "@/hooks/useExternalIntegrations";
+import { useExternalIntegrations, SatuSehatConfig, BPJSConfig, SISRUTEConfig, BPJSAntreanConfig, EklaimIDRGConfig } from "@/hooks/useExternalIntegrations";
 import { useToast } from "@/hooks/use-toast";
 import { ConfirmationDialog } from "@/components/shared/ConfirmationDialog";
 
@@ -28,6 +28,7 @@ export function ExternalIntegrationsTab() {
   const [bpjs, setBpjs] = useState<BPJSConfig>(integrations.bpjs);
   const [sisrute, setSisrute] = useState<SISRUTEConfig>(integrations.sisrute);
   const [bpjsAntrean, setBpjsAntrean] = useState<BPJSAntreanConfig>(integrations.bpjs_antrean);
+  const [eklaimIdrg, setEklaimIdrg] = useState<EklaimIDRGConfig>(integrations.eklaim_idrg);
 
   // Testing states
   const [testingIntegration, setTestingIntegration] = useState<string | null>(null);
@@ -47,6 +48,7 @@ export function ExternalIntegrationsTab() {
       setBpjs(integrations.bpjs);
       setSisrute(integrations.sisrute);
       setBpjsAntrean(integrations.bpjs_antrean);
+      setEklaimIdrg(integrations.eklaim_idrg);
     }
   }, [isLoading, integrations]);
 
@@ -117,6 +119,10 @@ export function ExternalIntegrationsTab() {
         key = "integration_bpjs_antrean";
         value = bpjsAntrean;
         break;
+      case "eklaim_idrg":
+        key = "integration_eklaim_idrg";
+        value = eklaimIdrg;
+        break;
       default:
         return;
     }
@@ -158,6 +164,7 @@ export function ExternalIntegrationsTab() {
                     {integration.code === "satusehat" && <Building2 className="h-5 w-5 text-primary" />}
                     {integration.code === "bpjs" && <Hospital className="h-5 w-5 text-primary" />}
                     {integration.code === "bpjs_antrean" && <ClipboardList className="h-5 w-5 text-primary" />}
+                    {integration.code === "eklaim_idrg" && <Stethoscope className="h-5 w-5 text-primary" />}
                     {integration.code === "sisrute" && <Ambulance className="h-5 w-5 text-primary" />}
                   </div>
                   <div>
@@ -492,6 +499,85 @@ export function ExternalIntegrationsTab() {
                   </Button>
                   <Button
                     onClick={() => setConfirmDialog({ open: true, integration: "bpjs_antrean", action: "save" })}
+                    disabled={updateIntegration.isPending}
+                  >
+                    <Save className="h-4 w-4 mr-2" />
+                    Simpan
+                  </Button>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+
+            {/* E-Klaim IDRG */}
+            <AccordionItem value="eklaim_idrg">
+              <AccordionTrigger>
+                <div className="flex items-center gap-3">
+                  <Stethoscope className="h-5 w-5" />
+                  <span>E-Klaim IDRG (Bridging Lokal)</span>
+                  {getStatusBadge(integrationStatuses.find(i => i.code === "eklaim_idrg")?.status || "disconnected")}
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="space-y-4 pt-4">
+                <Alert>
+                  <Info className="h-4 w-4" />
+                  <AlertDescription>
+                    Integrasi bridging E-Klaim IDRG melalui webservice lokal (ws.php). Mendukung 31 endpoint: New Claim, Set Claim Data, Grouping IDRG/INACBG, Finalisasi, dan lainnya.
+                  </AlertDescription>
+                </Alert>
+
+                <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
+                  <div>
+                    <Label className="text-base">Aktifkan Integrasi</Label>
+                    <p className="text-sm text-muted-foreground">Koneksi ke server E-Klaim lokal</p>
+                  </div>
+                  <Switch
+                    checked={eklaimIdrg.enabled}
+                    onCheckedChange={(checked) => setEklaimIdrg({ ...eklaimIdrg, enabled: checked })}
+                  />
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label>Base URL Server E-Klaim</Label>
+                    <Input
+                      placeholder="http://192.168.1.100"
+                      value={eklaimIdrg.base_url}
+                      onChange={(e) => setEklaimIdrg({ ...eklaimIdrg, base_url: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Kode Tarif RS</Label>
+                    <Input
+                      placeholder="Kode tarif dari E-Klaim"
+                      value={eklaimIdrg.kode_tarif}
+                      onChange={(e) => setEklaimIdrg({ ...eklaimIdrg, kode_tarif: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <Label>Encryption Key</Label>
+                    <Input
+                      type="password"
+                      placeholder="Key dari generate E-Klaim"
+                      value={eklaimIdrg.encryption_key}
+                      onChange={(e) => setEklaimIdrg({ ...eklaimIdrg, encryption_key: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
+                  <div>
+                    <Label className="text-base">Debug Mode</Label>
+                    <p className="text-sm text-muted-foreground">Kirim request tanpa enkripsi (untuk pengembangan)</p>
+                  </div>
+                  <Switch
+                    checked={eklaimIdrg.debug_mode}
+                    onCheckedChange={(checked) => setEklaimIdrg({ ...eklaimIdrg, debug_mode: checked })}
+                  />
+                </div>
+
+                <div className="flex gap-3 justify-end pt-2">
+                  <Button
+                    onClick={() => setConfirmDialog({ open: true, integration: "eklaim_idrg", action: "save" })}
                     disabled={updateIntegration.isPending}
                   >
                     <Save className="h-4 w-4 mr-2" />
