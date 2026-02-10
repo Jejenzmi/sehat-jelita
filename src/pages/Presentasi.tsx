@@ -1426,6 +1426,152 @@ const slides: Slide[] = [
   },
   {
     id: 14,
+    title: "Perbandingan Sistem",
+    content: (
+      <div className="relative flex flex-col min-h-full px-8 py-10 overflow-hidden">
+        <motion.div className="absolute inset-0 bg-gradient-to-br from-red-50/30 via-transparent to-emerald-50/30" />
+        <div className="relative z-10 max-w-6xl mx-auto w-full">
+          <motion.p className="text-xs text-slate-400 tracking-[0.3em] uppercase mb-2" variants={fadeInUp} initial="hidden" animate="visible">
+            Technology Comparison
+          </motion.p>
+          <motion.h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-5" variants={fadeInUp} initial="hidden" animate="visible" custom={1}>
+            PHP 5 + MySQL <span className="text-slate-400">vs</span> <span className="text-primary">SIMRS Lintas Link</span>
+          </motion.h2>
+
+          {/* Comparison Table */}
+          <motion.div className="rounded-2xl bg-white border border-slate-100 shadow-xl overflow-hidden mb-5" variants={fadeInUp} initial="hidden" animate="visible" custom={2}>
+            <div className="grid grid-cols-3 text-xs">
+              <div className="bg-slate-50 p-3 font-bold text-slate-600 border-b border-slate-100">Aspek</div>
+              <div className="bg-red-50 p-3 font-bold text-red-700 border-b border-slate-100 text-center">❌ PHP 5 + MySQL</div>
+              <div className="bg-emerald-50 p-3 font-bold text-emerald-700 border-b border-slate-100 text-center">✅ SIMRS Lintas Link</div>
+              {[
+                ["Keamanan", "PHP 5 EOL 2018, tanpa patch", "RLS, JWT, audit trail, UU PDP"],
+                ["Database", "MySQL single server, backup manual", "PostgreSQL cloud, auto-backup harian"],
+                ["Arsitektur", "Monolith spaghetti code", "Modular 30+ modul, microservices-ready"],
+                ["Integrasi", "Manual coding per API", "Built-in SATU SEHAT, BPJS, SISRUTE"],
+                ["UI/UX", "Server-rendered, reload penuh", "SPA real-time, responsive, PWA"],
+                ["Multi-role", "Hardcoded if-else", "RBAC 21 role, menu access granular"],
+                ["Pelaporan", "Manual export Excel", "Otomatis RL 1-6, SISMADAK"],
+                ["Skalabilitas", "Vertical only", "Horizontal + vertical auto-scale"],
+                ["Real-time", "Polling / refresh manual", "WebSocket & Realtime subscription"],
+                ["Deployment", "FTP ke shared hosting", "CI/CD otomatis, cloud infrastructure"],
+              ].map(([aspect, legacy, modern], idx) => (
+                <div key={idx} className="contents">
+                  <div className={`p-2.5 font-semibold text-slate-800 ${idx % 2 === 0 ? 'bg-slate-50/50' : 'bg-white'} border-b border-slate-50`}>{aspect}</div>
+                  <div className={`p-2.5 text-red-600 ${idx % 2 === 0 ? 'bg-red-50/30' : 'bg-white'} border-b border-slate-50 text-center`}>{legacy}</div>
+                  <div className={`p-2.5 text-emerald-700 font-medium ${idx % 2 === 0 ? 'bg-emerald-50/30' : 'bg-white'} border-b border-slate-50 text-center`}>{modern}</div>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+
+          {/* Risk of staying */}
+          <motion.div className="rounded-2xl bg-gradient-to-r from-red-50 to-orange-50 border border-red-100 p-4" variants={fadeInUp} initial="hidden" animate="visible" custom={3}>
+            <h4 className="font-bold text-red-800 text-sm mb-2 flex items-center gap-2">
+              <span className="text-lg">⛔</span> Risiko Tetap di PHP 5 + MySQL
+            </h4>
+            <div className="grid md:grid-cols-2 gap-2">
+              {[
+                "Tidak ada security update sejak 2018 — rentan eksploitasi & ransomware",
+                "Tidak bisa integrasi SATU SEHAT & BPJS modern (butuh FHIR R4/REST API)",
+                "Gagal akreditasi SNARS/KARS karena tidak memenuhi standar IT RS terbaru",
+                "Kehilangan data tinggi tanpa backup otomatis & audit trail",
+              ].map((risk, idx) => (
+                <div key={idx} className="flex items-start gap-2 text-xs text-red-700 bg-white/60 rounded-lg p-2">
+                  <span className="text-red-500 font-bold mt-0.5">✗</span>
+                  <span>{risk}</span>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        </div>
+      </div>
+    ),
+  },
+  {
+    id: 15,
+    title: "Standar IT RS",
+    content: (
+      <div className="relative flex flex-col min-h-full px-8 py-10 overflow-hidden">
+        <motion.div className="absolute inset-0 bg-gradient-to-br from-indigo-50/30 via-transparent to-cyan-50/30" />
+        <div className="relative z-10 max-w-6xl mx-auto w-full">
+          <motion.p className="text-xs text-slate-400 tracking-[0.3em] uppercase mb-2" variants={fadeInUp} initial="hidden" animate="visible">
+            Regulatory Compliance
+          </motion.p>
+          <motion.h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-2" variants={fadeInUp} initial="hidden" animate="visible" custom={1}>
+            Standar <span className="text-primary">IT Rumah Sakit</span> Terbaru
+          </motion.h2>
+          <motion.p className="text-sm text-slate-500 mb-5" variants={fadeInUp} initial="hidden" animate="visible" custom={2}>
+            Regulasi yang wajib dipenuhi oleh sistem informasi rumah sakit di Indonesia
+          </motion.p>
+
+          <motion.div className="grid md:grid-cols-3 gap-3 mb-5" variants={staggerContainer} initial="hidden" animate="visible">
+            {[
+              {
+                icon: "🏥", title: "Permenkes 82/2013", subtitle: "SIMRS Wajib",
+                items: ["Sistem informasi RS wajib terintegrasi", "Mendukung manajemen klinis & administratif", "Pelaporan online ke Kemenkes (RL 1-6)", "Standar keamanan data pasien"],
+                color: "from-blue-500 to-indigo-500", status: "✅ Terpenuhi"
+              },
+              {
+                icon: "🔗", title: "Permenkes 24/2022", subtitle: "Rekam Medis Elektronik",
+                items: ["RME wajib untuk seluruh fasyankes", "Interoperabilitas via SATU SEHAT", "Standar FHIR R4 untuk pertukaran data", "Tanda tangan digital & audit trail"],
+                color: "from-primary to-blue-500", status: "✅ Terpenuhi"
+              },
+              {
+                icon: "🛡️", title: "UU PDP No. 27/2022", subtitle: "Perlindungan Data Pribadi",
+                items: ["Enkripsi data sensitif (at-rest & in-transit)", "Hak akses berbasis peran (RBAC)", "Consent management untuk pasien", "Audit log seluruh akses data"],
+                color: "from-emerald-500 to-teal-500", status: "✅ Terpenuhi"
+              },
+              {
+                icon: "⭐", title: "SNARS Edisi 2.1", subtitle: "Akreditasi RS",
+                items: ["MIRM: Manajemen Informasi & Rekam Medis", "PMKP: Peningkatan Mutu & Keselamatan Pasien", "PPI: Pencegahan & Pengendalian Infeksi", "Integrasi seluruh unit pelayanan"],
+                color: "from-amber-500 to-orange-500", status: "✅ Terpenuhi"
+              },
+              {
+                icon: "🌐", title: "SATU SEHAT (2024)", subtitle: "Interoperabilitas Nasional",
+                items: ["11 resource FHIR R4 wajib dikirim", "Organization, Location, Practitioner", "Patient, Encounter, Condition", "Observation, Medication, AllergyIntolerance"],
+                color: "from-cyan-500 to-blue-500", status: "✅ Terpenuhi"
+              },
+              {
+                icon: "💳", title: "BPJS Kesehatan", subtitle: "Bridging System",
+                items: ["VClaim API untuk verifikasi peserta & SEP", "Antrean Online RS terintegrasi", "E-Claim & INA-CBG Grouper", "iCare JKN untuk monitoring klaim"],
+                color: "from-green-500 to-emerald-500", status: "✅ Terpenuhi"
+              },
+            ].map((item, idx) => (
+              <motion.div key={idx} variants={scaleIn} custom={idx} className="group">
+                <motion.div className="h-full rounded-2xl bg-white border border-slate-100 shadow-lg p-4 hover:shadow-xl transition-all" whileHover={{ y: -4 }}>
+                  <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${item.color} flex items-center justify-center text-xl shadow-md mb-2`}>
+                    {item.icon}
+                  </div>
+                  <h3 className="font-bold text-slate-900 text-sm">{item.title}</h3>
+                  <p className="text-xs text-slate-400 mb-2">{item.subtitle}</p>
+                  <div className="space-y-1 mb-3">
+                    {item.items.map((i, iIdx) => (
+                      <div key={iIdx} className="flex items-start gap-1.5 text-xs text-slate-600">
+                        <span className={`w-1 h-1 rounded-full bg-gradient-to-r ${item.color} mt-1.5 flex-shrink-0`} />
+                        <span>{i}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <span className={`inline-block px-2.5 py-1 rounded-full bg-gradient-to-r ${item.color} text-white text-xs font-medium shadow-sm`}>
+                    {item.status}
+                  </span>
+                </motion.div>
+              </motion.div>
+            ))}
+          </motion.div>
+
+          <motion.div className="rounded-2xl bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-100 p-4" variants={fadeInUp} initial="hidden" animate="visible" custom={5}>
+            <p className="text-xs text-indigo-800 text-center font-medium">
+              💡 <strong>Kesimpulan:</strong> Sistem berbasis PHP 5 + MySQL <strong>tidak mampu memenuhi</strong> satupun standar di atas karena keterbatasan arsitektur, keamanan yang sudah kadaluarsa, dan ketidakmampuan integrasi API modern (FHIR R4, REST). SIMRS Lintas Link dirancang dari awal untuk <strong>memenuhi seluruh regulasi</strong> ini secara native.
+            </p>
+          </motion.div>
+        </div>
+      </div>
+    ),
+  },
+  {
+    id: 16,
     title: "Penutup",
     content: (
       <div className="relative flex flex-col items-center justify-center min-h-full px-8 py-12 overflow-hidden">
