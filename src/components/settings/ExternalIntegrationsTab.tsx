@@ -13,9 +13,9 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import {
   Building2, Save, RefreshCw, CheckCircle, AlertTriangle, XCircle,
   ExternalLink, Key, Globe, Shield, Info, Network, Wifi, WifiOff,
-  Hospital, Stethoscope, Ambulance, ClipboardList
+  Hospital, Stethoscope, Ambulance, ClipboardList, Server
 } from "lucide-react";
-import { useExternalIntegrations, SatuSehatConfig, BPJSConfig, SISRUTEConfig, BPJSAntreanConfig, EklaimIDRGConfig } from "@/hooks/useExternalIntegrations";
+import { useExternalIntegrations, SatuSehatConfig, BPJSConfig, SISRUTEConfig, BPJSAntreanConfig, EklaimIDRGConfig, PACSConfig } from "@/hooks/useExternalIntegrations";
 import { useToast } from "@/hooks/use-toast";
 import { ConfirmationDialog } from "@/components/shared/ConfirmationDialog";
 
@@ -29,6 +29,7 @@ export function ExternalIntegrationsTab() {
   const [sisrute, setSisrute] = useState<SISRUTEConfig>(integrations.sisrute);
   const [bpjsAntrean, setBpjsAntrean] = useState<BPJSAntreanConfig>(integrations.bpjs_antrean);
   const [eklaimIdrg, setEklaimIdrg] = useState<EklaimIDRGConfig>(integrations.eklaim_idrg);
+  const [pacs, setPacs] = useState<PACSConfig>(integrations.pacs);
 
   // Testing states
   const [testingIntegration, setTestingIntegration] = useState<string | null>(null);
@@ -49,6 +50,7 @@ export function ExternalIntegrationsTab() {
       setSisrute(integrations.sisrute);
       setBpjsAntrean(integrations.bpjs_antrean);
       setEklaimIdrg(integrations.eklaim_idrg);
+      setPacs(integrations.pacs);
     }
   }, [isLoading, integrations]);
 
@@ -68,6 +70,9 @@ export function ExternalIntegrationsTab() {
         break;
       case "bpjs_antrean":
         config = bpjsAntrean;
+        break;
+      case "pacs":
+        config = pacs;
         break;
       default:
         toast({
@@ -123,6 +128,10 @@ export function ExternalIntegrationsTab() {
         key = "integration_eklaim_idrg";
         value = eklaimIdrg;
         break;
+      case "pacs":
+        key = "integration_pacs";
+        value = pacs;
+        break;
       default:
         return;
     }
@@ -166,6 +175,7 @@ export function ExternalIntegrationsTab() {
                     {integration.code === "bpjs_antrean" && <ClipboardList className="h-5 w-5 text-primary" />}
                     {integration.code === "eklaim_idrg" && <Stethoscope className="h-5 w-5 text-primary" />}
                     {integration.code === "sisrute" && <Ambulance className="h-5 w-5 text-primary" />}
+                    {integration.code === "pacs" && <Server className="h-5 w-5 text-primary" />}
                   </div>
                   <div>
                     <p className="font-medium text-sm">{integration.name}</p>
@@ -578,6 +588,149 @@ export function ExternalIntegrationsTab() {
                 <div className="flex gap-3 justify-end pt-2">
                   <Button
                     onClick={() => setConfirmDialog({ open: true, integration: "eklaim_idrg", action: "save" })}
+                    disabled={updateIntegration.isPending}
+                  >
+                    <Save className="h-4 w-4 mr-2" />
+                    Simpan
+                  </Button>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+
+            {/* PACS Server */}
+            <AccordionItem value="pacs">
+              <AccordionTrigger>
+                <div className="flex items-center gap-3">
+                  <Server className="h-5 w-5" />
+                  <span>PACS Server (Orthanc / DCM4CHEE / DICOMweb)</span>
+                  {getStatusBadge(integrationStatuses.find(i => i.code === "pacs")?.status || "disconnected")}
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="space-y-4 pt-4">
+                <Alert>
+                  <Info className="h-4 w-4" />
+                  <AlertDescription>
+                    Koneksi ke server PACS untuk penyimpanan dan distribusi gambar medis (DICOM).
+                    Mendukung Orthanc, DCM4CHEE, Horos, Conquest, dan server DICOMweb generik.
+                  </AlertDescription>
+                </Alert>
+
+                <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
+                  <div>
+                    <Label className="text-base">Aktifkan Integrasi</Label>
+                    <p className="text-sm text-muted-foreground">Koneksi ke server PACS</p>
+                  </div>
+                  <Switch
+                    checked={pacs.enabled}
+                    onCheckedChange={(checked) => setPacs({ ...pacs, enabled: checked })}
+                  />
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label>Tipe Server PACS</Label>
+                    <Select
+                      value={pacs.server_type}
+                      onValueChange={(val) => setPacs({ ...pacs, server_type: val as any })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="orthanc">Orthanc</SelectItem>
+                        <SelectItem value="dcm4chee">DCM4CHEE</SelectItem>
+                        <SelectItem value="horos">Horos</SelectItem>
+                        <SelectItem value="conquest">Conquest DICOM</SelectItem>
+                        <SelectItem value="generic_dicomweb">DICOMweb Generik</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>AE Title</Label>
+                    <Input
+                      placeholder="SIMRS_ZEN"
+                      value={pacs.ae_title}
+                      onChange={(e) => setPacs({ ...pacs, ae_title: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Base URL (REST API)</Label>
+                    <Input
+                      placeholder="http://192.168.1.100:8042"
+                      value={pacs.base_url}
+                      onChange={(e) => setPacs({ ...pacs, base_url: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>DICOMweb URL (WADO-RS/QIDO-RS)</Label>
+                    <Input
+                      placeholder="http://192.168.1.100:8042/dicom-web"
+                      value={pacs.dicomweb_url}
+                      onChange={(e) => setPacs({ ...pacs, dicomweb_url: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Username</Label>
+                    <Input
+                      placeholder="Username PACS (opsional)"
+                      value={pacs.username}
+                      onChange={(e) => setPacs({ ...pacs, username: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Password</Label>
+                    <Input
+                      type="password"
+                      placeholder="••••••••"
+                      value={pacs.password}
+                      onChange={(e) => setPacs({ ...pacs, password: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Timeout (detik)</Label>
+                    <Input
+                      type="number"
+                      value={pacs.timeout_seconds}
+                      onChange={(e) => setPacs({ ...pacs, timeout_seconds: parseInt(e.target.value) || 30 })}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
+                  <div>
+                    <Label className="text-base">TLS / HTTPS</Label>
+                    <p className="text-sm text-muted-foreground">Enkripsi koneksi ke server PACS</p>
+                  </div>
+                  <Switch
+                    checked={pacs.tls_enabled}
+                    onCheckedChange={(checked) => setPacs({ ...pacs, tls_enabled: checked })}
+                  />
+                </div>
+
+                {testResults["pacs"] && (
+                  <div className={`p-3 rounded-lg flex items-center gap-2 ${
+                    testResults["pacs"] === "success" ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"
+                  }`}>
+                    {testResults["pacs"] === "success" ? <CheckCircle className="h-4 w-4" /> : <XCircle className="h-4 w-4" />}
+                    {testResults["pacs"] === "success" ? "Koneksi berhasil!" : "Koneksi gagal"}
+                  </div>
+                )}
+
+                <div className="flex gap-3 justify-end pt-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => handleTestConnection("pacs")}
+                    disabled={testingIntegration === "pacs" || !pacs.base_url}
+                  >
+                    {testingIntegration === "pacs" ? (
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Wifi className="h-4 w-4 mr-2" />
+                    )}
+                    Test Koneksi
+                  </Button>
+                  <Button
+                    onClick={() => setConfirmDialog({ open: true, integration: "pacs", action: "save" })}
                     disabled={updateIntegration.isPending}
                   >
                     <Save className="h-4 w-4 mr-2" />

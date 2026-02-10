@@ -51,12 +51,25 @@ export interface EklaimIDRGConfig {
   debug_mode: boolean;
 }
 
+export interface PACSConfig {
+  enabled: boolean;
+  server_type: "orthanc" | "dcm4chee" | "horos" | "conquest" | "generic_dicomweb";
+  base_url: string;
+  dicomweb_url: string;
+  username: string;
+  password: string;
+  ae_title: string;
+  tls_enabled: boolean;
+  timeout_seconds: number;
+}
+
 export interface AllIntegrationsConfig {
   satusehat: SatuSehatConfig;
   bpjs: BPJSConfig;
   sisrute: SISRUTEConfig;
   bpjs_antrean: BPJSAntreanConfig;
   eklaim_idrg: EklaimIDRGConfig;
+  pacs: PACSConfig;
 }
 
 const defaultConfigs: AllIntegrationsConfig = {
@@ -94,6 +107,17 @@ const defaultConfigs: AllIntegrationsConfig = {
     kode_tarif: "",
     debug_mode: true,
   },
+  pacs: {
+    enabled: false,
+    server_type: "orthanc",
+    base_url: "",
+    dicomweb_url: "",
+    username: "",
+    password: "",
+    ae_title: "SIMRS_ZEN",
+    tls_enabled: false,
+    timeout_seconds: 30,
+  },
 };
 
 export function useExternalIntegrations() {
@@ -113,6 +137,7 @@ export function useExternalIntegrations() {
           "integration_sisrute",
           "integration_bpjs_antrean",
           "integration_eklaim_idrg",
+          "integration_pacs",
         ]);
 
       if (error) throw error;
@@ -130,6 +155,8 @@ export function useExternalIntegrations() {
           result.bpjs_antrean = { ...defaultConfigs.bpjs_antrean, ...setting.setting_value };
         } else if (setting.setting_key === "integration_eklaim_idrg") {
           result.eklaim_idrg = { ...defaultConfigs.eklaim_idrg, ...setting.setting_value };
+        } else if (setting.setting_key === "integration_pacs") {
+          result.pacs = { ...defaultConfigs.pacs, ...setting.setting_value };
         }
       });
 
@@ -187,6 +214,9 @@ export function useExternalIntegrations() {
           break;
         case "bpjs_antrean":
           endpoint = "bpjs-antrean";
+          break;
+        case "pacs":
+          endpoint = "pacs-bridge";
           break;
         default:
           throw new Error("Integrasi tidak dikenal");
@@ -262,6 +292,17 @@ export function useExternalIntegrations() {
         enabled: configs.eklaim_idrg.enabled,
         status: configs.eklaim_idrg.enabled
           ? configs.eklaim_idrg.base_url
+            ? "connected"
+            : "pending"
+          : "disconnected",
+      },
+      {
+        id: "pacs",
+        name: "PACS Server",
+        code: "pacs",
+        enabled: configs.pacs.enabled,
+        status: configs.pacs.enabled
+          ? configs.pacs.base_url
             ? "connected"
             : "pending"
           : "disconnected",
