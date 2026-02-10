@@ -351,7 +351,7 @@ const _rawSlides: Slide[] = [
         
         <div className="relative z-10 max-w-5xl mx-auto">
           <motion.div variants={fadeInUp} initial="hidden" animate="visible" className="text-center mb-10">
-            <p className="text-xs text-emerald-600 tracking-[0.3em] uppercase mb-2 font-semibold">04 — Interoperabilitas</p>
+            <p className="text-xs text-emerald-600 tracking-[0.3em] uppercase mb-2 font-semibold">08 — Interoperabilitas</p>
             <h2 className="text-3xl md:text-5xl font-bold text-slate-900">
               Integrasi <span className="text-emerald-600">SATU SEHAT</span>
             </h2>
@@ -408,7 +408,7 @@ const _rawSlides: Slide[] = [
       <div className="relative min-h-full px-8 md:px-16 py-12 overflow-hidden bg-gradient-to-br from-blue-50 via-white to-cyan-50">
         <div className="relative z-10 max-w-5xl mx-auto">
           <motion.div variants={fadeInUp} initial="hidden" animate="visible" className="text-center mb-10">
-            <p className="text-xs text-blue-600 tracking-[0.3em] uppercase mb-2 font-semibold">05 — Integrasi</p>
+            <p className="text-xs text-blue-600 tracking-[0.3em] uppercase mb-2 font-semibold">09 — Integrasi</p>
             <h2 className="text-3xl md:text-5xl font-bold text-slate-900">
               Integrasi <span className="text-blue-600">BPJS</span> Kesehatan
             </h2>
@@ -504,7 +504,7 @@ const _rawSlides: Slide[] = [
         
         <div className="relative z-10 max-w-5xl mx-auto text-white">
           <motion.div variants={fadeInUp} initial="hidden" animate="visible" className="text-center mb-10">
-            <p className="text-xs text-primary tracking-[0.3em] uppercase mb-2 font-semibold">06 — Infrastruktur</p>
+            <p className="text-xs text-primary tracking-[0.3em] uppercase mb-2 font-semibold">07 — Infrastruktur</p>
             <h2 className="text-3xl md:text-5xl font-bold">
               Arsitektur & <span className="text-primary">Keamanan</span>
             </h2>
@@ -587,7 +587,7 @@ const _rawSlides: Slide[] = [
         
         <div className="relative z-10 max-w-6xl mx-auto">
           <motion.div variants={fadeInUp} initial="hidden" animate="visible" className="text-center mb-6">
-            <p className="text-xs text-primary tracking-[0.3em] uppercase mb-2 font-semibold">07 — Metodologi Migrasi</p>
+            <p className="text-xs text-primary tracking-[0.3em] uppercase mb-2 font-semibold">14 — Metodologi Migrasi</p>
             <h2 className="text-3xl md:text-4xl font-bold text-slate-900">
               Migrasi dari SIMRS Existing ke <span className="text-primary">SIMRS Lintas Link</span>
             </h2>
@@ -843,7 +843,7 @@ const _rawSlides: Slide[] = [
         
         <div className="relative z-10 max-w-6xl mx-auto">
           <motion.div variants={fadeInUp} initial="hidden" animate="visible" className="text-center mb-6">
-            <p className="text-xs text-blue-600 tracking-[0.3em] uppercase mb-2 font-semibold">08 — Jaminan Layanan</p>
+            <p className="text-xs text-blue-600 tracking-[0.3em] uppercase mb-2 font-semibold">15 — Jaminan Layanan</p>
             <h2 className="text-3xl md:text-4xl font-bold text-slate-900">
               SLA & <span className="text-blue-600">Dukungan Teknis</span>
             </h2>
@@ -958,7 +958,7 @@ const _rawSlides: Slide[] = [
         
         <div className="relative z-10 max-w-6xl mx-auto">
           <motion.div variants={fadeInUp} initial="hidden" animate="visible" className="text-center mb-10">
-            <p className="text-xs text-violet-600 tracking-[0.3em] uppercase mb-2 font-semibold">09 — Inovasi Digital</p>
+            <p className="text-xs text-violet-600 tracking-[0.3em] uppercase mb-2 font-semibold">04 — Inovasi Digital</p>
             <h2 className="text-3xl md:text-5xl font-bold text-slate-900">
               <span className="text-violet-600">Kiosk</span> Mandiri & <span className="text-cyan-600">Telemedicine</span>
             </h2>
@@ -1090,7 +1090,7 @@ const _rawSlides: Slide[] = [
       <div className="relative flex flex-col items-center justify-center min-h-full px-8 py-12 overflow-hidden">
         <motion.div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-transparent to-cyan-500/5" animate={{ opacity: [0.5, 1, 0.5] }} transition={{ duration: 4, repeat: Infinity }} />
         <div className="relative z-10 max-w-5xl w-full">
-          <motion.p className="text-xs text-slate-400 tracking-[0.4em] uppercase mb-4 text-center" variants={fadeInUp} initial="hidden" animate="visible">Fitur Unggulan Terbaru</motion.p>
+          <motion.p className="text-xs text-slate-400 tracking-[0.4em] uppercase mb-4 text-center" variants={fadeInUp} initial="hidden" animate="visible">05 — Fitur Unggulan Terbaru</motion.p>
           <motion.h1 className="text-3xl md:text-4xl font-bold text-slate-900 mb-8 text-center" variants={fadeInUp} initial="hidden" animate="visible" custom={1}>
             <span className="text-indigo-600">Fitur Baru</span> — Home Care, Ambulance & <span className="text-cyan-600">Smart Tools</span>
           </motion.h1>
@@ -1133,7 +1133,7 @@ const _rawSlides: Slide[] = [
         
         <div className="relative z-10 max-w-6xl mx-auto">
           <motion.div variants={fadeInUp} initial="hidden" animate="visible" className="text-center mb-6">
-            <p className="text-xs text-rose-600 tracking-[0.3em] uppercase mb-2 font-semibold">10 — Regulatory Compliance</p>
+            <p className="text-xs text-rose-600 tracking-[0.3em] uppercase mb-2 font-semibold">10 — Kepatuhan Regulasi</p>
             <h2 className="text-3xl md:text-4xl font-bold text-slate-900">
               Kepatuhan <span className="text-rose-600">Regulasi</span> & Standar
             </h2>
@@ -1303,7 +1303,7 @@ const _rawSlides: Slide[] = [
             className="text-xs text-slate-400 tracking-[0.3em] uppercase mb-2"
             variants={fadeInUp} initial="hidden" animate="visible"
           >
-            Legacy System Migration
+            13 — Migrasi Sistem Legacy
           </motion.p>
           <motion.h2 
             className="text-2xl md:text-3xl font-bold text-slate-900 mb-2"
@@ -1432,7 +1432,7 @@ const _rawSlides: Slide[] = [
         <motion.div className="absolute inset-0 bg-gradient-to-br from-red-50/30 via-transparent to-emerald-50/30" />
         <div className="relative z-10 max-w-6xl mx-auto w-full">
           <motion.p className="text-xs text-slate-400 tracking-[0.3em] uppercase mb-2" variants={fadeInUp} initial="hidden" animate="visible">
-            Technology Comparison
+            12 — Perbandingan Sistem
           </motion.p>
           <motion.h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-5" variants={fadeInUp} initial="hidden" animate="visible" custom={1}>
             PHP 5 + MySQL <span className="text-slate-400">vs</span> <span className="text-primary">SIMRS Lintas Link</span>
@@ -1496,7 +1496,7 @@ const _rawSlides: Slide[] = [
         <motion.div className="absolute inset-0 bg-gradient-to-br from-indigo-50/30 via-transparent to-cyan-50/30" />
         <div className="relative z-10 max-w-6xl mx-auto w-full">
           <motion.p className="text-xs text-slate-400 tracking-[0.3em] uppercase mb-2" variants={fadeInUp} initial="hidden" animate="visible">
-            Regulatory Compliance
+            11 — Standar IT RS
           </motion.p>
           <motion.h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-2" variants={fadeInUp} initial="hidden" animate="visible" custom={1}>
             Standar <span className="text-primary">IT Rumah Sakit</span> Terbaru
@@ -1686,6 +1686,7 @@ const _rawSlides: Slide[] = [
     title: "Role & Fungsi Pengguna",
     content: (
       <div className="relative flex flex-col min-h-full px-8 py-12 bg-gradient-to-br from-slate-50 to-blue-50 overflow-y-auto">
+        <motion.p className="text-xs text-slate-400 tracking-[0.3em] uppercase mb-2 text-center" variants={fadeInUp} initial="hidden" animate="visible">06 — Manajemen Pengguna</motion.p>
         <motion.h2 
           className="text-3xl md:text-4xl font-bold text-slate-900 mb-2 text-center"
           initial={{ opacity: 0, y: -20 }}
