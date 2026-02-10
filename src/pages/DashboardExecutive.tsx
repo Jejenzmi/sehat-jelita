@@ -80,9 +80,9 @@ export default function DashboardExecutive() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         {loadingKPIs ? (
-          Array.from({ length: 6 }).map((_, idx) => (
+          Array.from({ length: 4 }).map((_, idx) => (
             <Card key={idx}>
               <CardContent className="pt-6">
                 <Skeleton className="h-20 w-full" />
@@ -92,27 +92,36 @@ export default function DashboardExecutive() {
         ) : hasKPIData ? (
           kpiData.map((metric, idx) => {
             const Icon = getKPIIcon(metric.label);
+            const colorConfig = [
+              { bg: "bg-blue-50 dark:bg-blue-950", border: "border-blue-200 dark:border-blue-800", icon: "text-blue-600", value: "text-blue-700 dark:text-blue-300" },
+              { bg: "bg-emerald-50 dark:bg-emerald-950", border: "border-emerald-200 dark:border-emerald-800", icon: "text-emerald-600", value: "text-emerald-700 dark:text-emerald-300" },
+              { bg: "bg-amber-50 dark:bg-amber-950", border: "border-amber-200 dark:border-amber-800", icon: "text-amber-600", value: "text-amber-700 dark:text-amber-300" },
+              { bg: "bg-purple-50 dark:bg-purple-950", border: "border-purple-200 dark:border-purple-800", icon: "text-purple-600", value: "text-purple-700 dark:text-purple-300" },
+            ][idx] || { bg: "", border: "", icon: "text-muted-foreground", value: "" };
+
             return (
-              <Card key={idx}>
+              <Card key={idx} className={`${colorConfig.bg} ${colorConfig.border} border-2`}>
                 <CardContent className="pt-6">
-                  <div className="flex items-center justify-between mb-2">
-                    <Icon className="h-5 w-5 text-muted-foreground" />
+                  <div className="flex items-center justify-between mb-3">
+                    <div className={`p-2 rounded-lg ${colorConfig.bg}`}>
+                      <Icon className={`h-5 w-5 ${colorConfig.icon}`} />
+                    </div>
                     <Badge 
                       variant="outline" 
-                      className={metric.trend === "up" ? "text-green-600 bg-green-50" : "text-blue-600 bg-blue-50"}
+                      className={metric.trend === "up" ? "text-green-600 bg-green-50 border-green-200" : "text-red-600 bg-red-50 border-red-200"}
                     >
                       {metric.trend === "up" ? <ArrowUpRight className="h-3 w-3 mr-1" /> : <ArrowDownRight className="h-3 w-3 mr-1" />}
                       {metric.change}
                     </Badge>
                   </div>
-                  <p className="text-lg lg:text-2xl font-bold leading-tight break-words">{metric.value}</p>
-                  <p className="text-xs text-muted-foreground">{metric.label}</p>
+                  <p className={`text-xl lg:text-2xl font-bold leading-tight break-words ${colorConfig.value}`}>{metric.value}</p>
+                  <p className="text-sm text-muted-foreground mt-1">{metric.label}</p>
                 </CardContent>
               </Card>
             );
           })
         ) : (
-          <Card className="md:col-span-3 lg:col-span-6">
+          <Card className="col-span-2 lg:col-span-4">
             <CardContent className="pt-6 text-center text-muted-foreground">
               Belum ada data KPI. Data akan muncul setelah ada transaksi.
             </CardContent>

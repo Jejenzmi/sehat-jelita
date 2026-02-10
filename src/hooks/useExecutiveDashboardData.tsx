@@ -155,18 +155,6 @@ export function useExecutiveKPIs() {
           change: "0", 
           trend: "down" 
         },
-        { 
-          label: "BTO", 
-          value: `${bto || 0}`, 
-          change: "+0", 
-          trend: "up" 
-        },
-        { 
-          label: "TOI", 
-          value: `${toi || 0} hari`, 
-          change: "0", 
-          trend: "down" 
-        },
       ];
     },
     refetchInterval: 60000,
