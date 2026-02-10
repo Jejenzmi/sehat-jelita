@@ -1680,6 +1680,81 @@ const slides: Slide[] = [
       </div>
     ),
   },
+  // Slide: Role & Fungsi Pengguna
+  {
+    id: 17,
+    title: "Role & Fungsi Pengguna",
+    content: (
+      <div className="relative flex flex-col min-h-full px-8 py-12 bg-gradient-to-br from-slate-50 to-blue-50 overflow-y-auto">
+        <motion.h2 
+          className="text-3xl md:text-4xl font-bold text-slate-900 mb-2 text-center"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          21 Role Pengguna SIMRS Lintas Link
+        </motion.h2>
+        <motion.p 
+          className="text-slate-500 text-center mb-8"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2 }}
+        >
+          Setiap role memiliki akses menu & fungsi yang terpisah (RBAC)
+        </motion.p>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-6xl mx-auto w-full">
+          {[
+            { role: "Administrator", color: "bg-red-500", desc: "Pengelolaan penuh sistem, user, modul, dan konfigurasi rumah sakit" },
+            { role: "Direktur", color: "bg-purple-600", desc: "Dashboard eksekutif, laporan keuangan, statistik kinerja RS" },
+            { role: "Dokter Umum", color: "bg-blue-500", desc: "Rawat jalan, rekam medis, resep, e-konsultasi, SOAP" },
+            { role: "Dokter Spesialis", color: "bg-blue-700", desc: "Rawat jalan/inap, rujukan, tindakan, rekam medis spesialistik" },
+            { role: "Perawat", color: "bg-teal-500", desc: "Asuhan keperawatan, vital signs, pemberian obat, CPPT" },
+            { role: "Bidan", color: "bg-pink-500", desc: "ANC, persalinan, KB, rekam medis ibu & anak" },
+            { role: "Apoteker", color: "bg-green-600", desc: "Verifikasi resep, dispensing, stok obat, retur, MESO" },
+            { role: "Asisten Apoteker", color: "bg-green-400", desc: "Dispensing obat, pengemasan, pengecekan stok, label obat" },
+            { role: "Analis Lab", color: "bg-amber-600", desc: "Input hasil lab, validasi pemeriksaan, kontrol kualitas" },
+            { role: "Radiografer", color: "bg-indigo-500", desc: "Pemeriksaan radiologi, input hasil, PACS/DICOM" },
+            { role: "Petugas Pendaftaran", color: "bg-cyan-500", desc: "Registrasi pasien, verifikasi BPJS, antrian, booking" },
+            { role: "Kasir / Billing", color: "bg-yellow-600", desc: "Pembayaran, invoice, rincian biaya, pembatalan tagihan" },
+            { role: "Petugas Rekam Medis", color: "bg-orange-500", desc: "Pengelolaan berkas RM, coding ICD-10/ICD-9, pelaporan RL" },
+            { role: "Nutrisionis", color: "bg-lime-600", desc: "Diet pasien, meal plan, alergi makanan, laporan gizi" },
+            { role: "Fisioterapis", color: "bg-emerald-500", desc: "Terapi rehabilitasi, jadwal sesi, progress pasien" },
+            { role: "HRD", color: "bg-violet-500", desc: "Data karyawan, shift, payroll, absensi, PPh 21, BPJS TK" },
+            { role: "Procurement", color: "bg-rose-500", desc: "Purchase request, approval pembelian, manajemen vendor" },
+            { role: "Manajemen Inventory", color: "bg-stone-600", desc: "Stok barang, opname, batch, expiry, auto-reorder" },
+            { role: "Petugas BPJS", color: "bg-sky-600", desc: "SEP, VClaim, Antrean JKN, E-Claim, klaim & verifikasi" },
+            { role: "Kepala Ruangan", color: "bg-fuchsia-600", desc: "Monitoring bed, jadwal perawat, approval cuti, laporan ruangan" },
+            { role: "Manajemen Mutu", color: "bg-amber-700", desc: "Akreditasi SNARS, indikator mutu, insiden keselamatan, audit" },
+          ].map((item, index) => (
+            <motion.div
+              key={item.role}
+              className="flex items-start gap-3 p-3 rounded-xl bg-white shadow-sm border border-slate-100 hover:shadow-md transition-shadow"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.05 * index }}
+            >
+              <div className={`w-2.5 h-2.5 rounded-full mt-1.5 flex-shrink-0 ${item.color}`} />
+              <div>
+                <p className="font-semibold text-sm text-slate-900">{item.role}</p>
+                <p className="text-xs text-slate-500 leading-relaxed">{item.desc}</p>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+
+        <motion.div 
+          className="mt-8 text-center"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1 }}
+        >
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-200 rounded-full">
+            <span className="text-xs font-medium text-blue-700">✦ Setiap role dapat dikustomisasi melalui menu Manajemen User → Hak Akses</span>
+          </div>
+        </motion.div>
+      </div>
+    ),
+  },
 ];
 
 export default function Presentasi() {
