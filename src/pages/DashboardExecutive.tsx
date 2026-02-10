@@ -105,8 +105,8 @@ export default function DashboardExecutive() {
                       {metric.change}
                     </Badge>
                   </div>
-                  <p className="text-2xl font-bold">{metric.value}</p>
-                  <p className="text-xs text-muted-foreground">{metric.label}</p>
+                  <p className="text-2xl font-bold truncate" title={metric.value}>{metric.value}</p>
+                  <p className="text-xs text-muted-foreground truncate">{metric.label}</p>
                 </CardContent>
               </Card>
             );
