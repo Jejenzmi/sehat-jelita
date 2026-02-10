@@ -80,7 +80,7 @@ export default function DashboardExecutive() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
+      <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
         {loadingKPIs ? (
           Array.from({ length: 6 }).map((_, idx) => (
             <Card key={idx}>
@@ -105,8 +105,8 @@ export default function DashboardExecutive() {
                       {metric.change}
                     </Badge>
                   </div>
-                  <p className="text-2xl font-bold truncate" title={metric.value}>{metric.value}</p>
-                  <p className="text-xs text-muted-foreground truncate">{metric.label}</p>
+                  <p className="text-lg lg:text-2xl font-bold leading-tight break-words">{metric.value}</p>
+                  <p className="text-xs text-muted-foreground">{metric.label}</p>
                 </CardContent>
               </Card>
             );
