@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.eklaim-idrg]
 verify_jwt = false
+
+[functions.pacs-bridge]
+verify_jwt = false
