@@ -3,29 +3,29 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Users, 
-  Calendar, 
-  Stethoscope, 
-  TestTube, 
-  Pill, 
-  CreditCard, 
-  ArrowLeft, 
-  Printer, 
+import {
+  Users,
+  Calendar,
+  Stethoscope,
+  TestTube,
+  Pill,
+  CreditCard,
+  ArrowLeft,
+  Printer,
   CheckCircle,
   Search,
-  QrCode,
   Keyboard,
   Timer,
-  Activity
+  Activity,
+  Phone,
+  Mail,
+  MapPin,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
-import lintaslinkLogo from "@/assets/lintaslink-logo.png";
+import rsudLogo from "@/assets/logo-rsud-moewardi.png";
 
 type KioskStep = "home" | "service-select" | "patient-search" | "department-select" | "confirmation" | "ticket";
 
@@ -35,6 +35,7 @@ interface ServiceType {
   icon: React.ReactNode;
   code: string;
   description: string;
+  gradient: string;
 }
 
 interface Department {
@@ -56,15 +57,59 @@ interface Appointment {
   appointment_date: string;
   appointment_time: string;
   status: string;
-  doctors: {
-    full_name: string;
-  } | null;
-  departments: {
-    name: string;
-  } | null;
+  doctors: { full_name: string } | null;
+  departments: { name: string } | null;
 }
 
-const IDLE_TIMEOUT = 60000; // 60 seconds idle timeout
+const IDLE_TIMEOUT = 60000;
+
+function KioskClock() {
+  const [time, setTime] = useState(new Date());
+  useEffect(() => {
+    const interval = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(interval);
+  }, []);
+  return (
+    <div className="text-center">
+      <p className="text-6xl font-black tabular-nums tracking-tight text-white drop-shadow-lg">
+        {time.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
+      </p>
+      <p className="text-lg text-white/80 font-medium mt-1">
+        {time.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+      </p>
+    </div>
+  );
+}
+
+function VirtualKeyboard({ searchQuery, setSearchQuery }: { searchQuery: string; setSearchQuery: (v: string | ((p: string) => string)) => void }) {
+  const keys = [
+    ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"],
+    ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"],
+    ["A", "S", "D", "F", "G", "H", "J", "K", "L"],
+    ["Z", "X", "C", "V", "B", "N", "M", "⌫"],
+  ];
+  const handleKey = (key: string) => {
+    if (key === "⌫") setSearchQuery((prev: string) => prev.slice(0, -1));
+    else setSearchQuery((prev: string) => prev + key);
+  };
+  return (
+    <div className="mt-4 p-5 bg-muted/80 backdrop-blur rounded-2xl shadow-inner">
+      {keys.map((row, i) => (
+        <div key={i} className="flex justify-center gap-1.5 mb-1.5">
+          {row.map(key => (
+            <Button key={key} variant="outline" className="w-14 h-14 text-xl font-bold rounded-xl shadow-sm hover:scale-105 transition-transform" onClick={() => handleKey(key)}>
+              {key}
+            </Button>
+          ))}
+        </div>
+      ))}
+      <div className="flex justify-center gap-2 mt-2">
+        <Button variant="outline" className="w-64 h-14 rounded-xl text-lg" onClick={() => setSearchQuery((prev: string) => prev + " ")}>Spasi</Button>
+        <Button variant="destructive" className="w-32 h-14 rounded-xl text-lg" onClick={() => setSearchQuery("")}>Hapus</Button>
+      </div>
+    </div>
+  );
+}
 
 export default function Kiosk() {
   const queryClient = useQueryClient();
@@ -78,22 +123,18 @@ export default function Kiosk() {
   const idleTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const services: ServiceType[] = [
-    { id: "rawat_jalan", name: "Rawat Jalan", icon: <Stethoscope className="w-12 h-12" />, code: "RJ", description: "Poli Umum & Spesialis" },
-    { id: "laboratorium", name: "Laboratorium", icon: <TestTube className="w-12 h-12" />, code: "LAB", description: "Pemeriksaan Lab" },
-    { id: "farmasi", name: "Farmasi", icon: <Pill className="w-12 h-12" />, code: "FAR", description: "Pengambilan Obat" },
-    { id: "kasir", name: "Kasir / Billing", icon: <CreditCard className="w-12 h-12" />, code: "KSR", description: "Pembayaran" },
-    { id: "radiologi", name: "Radiologi", icon: <Activity className="w-12 h-12" />, code: "RAD", description: "X-Ray, USG, CT-Scan" },
+    { id: "rawat_jalan", name: "Rawat Jalan", icon: <Stethoscope className="w-14 h-14" />, code: "RJ", description: "Poli Umum & Spesialis", gradient: "from-teal-500 to-cyan-500" },
+    { id: "laboratorium", name: "Laboratorium", icon: <TestTube className="w-14 h-14" />, code: "LAB", description: "Pemeriksaan Lab", gradient: "from-blue-500 to-indigo-500" },
+    { id: "farmasi", name: "Farmasi", icon: <Pill className="w-14 h-14" />, code: "FAR", description: "Pengambilan Obat", gradient: "from-emerald-500 to-green-500" },
+    { id: "kasir", name: "Kasir / Billing", icon: <CreditCard className="w-14 h-14" />, code: "KSR", description: "Pembayaran", gradient: "from-amber-500 to-orange-500" },
+    { id: "radiologi", name: "Radiologi", icon: <Activity className="w-14 h-14" />, code: "RAD", description: "X-Ray, USG, CT-Scan", gradient: "from-purple-500 to-pink-500" },
   ];
 
   // Fetch departments
   const { data: departments = [] } = useQuery({
     queryKey: ["kiosk-departments"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("departments")
-        .select("id, name, code")
-        .eq("is_active", true)
-        .order("name");
+      const { data, error } = await supabase.from("departments").select("id, name, code").eq("is_active", true).order("name");
       if (error) throw error;
       return data as Department[];
     },
@@ -115,7 +156,7 @@ export default function Kiosk() {
     enabled: searchQuery.length >= 3,
   });
 
-  // Get today's appointments for selected patient
+  // Get today's appointments
   const { data: appointments = [] } = useQuery({
     queryKey: ["kiosk-appointments", selectedPatient?.id],
     queryFn: async () => {
@@ -123,14 +164,7 @@ export default function Kiosk() {
       const today = new Date().toISOString().split("T")[0];
       const { data, error } = await supabase
         .from("appointments")
-        .select(`
-          id,
-          appointment_date,
-          appointment_time,
-          status,
-          doctors (full_name),
-          departments (name)
-        `)
+        .select("id, appointment_date, appointment_time, status, doctors (full_name), departments (name)")
         .eq("patient_id", selectedPatient.id)
         .eq("appointment_date", today)
         .in("status", ["confirmed", "scheduled"]);
@@ -144,37 +178,22 @@ export default function Kiosk() {
   const generateTicket = useMutation({
     mutationFn: async () => {
       if (!selectedPatient || !selectedService) throw new Error("Data tidak lengkap");
-
       const today = new Date().toISOString().split("T")[0];
-      
-      // Get current max ticket number for this service today
       const { data: existingTickets } = await supabase
-        .from("queue_tickets")
-        .select("ticket_number")
-        .eq("queue_date", today)
-        .eq("service_type", selectedService.id)
-        .order("created_at", { ascending: false })
-        .limit(1);
-
+        .from("queue_tickets").select("ticket_number")
+        .eq("queue_date", today).eq("service_type", selectedService.id)
+        .order("created_at", { ascending: false }).limit(1);
       let nextNumber = 1;
       if (existingTickets && existingTickets.length > 0) {
-        const lastTicket = existingTickets[0].ticket_number;
-        const lastNum = parseInt(lastTicket.replace(/\D/g, "")) || 0;
+        const lastNum = parseInt(existingTickets[0].ticket_number.replace(/\D/g, "")) || 0;
         nextNumber = lastNum + 1;
       }
-
       const ticketNumber = `${selectedService.code}${String(nextNumber).padStart(3, "0")}`;
-
       const { error } = await supabase.from("queue_tickets").insert({
-        ticket_number: ticketNumber,
-        patient_id: selectedPatient.id,
-        department_id: selectedDepartment?.id || null,
-        service_type: selectedService.id,
-        queue_date: today,
-        status: "waiting",
-        priority: 0,
+        ticket_number: ticketNumber, patient_id: selectedPatient.id,
+        department_id: selectedDepartment?.id || null, service_type: selectedService.id,
+        queue_date: today, status: "waiting", priority: 0,
       });
-
       if (error) throw error;
       return ticketNumber;
     },
@@ -190,46 +209,24 @@ export default function Kiosk() {
     mutationFn: async (appointmentId: string) => {
       const appointment = appointments.find(a => a.id === appointmentId);
       if (!appointment || !selectedPatient) throw new Error("Data tidak ditemukan");
-
       const today = new Date().toISOString().split("T")[0];
-      
-      // Get current max ticket number
       const { data: existingTickets } = await supabase
-        .from("queue_tickets")
-        .select("ticket_number")
-        .eq("queue_date", today)
-        .eq("service_type", "rawat_jalan")
-        .order("created_at", { ascending: false })
-        .limit(1);
-
+        .from("queue_tickets").select("ticket_number")
+        .eq("queue_date", today).eq("service_type", "rawat_jalan")
+        .order("created_at", { ascending: false }).limit(1);
       let nextNumber = 1;
       if (existingTickets && existingTickets.length > 0) {
-        const lastTicket = existingTickets[0].ticket_number;
-        const lastNum = parseInt(lastTicket.replace(/\D/g, "")) || 0;
+        const lastNum = parseInt(existingTickets[0].ticket_number.replace(/\D/g, "")) || 0;
         nextNumber = lastNum + 1;
       }
-
       const ticketNumber = `RJ${String(nextNumber).padStart(3, "0")}`;
-
-      // Create queue ticket
       const { error: queueError } = await supabase.from("queue_tickets").insert({
-        ticket_number: ticketNumber,
-        patient_id: selectedPatient.id,
-        service_type: "rawat_jalan",
-        queue_date: today,
-        status: "waiting",
-        priority: 1, // Appointment has priority
-        notes: `Check-in dari booking - ${appointment.doctors?.full_name || ""}`,
+        ticket_number: ticketNumber, patient_id: selectedPatient.id,
+        service_type: "rawat_jalan", queue_date: today, status: "waiting",
+        priority: 1, notes: `Check-in dari booking - ${appointment.doctors?.full_name || ""}`,
       });
-
       if (queueError) throw queueError;
-
-      // Update appointment status
-      await supabase
-        .from("appointments")
-        .update({ status: "checked_in" })
-        .eq("id", appointmentId);
-
+      await supabase.from("appointments").update({ status: "checked_in" }).eq("id", appointmentId);
       return ticketNumber;
     },
     onSuccess: (ticketNumber) => {
@@ -240,13 +237,11 @@ export default function Kiosk() {
     },
   });
 
-  // Idle timer reset
+  // Idle timer
   const resetIdleTimer = () => {
     if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
     if (step !== "home") {
-      idleTimerRef.current = setTimeout(() => {
-        resetKiosk();
-      }, IDLE_TIMEOUT);
+      idleTimerRef.current = setTimeout(() => resetKiosk(), IDLE_TIMEOUT);
     }
   };
 
@@ -265,7 +260,6 @@ export default function Kiosk() {
     window.addEventListener("click", handleInteraction);
     window.addEventListener("touchstart", handleInteraction);
     window.addEventListener("keydown", handleInteraction);
-    
     return () => {
       window.removeEventListener("click", handleInteraction);
       window.removeEventListener("touchstart", handleInteraction);
@@ -274,238 +268,124 @@ export default function Kiosk() {
     };
   }, [step]);
 
-  const handleServiceSelect = (service: ServiceType) => {
-    setSelectedService(service);
-    setStep("patient-search");
-  };
-
+  const handleServiceSelect = (service: ServiceType) => { setSelectedService(service); setStep("patient-search"); };
   const handlePatientSelect = (patient: Patient) => {
     setSelectedPatient(patient);
-    if (selectedService?.id === "rawat_jalan") {
-      setStep("department-select");
-    } else {
-      setStep("confirmation");
-    }
+    setStep(selectedService?.id === "rawat_jalan" ? "department-select" : "confirmation");
   };
-
-  const handleDepartmentSelect = (dept: Department) => {
-    setSelectedDepartment(dept);
-    setStep("confirmation");
-  };
-
-  const handleConfirm = () => {
-    generateTicket.mutate();
-  };
-
-  const printTicket = () => {
-    window.print();
-  };
-
-  // Virtual keyboard
-  const VirtualKeyboard = () => {
-    const keys = [
-      ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"],
-      ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"],
-      ["A", "S", "D", "F", "G", "H", "J", "K", "L"],
-      ["Z", "X", "C", "V", "B", "N", "M", "⌫"],
-    ];
-
-    const handleKey = (key: string) => {
-      if (key === "⌫") {
-        setSearchQuery(prev => prev.slice(0, -1));
-      } else {
-        setSearchQuery(prev => prev + key);
-      }
-    };
-
-    return (
-      <div className="mt-4 p-4 bg-muted rounded-lg">
-        {keys.map((row, i) => (
-          <div key={i} className="flex justify-center gap-2 mb-2">
-            {row.map(key => (
-              <Button
-                key={key}
-                variant="outline"
-                size="lg"
-                className="w-14 h-14 text-xl font-bold"
-                onClick={() => handleKey(key)}
-              >
-                {key}
-              </Button>
-            ))}
-          </div>
-        ))}
-        <div className="flex justify-center gap-2 mt-2">
-          <Button
-            variant="outline"
-            size="lg"
-            className="w-64 h-14"
-            onClick={() => setSearchQuery(prev => prev + " ")}
-          >
-            Space
-          </Button>
-          <Button
-            variant="destructive"
-            size="lg"
-            className="w-32 h-14"
-            onClick={() => setSearchQuery("")}
-          >
-            Clear
-          </Button>
-        </div>
-      </div>
-    );
-  };
+  const handleDepartmentSelect = (dept: Department) => { setSelectedDepartment(dept); setStep("confirmation"); };
+  const handleConfirm = () => { generateTicket.mutate(); };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-primary/10 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-teal-900 via-teal-800 to-cyan-900 flex flex-col">
       {/* Header */}
-      <div className="bg-primary text-primary-foreground p-4 flex items-center justify-between shadow-lg">
-        <div className="flex items-center gap-4">
-          <img src={lintaslinkLogo} alt="Logo" className="h-12 w-auto" />
-          <div>
-            <h1 className="text-2xl font-bold">Self-Service Kiosk</h1>
-            <p className="text-primary-foreground/80">Layanan Mandiri Pasien</p>
+      <div className="bg-white/10 backdrop-blur-md border-b border-white/10 p-5 flex items-center justify-between">
+        <div className="flex items-center gap-5">
+          <div className="bg-white rounded-xl p-2 shadow-lg">
+            <img src={rsudLogo} alt="RSUD Dr. Moewardi" className="h-14 w-auto" />
+          </div>
+          <div className="text-white">
+            <h1 className="text-3xl font-black tracking-tight">Self-Service Kiosk</h1>
+            <p className="text-white/70 text-sm">RSUD Dr. Moewardi — Cepat, Tepat, Nyaman & Mudah</p>
           </div>
         </div>
-        <div className="text-right">
-          <p className="text-lg font-semibold">{format(new Date(), "EEEE, dd MMMM yyyy", { locale: id })}</p>
-          <p className="text-2xl font-bold">{format(new Date(), "HH:mm")}</p>
-        </div>
+        <KioskClock />
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 p-8">
+      <div className="flex-1 p-8 overflow-y-auto">
         {step !== "home" && step !== "ticket" && (
-          <Button
-            variant="ghost"
-            size="lg"
-            className="mb-4"
-            onClick={() => {
-              if (step === "patient-search") setStep("home");
-              else if (step === "department-select") setStep("patient-search");
-              else if (step === "confirmation") {
-                if (selectedService?.id === "rawat_jalan") setStep("department-select");
-                else setStep("patient-search");
-              }
-            }}
-          >
-            <ArrowLeft className="w-6 h-6 mr-2" />
-            Kembali
+          <Button variant="ghost" size="lg" className="mb-6 text-white hover:bg-white/10 text-lg" onClick={() => {
+            if (step === "patient-search") setStep("home");
+            else if (step === "department-select") setStep("patient-search");
+            else if (step === "confirmation") setStep(selectedService?.id === "rawat_jalan" ? "department-select" : "patient-search");
+          }}>
+            <ArrowLeft className="w-6 h-6 mr-2" /> Kembali
           </Button>
         )}
 
-        {/* Step: Home */}
+        {/* HOME */}
         {step === "home" && (
-          <div className="max-w-5xl mx-auto text-center">
-            <div className="mb-12">
-              <h2 className="text-5xl font-bold mb-4">Selamat Datang</h2>
-              <p className="text-2xl text-muted-foreground">Silakan pilih layanan yang Anda butuhkan</p>
+          <div className="max-w-5xl mx-auto text-center animate-fade-in">
+            <div className="mb-14">
+              <h2 className="text-5xl font-black text-white mb-3 drop-shadow-lg">Selamat Datang</h2>
+              <p className="text-2xl text-white/70">Silakan pilih layanan yang Anda butuhkan</p>
             </div>
-            
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-5">
               {services.map(service => (
-                <Card
+                <button
                   key={service.id}
-                  className="cursor-pointer hover:shadow-xl hover:scale-105 transition-all duration-200 border-2 hover:border-primary"
+                  className={`group relative bg-gradient-to-br ${service.gradient} rounded-3xl p-8 text-white text-center shadow-xl hover:shadow-2xl hover:scale-[1.04] active:scale-[0.98] transition-all duration-200 cursor-pointer border border-white/10`}
                   onClick={() => handleServiceSelect(service)}
                 >
-                  <CardContent className="p-8 text-center">
-                    <div className="text-primary mb-4 flex justify-center">
-                      {service.icon}
-                    </div>
-                    <h3 className="text-2xl font-bold mb-2">{service.name}</h3>
-                    <p className="text-muted-foreground">{service.description}</p>
-                  </CardContent>
-                </Card>
+                  <div className="mb-4 flex justify-center opacity-90 group-hover:opacity-100 transition-opacity">
+                    {service.icon}
+                  </div>
+                  <h3 className="text-2xl font-bold mb-1">{service.name}</h3>
+                  <p className="text-sm opacity-80">{service.description}</p>
+                </button>
               ))}
-              
-              {/* Check-in Booking */}
-              <Card
-                className="cursor-pointer hover:shadow-xl hover:scale-105 transition-all duration-200 border-2 hover:border-accent bg-accent/10"
+              <button
+                className="group relative bg-gradient-to-br from-rose-500 to-pink-600 rounded-3xl p-8 text-white text-center shadow-xl hover:shadow-2xl hover:scale-[1.04] active:scale-[0.98] transition-all duration-200 cursor-pointer border border-white/10"
                 onClick={() => {
-                  setSelectedService({ id: "checkin", name: "Check-in Booking", icon: <Calendar />, code: "CHK", description: "" });
+                  setSelectedService({ id: "checkin", name: "Check-in Booking", icon: <Calendar />, code: "CHK", description: "Sudah punya jadwal", gradient: "from-rose-500 to-pink-600" });
                   setStep("patient-search");
                 }}
               >
-                <CardContent className="p-8 text-center">
-                  <div className="text-accent-foreground mb-4 flex justify-center">
-                    <Calendar className="w-12 h-12" />
-                  </div>
-                  <h3 className="text-2xl font-bold mb-2">Check-in Booking</h3>
-                  <p className="text-muted-foreground">Sudah punya jadwal? Check-in di sini</p>
-                </CardContent>
-              </Card>
+                <div className="mb-4 flex justify-center opacity-90 group-hover:opacity-100">
+                  <Calendar className="w-14 h-14" />
+                </div>
+                <h3 className="text-2xl font-bold mb-1">Check-in Booking</h3>
+                <p className="text-sm opacity-80">Sudah punya jadwal? Check-in di sini</p>
+              </button>
             </div>
           </div>
         )}
 
-        {/* Step: Patient Search */}
+        {/* PATIENT SEARCH */}
         {step === "patient-search" && (
-          <div className="max-w-3xl mx-auto">
-            <Card>
-              <CardHeader className="text-center">
+          <div className="max-w-3xl mx-auto animate-fade-in">
+            <Card className="rounded-3xl shadow-2xl border-0 overflow-hidden">
+              <CardHeader className="text-center bg-gradient-to-r from-teal-50 to-cyan-50 dark:from-teal-950/30 dark:to-cyan-950/30 pb-4">
                 <CardTitle className="text-3xl">Cari Data Pasien</CardTitle>
-                <CardDescription className="text-lg">
-                  Masukkan No. RM, NIK, atau No. HP
-                </CardDescription>
+                <CardDescription className="text-lg">Masukkan No. RM, NIK, atau No. HP</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="flex gap-4">
+              <CardContent className="space-y-5 p-6">
+                <div className="flex gap-3">
                   <div className="relative flex-1">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 text-muted-foreground" />
-                    <Input
-                      type="text"
-                      placeholder="Ketik No. RM / NIK / No. HP..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-14 h-16 text-xl"
-                      autoFocus
-                    />
+                    <Input type="text" placeholder="Ketik No. RM / NIK / No. HP..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-14 h-16 text-xl rounded-2xl" autoFocus />
                   </div>
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    className="h-16 w-16"
-                    onClick={() => setShowKeyboard(!showKeyboard)}
-                  >
+                  <Button variant="outline" className="h-16 w-16 rounded-2xl" onClick={() => setShowKeyboard(!showKeyboard)}>
                     <Keyboard className="w-8 h-8" />
                   </Button>
                 </div>
-
-                {showKeyboard && <VirtualKeyboard />}
-
+                {showKeyboard && <VirtualKeyboard searchQuery={searchQuery} setSearchQuery={setSearchQuery} />}
                 {searchingPatients && (
                   <div className="text-center py-8">
-                    <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto" />
-                    <p className="mt-2 text-muted-foreground">Mencari pasien...</p>
+                    <div className="animate-spin w-10 h-10 border-4 border-teal-500 border-t-transparent rounded-full mx-auto" />
+                    <p className="mt-3 text-muted-foreground">Mencari pasien...</p>
                   </div>
                 )}
-
                 {!searchingPatients && searchQuery.length >= 3 && patients.length === 0 && (
                   <div className="text-center py-8 text-muted-foreground">
                     <p className="text-xl">Pasien tidak ditemukan</p>
                     <p>Silakan hubungi petugas pendaftaran</p>
                   </div>
                 )}
-
                 {patients.length > 0 && (
-                  <div className="space-y-3">
+                  <div className="space-y-2.5">
                     {patients.map(patient => (
-                      <Card
-                        key={patient.id}
-                        className="cursor-pointer hover:shadow-lg hover:border-primary transition-all"
-                        onClick={() => handlePatientSelect(patient)}
-                      >
+                      <Card key={patient.id} className="cursor-pointer hover:shadow-lg hover:border-teal-400 transition-all rounded-2xl" onClick={() => handlePatientSelect(patient)}>
                         <CardContent className="p-4 flex items-center justify-between">
                           <div>
                             <p className="text-xl font-bold">{patient.full_name}</p>
-                            <div className="flex gap-4 text-muted-foreground">
+                            <div className="flex gap-4 text-muted-foreground text-sm">
                               <span>RM: {patient.medical_record_number}</span>
                               {patient.nik && <span>NIK: {patient.nik.slice(0, 6)}****</span>}
                             </div>
                           </div>
-                          <Badge variant="secondary" className="text-lg px-4 py-2">Pilih</Badge>
+                          <Badge className="bg-teal-500 hover:bg-teal-600 text-white text-lg px-5 py-2 rounded-xl">Pilih</Badge>
                         </CardContent>
                       </Card>
                     ))}
@@ -516,118 +396,74 @@ export default function Kiosk() {
           </div>
         )}
 
-        {/* Step: Department Select (for Rawat Jalan) */}
+        {/* DEPARTMENT SELECT */}
         {step === "department-select" && (
-          <div className="max-w-4xl mx-auto">
+          <div className="max-w-4xl mx-auto animate-fade-in">
             <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold">Pilih Poli / Unit</h2>
-              <p className="text-xl text-muted-foreground mt-2">
-                Pasien: <span className="font-semibold">{selectedPatient?.full_name}</span>
-              </p>
+              <h2 className="text-3xl font-bold text-white">Pilih Poli / Unit</h2>
+              <p className="text-xl text-white/70 mt-2">Pasien: <span className="font-semibold text-white">{selectedPatient?.full_name}</span></p>
             </div>
-
-            {/* Check if patient has appointments today */}
             {selectedService?.id === "checkin" && appointments.length > 0 ? (
               <div className="space-y-4">
-                <h3 className="text-xl font-semibold text-center mb-4">Jadwal Booking Hari Ini</h3>
+                <h3 className="text-xl font-semibold text-center text-white mb-4">Jadwal Booking Hari Ini</h3>
                 {appointments.map(apt => (
-                  <Card
-                    key={apt.id}
-                    className="cursor-pointer hover:shadow-lg hover:border-primary transition-all"
-                    onClick={() => checkInAppointment.mutate(apt.id)}
-                  >
+                  <Card key={apt.id} className="cursor-pointer hover:shadow-lg hover:border-teal-400 transition-all rounded-2xl" onClick={() => checkInAppointment.mutate(apt.id)}>
                     <CardContent className="p-6 flex items-center justify-between">
                       <div>
                         <p className="text-xl font-bold">{apt.departments?.name || "Poli"}</p>
-                        <p className="text-muted-foreground">
-                          Dokter: {apt.doctors?.full_name || "-"} | Jam: {apt.appointment_time}
-                        </p>
+                        <p className="text-muted-foreground">Dokter: {apt.doctors?.full_name || "-"} | Jam: {apt.appointment_time}</p>
                       </div>
-                      <Button size="lg">
-                        <CheckCircle className="w-5 h-5 mr-2" />
-                        Check-in
+                      <Button size="lg" className="rounded-xl bg-teal-500 hover:bg-teal-600">
+                        <CheckCircle className="w-5 h-5 mr-2" /> Check-in
                       </Button>
                     </CardContent>
                   </Card>
                 ))}
               </div>
             ) : selectedService?.id === "checkin" ? (
-              <Card>
-                <CardContent className="p-8 text-center">
-                  <p className="text-xl text-muted-foreground">Tidak ada jadwal booking untuk hari ini</p>
-                  <Button className="mt-4" onClick={() => setStep("home")}>
-                    Kembali ke Beranda
-                  </Button>
-                </CardContent>
-              </Card>
+              <Card className="rounded-2xl"><CardContent className="p-8 text-center">
+                <p className="text-xl text-muted-foreground">Tidak ada jadwal booking untuk hari ini</p>
+                <Button className="mt-4 rounded-xl" onClick={() => setStep("home")}>Kembali ke Beranda</Button>
+              </CardContent></Card>
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 {departments.map(dept => (
-                  <Card
-                    key={dept.id}
-                    className="cursor-pointer hover:shadow-lg hover:border-primary transition-all"
-                    onClick={() => handleDepartmentSelect(dept)}
-                  >
-                    <CardContent className="p-6 text-center">
-                      <h3 className="text-lg font-bold">{dept.name}</h3>
-                      <Badge variant="secondary" className="mt-2">{dept.code}</Badge>
-                    </CardContent>
-                  </Card>
+                  <button key={dept.id} className="bg-white/10 backdrop-blur border border-white/20 rounded-2xl p-6 text-center text-white hover:bg-white/20 hover:scale-[1.03] transition-all cursor-pointer" onClick={() => handleDepartmentSelect(dept)}>
+                    <h3 className="text-lg font-bold">{dept.name}</h3>
+                    <Badge className="mt-2 bg-white/20 text-white border-white/30">{dept.code}</Badge>
+                  </button>
                 ))}
               </div>
             )}
           </div>
         )}
 
-        {/* Step: Confirmation */}
+        {/* CONFIRMATION */}
         {step === "confirmation" && (
-          <div className="max-w-2xl mx-auto">
-            <Card>
-              <CardHeader className="text-center">
+          <div className="max-w-2xl mx-auto animate-fade-in">
+            <Card className="rounded-3xl shadow-2xl border-0 overflow-hidden">
+              <CardHeader className="text-center bg-gradient-to-r from-teal-50 to-cyan-50 dark:from-teal-950/30 dark:to-cyan-950/30">
                 <CardTitle className="text-3xl">Konfirmasi Antrian</CardTitle>
                 <CardDescription className="text-lg">Pastikan data sudah benar</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="bg-muted p-6 rounded-lg space-y-4">
-                  <div className="flex justify-between text-lg">
-                    <span className="text-muted-foreground">Nama Pasien:</span>
-                    <span className="font-bold">{selectedPatient?.full_name}</span>
-                  </div>
-                  <div className="flex justify-between text-lg">
-                    <span className="text-muted-foreground">No. RM:</span>
-                    <span className="font-bold">{selectedPatient?.medical_record_number}</span>
-                  </div>
-                  <div className="flex justify-between text-lg">
-                    <span className="text-muted-foreground">Layanan:</span>
-                    <span className="font-bold">{selectedService?.name}</span>
-                  </div>
-                  {selectedDepartment && (
-                    <div className="flex justify-between text-lg">
-                      <span className="text-muted-foreground">Poli/Unit:</span>
-                      <span className="font-bold">{selectedDepartment.name}</span>
+              <CardContent className="space-y-6 p-6">
+                <div className="bg-muted/50 p-6 rounded-2xl space-y-4">
+                  {[
+                    ["Nama Pasien", selectedPatient?.full_name],
+                    ["No. RM", selectedPatient?.medical_record_number],
+                    ["Layanan", selectedService?.name],
+                    ...(selectedDepartment ? [["Poli/Unit", selectedDepartment.name]] : []),
+                    ["Tanggal", format(new Date(), "dd MMMM yyyy", { locale: id })],
+                  ].map(([label, val]) => (
+                    <div key={label as string} className="flex justify-between text-lg">
+                      <span className="text-muted-foreground">{label}</span>
+                      <span className="font-bold">{val}</span>
                     </div>
-                  )}
-                  <div className="flex justify-between text-lg">
-                    <span className="text-muted-foreground">Tanggal:</span>
-                    <span className="font-bold">{format(new Date(), "dd MMMM yyyy", { locale: id })}</span>
-                  </div>
+                  ))}
                 </div>
-
                 <div className="flex gap-4">
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    className="flex-1 h-16 text-lg"
-                    onClick={() => setStep("home")}
-                  >
-                    Batal
-                  </Button>
-                  <Button
-                    size="lg"
-                    className="flex-1 h-16 text-lg"
-                    onClick={handleConfirm}
-                    disabled={generateTicket.isPending}
-                  >
+                  <Button variant="outline" size="lg" className="flex-1 h-16 text-lg rounded-2xl" onClick={() => setStep("home")}>Batal</Button>
+                  <Button size="lg" className="flex-1 h-16 text-lg rounded-2xl bg-teal-600 hover:bg-teal-700" onClick={handleConfirm} disabled={generateTicket.isPending}>
                     {generateTicket.isPending ? "Memproses..." : "Ambil Nomor Antrian"}
                   </Button>
                 </div>
@@ -636,63 +472,50 @@ export default function Kiosk() {
           </div>
         )}
 
-        {/* Step: Ticket Display */}
+        {/* TICKET */}
         {step === "ticket" && generatedTicket && (
-          <div className="max-w-2xl mx-auto text-center print:p-0">
-            <Card className="print:shadow-none print:border-2 print:border-black">
-              <CardContent className="p-8">
-                <CheckCircle className="w-20 h-20 text-primary mx-auto mb-4 print:hidden" />
-                <h2 className="text-2xl font-bold mb-2">Nomor Antrian Anda</h2>
-                
-                <div className="my-8 p-8 bg-primary/10 rounded-xl print:bg-white print:border-4 print:border-primary">
-                  <p className="text-8xl font-black text-primary">{generatedTicket}</p>
+          <div className="max-w-2xl mx-auto text-center animate-fade-in print:p-0">
+            <Card className="rounded-3xl shadow-2xl border-0 overflow-hidden print:shadow-none print:border-2 print:border-black print:rounded-none">
+              <CardContent className="p-10">
+                <div className="w-20 h-20 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-5 print:hidden">
+                  <CheckCircle className="w-12 h-12 text-emerald-500" />
                 </div>
-
-                <div className="text-left bg-muted p-4 rounded-lg mb-6 print:bg-white print:border">
+                <h2 className="text-2xl font-bold mb-2">Nomor Antrian Anda</h2>
+                <div className="my-8 py-10 px-8 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-3xl shadow-xl print:bg-white print:border-4 print:border-teal-600 print:rounded-none">
+                  <p className="text-8xl font-black text-white tracking-wider print:text-teal-600">{generatedTicket}</p>
+                </div>
+                <div className="text-left bg-muted/50 p-5 rounded-2xl mb-6 space-y-1.5 print:bg-white print:border print:rounded-none">
                   <p><strong>Nama:</strong> {selectedPatient?.full_name}</p>
                   <p><strong>No. RM:</strong> {selectedPatient?.medical_record_number}</p>
                   <p><strong>Layanan:</strong> {selectedService?.name}</p>
                   {selectedDepartment && <p><strong>Poli:</strong> {selectedDepartment.name}</p>}
                   <p><strong>Tanggal:</strong> {format(new Date(), "dd MMMM yyyy HH:mm", { locale: id })}</p>
                 </div>
-
-                <p className="text-muted-foreground mb-6 print:hidden">
-                  Silakan menunggu nomor antrian Anda dipanggil
-                </p>
-
+                <p className="text-muted-foreground mb-6 print:hidden">Silakan menunggu nomor antrian Anda dipanggil</p>
                 <div className="flex gap-4 print:hidden">
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    className="flex-1 h-16 text-lg"
-                    onClick={printTicket}
-                  >
-                    <Printer className="w-6 h-6 mr-2" />
-                    Cetak Tiket
+                  <Button variant="outline" size="lg" className="flex-1 h-16 text-lg rounded-2xl" onClick={() => window.print()}>
+                    <Printer className="w-6 h-6 mr-2" /> Cetak Tiket
                   </Button>
-                  <Button
-                    size="lg"
-                    className="flex-1 h-16 text-lg"
-                    onClick={resetKiosk}
-                  >
-                    Selesai
-                  </Button>
+                  <Button size="lg" className="flex-1 h-16 text-lg rounded-2xl bg-teal-600 hover:bg-teal-700" onClick={resetKiosk}>Selesai</Button>
                 </div>
               </CardContent>
             </Card>
-
-            {/* Auto reset after 30 seconds */}
-            <p className="text-muted-foreground mt-4 print:hidden">
-              <Timer className="w-4 h-4 inline mr-1" />
-              Layar akan kembali ke beranda dalam 60 detik
+            <p className="text-white/60 mt-5 print:hidden">
+              <Timer className="w-4 h-4 inline mr-1" /> Layar akan kembali ke beranda dalam 60 detik
             </p>
           </div>
         )}
       </div>
 
       {/* Footer */}
-      <div className="bg-muted p-4 text-center text-muted-foreground print:hidden">
-        <p>Butuh bantuan? Hubungi petugas terdekat atau tekan tombol bantuan</p>
+      <div className="bg-white/5 backdrop-blur border-t border-white/10 p-4 print:hidden">
+        <div className="max-w-4xl mx-auto flex items-center justify-between text-white/60 text-sm">
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-1.5"><Phone className="h-3.5 w-3.5" /> (0271) 637415</div>
+            <div className="flex items-center gap-1.5"><Mail className="h-3.5 w-3.5" /> rsmoewardi@jatengprov.go.id</div>
+          </div>
+          <div className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" /> Jl. Kolonel Sutarto No.132, Jebres, Surakarta</div>
+        </div>
       </div>
     </div>
   );
