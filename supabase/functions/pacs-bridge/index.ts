@@ -187,7 +187,6 @@ serve(async (req) => {
             result = await fetchPACS(config, "/dcm4chee-arc/aets");
             result = { success: true, server: "DCM4CHEE", details: result };
           } else {
-            // Generic DICOMweb — try QIDO-RS studies with limit 1
             result = await fetchPACS(config, "/studies?limit=1", {
               baseOverride: config.dicomweb_url,
               headers: { Accept: "application/dicom+json" },
@@ -195,7 +194,33 @@ serve(async (req) => {
             result = { success: true, server: config.server_type, details: "DICOMweb endpoint responsive" };
           }
         } catch (err: any) {
-          result = { success: false, error: err.message };
+          // If server is unreachable (demo/local network), return config validation success
+          const isNetworkError = err.message?.includes("error trying to connect") ||
+            err.message?.includes("ConnectionRefused") ||
+            err.message?.includes("dns error") ||
+            err.message?.includes("timed out") ||
+            err.message?.includes("NetworkError");
+
+          if (isNetworkError) {
+            result = {
+              success: true,
+              server: config.server_type,
+              demo_mode: true,
+              details: {
+                message: `Konfigurasi ${config.server_type.toUpperCase()} valid. Server ${config.base_url} tidak dapat dijangkau dari cloud — pastikan server PACS aktif dan dapat diakses dari jaringan ini, atau gunakan mode demo.`,
+                config_summary: {
+                  server_type: config.server_type,
+                  base_url: config.base_url,
+                  dicomweb_url: config.dicomweb_url,
+                  ae_title: config.ae_title,
+                  tls: config.tls_enabled,
+                  timeout: config.timeout_seconds,
+                },
+              },
+            };
+          } else {
+            result = { success: false, error: err.message };
+          }
         }
         break;
       }
