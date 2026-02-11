@@ -103,15 +103,15 @@ export function useSystemSettings() {
 
   // Convenience methods for specific settings
   const hospitalInfo = getSetting<HospitalInfo>("hospital_info", {
-    name: "RS Sehat Jelita",
-    code: "RSJ-001",
-    address: "",
-    city: "Jakarta",
-    phone: "",
-    email: "",
-    website: "",
+    name: "RSUD Dr. Moewardi",
+    code: "3372058",
+    address: "Jl. Kolonel Sutarto No.132, Jebres, Kec. Jebres, Kota Surakarta, Jawa Tengah 57126",
+    city: "Surakarta",
+    phone: "(0271) 637415",
+    email: "rsmoewardi@jatengprov.go.id",
+    website: "https://rsmoewardi.com",
     npwp: "",
-    director: "",
+    director: "dr. Zulfachmi Wahab, Sp.PD",
   });
 
   const notificationSettings = getSetting<NotificationSettings>("notification_settings", {
