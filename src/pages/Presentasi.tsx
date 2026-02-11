@@ -1898,11 +1898,234 @@ const _rawSlides: Slide[] = [
       </div>
     ),
   },
+  {
+    id: 19,
+    title: "Topologi PACS",
+    content: (
+      <div className="relative min-h-full px-8 md:px-16 py-12 overflow-hidden bg-gradient-to-br from-sky-50 via-white to-blue-50">
+        <motion.div
+          className="absolute top-10 left-10 w-[400px] h-[400px] rounded-full bg-gradient-to-br from-sky-200/20 to-blue-200/20 blur-3xl"
+          animate={{ scale: [1, 1.15, 1] }}
+          transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
+        />
+
+        <div className="relative z-10 max-w-6xl mx-auto">
+          <motion.div variants={fadeInUp} initial="hidden" animate="visible" className="text-center mb-8">
+            <p className="text-xs text-sky-600 tracking-[0.3em] uppercase mb-2 font-semibold">11 — Topologi Integrasi</p>
+            <h2 className="text-3xl md:text-5xl font-bold text-slate-900">
+              Topologi <span className="text-sky-600">PACS & Imaging</span>
+            </h2>
+            <p className="text-slate-500 mt-3 max-w-2xl mx-auto text-sm">
+              Arsitektur integrasi SIMRS dengan sistem penyimpanan & distribusi gambar medis (DICOM)
+            </p>
+          </motion.div>
+
+          {/* Topology Diagram */}
+          <motion.div 
+            className="relative mb-8"
+            variants={fadeInUp}
+            initial="hidden"
+            animate="visible"
+            custom={1}
+          >
+            <div className="rounded-2xl bg-white border border-sky-100 shadow-xl p-8">
+              {/* Top Layer - Modalitas */}
+              <div className="text-center mb-2">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Modalitas Imaging</span>
+              </div>
+              <motion.div 
+                className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6"
+                variants={staggerContainer}
+                initial="hidden"
+                animate="visible"
+              >
+                {[
+                  { icon: "🦴", name: "X-Ray / CR", desc: "Rontgen Digital" },
+                  { icon: "🧠", name: "CT Scan", desc: "Computed Tomography" },
+                  { icon: "🫀", name: "MRI", desc: "Magnetic Resonance" },
+                  { icon: "👶", name: "USG", desc: "Ultrasonography" },
+                  { icon: "🦷", name: "Panoramic", desc: "Dental Imaging" },
+                ].map((mod, idx) => (
+                  <motion.div
+                    key={idx}
+                    variants={scaleIn}
+                    custom={idx}
+                    className="flex flex-col items-center p-4 rounded-xl bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 hover:shadow-lg transition-all"
+                    whileHover={{ y: -4, scale: 1.03 }}
+                  >
+                    <span className="text-3xl mb-2">{mod.icon}</span>
+                    <p className="font-bold text-xs text-slate-800">{mod.name}</p>
+                    <p className="text-[10px] text-slate-500">{mod.desc}</p>
+                  </motion.div>
+                ))}
+              </motion.div>
+
+              {/* Connection Lines Down */}
+              <div className="flex justify-center mb-2">
+                <motion.div 
+                  className="flex flex-col items-center"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.5 }}
+                >
+                  <div className="w-px h-6 bg-gradient-to-b from-slate-300 to-sky-400" />
+                  <div className="px-3 py-1 rounded-full bg-sky-100 border border-sky-200 text-[10px] font-bold text-sky-700">
+                    DICOM Protocol
+                  </div>
+                  <div className="w-px h-6 bg-gradient-to-b from-sky-400 to-sky-500" />
+                </motion.div>
+              </div>
+
+              {/* Middle Layer - PACS Server */}
+              <motion.div 
+                className="mx-auto max-w-lg mb-6 p-6 rounded-2xl bg-gradient-to-br from-sky-500 to-blue-600 text-white shadow-2xl shadow-sky-500/30 relative overflow-hidden"
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.6, duration: 0.5 }}
+              >
+                <motion.div 
+                  className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0"
+                  animate={{ x: ['-100%', '100%'] }}
+                  transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                />
+                <div className="relative z-10 text-center">
+                  <span className="text-4xl mb-2 block">🖥️</span>
+                  <h3 className="text-xl font-bold">PACS Server</h3>
+                  <p className="text-sky-100 text-xs mt-1">Orthanc / DCM4CHEE / Horos / Conquest</p>
+                  <div className="flex justify-center gap-3 mt-4">
+                    {["C-STORE", "C-FIND", "C-MOVE", "WADO-RS", "QIDO-RS"].map((proto, i) => (
+                      <span key={i} className="px-2 py-1 rounded bg-white/20 text-[10px] font-bold">
+                        {proto}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Connection Lines Down */}
+              <div className="flex justify-center mb-2">
+                <motion.div 
+                  className="flex flex-col items-center"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.8 }}
+                >
+                  <div className="w-px h-6 bg-gradient-to-b from-sky-500 to-emerald-400" />
+                  <div className="px-3 py-1 rounded-full bg-emerald-100 border border-emerald-200 text-[10px] font-bold text-emerald-700">
+                    DICOMweb REST API / HTTPS
+                  </div>
+                  <div className="w-px h-6 bg-gradient-to-b from-emerald-400 to-emerald-500" />
+                </motion.div>
+              </div>
+
+              {/* Bottom Layer - SIMRS & Edge Function */}
+              <motion.div 
+                className="grid md:grid-cols-3 gap-4"
+                variants={staggerContainer}
+                initial="hidden"
+                animate="visible"
+              >
+                <motion.div 
+                  variants={scaleIn}
+                  className="flex flex-col items-center p-5 rounded-xl bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200"
+                >
+                  <span className="text-3xl mb-2">⚡</span>
+                  <p className="font-bold text-sm text-slate-800">Edge Function</p>
+                  <p className="text-[10px] text-slate-500 text-center mt-1">pacs-bridge</p>
+                  <div className="mt-3 space-y-1 w-full">
+                    {["Query Studies", "Retrieve Images", "Store DICOM"].map((fn, i) => (
+                      <div key={i} className="text-[10px] px-2 py-1 rounded bg-white border border-emerald-100 text-center text-emerald-700 font-medium">
+                        {fn}
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+
+                <motion.div 
+                  variants={scaleIn}
+                  custom={1}
+                  className="flex flex-col items-center p-5 rounded-xl bg-gradient-to-br from-primary/10 to-blue-50 border-2 border-primary/30 shadow-lg"
+                >
+                  <span className="text-3xl mb-2">🏥</span>
+                  <p className="font-bold text-sm text-primary">SIMRS Lintas Link</p>
+                  <p className="text-[10px] text-slate-500 text-center mt-1">Frontend Application</p>
+                  <div className="mt-3 space-y-1 w-full">
+                    {["Viewer Imaging", "Riwayat Radiologi", "Integrasi Rekam Medis"].map((fn, i) => (
+                      <div key={i} className="text-[10px] px-2 py-1 rounded bg-white border border-primary/20 text-center text-primary font-medium">
+                        {fn}
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+
+                <motion.div 
+                  variants={scaleIn}
+                  custom={2}
+                  className="flex flex-col items-center p-5 rounded-xl bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200"
+                >
+                  <span className="text-3xl mb-2">👨‍⚕️</span>
+                  <p className="font-bold text-sm text-slate-800">Pengguna</p>
+                  <p className="text-[10px] text-slate-500 text-center mt-1">Dokter & Radiografer</p>
+                  <div className="mt-3 space-y-1 w-full">
+                    {["Lihat Hasil Rontgen", "Banding Studi", "Download DICOM"].map((fn, i) => (
+                      <div key={i} className="text-[10px] px-2 py-1 rounded bg-white border border-amber-100 text-center text-amber-700 font-medium">
+                        {fn}
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              </motion.div>
+            </div>
+          </motion.div>
+
+          {/* Features */}
+          <motion.div 
+            className="grid md:grid-cols-4 gap-3"
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
+          >
+            {[
+              { icon: "🔐", title: "TLS/HTTPS", desc: "Koneksi terenkripsi antar sistem" },
+              { icon: "⚙️", title: "Multi Server", desc: "Support Orthanc, DCM4CHEE, Horos, Conquest" },
+              { icon: "🔄", title: "Auto Sync", desc: "Sinkronisasi otomatis studi & gambar baru" },
+              { icon: "📱", title: "Web Viewer", desc: "Lihat gambar medis langsung di browser" },
+            ].map((feat, idx) => (
+              <motion.div
+                key={idx}
+                variants={scaleIn}
+                custom={idx}
+                className="flex items-start gap-3 p-4 rounded-xl bg-white border border-slate-100 shadow-sm"
+                whileHover={{ y: -2 }}
+              >
+                <span className="text-xl flex-shrink-0">{feat.icon}</span>
+                <div>
+                  <p className="font-bold text-xs text-slate-800">{feat.title}</p>
+                  <p className="text-[10px] text-slate-500">{feat.desc}</p>
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+
+          <motion.div 
+            className="mt-6 text-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1 }}
+          >
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-sky-50 border border-sky-200 rounded-full">
+              <span className="text-xs font-medium text-sky-700">✦ Konfigurasi PACS tersedia di Pengaturan → Integrasi Eksternal</span>
+            </div>
+          </motion.div>
+        </div>
+      </div>
+    ),
+  },
 ];
 
 // Reorder slides into a logical presentation flow:
 // Intro → Product overview → Technical → Compliance → Migration → Support → Close
-const slideOrder = [1, 2, 3, 4, 10, 11, 17, 7, 5, 6, 18, 12, 15, 14, 13, 8, 9, 16];
+const slideOrder = [1, 2, 3, 4, 10, 11, 17, 7, 5, 6, 18, 19, 12, 15, 14, 13, 8, 9, 16];
 const slides: Slide[] = slideOrder.map((originalId, idx) => ({
   ..._rawSlides.find(s => s.id === originalId)!,
   id: idx + 1,
