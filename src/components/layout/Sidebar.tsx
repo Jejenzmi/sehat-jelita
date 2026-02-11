@@ -192,10 +192,10 @@ export function Sidebar() {
         style={{ background: "var(--gradient-sidebar)" }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between h-16 px-4 border-b border-sidebar-border">
+        <div className="flex items-center justify-between h-16 px-4 border-b border-sidebar-border bg-white/10 backdrop-blur-sm">
           {!collapsed && (
             <div className="flex items-center gap-3 animate-fade-in">
-              <img src={rsudLogo} alt="RSUD Dr. Moewardi" className="h-10" />
+              <img src={rsudLogo} alt="RSUD Dr. Moewardi" className="h-10 bg-white/90 rounded-lg px-1.5 py-0.5" />
             </div>
           )}
           {collapsed && (

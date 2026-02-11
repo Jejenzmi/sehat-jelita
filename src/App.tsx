@@ -424,14 +424,7 @@ const App = () => (
                 </ProtectedPageWithLayout>
               }
             />
-            <Route
-              path="/smart-display"
-              element={
-                <ProtectedPageWithLayout>
-                  <SmartDisplay />
-                </ProtectedPageWithLayout>
-              }
-            />
+            <Route path="/smart-display" element={<SmartDisplay />} />
             <Route
               path="/dicom"
               element={
