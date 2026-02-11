@@ -82,7 +82,7 @@ import {
   Headphones,
   LifeBuoy,
 } from "lucide-react";
-import lintaslinkLogo from "@/assets/lintaslink-logo.png";
+import rsudLogo from "@/assets/logo-rsud-moewardi.png";
 
 interface SlideSection {
   id: string;
@@ -148,8 +148,8 @@ const PanduanPenggunaan = () => {
       content: (
         <div className="flex flex-col items-center justify-center h-full text-center px-8">
           <motion.img
-            src={lintaslinkLogo}
-            alt="SIMRS Lintas Link Logo"
+            src={rsudLogo}
+            alt="RSUD Dr. Moewardi"
             className="h-32 mb-8"
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
@@ -169,7 +169,7 @@ const PanduanPenggunaan = () => {
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.3 }}
           >
-            SIMRS ZEN
+            SIMRS RSUD Dr. Moewardi
           </motion.h2>
           <motion.p
             className="text-xl text-muted-foreground mb-8"
@@ -225,20 +225,20 @@ const PanduanPenggunaan = () => {
       ),
     },
 
-    // ========== SLIDE 2: Tentang SIMRS ZEN ==========
+    // ========== SLIDE 2: Tentang SIMRS RSUD Dr. Moewardi ==========
     {
       id: "about",
       content: (
         <div className="px-12 py-8">
           <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
             <Home className="h-8 w-8" />
-            Tentang SIMRS ZEN
+            Tentang SIMRS RSUD Dr. Moewardi
           </h2>
           <div className="grid grid-cols-2 gap-8">
             <div className="space-y-4">
               <p className="text-lg text-foreground leading-relaxed">
-                <strong>SIMRS ZEN</strong> adalah Sistem Informasi Manajemen Rumah Sakit terintegrasi 
-                yang dirancang untuk mendukung operasional fasilitas kesehatan secara menyeluruh.
+                <strong>SIMRS RSUD Dr. Moewardi</strong> adalah Sistem Informasi Manajemen Rumah Sakit terintegrasi 
+                yang dirancang untuk mendukung operasional RSUD Dr. Moewardi secara menyeluruh.
               </p>
               <div className="space-y-3">
                 <div className="flex items-start gap-3 p-4 bg-primary/5 rounded-lg">
@@ -366,7 +366,7 @@ const PanduanPenggunaan = () => {
           <div className="grid grid-cols-2 gap-8">
             <div className="space-y-4">
               <p className="text-lg text-foreground">
-                Akses aplikasi melalui URL: <code className="bg-muted px-2 py-1 rounded">https://simrszen.id</code>
+                Akses aplikasi melalui URL: <code className="bg-muted px-2 py-1 rounded">https://rsmoewardi.jatengprov.go.id</code>
               </p>
               <div className="space-y-4">
                 <div className="p-4 bg-muted rounded-lg">
@@ -401,7 +401,7 @@ const PanduanPenggunaan = () => {
             <div className="bg-gradient-to-br from-primary/10 to-primary/5 rounded-xl p-8 flex flex-col items-center justify-center">
               <div className="w-full max-w-sm bg-card border rounded-lg p-6 shadow-lg">
                 <div className="flex justify-center mb-6">
-                  <img src={lintaslinkLogo} alt="Logo" className="h-12" />
+                  <img src={rsudLogo} alt="Logo" className="h-12" />
                 </div>
                 <div className="space-y-4">
                   <div>
@@ -438,7 +438,7 @@ const PanduanPenggunaan = () => {
             Role & Hak Akses
           </h2>
           <p className="text-lg text-muted-foreground mb-6">
-            SIMRS ZEN memiliki sistem role-based access control (RBAC) untuk mengatur hak akses setiap pengguna.
+            SIMRS RSUD Dr. Moewardi memiliki sistem role-based access control (RBAC) untuk mengatur hak akses setiap pengguna.
           </p>
           <div className="grid grid-cols-3 gap-4">
             {[
@@ -4682,7 +4682,7 @@ const PanduanPenggunaan = () => {
             </div>
             <div className="p-4 bg-muted rounded-lg">
               <h4 className="font-semibold mb-3">Cara Registrasi:</h4>
-              {["Buka portal.simrszen.id", "Klik 'Daftar'", "Input NIK dan data pribadi", "Verifikasi email/WA", "Login dengan NIK + password"].map((item, i) => (
+              {["Buka portal RSUD Dr. Moewardi", "Klik 'Daftar'", "Input NIK dan data pribadi", "Verifikasi email/WA", "Login dengan NIK + password"].map((item, i) => (
                 <div key={i} className="flex items-center gap-2 text-sm mb-2">
                   <div className="w-5 h-5 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xs">{i + 1}</div>
                   <span>{item}</span>
@@ -5203,15 +5203,15 @@ const PanduanPenggunaan = () => {
                   Vendor Support
                 </h4>
                 <ul className="text-sm space-y-2 mt-3">
-                  <li>📞 (021) 1234-5678</li>
-                  <li>📧 support@simrszen.id</li>
-                  <li>🌐 help.simrszen.id</li>
+                  <li>📞 (0271) 637415</li>
+                  <li>📧 rsmoewardi@jatengprov.go.id</li>
+                  <li>🌐 rsmoewardi.jatengprov.go.id</li>
                 </ul>
               </div>
             </div>
             <div className="p-4 bg-primary/5 rounded-lg flex flex-col items-center justify-center text-center">
-              <img src={lintaslinkLogo} alt="SIMRS Lintas Link" className="h-20 mb-4" />
-              <h3 className="text-xl font-bold text-primary">SIMRS Lintas Link</h3>
+              <img src={rsudLogo} alt="RSUD Dr. Moewardi" className="h-20 mb-4" />
+              <h3 className="text-xl font-bold text-primary">SIMRS RSUD Dr. Moewardi</h3>
               <p className="text-muted-foreground">Sistem Informasi Manajemen Rumah Sakit Terintegrasi</p>
               <p className="text-sm text-muted-foreground mt-4">© 2025 - Semua Hak Dilindungi</p>
             </div>
@@ -5312,9 +5312,9 @@ const PanduanPenggunaan = () => {
             >
               <Menu className="h-5 w-5" />
             </Button>
-            <img src={lintaslinkLogo} alt="SIMRS Lintas Link" className="h-8" />
+            <img src={rsudLogo} alt="RSUD Dr. Moewardi" className="h-8" />
             <div>
-              <h1 className="font-semibold text-sm">Panduan Penggunaan SIMRS Lintas Link</h1>
+              <h1 className="font-semibold text-sm">Panduan Penggunaan SIMRS RSUD Dr. Moewardi</h1>
               <p className="text-xs text-muted-foreground">
                 {getCurrentSection()?.title} • Slide {currentSlide + 1} / {totalSlides}
               </p>

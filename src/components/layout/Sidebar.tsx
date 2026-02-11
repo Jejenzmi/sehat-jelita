@@ -44,7 +44,7 @@ import {
   Truck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import lintaslinkLogo from "@/assets/lintaslink-logo.png";
+import rsudLogo from "@/assets/logo-rsud-moewardi.png";
 import { useMenuAccess } from "@/hooks/useMenuAccess";
 import { useModuleVisibility } from "@/hooks/useModuleVisibility";
 
@@ -195,7 +195,7 @@ export function Sidebar() {
         <div className="flex items-center justify-between h-16 px-4 border-b border-sidebar-border">
           {!collapsed && (
             <div className="flex items-center gap-3 animate-fade-in">
-              <img src={lintaslinkLogo} alt="PT Lintaslink Media Teknologi" className="h-10" />
+              <img src={rsudLogo} alt="RSUD Dr. Moewardi" className="h-10" />
             </div>
           )}
           {collapsed && (

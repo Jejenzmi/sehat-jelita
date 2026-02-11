@@ -94,7 +94,7 @@ export default function Dashboard() {
       <div className="animate-fade-in">
         <h1 className="text-2xl font-bold">Dashboard</h1>
         <p className="text-muted-foreground">
-          Selamat datang di SIMRS ZEN
+          Selamat datang di SIMRS RSUD Dr. Moewardi
         </p>
       </div>
 
