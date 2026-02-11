@@ -114,7 +114,7 @@ const defaultConfigs: AllIntegrationsConfig = {
     dicomweb_url: "",
     username: "",
     password: "",
-    ae_title: "SIMRS_ZEN",
+    ae_title: "RSUD_MOEWARDI",
     tls_enabled: false,
     timeout_seconds: 30,
   },
