@@ -128,17 +128,6 @@ export default function SmartDisplay() {
         </div>
       )}
 
-      {/* Floating exit fullscreen button */}
-      {isFullscreen && (
-        <Button
-          variant="outline"
-          size="sm"
-          className="fixed top-4 right-4 z-[10000] bg-card/90 backdrop-blur shadow-lg"
-          onClick={toggleFullscreen}
-        >
-          <Minimize2 className="h-4 w-4 mr-1" /> Keluar Fullscreen
-        </Button>
-      )}
 
       {/* Content */}
       <div className={cn(isFullscreen ? "flex-1 overflow-auto p-6" : "p-4")}>
@@ -150,7 +139,8 @@ export default function SmartDisplay() {
           })()
         ) : (
           <Tabs value={activeDisplay} onValueChange={setActiveDisplay} className={cn(isFullscreen && "h-full flex flex-col")}>
-            <TabsList className={cn("mb-4 shrink-0", isFullscreen && "mb-5")}>
+          {!isFullscreen && (
+            <TabsList className="mb-4 shrink-0">
               {enabledModules.map((key) => {
                 const mod = MODULE_CONFIG[key];
                 const Icon = mod.icon;
@@ -161,6 +151,7 @@ export default function SmartDisplay() {
                 );
               })}
             </TabsList>
+          )}
             <div className={cn(isFullscreen && "flex-1 overflow-auto")}>
               {enabledModules.map((key) => {
                 const mod = MODULE_CONFIG[key];
