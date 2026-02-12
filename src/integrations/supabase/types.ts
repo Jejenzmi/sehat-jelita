@@ -10085,10 +10085,59 @@ export type Database = {
         }
         Relationships: []
       }
+      smart_display_devices: {
+        Row: {
+          auto_rotate: boolean
+          created_at: string
+          created_by: string | null
+          description: string | null
+          device_code: string
+          device_name: string
+          display_type: string
+          enabled_modules: string[]
+          id: string
+          is_active: boolean
+          location: string
+          rotate_interval: number
+          updated_at: string
+        }
+        Insert: {
+          auto_rotate?: boolean
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          device_code: string
+          device_name: string
+          display_type?: string
+          enabled_modules?: string[]
+          id?: string
+          is_active?: boolean
+          location: string
+          rotate_interval?: number
+          updated_at?: string
+        }
+        Update: {
+          auto_rotate?: boolean
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          device_code?: string
+          device_name?: string
+          display_type?: string
+          enabled_modules?: string[]
+          id?: string
+          is_active?: boolean
+          location?: string
+          rotate_interval?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       smart_display_media: {
         Row: {
           created_at: string
           created_by: string | null
+          device_id: string | null
           display_order: number | null
           display_type: string
           file_name: string
@@ -10101,6 +10150,7 @@ export type Database = {
         Insert: {
           created_at?: string
           created_by?: string | null
+          device_id?: string | null
           display_order?: number | null
           display_type: string
           file_name: string
@@ -10113,6 +10163,7 @@ export type Database = {
         Update: {
           created_at?: string
           created_by?: string | null
+          device_id?: string | null
           display_order?: number | null
           display_type?: string
           file_name?: string
@@ -10122,7 +10173,15 @@ export type Database = {
           title?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "smart_display_media_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "smart_display_devices"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sterilization_batches: {
         Row: {
