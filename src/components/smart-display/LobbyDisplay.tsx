@@ -3,30 +3,24 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useQueueData, useDoctorScheduleData } from "@/hooks/useSmartDisplayData";
 import { DisplayHeader } from "./DisplayHeader";
-import { Volume2, Users, Stethoscope, Megaphone, Phone, Mail, MapPin } from "lucide-react";
-
-const promos = [
-  { title: "Paket MCU Executive", desc: "Diskon 30% untuk Medical Check Up lengkap", gradient: "from-blue-500 to-cyan-500" },
-  { title: "Vaksin Influenza", desc: "Tersedia vaksin influenza untuk dewasa & anak", gradient: "from-emerald-500 to-teal-500" },
-  { title: "Klinik Laktasi", desc: "Konsultasi laktasi gratis setiap hari Sabtu", gradient: "from-amber-500 to-orange-500" },
-];
+import { RunningText } from "./RunningText";
+import { ImageSlideshow } from "./ImageSlideshow";
+import { VideoPlayer } from "./VideoPlayer";
+import { Volume2, Users, Stethoscope, Phone, Mail, MapPin } from "lucide-react";
 
 export function LobbyDisplay() {
   const { data: queueData = [] } = useQueueData();
   const { data: scheduleData = [] } = useDoctorScheduleData();
-  const [promoIdx, setPromoIdx] = useState(0);
-
-  useEffect(() => {
-    const interval = setInterval(() => setPromoIdx(prev => (prev + 1) % promos.length), 5000);
-    return () => clearInterval(interval);
-  }, []);
 
   const called = queueData.filter((q: any) => q.status === "dipanggil");
   const waiting = queueData.filter((q: any) => q.status === "menunggu");
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <DisplayHeader title="RSUD Dr. Moewardi" subtitle="Informasi Antrian Lobby — Cepat, Tepat, Nyaman & Mudah" variant="primary" />
+
+      {/* Running Text */}
+      <RunningText />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Main Queue */}
@@ -85,6 +79,9 @@ export function LobbyDisplay() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Image Slideshow */}
+          <ImageSlideshow />
         </div>
 
         {/* Sidebar */}
@@ -112,22 +109,8 @@ export function LobbyDisplay() {
             </CardContent>
           </Card>
 
-          {/* Promo Carousel */}
-          <Card className={`bg-gradient-to-br ${promos[promoIdx].gradient} text-white shadow-lg transition-all duration-700 overflow-hidden`}>
-            <CardContent className="p-5">
-              <div className="flex items-center gap-2 mb-3">
-                <Megaphone className="h-4 w-4" />
-                <span className="text-[10px] font-bold uppercase tracking-widest opacity-80">Info & Promo</span>
-              </div>
-              <h3 className="font-bold text-xl">{promos[promoIdx].title}</h3>
-              <p className="text-sm opacity-90 mt-1">{promos[promoIdx].desc}</p>
-              <div className="flex gap-1.5 mt-4">
-                {promos.map((_, i) => (
-                  <div key={i} className={`h-1.5 flex-1 rounded-full transition-all ${i === promoIdx ? "bg-white" : "bg-white/30"}`} />
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          {/* Video Player */}
+          <VideoPlayer />
 
           {/* Hospital Contact */}
           <Card className="bg-muted/50 border-dashed">
