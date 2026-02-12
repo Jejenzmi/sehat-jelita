@@ -8,6 +8,7 @@ import { LobbyDisplay } from "@/components/smart-display/LobbyDisplay";
 import { WardDisplay } from "@/components/smart-display/WardDisplay";
 import { PharmacyDisplay } from "@/components/smart-display/PharmacyDisplay";
 import { ScheduleDisplay } from "@/components/smart-display/ScheduleDisplay";
+import { SmartDisplaySettings } from "@/components/smart-display/SmartDisplaySettings";
 import {
   Tv,
   Monitor,
@@ -19,11 +20,16 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function SmartDisplay() {
   const [activeDisplay, setActiveDisplay] = useState("lobby");
   const [autoRefresh, setAutoRefresh] = useState(true);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const navigate = useNavigate();
+  const { hasRole } = useAuth();
+
+  const canManage = hasRole("admin") || hasRole("manajemen");
 
   const handleFullscreen = () => {
     if (document.documentElement.requestFullscreen) {
@@ -53,6 +59,11 @@ export default function SmartDisplay() {
           <Button variant="outline" size="sm" onClick={handleFullscreen}>
             <Maximize2 className="h-4 w-4 mr-1" /> Fullscreen
           </Button>
+          {canManage && (
+            <Button variant="outline" size="sm" onClick={() => setSettingsOpen(true)}>
+              <Settings2 className="h-4 w-4 mr-1" /> Pengaturan
+            </Button>
+          )}
         </div>
       </div>
 
@@ -72,6 +83,9 @@ export default function SmartDisplay() {
           <TabsContent value="schedule"><ScheduleDisplay /></TabsContent>
         </Tabs>
       </div>
+
+      {/* Settings Dialog - only rendered for admin/manajemen */}
+      {canManage && <SmartDisplaySettings open={settingsOpen} onOpenChange={setSettingsOpen} />}
     </div>
   );
 }
