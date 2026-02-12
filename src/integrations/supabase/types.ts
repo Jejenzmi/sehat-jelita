@@ -10090,6 +10090,7 @@ export type Database = {
           auto_rotate: boolean
           created_at: string
           created_by: string | null
+          department_id: string | null
           description: string | null
           device_code: string
           device_name: string
@@ -10105,6 +10106,7 @@ export type Database = {
           auto_rotate?: boolean
           created_at?: string
           created_by?: string | null
+          department_id?: string | null
           description?: string | null
           device_code: string
           device_name: string
@@ -10120,6 +10122,7 @@ export type Database = {
           auto_rotate?: boolean
           created_at?: string
           created_by?: string | null
+          department_id?: string | null
           description?: string | null
           device_code?: string
           device_name?: string
@@ -10131,7 +10134,22 @@ export type Database = {
           rotate_interval?: number
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "smart_display_devices_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "department_satisfaction_summary"
+            referencedColumns: ["department_id"]
+          },
+          {
+            foreignKeyName: "smart_display_devices_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       smart_display_media: {
         Row: {

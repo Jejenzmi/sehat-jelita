@@ -13,6 +13,7 @@ export interface SmartDisplayDevice {
   is_active: boolean;
   auto_rotate: boolean;
   rotate_interval: number;
+  department_id: string | null;
   created_at: string;
   updated_at: string;
 }
