@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { Megaphone } from "lucide-react";
+import { useSmartDisplayConfig } from "@/hooks/useSmartDisplayConfig";
 
 interface RunningTextProps {
   messages?: string[];
-  speed?: number; // pixels per second
+  speed?: number;
   variant?: "primary" | "alert" | "info";
 }
 
@@ -22,10 +23,16 @@ const defaultMessages = [
   "📞 Informasi & Pendaftaran: (0271) 637415",
 ];
 
-export function RunningText({ messages = defaultMessages, speed = 80, variant = "primary" }: RunningTextProps) {
+export function RunningText({ messages: propMessages, speed = 80, variant = "primary" }: RunningTextProps) {
+  const { data: config } = useSmartDisplayConfig("lobby");
   const containerRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
   const [animDuration, setAnimDuration] = useState(30);
+
+  // Use DB running text if available (split by newline), else props, else defaults
+  const messages = config?.running_text
+    ? config.running_text.split("\n").filter((l) => l.trim())
+    : propMessages || defaultMessages;
 
   const fullText = messages.join("     ●     ");
 
@@ -36,24 +43,19 @@ export function RunningText({ messages = defaultMessages, speed = 80, variant = 
     }
   }, [fullText, speed]);
 
+  // Don't render if disabled via config
+  if (config && !config.running_text_enabled) return null;
+
   return (
     <div className={`${variantStyles[variant]} rounded-xl overflow-hidden shadow-lg`}>
       <div className="flex items-center">
-        {/* Label */}
         <div className="flex items-center gap-2 px-4 py-2.5 bg-black/20 shrink-0 z-10">
           <Megaphone className="h-4 w-4" />
           <span className="text-xs font-bold uppercase tracking-wider">Info</span>
         </div>
-
-        {/* Marquee */}
         <div ref={containerRef} className="flex-1 overflow-hidden py-2.5 relative">
-          <div
-            ref={textRef}
-            className="whitespace-nowrap inline-block animate-marquee font-medium text-sm"
-            style={{
-              animationDuration: `${animDuration}s`,
-            }}
-          >
+          <div ref={textRef} className="whitespace-nowrap inline-block animate-marquee font-medium text-sm"
+            style={{ animationDuration: `${animDuration}s` }}>
             {fullText}
             <span className="inline-block w-[100vw]" />
             {fullText}

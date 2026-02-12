@@ -10085,6 +10085,45 @@ export type Database = {
         }
         Relationships: []
       }
+      smart_display_media: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          display_order: number | null
+          display_type: string
+          file_name: string
+          file_url: string
+          id: string
+          media_type: string
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          display_order?: number | null
+          display_type: string
+          file_name: string
+          file_url: string
+          id?: string
+          media_type: string
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          display_order?: number | null
+          display_type?: string
+          file_name?: string
+          file_url?: string
+          id?: string
+          media_type?: string
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       sterilization_batches: {
         Row: {
           batch_number: string
