@@ -1,19 +1,66 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
-export function useQueueData() {
+export function useQueueData(departmentId?: string | null) {
   return useQuery({
-    queryKey: ["smart-display-queue"],
+    queryKey: ["smart-display-queue", departmentId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("queue_tickets")
         .select("*, patients(full_name), departments(name)")
         .eq("queue_date", new Date().toISOString().split("T")[0])
         .order("created_at", { ascending: true });
+      if (departmentId) {
+        query = query.eq("department_id", departmentId);
+      }
+      const { data, error } = await query;
       if (error) throw error;
       return data || [];
     },
-    refetchInterval: 10000, // 10 seconds auto-refresh
+    refetchInterval: 5000,
+  });
+}
+
+export function useCallQueueTicket() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ ticketId, counterNumber }: { ticketId: string; counterNumber?: string }) => {
+      const { error } = await supabase
+        .from("queue_tickets")
+        .update({
+          status: "dipanggil",
+          called_at: new Date().toISOString(),
+          counter_number: counterNumber || "1",
+        })
+        .eq("id", ticketId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["smart-display-queue"] });
+      toast.success("Pasien dipanggil");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+}
+
+export function useCompleteQueueTicket() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (ticketId: string) => {
+      const { error } = await supabase
+        .from("queue_tickets")
+        .update({
+          status: "selesai",
+          completed_at: new Date().toISOString(),
+        })
+        .eq("id", ticketId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["smart-display-queue"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
   });
 }
 
@@ -49,16 +96,20 @@ export function usePharmacyQueueData() {
   });
 }
 
-export function useDoctorScheduleData() {
+export function useDoctorScheduleData(departmentId?: string | null) {
   return useQuery({
-    queryKey: ["smart-display-doctor-schedule"],
+    queryKey: ["smart-display-doctor-schedule", departmentId],
     queryFn: async () => {
-      const today = new Date().toISOString().split("T")[0];
-      const { data, error } = await supabase
+      const today = new Date().getDay();
+      let query = (supabase as any)
         .from("doctor_schedules")
         .select("*, doctors(full_name, specialization), departments(name)")
-        .eq("day_of_week", new Date().getDay())
+        .eq("day_of_week", today)
         .eq("is_active", true);
+      if (departmentId) {
+        query = query.eq("department_id", departmentId);
+      }
+      const { data, error } = await query;
       if (error) throw error;
       return data || [];
     },

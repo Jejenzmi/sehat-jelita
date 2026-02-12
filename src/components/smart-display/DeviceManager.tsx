@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,8 +7,11 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, Plus, Trash2, Monitor, Copy, ExternalLink, Tv } from "lucide-react";
 import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import {
   useSmartDisplayDevices,
   useCreateSmartDisplayDevice,
@@ -29,8 +32,23 @@ const ALL_MODULES = [
   { value: "schedule", label: "Jadwal Dokter" },
 ];
 
+function useDepartments() {
+  return useQuery({
+    queryKey: ["departments-list"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("departments")
+        .select("id, name")
+        .order("name");
+      if (error) throw error;
+      return data || [];
+    },
+  });
+}
+
 export function DeviceManager({ open, onOpenChange }: Props) {
   const { data: devices = [], isLoading } = useSmartDisplayDevices();
+  const { data: departments = [] } = useDepartments();
   const createDevice = useCreateSmartDisplayDevice();
   const updateDevice = useUpdateSmartDisplayDevice();
   const deleteDevice = useDeleteSmartDisplayDevice();
@@ -46,6 +64,7 @@ export function DeviceManager({ open, onOpenChange }: Props) {
     is_active: true,
     auto_rotate: false,
     rotate_interval: 30,
+    department_id: null as string | null,
   });
 
   const baseUrl = window.location.origin;
@@ -61,6 +80,7 @@ export function DeviceManager({ open, onOpenChange }: Props) {
         setNewDevice({
           device_code: "", device_name: "", location: "", description: "",
           enabled_modules: ["lobby"], display_type: "lobby", is_active: true, auto_rotate: false, rotate_interval: 30,
+          department_id: null,
         });
       },
     });
@@ -78,6 +98,11 @@ export function DeviceManager({ open, onOpenChange }: Props) {
     updateDevice.mutate({ id: device.id, enabled_modules: updated });
   };
 
+  const getDeptName = (deptId: string | null) => {
+    if (!deptId) return "Semua Poli";
+    return departments.find(d => d.id === deptId)?.name || "—";
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
@@ -86,14 +111,13 @@ export function DeviceManager({ open, onOpenChange }: Props) {
             <Tv className="h-5 w-5 text-primary" />
             Manajemen Device Display
           </DialogTitle>
-          <p className="text-xs text-muted-foreground">Daftarkan TV/monitor dan atur modul yang ditampilkan per device</p>
+          <p className="text-xs text-muted-foreground">Daftarkan TV/monitor dan atur modul & poli yang ditampilkan per device</p>
         </DialogHeader>
 
         {isLoading ? (
           <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin" /></div>
         ) : (
           <div className="space-y-4">
-            {/* Device List */}
             {devices.map((device) => (
               <Card key={device.id} className="p-4 space-y-3">
                 <div className="flex items-start justify-between gap-3">
@@ -106,6 +130,7 @@ export function DeviceManager({ open, onOpenChange }: Props) {
                         {!device.is_active && <Badge variant="destructive" className="text-[10px]">Nonaktif</Badge>}
                       </div>
                       <p className="text-xs text-muted-foreground">{device.location}</p>
+                      <p className="text-xs text-primary font-medium">{getDeptName(device.department_id)}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
@@ -123,6 +148,25 @@ export function DeviceManager({ open, onOpenChange }: Props) {
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </div>
+                </div>
+
+                {/* Department selector */}
+                <div className="flex items-center gap-2">
+                  <Label className="text-xs shrink-0">Poli/Departemen:</Label>
+                  <Select
+                    value={device.department_id || "all"}
+                    onValueChange={(v) => updateDevice.mutate({ id: device.id, department_id: v === "all" ? null : v })}
+                  >
+                    <SelectTrigger className="h-8 text-xs w-56">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Semua Poli (Lobby Umum)</SelectItem>
+                      {departments.map(d => (
+                        <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 {/* Module toggles */}
@@ -158,7 +202,6 @@ export function DeviceManager({ open, onOpenChange }: Props) {
                   )}
                 </div>
 
-                {/* URL info */}
                 <div className="bg-muted/50 rounded-lg px-3 py-2">
                   <p className="text-[10px] text-muted-foreground font-mono truncate">
                     {baseUrl}/smart-display?device={device.device_code}
@@ -174,30 +217,41 @@ export function DeviceManager({ open, onOpenChange }: Props) {
               </div>
             )}
 
-            {/* Add New Device Form */}
             {adding ? (
               <Card className="p-4 space-y-3 border-primary/30">
                 <p className="font-semibold text-sm">Tambah Device Baru</p>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <Label className="text-xs">Kode Device *</Label>
-                    <Input placeholder="LOBBY-02" value={newDevice.device_code}
+                    <Input placeholder="POLI-ANAK-01" value={newDevice.device_code}
                       onChange={(e) => setNewDevice(d => ({ ...d, device_code: e.target.value.toUpperCase() }))} />
                   </div>
                   <div>
                     <Label className="text-xs">Nama Device *</Label>
-                    <Input placeholder="TV Lobby Lantai 2" value={newDevice.device_name}
+                    <Input placeholder="TV Poli Anak" value={newDevice.device_name}
                       onChange={(e) => setNewDevice(d => ({ ...d, device_name: e.target.value }))} />
                   </div>
                   <div>
                     <Label className="text-xs">Lokasi *</Label>
-                    <Input placeholder="Lobby Lantai 2" value={newDevice.location}
+                    <Input placeholder="Ruang Tunggu Poli Anak" value={newDevice.location}
                       onChange={(e) => setNewDevice(d => ({ ...d, location: e.target.value }))} />
                   </div>
                   <div>
-                    <Label className="text-xs">Deskripsi</Label>
-                    <Input placeholder="Opsional" value={newDevice.description}
-                      onChange={(e) => setNewDevice(d => ({ ...d, description: e.target.value }))} />
+                    <Label className="text-xs">Poli / Departemen</Label>
+                    <Select
+                      value={newDevice.department_id || "all"}
+                      onValueChange={(v) => setNewDevice(d => ({ ...d, department_id: v === "all" ? null : v }))}
+                    >
+                      <SelectTrigger className="h-9 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Semua Poli (Lobby Umum)</SelectItem>
+                        {departments.map(d => (
+                          <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
                 <div>

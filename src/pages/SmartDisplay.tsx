@@ -81,6 +81,17 @@ export default function SmartDisplay() {
     else document.exitFullscreen();
   }, []);
 
+  const departmentId = device?.department_id || null;
+  const departmentName = device?.device_name || undefined;
+
+  const renderModule = useCallback((key: ModuleKey) => {
+    const Comp = MODULE_CONFIG[key].component as any;
+    if (key === "lobby") {
+      return <Comp departmentId={departmentId} departmentName={departmentName} />;
+    }
+    return <Comp />;
+  }, [departmentId, departmentName]);
+
   return (
     <div className={cn(
       "bg-background",
@@ -133,9 +144,8 @@ export default function SmartDisplay() {
       <div className={cn(isFullscreen ? "flex-1 overflow-hidden p-4" : "p-4")}>
         {enabledModules.length === 1 ? (
           (() => {
-            const mod = MODULE_CONFIG[enabledModules[0]];
-            const Comp = mod.component;
-            return <Comp />;
+            const key = enabledModules[0];
+            return renderModule(key);
           })()
         ) : (
           <Tabs value={activeDisplay} onValueChange={setActiveDisplay} className={cn(isFullscreen && "h-full flex flex-col")}>
@@ -153,13 +163,9 @@ export default function SmartDisplay() {
             </TabsList>
           )}
             <div className={cn(isFullscreen && "flex-1 overflow-auto")}>
-              {enabledModules.map((key) => {
-                const mod = MODULE_CONFIG[key];
-                const Comp = mod.component;
-                return (
-                  <TabsContent key={key} value={key}><Comp /></TabsContent>
-                );
-              })}
+              {enabledModules.map((key) => (
+                <TabsContent key={key} value={key}>{renderModule(key)}</TabsContent>
+              ))}
             </div>
           </Tabs>
         )}
