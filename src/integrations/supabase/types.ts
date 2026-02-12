@@ -9992,6 +9992,60 @@ export type Database = {
           },
         ]
       }
+      smart_display_config: {
+        Row: {
+          auto_refresh: boolean | null
+          auto_refresh_interval: number | null
+          created_at: string | null
+          created_by: string | null
+          custom_config: Json | null
+          display_type: string
+          id: string
+          running_text: string | null
+          running_text_enabled: boolean | null
+          slideshow_enabled: boolean | null
+          slideshow_interval: number | null
+          updated_at: string | null
+          updated_by: string | null
+          video_auto_play: boolean | null
+          video_enabled: boolean | null
+        }
+        Insert: {
+          auto_refresh?: boolean | null
+          auto_refresh_interval?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          custom_config?: Json | null
+          display_type?: string
+          id?: string
+          running_text?: string | null
+          running_text_enabled?: boolean | null
+          slideshow_enabled?: boolean | null
+          slideshow_interval?: number | null
+          updated_at?: string | null
+          updated_by?: string | null
+          video_auto_play?: boolean | null
+          video_enabled?: boolean | null
+        }
+        Update: {
+          auto_refresh?: boolean | null
+          auto_refresh_interval?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          custom_config?: Json | null
+          display_type?: string
+          id?: string
+          running_text?: string | null
+          running_text_enabled?: boolean | null
+          slideshow_enabled?: boolean | null
+          slideshow_interval?: number | null
+          updated_at?: string | null
+          updated_by?: string | null
+          video_auto_play?: boolean | null
+          video_enabled?: boolean | null
+        }
+        Relationships: []
+      }
       smart_display_configs: {
         Row: {
           auto_refresh_seconds: number
