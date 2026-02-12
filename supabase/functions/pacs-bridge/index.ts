@@ -598,6 +598,62 @@ serve(async (req) => {
         break;
       }
 
+      // ==================== Discover All Modalities (Auto-Discovery) ====================
+      case "discover_modalities": {
+        if (config.server_type === "orthanc") {
+          // 1. Get list of modality names
+          const modalityNames = await fetchPACS(config, "/modalities");
+          const modalities: any[] = [];
+
+          // modalityNames can be an array of strings or an object with keys
+          const names = Array.isArray(modalityNames) ? modalityNames : Object.keys(modalityNames || {});
+
+          // 2. For each modality, get details and run C-ECHO
+          for (const name of names) {
+            try {
+              const details = await fetchPACS(config, `/modalities/${name}`);
+              let status = "offline";
+              try {
+                await fetchPACS(config, `/modalities/${name}/echo`, { method: "POST" });
+                status = "online";
+              } catch {
+                status = "offline";
+              }
+
+              modalities.push({
+                name,
+                ae_title: details.AET || details.AeTitle || details.aet || "N/A",
+                host: details.Host || details.host || "N/A",
+                port: details.Port || details.port || 0,
+                manufacturer: details.Manufacturer || null,
+                status,
+              });
+            } catch (err: any) {
+              modalities.push({
+                name,
+                ae_title: "N/A",
+                host: "N/A",
+                port: 0,
+                manufacturer: null,
+                status: "error",
+                error: err.message,
+              });
+            }
+          }
+
+          result = {
+            success: true,
+            total: modalities.length,
+            online: modalities.filter(m => m.status === "online").length,
+            offline: modalities.filter(m => m.status !== "online").length,
+            modalities,
+          };
+        } else {
+          result = { error: "discover_modalities only supported on Orthanc." };
+        }
+        break;
+      }
+
       default:
         return new Response(
           JSON.stringify({
@@ -611,6 +667,7 @@ serve(async (req) => {
               "delete_study", "get_tags", "get_rendered", "get_viewer_url",
               "add_modality", "remove_modality", "get_modality",
               "query_remote", "retrieve_remote", "store_dicomweb", "get_changes",
+              "discover_modalities",
             ],
           }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }

@@ -34,6 +34,9 @@ import {
   Zap,
   Loader2,
   Navigation,
+  Radar,
+  Plus,
+  Trash2,
 } from "lucide-react";
 import {
   usePACSStudies,
@@ -43,8 +46,13 @@ import {
   useGetViewerUrl,
   useGetSeries,
   useGetInstances,
+  useDiscoverModalities,
+  useAddModality,
+  useRemoveModality,
+  useModalityEcho,
 } from "@/hooks/usePACSIntegration";
 import { useExternalIntegrations } from "@/hooks/useExternalIntegrations";
+import { ConfirmationDialog } from "@/components/shared/ConfirmationDialog";
 
 const StatusIcon = ({ status }: { status: string }) => {
   switch (status) {
@@ -72,6 +80,8 @@ export default function DICOMIntegration() {
   const [activeTab, setActiveTab] = useState("overview");
   const [selectedStudy, setSelectedStudy] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [deleteModalityName, setDeleteModalityName] = useState<string | null>(null);
+  const [newModality, setNewModality] = useState({ name: "", ae_title: "", host: "", port: 104 });
 
   // PACS Hooks
   const testConnection = useTestPACSConnection();
@@ -81,6 +91,10 @@ export default function DICOMIntegration() {
   const getViewerUrl = useGetViewerUrl();
   const getSeries = useGetSeries();
   const getInstances = useGetInstances();
+  const discoverModalities = useDiscoverModalities();
+  const addModality = useAddModality();
+  const removeModality = useRemoveModality();
+  const modalityEcho = useModalityEcho();
 
   // Integration Settings
   const { integrations, getIntegrationStatus } = useExternalIntegrations();
@@ -253,9 +267,12 @@ export default function DICOMIntegration() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
+        <TabsList className="flex-wrap">
           <TabsTrigger value="overview">🖥️ Overview</TabsTrigger>
           <TabsTrigger value="pacs">📡 PACS / DICOM</TabsTrigger>
+          <TabsTrigger value="modalities">
+            <Radar className="h-3.5 w-3.5 mr-1" /> Modalitas
+          </TabsTrigger>
           <TabsTrigger value="viewer">🖼️ DICOM Viewer</TabsTrigger>
           <TabsTrigger value="search">🔍 Pencarian Studi</TabsTrigger>
         </TabsList>
@@ -463,6 +480,240 @@ export default function DICOMIntegration() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Modalitas Tab - Auto Discovery */}
+        <TabsContent value="modalities">
+          <div className="space-y-4">
+            {/* Stats Cards */}
+            {discoverModalities.data?.success && (
+              <div className="grid grid-cols-3 gap-3">
+                <Card>
+                  <CardContent className="p-4 text-center">
+                    <p className="text-2xl font-bold">{discoverModalities.data.total}</p>
+                    <p className="text-xs text-muted-foreground">Total Modalitas</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-4 text-center">
+                    <p className="text-2xl font-bold text-emerald-600">{discoverModalities.data.online}</p>
+                    <p className="text-xs text-muted-foreground">Online</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-4 text-center">
+                    <p className="text-2xl font-bold text-red-600">{discoverModalities.data.offline}</p>
+                    <p className="text-xs text-muted-foreground">Offline</p>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {/* Scan Button & Add Form */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Radar className="h-4 w-4" /> Scan & Discovery
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <p className="text-sm text-muted-foreground">
+                    Scan otomatis semua modalitas (CT, MRI, X-Ray, dll) yang terdaftar di server PACS dan verifikasi status koneksi masing-masing.
+                  </p>
+                  <Button
+                    onClick={() => discoverModalities.mutate()}
+                    disabled={discoverModalities.isPending}
+                    className="w-full"
+                  >
+                    {discoverModalities.isPending ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Radar className="h-4 w-4 mr-2" />
+                    )}
+                    {discoverModalities.isPending ? "Scanning modalitas..." : "Scan Modalitas"}
+                  </Button>
+                  {discoverModalities.isPending && (
+                    <div className="space-y-2">
+                      <p className="text-xs text-muted-foreground text-center">Menjalankan C-ECHO ke setiap modalitas...</p>
+                      <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                        <div className="h-full bg-primary rounded-full animate-pulse w-2/3" />
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Plus className="h-4 w-4" /> Tambah Modalitas
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <Label className="text-xs">Nama</Label>
+                      <Input
+                        placeholder="CT_SCANNER"
+                        value={newModality.name}
+                        onChange={(e) => setNewModality(p => ({ ...p, name: e.target.value }))}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">AE Title</Label>
+                      <Input
+                        placeholder="CT_AET"
+                        value={newModality.ae_title}
+                        onChange={(e) => setNewModality(p => ({ ...p, ae_title: e.target.value }))}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Host / IP</Label>
+                      <Input
+                        placeholder="192.168.1.50"
+                        value={newModality.host}
+                        onChange={(e) => setNewModality(p => ({ ...p, host: e.target.value }))}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Port</Label>
+                      <Input
+                        type="number"
+                        placeholder="104"
+                        value={newModality.port}
+                        onChange={(e) => setNewModality(p => ({ ...p, port: parseInt(e.target.value) || 104 }))}
+                      />
+                    </div>
+                  </div>
+                  <Button
+                    className="w-full"
+                    variant="outline"
+                    disabled={addModality.isPending || !newModality.name || !newModality.ae_title || !newModality.host}
+                    onClick={() => {
+                      addModality.mutate(newModality, {
+                        onSuccess: () => {
+                          setNewModality({ name: "", ae_title: "", host: "", port: 104 });
+                          discoverModalities.mutate();
+                        },
+                      });
+                    }}
+                  >
+                    {addModality.isPending ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Plus className="h-4 w-4 mr-2" />
+                    )}
+                    Tambah Modalitas
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Modalities Table */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Monitor className="h-4 w-4" /> Daftar Modalitas
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-[400px]">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Nama</TableHead>
+                        <TableHead>AE Title</TableHead>
+                        <TableHead>Host</TableHead>
+                        <TableHead>Port</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Aksi</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {discoverModalities.isPending ? (
+                        [...Array(3)].map((_, i) => (
+                          <TableRow key={i}>
+                            {[...Array(6)].map((_, j) => (
+                              <TableCell key={j}><Skeleton className="h-4 w-full" /></TableCell>
+                            ))}
+                          </TableRow>
+                        ))
+                      ) : discoverModalities.data?.modalities?.length > 0 ? (
+                        discoverModalities.data.modalities.map((mod: any) => (
+                          <TableRow key={mod.name}>
+                            <TableCell className="font-medium">{mod.name}</TableCell>
+                            <TableCell className="font-mono text-xs">{mod.ae_title}</TableCell>
+                            <TableCell className="font-mono text-xs">{mod.host}</TableCell>
+                            <TableCell>{mod.port}</TableCell>
+                            <TableCell>
+                              <Badge
+                                variant={mod.status === "online" ? "default" : "destructive"}
+                                className="text-[10px]"
+                              >
+                                {mod.status === "online" ? (
+                                  <CheckCircle2 className="h-3 w-3 mr-1" />
+                                ) : (
+                                  <XCircle className="h-3 w-3 mr-1" />
+                                )}
+                                {mod.status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7"
+                                  title="C-ECHO Test"
+                                  onClick={() => modalityEcho.mutate(mod.name)}
+                                  disabled={modalityEcho.isPending}
+                                >
+                                  <Zap className="h-3.5 w-3.5" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 text-destructive"
+                                  title="Hapus Modalitas"
+                                  onClick={() => setDeleteModalityName(mod.name)}
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                            {discoverModalities.data ? "Tidak ada modalitas ditemukan" : "Klik 'Scan Modalitas' untuk memulai discovery"}
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          </div>
+
+          <ConfirmationDialog
+            open={!!deleteModalityName}
+            onOpenChange={(open) => !open && setDeleteModalityName(null)}
+            title="Hapus Modalitas"
+            description={`Yakin ingin menghapus modalitas "${deleteModalityName}" dari konfigurasi PACS?`}
+            onConfirm={() => {
+              if (deleteModalityName) {
+                removeModality.mutate(deleteModalityName, {
+                  onSuccess: () => {
+                    setDeleteModalityName(null);
+                    discoverModalities.mutate();
+                  },
+                });
+              }
+            }}
+          />
         </TabsContent>
 
         {/* Viewer Tab */}

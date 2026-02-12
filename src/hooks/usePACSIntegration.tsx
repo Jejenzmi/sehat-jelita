@@ -259,3 +259,19 @@ export function usePACSChanges(since?: number) {
     retry: false,
   });
 }
+
+// ============================================
+// Auto-Discovery Modalities
+// ============================================
+
+export function useDiscoverModalities() {
+  return useMutation({
+    mutationFn: () => callPACS("discover_modalities"),
+    onSuccess: (data) => {
+      if (data.success) {
+        toast.success(`Ditemukan ${data.total} modalitas (${data.online} online, ${data.offline} offline)`);
+      }
+    },
+    onError: (err: Error) => toast.error(`Discovery gagal: ${err.message}`),
+  });
+}
