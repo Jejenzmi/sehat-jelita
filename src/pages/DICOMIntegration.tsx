@@ -703,6 +703,9 @@ export default function DICOMIntegration() {
             onOpenChange={(open) => !open && setDeleteModalityName(null)}
             title="Hapus Modalitas"
             description={`Yakin ingin menghapus modalitas "${deleteModalityName}" dari konfigurasi PACS?`}
+            type="delete"
+            confirmLabel="Hapus"
+            isLoading={removeModality.isPending}
             onConfirm={() => {
               if (deleteModalityName) {
                 removeModality.mutate(deleteModalityName, {
