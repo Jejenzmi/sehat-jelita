@@ -83,60 +83,66 @@ export default function SmartDisplay() {
 
   return (
     <div className={cn(
-      "bg-gradient-to-br from-slate-50 via-white to-teal-50/30 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950",
+      "bg-background",
       isFullscreen ? "fixed inset-0 z-[9999] flex flex-col w-screen h-screen overflow-hidden" : "min-h-screen"
     )}>
-      {/* Top bar */}
-      <div className={cn(
-        "flex items-center justify-between px-4 py-2 bg-white/80 dark:bg-slate-900/80 backdrop-blur border-b shrink-0",
-        isFullscreen && "px-6 py-3"
-      )}>
-        <div className="flex items-center gap-3">
-          {!isFullscreen && (
+      {/* Top bar - hidden in fullscreen */}
+      {!isFullscreen && (
+        <div className="flex items-center justify-between px-4 py-2 bg-card/80 backdrop-blur border-b border-border shrink-0">
+          <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(-1)}>
               <ArrowLeft className="h-4 w-4" />
             </Button>
-          )}
-          <div className="flex items-center gap-2">
-            <Tv className={cn("text-primary", isFullscreen ? "h-7 w-7" : "h-5 w-5")} />
-            <div>
-              <h1 className={cn("font-bold text-foreground", isFullscreen ? "text-2xl" : "text-lg")}>
-                Smart Hospital Display
-              </h1>
-              {device && (
-                <p className="text-[10px] text-muted-foreground leading-tight">
-                  {device.device_name} — {device.location}
-                  {device.auto_rotate && <Badge variant="outline" className="ml-2 text-[8px] py-0">Auto Rotate</Badge>}
-                </p>
-              )}
+            <div className="flex items-center gap-2">
+              <Tv className="h-5 w-5 text-primary" />
+              <div>
+                <h1 className="font-bold text-foreground text-lg">Smart Hospital Display</h1>
+                {device && (
+                  <p className="text-[10px] text-muted-foreground leading-tight">
+                    {device.device_name} — {device.location}
+                    {device.auto_rotate && <Badge variant="outline" className="ml-2 text-[8px] py-0">Auto Rotate</Badge>}
+                  </p>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <Label className="text-xs">Auto Refresh</Label>
-            <Switch checked={autoRefresh} onCheckedChange={setAutoRefresh} />
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <Label className="text-xs">Auto Refresh</Label>
+              <Switch checked={autoRefresh} onCheckedChange={setAutoRefresh} />
+            </div>
+            <Button variant="outline" size="sm" onClick={toggleFullscreen}>
+              <Maximize2 className="h-4 w-4 mr-1" /> Fullscreen
+            </Button>
+            {canManage && (
+              <>
+                <Button variant="outline" size="sm" onClick={() => setDevicesOpen(true)}>
+                  <MonitorSmartphone className="h-4 w-4 mr-1" /> Devices
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setSettingsOpen(true)}>
+                  <Settings2 className="h-4 w-4 mr-1" /> Konten
+                </Button>
+              </>
+            )}
           </div>
-          <Button variant="outline" size="sm" onClick={toggleFullscreen}>
-            {isFullscreen ? <><Minimize2 className="h-4 w-4 mr-1" /> Keluar Fullscreen</> : <><Maximize2 className="h-4 w-4 mr-1" /> Fullscreen</>}
-          </Button>
-          {canManage && !isFullscreen && (
-            <>
-              <Button variant="outline" size="sm" onClick={() => setDevicesOpen(true)}>
-                <MonitorSmartphone className="h-4 w-4 mr-1" /> Devices
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => setSettingsOpen(true)}>
-                <Settings2 className="h-4 w-4 mr-1" /> Konten
-              </Button>
-            </>
-          )}
         </div>
-      </div>
+      )}
+
+      {/* Floating exit fullscreen button */}
+      {isFullscreen && (
+        <Button
+          variant="outline"
+          size="sm"
+          className="fixed top-4 right-4 z-[10000] bg-card/90 backdrop-blur shadow-lg"
+          onClick={toggleFullscreen}
+        >
+          <Minimize2 className="h-4 w-4 mr-1" /> Keluar Fullscreen
+        </Button>
+      )}
 
       {/* Content */}
       <div className={cn(isFullscreen ? "flex-1 overflow-auto p-6" : "p-4")}>
         {enabledModules.length === 1 ? (
-          // Single module — render directly without tabs
           (() => {
             const mod = MODULE_CONFIG[enabledModules[0]];
             const Comp = mod.component;
