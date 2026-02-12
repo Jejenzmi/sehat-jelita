@@ -84,7 +84,7 @@ export default function SmartDisplay() {
   return (
     <div className={cn(
       "bg-background",
-      isFullscreen ? "fixed inset-0 z-[9999] flex flex-col w-screen h-screen overflow-hidden" : "min-h-screen"
+      isFullscreen ? "fixed inset-0 z-[9999] flex flex-col w-screen h-screen overflow-auto" : "min-h-screen"
     )}>
       {/* Top bar - hidden in fullscreen */}
       {!isFullscreen && (
