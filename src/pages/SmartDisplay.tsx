@@ -84,7 +84,7 @@ export default function SmartDisplay() {
   return (
     <div className={cn(
       "bg-background",
-      isFullscreen ? "fixed inset-0 z-[9999] flex flex-col w-screen h-screen overflow-auto" : "min-h-screen"
+      isFullscreen ? "fixed inset-0 z-[9999] flex flex-col w-screen h-screen overflow-hidden" : "min-h-screen"
     )}>
       {/* Top bar - hidden in fullscreen */}
       {!isFullscreen && (
@@ -130,7 +130,7 @@ export default function SmartDisplay() {
 
 
       {/* Content */}
-      <div className={cn(isFullscreen ? "flex-1 overflow-auto p-6" : "p-4")}>
+      <div className={cn(isFullscreen ? "flex-1 overflow-hidden p-4" : "p-4")}>
         {enabledModules.length === 1 ? (
           (() => {
             const mod = MODULE_CONFIG[enabledModules[0]];
