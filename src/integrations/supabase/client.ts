@@ -317,6 +317,22 @@ const functionsShim = {
   },
 };
 
+// ---- Realtime channel stub (no-op — use WebSocket/backend events instead) ----
+export type RealtimeChannel = {
+  on: (...args: unknown[]) => RealtimeChannel;
+  subscribe: (cb?: (status: string) => void) => RealtimeChannel;
+  unsubscribe: () => void;
+};
+
+function noopChannel(): RealtimeChannel {
+  const ch: RealtimeChannel = {
+    on: () => ch,
+    subscribe: (cb?: (status: string) => void) => { cb?.('CLOSED'); return ch; },
+    unsubscribe: () => {},
+  };
+  return ch;
+}
+
 // ---- Main export ----
 export const supabase = {
   from(table: string): QueryBuilder {
@@ -324,4 +340,11 @@ export const supabase = {
   },
   auth: authShim,
   functions: functionsShim,
+  /** Realtime channels are not supported in Node.js mode — returns a no-op channel. */
+  channel(_name: string): RealtimeChannel {
+    return noopChannel();
+  },
+  removeChannel(_channel: RealtimeChannel): void {
+    // no-op
+  },
 } as const;
