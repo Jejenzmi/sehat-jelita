@@ -1,20 +1,35 @@
-# SIMRS ZEN - Node.js API Dockerfile
+# Use the official Node.js image as the base image for the builder stage
+FROM node:20-bookworm-slim AS builder
 
-FROM node:20-bookworm-slim
-
+# Set the working directory
 WORKDIR /app
 
-# deps + openssl untuk Prisma
-RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates \
- && rm -rf /var/lib/apt/lists/*
-
+# Copy package files and install dependencies
 COPY package*.json ./
-RUN npm ci
+RUN npm install
 
+# Copy application files
 COPY . .
 
-# generate prisma client
-RUN npx prisma generate
+# Build the application
+RUN npm run build
 
-EXPOSE 3000
-CMD ["sh", "entrypoint.sh"]
+
+# Use the official Node.js image as the base image for the production stage
+FROM node:20-bookworm-slim AS production
+
+# Install openssl
+RUN apt-get update && apt-get install -y openssl && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Set the working directory
+WORKDIR /app
+
+# Copy only the build artifacts from the builder stage
+COPY --from=builder /app/dist ./dist
+
+# Install production dependencies
+COPY package*.json ./
+RUN npm install --only=production
+
+# Command to run the application
+CMD [ "node", "dist/index.js" ]
