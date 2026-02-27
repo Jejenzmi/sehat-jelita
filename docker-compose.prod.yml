@@ -1,0 +1,99 @@
+# SIMRS ZEN - Docker Compose for Production
+# Use this file for production deployment: docker-compose -f docker-compose.prod.yml up -d
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: simrs-zen-db
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - simrs-internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis for caching and rate limiting
+  redis:
+    image: redis:7-alpine
+    container_name: simrs-zen-redis
+    restart: always
+    # Note: For higher security, mount a redis.conf file instead of passing the password via CLI
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - redis_data:/data
+    networks:
+      - simrs-internal
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Node.js API Backend
+  api:
+    image: ${REGISTRY:-ghcr.io}/${IMAGE_NAMESPACE:-jejenzmi/sehat-jelita}/simrs-zen-api:${IMAGE_TAG:-latest}
+    container_name: simrs-zen-api
+    restart: always
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-30d}
+      FRONTEND_URL: ${FRONTEND_URL}
+      BPJS_CONS_ID: ${BPJS_CONS_ID:-}
+      BPJS_SECRET_KEY: ${BPJS_SECRET_KEY:-}
+      BPJS_USER_KEY: ${BPJS_USER_KEY:-}
+      SATUSEHAT_CLIENT_ID: ${SATUSEHAT_CLIENT_ID:-}
+      SATUSEHAT_CLIENT_SECRET: ${SATUSEHAT_CLIENT_SECRET:-}
+      SATUSEHAT_ORGANIZATION_ID: ${SATUSEHAT_ORGANIZATION_ID:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - simrs-internal
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # React Frontend + nginx reverse proxy
+  frontend:
+    image: ${REGISTRY:-ghcr.io}/${IMAGE_NAMESPACE:-jejenzmi/sehat-jelita}/simrs-zen-frontend:${IMAGE_TAG:-latest}
+    container_name: simrs-zen-frontend
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - simrs-internal
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  simrs-internal:
+    name: simrs-zen-network
+    driver: bridge

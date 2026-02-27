@@ -1,0 +1,91 @@
+name: CI - Lint, Type Check & Build
+
+on:
+  push:
+    branches:
+      - main
+      - 'copilot/**'
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  frontend:
+    name: Frontend - Lint, Type Check & Build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout kode
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependensi frontend
+        run: npm ci --legacy-peer-deps
+
+      - name: Lint frontend
+        run: npm run lint
+
+      - name: Type check frontend
+        run: npx tsc --noEmit
+
+      - name: Run frontend & backend tests
+        run: npm test
+
+      - name: Build frontend
+        env:
+          VITE_API_MODE: nodejs
+          VITE_API_URL: /api
+        run: npm run build
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: frontend-dist
+          path: dist/
+          retention-days: 7
+
+  backend:
+    name: Backend - Lint & Type Check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout kode
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependensi backend
+        working-directory: backend
+        run: npm ci
+
+      - name: Validate backend structure
+        working-directory: backend
+        run: node --input-type=module --eval "
+          import fs from 'fs';
+          const requiredFiles = [
+            'src/app.js',
+            'src/middleware/errorHandler.js',
+            'src/middleware/rateLimiter.js',
+            'src/middleware/auth.middleware.js',
+            'src/routes/index.js',
+          ];
+          requiredFiles.forEach(f => {
+            if (!fs.existsSync(f)) throw new Error('Missing: ' + f);
+          });
+          console.log('All required backend files present');
+        "

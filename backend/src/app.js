@@ -8,21 +8,13 @@ import cors from 'cors';
 import helmet from 'helmet';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
-import dotenv from 'dotenv';
-
-// Load environment variables
-dotenv.config();
 
 // ============================================
 // STARTUP VALIDATION
 // ============================================
 
-const REQUIRED_ENV_VARS = ['DATABASE_URL', 'JWT_SECRET'];
-const missingEnvVars = REQUIRED_ENV_VARS.filter(key => !process.env[key]);
-if (missingEnvVars.length > 0) {
-  console.error(`❌ Missing required environment variables: ${missingEnvVars.join(', ')}`);
-  process.exit(1);
-}
+// Load .env and validate environment variables using Zod schema (exits on error)
+import { env } from './config/env.js';
 
 // Import middleware
 import { errorHandler } from './middleware/errorHandler.js';
@@ -43,7 +35,7 @@ const httpServer = createServer(app);
 // Socket.IO Setup
 const io = new Server(httpServer, {
   cors: {
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    origin: env.FRONTEND_URL,
     methods: ['GET', 'POST'],
     credentials: true
   }
@@ -75,7 +67,7 @@ app.use(helmet({
 
 // CORS Configuration
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: env.FRONTEND_URL,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: [
@@ -136,7 +128,7 @@ initializeSocketHandlers(io);
 // SERVER START
 // ============================================
 
-const PORT = process.env.PORT || 3000;
+const PORT = env.PORT;
 
 // Verify database connection before binding to the port
 const dbConnected = await checkDatabaseConnection();
