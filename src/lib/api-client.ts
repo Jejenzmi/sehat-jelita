@@ -1,10 +1,10 @@
 /**
  * SIMRS ZEN - API Client (Node.js/Express backend)
  *
- * VITE_API_URL = 'https://simrszen.id/api'
+ * VITE_API_URL = '/api'  (proxied via nginx/vite-dev-server to the backend)
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://simrszen.id/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 // ============================================
 // CUSTOM ERROR CLASS
