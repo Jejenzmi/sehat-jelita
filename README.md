@@ -88,10 +88,14 @@ nano backend/.env
 Isi nilai penting di `backend/.env`:
 
 ```env
+DB_USER=simrs
 DB_PASSWORD=GANTI_DENGAN_PASSWORD_KUAT
+DB_NAME=simrs_zen
+DATABASE_URL=postgresql://simrs:GANTI_DENGAN_PASSWORD_KUAT@postgres:5432/simrs_zen
 JWT_SECRET=GANTI_DENGAN_STRING_HEX_64_KARAKTER
 FRONTEND_URL=https://domain-anda.com
 REDIS_PASSWORD=GANTI_DENGAN_PASSWORD_REDIS
+REDIS_URL=redis://:GANTI_DENGAN_PASSWORD_REDIS@redis:6379
 ```
 
 Generate `JWT_SECRET` (pilih salah satu perintah):
@@ -127,6 +131,14 @@ docker compose ps
 
 # Lihat log (tekan Ctrl+C untuk keluar)
 docker compose logs -f
+```
+
+#### Langkah 6a: Jalankan Migrasi Database
+
+Setelah semua container berjalan, jalankan migrasi Prisma:
+
+```bash
+docker compose exec api npx prisma migrate deploy
 ```
 
 #### Langkah 7: Setup SSL (Opsional — jika domain sudah terhubung)
@@ -253,7 +265,10 @@ nano backend/.env
 
 ```env
 # Ganti dengan password yang kuat
+DB_USER=simrs
 DB_PASSWORD=GANTI_DENGAN_PASSWORD_KUAT
+DB_NAME=simrs_zen
+DATABASE_URL=postgresql://simrs:GANTI_DENGAN_PASSWORD_KUAT@postgres:5432/simrs_zen
 
 # Generate JWT secret: node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
 JWT_SECRET=GANTI_DENGAN_STRING_HEX_64_KARAKTER
@@ -263,6 +278,7 @@ FRONTEND_URL=https://domain-anda.com
 
 # Redis password
 REDIS_PASSWORD=GANTI_DENGAN_PASSWORD_REDIS
+REDIS_URL=redis://:GANTI_DENGAN_PASSWORD_REDIS@redis:6379
 
 # Integrasi BPJS (opsional)
 BPJS_CONS_ID=
@@ -288,6 +304,14 @@ docker compose ps
 
 # Lihat logs
 docker compose logs -f
+```
+
+### Langkah 5a: Jalankan Migrasi Database
+
+Setelah semua container berjalan, jalankan migrasi Prisma:
+
+```bash
+docker compose exec api npx prisma migrate deploy
 ```
 
 Setelah selesai, layanan tersedia di:

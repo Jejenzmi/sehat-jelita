@@ -51,7 +51,7 @@ cd /opt
 mkdir -p simrs-zen && cd simrs-zen
 
 # Clone repositori
-git clone https://github.com/YOUR_USERNAME/sehat-jelita.git .
+git clone https://github.com/Jejenzmi/sehat-jelita.git .
 ```
 
 ---
@@ -99,7 +99,9 @@ JWT_EXPIRES_IN=7d
 JWT_REFRESH_EXPIRES_IN=30d
 
 # Redis
-REDIS_URL=redis://redis:6379
+REDIS_PASSWORD=YOUR_SECURE_REDIS_PASSWORD
+REDIS_URL=redis://:YOUR_SECURE_REDIS_PASSWORD@redis:6379
+# Pastikan nilai REDIS_PASSWORD di atas sama persis di kedua variabel
 
 # URL frontend (untuk CORS)
 FRONTEND_URL=https://YOUR_DOMAIN
@@ -136,6 +138,14 @@ docker compose logs -f
 ```
 
 > **Catatan**: Proses build pertama kali memakan waktu 5–10 menit.
+
+### Jalankan Migrasi Database
+
+Setelah semua container berjalan:
+
+```bash
+docker compose exec api npx prisma migrate deploy
+```
 
 ---
 
