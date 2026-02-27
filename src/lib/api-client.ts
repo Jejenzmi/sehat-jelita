@@ -1,18 +1,9 @@
 /**
- * SIMRS ZEN - Unified API Client
- * Supports both Lovable Cloud (Supabase) and Node.js/Express backend
- * 
- * Configuration via environment variable:
- * VITE_API_MODE = 'supabase' | 'nodejs'
- * VITE_API_URL = 'http://localhost:3000/api' (for nodejs mode)
+ * SIMRS ZEN - API Client (Node.js/Express backend)
+ *
+ * VITE_API_URL = 'http://localhost:3000/api'
  */
 
-import { supabase } from '@/integrations/supabase/client';
-
-// API Mode Configuration
-type ApiMode = 'supabase' | 'nodejs';
-
-const API_MODE: ApiMode = (import.meta.env.VITE_API_MODE as ApiMode) || 'nodejs';
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 // ============================================
@@ -164,7 +155,7 @@ async function refreshAccessToken(): Promise<boolean> {
 
 export const api = {
   // Get current API mode
-  getMode: () => API_MODE,
+  getMode: () => 'nodejs' as const,
 
   // ==========================================
   // AUTHENTICATION
@@ -172,78 +163,41 @@ export const api = {
 
   auth: {
     async login(email: string, password: string) {
-      if (API_MODE === 'supabase') {
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
+      const response = await nodeRequest<{
+        success: boolean;
+        data: { user: unknown; accessToken: string; refreshToken: string };
+      }>('POST', '/auth/login', { body: { email, password } });
+      if (response.success) {
+        tokenManager.setTokens({
+          accessToken: response.data.accessToken,
+          refreshToken: response.data.refreshToken,
         });
-        if (error) throw new ApiError(error.message, 401, 'AUTH_ERROR');
-        return { success: true, data };
-      } else {
-        const response = await nodeRequest<{
-          success: boolean;
-          data: { user: unknown; accessToken: string; refreshToken: string };
-        }>('POST', '/auth/login', { body: { email, password } });
-        if (response.success) {
-          tokenManager.setTokens({
-            accessToken: response.data.accessToken,
-            refreshToken: response.data.refreshToken,
-          });
-        }
-        return response;
       }
+      return response;
     },
 
     async logout() {
-      if (API_MODE === 'supabase') {
-        await supabase.auth.signOut();
-      } else {
-        try {
-          await nodeRequest('POST', '/auth/logout');
-        } finally {
-          tokenManager.clearTokens();
-        }
+      try {
+        await nodeRequest('POST', '/auth/logout');
+      } finally {
+        tokenManager.clearTokens();
       }
     },
 
     async register(email: string, password: string, fullName: string) {
-      if (API_MODE === 'supabase') {
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: { data: { full_name: fullName } },
-        });
-        if (error) throw new ApiError(error.message, 400, 'REGISTER_ERROR');
-        return { success: true, data };
-      } else {
-        return nodeRequest('POST', '/auth/register', {
-          body: { email, password, fullName },
-        });
-      }
+      return nodeRequest('POST', '/auth/register', {
+        body: { email, password, fullName },
+      });
     },
 
     async getCurrentUser() {
-      if (API_MODE === 'supabase') {
-        const { data, error } = await supabase.auth.getUser();
-        if (error) throw new ApiError(error.message, 401, 'AUTH_ERROR');
-        return { success: true, data: data.user };
-      } else {
-        return nodeRequest('GET', '/auth/me');
-      }
+      return nodeRequest('GET', '/auth/me');
     },
 
     async changePassword(currentPassword: string, newPassword: string) {
-      if (API_MODE === 'supabase') {
-        const { error } = await supabase.auth.updateUser({
-          password: newPassword,
-        });
-        if (error) throw new ApiError(error.message, 400, 'PASSWORD_ERROR');
-        return { success: true };
-      } else {
-        return nodeRequest('POST', '/auth/change-password', {
-          body: { currentPassword, newPassword },
-        });
-      }
+      return nodeRequest('POST', '/auth/change-password', {
+        body: { currentPassword, newPassword },
+      });
     },
   },
 
@@ -253,73 +207,23 @@ export const api = {
 
   patients: {
     async list(params?: Record<string, string>) {
-      if (API_MODE === 'supabase') {
-        let query = supabase.from('patients').select('*');
-        if (params?.search) {
-          query = query.or(`full_name.ilike.%${params.search}%,medical_record_number.ilike.%${params.search}%`);
-        }
-        if (params?.limit) {
-          query = query.limit(parseInt(params.limit));
-        }
-        const { data, error } = await query.order('created_at', { ascending: false });
-        if (error) throw new ApiError(error.message, 400, 'QUERY_ERROR');
-        return { success: true, data };
-      } else {
-        return nodeRequest('GET', '/patients', { params });
-      }
+      return nodeRequest('GET', '/patients', { params });
     },
 
     async get(id: string) {
-      if (API_MODE === 'supabase') {
-        const { data, error } = await supabase
-          .from('patients')
-          .select('*')
-          .eq('id', id)
-          .single();
-        if (error) throw new ApiError(error.message, 404, 'NOT_FOUND');
-        return { success: true, data };
-      } else {
-        return nodeRequest('GET', `/patients/${id}`);
-      }
+      return nodeRequest('GET', `/patients/${id}`);
     },
 
     async create(patientData: Record<string, unknown>) {
-      if (API_MODE === 'supabase') {
-        const { data, error } = await supabase
-          .from('patients')
-          .insert(patientData as never)
-          .select()
-          .single();
-        if (error) throw new ApiError(error.message, 400, 'CREATE_ERROR');
-        return { success: true, data };
-      } else {
-        return nodeRequest('POST', '/patients', { body: patientData });
-      }
+      return nodeRequest('POST', '/patients', { body: patientData });
     },
 
     async update(id: string, patientData: Record<string, unknown>) {
-      if (API_MODE === 'supabase') {
-        const { data, error } = await supabase
-          .from('patients')
-          .update(patientData as never)
-          .eq('id', id)
-          .select()
-          .single();
-        if (error) throw new ApiError(error.message, 400, 'UPDATE_ERROR');
-        return { success: true, data };
-      } else {
-        return nodeRequest('PUT', `/patients/${id}`, { body: patientData });
-      }
+      return nodeRequest('PUT', `/patients/${id}`, { body: patientData });
     },
 
     async delete(id: string) {
-      if (API_MODE === 'supabase') {
-        const { error } = await supabase.from('patients').delete().eq('id', id);
-        if (error) throw new ApiError(error.message, 400, 'DELETE_ERROR');
-        return { success: true };
-      } else {
-        return nodeRequest('DELETE', `/patients/${id}`);
-      }
+      return nodeRequest('DELETE', `/patients/${id}`);
     },
   },
 
@@ -329,63 +233,19 @@ export const api = {
 
   visits: {
     async list(params?: Record<string, string>) {
-      if (API_MODE === 'supabase') {
-        let query = supabase.from('visits').select('*, patients(*)');
-        if (params?.patient_id) {
-          query = query.eq('patient_id', params.patient_id);
-        }
-        if (params?.status) {
-          query = query.eq('status', params.status as 'menunggu' | 'dipanggil' | 'dilayani' | 'selesai' | 'batal');
-        }
-        const { data, error } = await query.order('created_at', { ascending: false });
-        if (error) throw new ApiError(error.message, 400, 'QUERY_ERROR');
-        return { success: true, data };
-      } else {
-        return nodeRequest('GET', '/visits', { params });
-      }
+      return nodeRequest('GET', '/visits', { params });
     },
 
     async get(id: string) {
-      if (API_MODE === 'supabase') {
-        const { data, error } = await supabase
-          .from('visits')
-          .select('*, patients(*)')
-          .eq('id', id)
-          .single();
-        if (error) throw new ApiError(error.message, 404, 'NOT_FOUND');
-        return { success: true, data };
-      } else {
-        return nodeRequest('GET', `/visits/${id}`);
-      }
+      return nodeRequest('GET', `/visits/${id}`);
     },
 
     async create(visitData: Record<string, unknown>) {
-      if (API_MODE === 'supabase') {
-        const { data, error } = await supabase
-          .from('visits')
-          .insert(visitData as never)
-          .select()
-          .single();
-        if (error) throw new ApiError(error.message, 400, 'CREATE_ERROR');
-        return { success: true, data };
-      } else {
-        return nodeRequest('POST', '/visits', { body: visitData });
-      }
+      return nodeRequest('POST', '/visits', { body: visitData });
     },
 
     async update(id: string, visitData: Record<string, unknown>) {
-      if (API_MODE === 'supabase') {
-        const { data, error } = await supabase
-          .from('visits')
-          .update(visitData as never)
-          .eq('id', id)
-          .select()
-          .single();
-        if (error) throw new ApiError(error.message, 400, 'UPDATE_ERROR');
-        return { success: true, data };
-      } else {
-        return nodeRequest('PUT', `/visits/${id}`, { body: visitData });
-      }
+      return nodeRequest('PUT', `/visits/${id}`, { body: visitData });
     },
   },
 
@@ -395,64 +255,19 @@ export const api = {
 
   billing: {
     async list(params?: Record<string, string>) {
-      if (API_MODE === 'supabase') {
-        const { data, error } = await supabase
-          .from('billings')
-          .select('*, patients(*), visits(*)')
-          .order('created_at', { ascending: false });
-        if (error) throw new ApiError(error.message, 400, 'QUERY_ERROR');
-        return { success: true, data };
-      } else {
-        return nodeRequest('GET', '/billing', { params });
-      }
+      return nodeRequest('GET', '/billing', { params });
     },
 
     async get(id: string) {
-      if (API_MODE === 'supabase') {
-        const { data, error } = await supabase
-          .from('billings')
-          .select('*, patients(*), visits(*), billing_items(*)')
-          .eq('id', id)
-          .single();
-        if (error) throw new ApiError(error.message, 404, 'NOT_FOUND');
-        return { success: true, data };
-      } else {
-        return nodeRequest('GET', `/billing/${id}`);
-      }
+      return nodeRequest('GET', `/billing/${id}`);
     },
 
     async create(billingData: Record<string, unknown>) {
-      if (API_MODE === 'supabase') {
-        const { data, error } = await supabase
-          .from('billings')
-          .insert(billingData as never)
-          .select()
-          .single();
-        if (error) throw new ApiError(error.message, 400, 'CREATE_ERROR');
-        return { success: true, data };
-      } else {
-        return nodeRequest('POST', '/billing', { body: billingData });
-      }
+      return nodeRequest('POST', '/billing', { body: billingData });
     },
 
     async processPayment(id: string, paymentData: Record<string, unknown>) {
-      if (API_MODE === 'supabase') {
-        const updateData = {
-          status: 'lunas' as const,
-          payment_date: new Date().toISOString(),
-          ...paymentData,
-        };
-        const { data, error } = await supabase
-          .from('billings')
-          .update(updateData as never)
-          .eq('id', id)
-          .select()
-          .single();
-        if (error) throw new ApiError(error.message, 400, 'PAYMENT_ERROR');
-        return { success: true, data };
-      } else {
-        return nodeRequest('POST', `/billing/${id}/payment`, { body: paymentData });
-      }
+      return nodeRequest('POST', `/billing/${id}/payment`, { body: paymentData });
     },
   },
 
@@ -462,51 +277,17 @@ export const api = {
 
   pharmacy: {
     async prescriptions(params?: Record<string, string>) {
-      if (API_MODE === 'supabase') {
-        const { data, error } = await supabase
-          .from('prescriptions')
-          .select('*, patients(*), doctors(*)')
-          .order('created_at', { ascending: false });
-        if (error) throw new ApiError(error.message, 400, 'QUERY_ERROR');
-        return { success: true, data };
-      } else {
-        return nodeRequest('GET', '/pharmacy/prescriptions', { params });
-      }
+      return nodeRequest('GET', '/pharmacy/prescriptions', { params });
     },
 
     async dispense(id: string, dispenseData: Record<string, unknown>) {
-      if (API_MODE === 'supabase') {
-        const updateData = {
-          status: 'diserahkan' as const,
-          updated_at: new Date().toISOString(),
-          ...dispenseData,
-        };
-        const { data, error } = await supabase
-          .from('prescriptions')
-          .update(updateData as never)
-          .eq('id', id)
-          .select()
-          .single();
-        if (error) throw new ApiError(error.message, 400, 'DISPENSE_ERROR');
-        return { success: true, data };
-      } else {
-        return nodeRequest('PUT', `/pharmacy/prescriptions/${id}/dispense`, {
-          body: dispenseData,
-        });
-      }
+      return nodeRequest('PUT', `/pharmacy/prescriptions/${id}/dispense`, {
+        body: dispenseData,
+      });
     },
 
     async stock(params?: Record<string, string>) {
-      if (API_MODE === 'supabase') {
-        const { data, error } = await supabase
-          .from('medicines')
-          .select('*')
-          .order('medicine_name');
-        if (error) throw new ApiError(error.message, 400, 'QUERY_ERROR');
-        return { success: true, data };
-      } else {
-        return nodeRequest('GET', '/pharmacy/stock', { params });
-      }
+      return nodeRequest('GET', '/pharmacy/stock', { params });
     },
   },
 
@@ -516,32 +297,15 @@ export const api = {
 
   lab: {
     async orders(params?: Record<string, string>) {
-      if (API_MODE === 'supabase') {
-        // Lab orders table may not exist yet in schema, return empty for now
-        return { success: true, data: [] };
-      } else {
-        return nodeRequest('GET', '/lab/orders', { params });
-      }
+      return nodeRequest('GET', '/lab/orders', { params });
     },
 
     async createOrder(orderData: Record<string, unknown>) {
-      if (API_MODE === 'supabase') {
-        // Lab orders table may not exist yet
-        console.warn('Lab orders not available in Supabase mode yet');
-        return { success: false, error: 'Not implemented' };
-      } else {
-        return nodeRequest('POST', '/lab/orders', { body: orderData });
-      }
+      return nodeRequest('POST', '/lab/orders', { body: orderData });
     },
 
     async addResult(orderId: string, results: Record<string, unknown>) {
-      if (API_MODE === 'supabase') {
-        // Lab results table may not exist yet
-        console.warn('Lab results not available in Supabase mode yet');
-        return { success: false, error: 'Not implemented' };
-      } else {
-        return nodeRequest('POST', `/lab/orders/${orderId}/results`, { body: results });
-      }
+      return nodeRequest('POST', `/lab/orders/${orderId}/results`, { body: results });
     },
   },
 
@@ -551,39 +315,15 @@ export const api = {
 
   bpjs: {
     async checkPeserta(noBpjs: string) {
-      if (API_MODE === 'supabase') {
-        const { data, error } = await supabase.functions.invoke('bpjs-vclaim', {
-          body: { action: 'getPeserta', noBpjs },
-        });
-        if (error) throw new ApiError(error.message, 400, 'BPJS_ERROR');
-        return { success: true, data };
-      } else {
-        return nodeRequest('GET', `/bpjs/peserta/${noBpjs}`);
-      }
+      return nodeRequest('GET', `/bpjs/peserta/${noBpjs}`);
     },
 
     async createSEP(sepData: unknown) {
-      if (API_MODE === 'supabase') {
-        const { data, error } = await supabase.functions.invoke('bpjs-vclaim', {
-          body: { action: 'createSEP', ...sepData as Record<string, unknown> },
-        });
-        if (error) throw new ApiError(error.message, 400, 'BPJS_ERROR');
-        return { success: true, data };
-      } else {
-        return nodeRequest('POST', '/bpjs/sep', { body: sepData });
-      }
+      return nodeRequest('POST', '/bpjs/sep', { body: sepData });
     },
 
     async getRujukan(noRujukan: string) {
-      if (API_MODE === 'supabase') {
-        const { data, error } = await supabase.functions.invoke('bpjs-vclaim', {
-          body: { action: 'getRujukan', noRujukan },
-        });
-        if (error) throw new ApiError(error.message, 400, 'BPJS_ERROR');
-        return { success: true, data };
-      } else {
-        return nodeRequest('GET', `/bpjs/rujukan/${noRujukan}`);
-      }
+      return nodeRequest('GET', `/bpjs/rujukan/${noRujukan}`);
     },
   },
 
@@ -593,39 +333,15 @@ export const api = {
 
   satusehat: {
     async syncPatient(patientId: string) {
-      if (API_MODE === 'supabase') {
-        const { data, error } = await supabase.functions.invoke('satusehat', {
-          body: { action: 'syncPatient', patientId },
-        });
-        if (error) throw new ApiError(error.message, 400, 'SATUSEHAT_ERROR');
-        return { success: true, data };
-      } else {
-        return nodeRequest('POST', '/satusehat/sync/patient', { body: { patientId } });
-      }
+      return nodeRequest('POST', '/satusehat/sync/patient', { body: { patientId } });
     },
 
     async syncEncounter(visitId: string) {
-      if (API_MODE === 'supabase') {
-        const { data, error } = await supabase.functions.invoke('satusehat', {
-          body: { action: 'syncEncounter', visitId },
-        });
-        if (error) throw new ApiError(error.message, 400, 'SATUSEHAT_ERROR');
-        return { success: true, data };
-      } else {
-        return nodeRequest('POST', '/satusehat/sync/encounter', { body: { visitId } });
-      }
+      return nodeRequest('POST', '/satusehat/sync/encounter', { body: { visitId } });
     },
 
     async getIHSPatient(nik: string) {
-      if (API_MODE === 'supabase') {
-        const { data, error } = await supabase.functions.invoke('satusehat', {
-          body: { action: 'getPatientByNIK', nik },
-        });
-        if (error) throw new ApiError(error.message, 400, 'SATUSEHAT_ERROR');
-        return { success: true, data };
-      } else {
-        return nodeRequest('GET', `/satusehat/patient/${nik}`);
-      }
+      return nodeRequest('GET', `/satusehat/patient/${nik}`);
     },
   },
 
@@ -635,48 +351,18 @@ export const api = {
 
   reports: {
     async dashboard(params?: Record<string, string>) {
-      if (API_MODE === 'supabase') {
-        const today = new Date().toISOString().split('T')[0];
-        const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
-        const [patientsResult, visitsResult, billingsResult] = await Promise.all([
-          supabase.from('patients').select('id', { count: 'exact', head: true }),
-          supabase.from('visits').select('id', { count: 'exact', head: true }).gte('visit_date', today).lt('visit_date', tomorrow),
-          supabase.from('billings').select('total').eq('status', 'pending' as const),
-        ]);
-
-        return {
-          success: true,
-          data: {
-            totalPatients: patientsResult.count || 0,
-            todayVisits: visitsResult.count || 0,
-            pendingBillings: billingsResult.data?.length || 0,
-            pendingAmount: billingsResult.data?.reduce((sum, b) => sum + (b.total || 0), 0) || 0,
-          },
-        };
-      } else {
-        return nodeRequest('GET', '/reports/dashboard', { params });
-      }
+      return nodeRequest('GET', '/reports/dashboard', { params });
     },
 
     async revenue(params?: Record<string, string>) {
-      if (API_MODE === 'supabase') {
-        const { data, error } = await supabase
-          .from('billings')
-          .select('total, payment_date, payment_type')
-          .eq('status', 'lunas' as const)
-          .order('payment_date', { ascending: false });
-        if (error) throw new ApiError(error.message, 400, 'QUERY_ERROR');
-        return { success: true, data };
-      } else {
-        return nodeRequest('GET', '/reports/revenue', { params });
-      }
+      return nodeRequest('GET', '/reports/revenue', { params });
     },
   },
 };
 
 // Export utilities
-export const isNodeMode = () => API_MODE === 'nodejs';
-export const isSupabaseMode = () => API_MODE === 'supabase';
-export const getApiBaseUrl = () => API_MODE === 'nodejs' ? API_BASE_URL : null;
+export const isNodeMode = () => true;
+export const isSupabaseMode = () => false;
+export const getApiBaseUrl = () => API_BASE_URL;
 
 export default api;

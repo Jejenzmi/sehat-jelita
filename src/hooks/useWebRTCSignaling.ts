@@ -1,6 +1,5 @@
 import { useEffect, useCallback, useRef } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { RealtimeChannel } from "@supabase/supabase-js";
+import { supabase, RealtimeChannel } from "@/integrations/supabase/client";
 
 interface SignalMessage {
   type: "offer" | "answer" | "ice-candidate";
