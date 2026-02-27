@@ -18,15 +18,8 @@ import { errorHandler } from './middleware/errorHandler.js';
 import { rateLimiter } from './middleware/rateLimiter.js';
 import { requestLogger } from './middleware/logger.js';
 
-// Import routes
-import authRoutes from './routes/auth.routes.js';
-import patientRoutes from './routes/patients.routes.js';
-import visitRoutes from './routes/visits.routes.js';
-import billingRoutes from './routes/billing.routes.js';
-import pharmacyRoutes from './routes/pharmacy.routes.js';
-import labRoutes from './routes/lab.routes.js';
-import bpjsRoutes from './routes/bpjs.routes.js';
-import satusehatRoutes from './routes/satusehat.routes.js';
+// Import centralized routes
+import apiRouter from './routes/index.js';
 
 // Import Socket handlers
 import { initializeSocketHandlers } from './socket/index.js';
@@ -106,14 +99,7 @@ app.get('/health', (req, res) => {
 });
 
 // API Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/patients', patientRoutes);
-app.use('/api/visits', visitRoutes);
-app.use('/api/billing', billingRoutes);
-app.use('/api/pharmacy', pharmacyRoutes);
-app.use('/api/lab', labRoutes);
-app.use('/api/bpjs', bpjsRoutes);
-app.use('/api/satusehat', satusehatRoutes);
+app.use('/api', apiRouter);
 
 // 404 Handler
 app.use((req, res) => {

@@ -501,7 +501,7 @@ export const api = {
         const { data, error } = await supabase
           .from('medicines')
           .select('*')
-          .order('name');
+          .order('medicine_name');
         if (error) throw new ApiError(error.message, 400, 'QUERY_ERROR');
         return { success: true, data };
       } else {
@@ -636,10 +636,11 @@ export const api = {
   reports: {
     async dashboard(params?: Record<string, string>) {
       if (API_MODE === 'supabase') {
-        // Aggregate dashboard data from multiple tables
+        const today = new Date().toISOString().split('T')[0];
+        const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
         const [patientsResult, visitsResult, billingsResult] = await Promise.all([
           supabase.from('patients').select('id', { count: 'exact', head: true }),
-          supabase.from('visits').select('id', { count: 'exact', head: true }).eq('visit_date', new Date().toISOString().split('T')[0]),
+          supabase.from('visits').select('id', { count: 'exact', head: true }).gte('visit_date', today).lt('visit_date', tomorrow),
           supabase.from('billings').select('total').eq('status', 'pending' as const),
         ]);
 

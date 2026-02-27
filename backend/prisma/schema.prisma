@@ -1,108 +1,62 @@
 // SIMRS ZEN - Prisma Schema
-// Database schema for Hospital Management System
+// Database schema matching backend/database/schema.sql
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider     = "postgresql"
+  url          = env("DATABASE_URL")
+  relationMode = "prisma"
 }
 
 // ============================================
-// ENUMS
+// ENUMS (matching schema.sql)
 // ============================================
-
-enum AppRole {
-  admin
-  dokter
-  perawat
-  farmasi
-  laboratorium
-  radiologi
-  pendaftaran
-  kasir
-  keuangan
-  hrd
-  manajemen
-  rekam_medis
-  gizi
-  rehabilitasi
-  bedah
-  icu
-  hemodialisa
-  forensik
-  procurement
-  it
-  guest
-}
-
-enum Gender {
-  male
-  female
-}
-
-enum BloodType {
-  A_POSITIVE    @map("A+")
-  A_NEGATIVE    @map("A-")
-  B_POSITIVE    @map("B+")
-  B_NEGATIVE    @map("B-")
-  AB_POSITIVE   @map("AB+")
-  AB_NEGATIVE   @map("AB-")
-  O_POSITIVE    @map("O+")
-  O_NEGATIVE    @map("O-")
-}
-
-enum VisitType {
-  OUTPATIENT
-  INPATIENT
-  EMERGENCY
-  MCU
-  TELEMEDICINE
-}
-
-enum VisitStatus {
-  SCHEDULED
-  WAITING
-  IN_PROGRESS
-  COMPLETED
-  CANCELLED
-  NO_SHOW
-}
 
 enum BedStatus {
-  AVAILABLE
-  OCCUPIED
-  RESERVED
-  CLEANING
-  MAINTENANCE
+  available
+  occupied
+  maintenance
+  reserved
 }
 
 enum BillingStatus {
-  DRAFT
-  PENDING
-  PARTIAL
-  PAID
-  CANCELLED
-  REFUNDED
+  pending
+  partial
+  paid
+  cancelled
+  refunded
 }
 
 enum PaymentType {
-  UMUM
-  BPJS
-  ASURANSI
-  PERUSAHAAN
-  GRATIS
+  cash
+  bpjs
+  insurance
+  corporate
+  credit_card
+  debit_card
+}
+
+enum BloodType {
+  A_POSITIVE  @map("A+")
+  A_NEGATIVE  @map("A-")
+  B_POSITIVE  @map("B+")
+  B_NEGATIVE  @map("B-")
+  AB_POSITIVE @map("AB+")
+  AB_NEGATIVE @map("AB-")
+  O_POSITIVE  @map("O+")
+  O_NEGATIVE  @map("O-")
 }
 
 enum ClaimStatus {
-  DRAFT
-  SUBMITTED
-  VERIFIED
-  APPROVED
-  REJECTED
-  PAID
+  draft
+  submitted
+  verified
+  approved
+  rejected
+  paid
 }
 
 // ============================================
@@ -110,41 +64,45 @@ enum ClaimStatus {
 // ============================================
 
 model profiles {
-  id            String   @id @default(uuid())
-  user_id       String   @unique
-  email         String   @unique
-  full_name     String
+  id            String    @id @default(uuid())
+  user_id       String    @unique
+  email         String    @unique
+  full_name     String?
   phone         String?
   avatar_url    String?
   password_hash String?
-  created_at    DateTime @default(now())
-  updated_at    DateTime @updatedAt
+  is_active     Boolean   @default(true)
+  last_login    DateTime?
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
 
-  user_roles    user_roles[]
-  employees     employees[]
-  audit_logs    audit_logs[]
+  user_roles user_roles[]
+  employees  employees[]
+  audit_logs audit_logs[]
 }
 
 model user_roles {
-  id         String   @id @default(uuid())
-  user_id    String
-  role       AppRole
-  created_at DateTime @default(now())
+  id          String   @id @default(uuid())
+  user_id     String
+  role        String
+  assigned_at DateTime @default(now())
+  assigned_by String?
 
-  profile    profiles @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+  profile profiles @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
 
   @@unique([user_id, role])
+  @@index([user_id])
 }
 
 model menu_access {
-  id          String   @id @default(uuid())
-  role        AppRole
-  menu_path   String
-  can_view    Boolean  @default(false)
-  can_create  Boolean  @default(false)
-  can_edit    Boolean  @default(false)
-  can_delete  Boolean  @default(false)
-  created_at  DateTime @default(now())
+  id         String   @id @default(uuid())
+  role       String
+  menu_path  String
+  can_view   Boolean  @default(false)
+  can_create Boolean  @default(false)
+  can_edit   Boolean  @default(false)
+  can_delete Boolean  @default(false)
+  created_at DateTime @default(now())
 
   @@unique([role, menu_path])
 }
@@ -154,70 +112,84 @@ model menu_access {
 // ============================================
 
 model departments {
-  id          String   @id @default(uuid())
-  code        String   @unique
-  name        String
-  description String?
-  is_active   Boolean  @default(true)
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
-
-  doctors     doctors[]
-  employees   employees[]
-  rooms       rooms[]
-}
-
-model doctors {
   id              String   @id @default(uuid())
-  user_id         String?
-  sip_number      String   @unique
-  str_number      String?
-  full_name       String
-  specialization  String?
-  department_id   String?
+  department_code String   @unique
+  department_name String
+  department_type String?
+  head_doctor_id  String?
   phone           String?
-  email           String?
+  location        String?
   is_active       Boolean  @default(true)
   created_at      DateTime @default(now())
   updated_at      DateTime @updatedAt
 
-  department      departments? @relation(fields: [department_id], references: [id])
-  visits          visits[]
-  appointments    appointments[]
-  schedules       doctor_schedules[]
+  doctors      doctors[]
+  employees    employees[]
+  rooms        rooms[]
+  visits       visits[]
+  appointments appointments[]
 }
 
 model rooms {
   id            String   @id @default(uuid())
   room_number   String
-  room_name     String
-  room_type     String   // WARD, ICU, OR, ER, CLINIC, etc.
-  room_class    String?  // VIP, I, II, III
-  ward_id       String?
+  room_name     String?
   department_id String?
-  daily_rate    Decimal?
+  room_type     String?
+  floor         Int?
+  capacity      Int      @default(1)
+  rate_per_day  Decimal?
   is_active     Boolean  @default(true)
   created_at    DateTime @default(now())
   updated_at    DateTime @updatedAt
 
-  department    departments? @relation(fields: [department_id], references: [id])
-  beds          beds[]
+  departments departments? @relation(fields: [department_id], references: [id])
+  beds        beds[]
+
+  @@index([department_id])
 }
 
 model beds {
   id                 String    @id @default(uuid())
   bed_number         String
   room_id            String
-  status             BedStatus @default(AVAILABLE)
+  status             BedStatus @default(available)
   current_patient_id String?
   notes              String?
   created_at         DateTime  @default(now())
   updated_at         DateTime  @updatedAt
 
-  room               rooms     @relation(fields: [room_id], references: [id])
-  patient            patients? @relation(fields: [current_patient_id], references: [id])
+  rooms  rooms    @relation(fields: [room_id], references: [id])
+  visits visits[]
 
   @@unique([room_id, bed_number])
+  @@index([room_id])
+}
+
+model doctors {
+  id               String   @id @default(uuid())
+  employee_id      String?
+  user_id          String?
+  doctor_code      String   @unique
+  sip_number       String?
+  str_number       String?
+  full_name        String?
+  specialization   String?
+  department_id    String?
+  consultation_fee Decimal?
+  is_active        Boolean  @default(true)
+  schedule         Json?
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+
+  departments     departments?      @relation(fields: [department_id], references: [id])
+  visits          visits[]
+  appointments    appointments[]
+  prescriptions   prescriptions[]
+  medical_records medical_records[]
+  lab_orders      lab_orders[]
+
+  @@index([department_id])
 }
 
 // ============================================
@@ -225,34 +197,46 @@ model beds {
 // ============================================
 
 model patients {
-  id                     String    @id @default(uuid())
-  medical_record_number  String    @unique
-  nik                    String?   @unique
-  full_name              String
-  date_of_birth          DateTime
-  gender                 Gender
-  blood_type             BloodType?
-  address                String?
-  city                   String?
-  province               String?
-  postal_code            String?
-  phone                  String?
-  email                  String?
-  emergency_contact_name String?
-  emergency_contact_phone String?
-  bpjs_number            String?
-  allergies              String[]
-  is_active              Boolean   @default(true)
-  created_at             DateTime  @default(now())
-  updated_at             DateTime  @updatedAt
+  id                         String    @id @default(uuid())
+  medical_record_number      String    @unique
+  nik                        String?   @unique
+  bpjs_number                String?
+  full_name                  String
+  birth_date                 DateTime?
+  birth_place                String?
+  gender                     String?
+  blood_type                 String?
+  religion                   String?
+  marital_status             String?
+  education                  String?
+  occupation                 String?
+  address                    String?
+  rt                         String?
+  rw                         String?
+  kelurahan                  String?
+  kecamatan                  String?
+  city                       String?
+  province                   String?
+  postal_code                String?
+  phone                      String?
+  mobile_phone               String?
+  email                      String?
+  emergency_contact_name     String?
+  emergency_contact_phone    String?
+  emergency_contact_relation String?
+  allergy_notes              String?
+  chronic_conditions         String?
+  is_active                  Boolean   @default(true)
+  photo_url                  String?
+  created_at                 DateTime  @default(now())
+  updated_at                 DateTime  @updatedAt
 
-  visits                 visits[]
-  appointments           appointments[]
-  billings               billings[]
-  beds                   beds[]
-  medical_records        medical_records[]
-  prescriptions          prescriptions[]
-  lab_orders             lab_orders[]
+  visits          visits[]
+  appointments    appointments[]
+  billings        billings[]
+  medical_records medical_records[]
+  prescriptions   prescriptions[]
+  lab_orders      lab_orders[]
 }
 
 // ============================================
@@ -260,46 +244,69 @@ model patients {
 // ============================================
 
 model visits {
-  id            String      @id @default(uuid())
-  visit_number  String      @unique
-  patient_id    String
-  doctor_id     String?
-  department_id String?
-  visit_type    VisitType
-  visit_date    DateTime    @default(now())
-  status        VisitStatus @default(WAITING)
-  checkin_time  DateTime?
-  checkout_time DateTime?
-  chief_complaint String?
-  notes         String?
-  created_at    DateTime    @default(now())
-  updated_at    DateTime    @updatedAt
+  id                      String    @id @default(uuid())
+  visit_number            String    @unique
+  patient_id              String
+  visit_date              DateTime  @default(now())
+  visit_type              String
+  department_id           String?
+  doctor_id               String?
+  bed_id                  String?
+  admission_date          DateTime?
+  discharge_date          DateTime?
+  chief_complaint         String?
+  diagnosis               String?
+  icd10_code              String?
+  treatment_plan          String?
+  discharge_summary       String?
+  status                  String    @default("active")
+  payment_type            PaymentType?
+  bpjs_sep_number         String?
+  insurance_policy_number String?
+  created_by              String?
+  created_at              DateTime  @default(now())
+  updated_at              DateTime  @updatedAt
 
-  patient       patients    @relation(fields: [patient_id], references: [id])
-  doctor        doctors?    @relation(fields: [doctor_id], references: [id])
-  billings      billings[]
-  medical_records medical_records[]
-  prescriptions prescriptions[]
-  lab_orders    lab_orders[]
+  patients         patients     @relation(fields: [patient_id], references: [id])
+  doctors          doctors?     @relation(fields: [doctor_id], references: [id])
+  departments      departments? @relation(fields: [department_id], references: [id])
+  beds             beds?        @relation(fields: [bed_id], references: [id])
+  billings         billings[]
+  medical_records  medical_records[]
+  prescriptions    prescriptions[]
+  lab_orders       lab_orders[]
+  queue_entries    queue_entries[]
+
+  @@index([patient_id])
+  @@index([visit_date])
+  @@index([department_id])
+  @@index([doctor_id])
+  @@index([bed_id])
 }
 
 model medical_records {
-  id                String   @id @default(uuid())
-  patient_id        String
-  visit_id          String
-  subjective        String?  // Keluhan
-  objective         String?  // Pemeriksaan Fisik
-  assessment        String?  // Diagnosis
-  plan              String?  // Rencana Tindakan
-  vital_signs       Json?
-  icd10_codes       String[]
-  icd9_codes        String[]
-  created_by        String?
-  created_at        DateTime @default(now())
-  updated_at        DateTime @updatedAt
+  id            String   @id @default(uuid())
+  patient_id    String
+  visit_id      String?
+  record_date   DateTime @default(now())
+  record_type   String?
+  subjective    String?
+  objective     String?
+  assessment    String?
+  plan          String?
+  vital_signs   Json?
+  physical_exam Json?
+  doctor_id     String?
+  created_by    String?
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
 
-  patient           patients @relation(fields: [patient_id], references: [id])
-  visit             visits   @relation(fields: [visit_id], references: [id])
+  patients patients  @relation(fields: [patient_id], references: [id])
+  visits   visits?   @relation(fields: [visit_id], references: [id])
+  doctors  doctors?  @relation(fields: [doctor_id], references: [id])
+
+  @@index([patient_id])
+  @@index([visit_id])
 }
 
 // ============================================
@@ -307,107 +314,130 @@ model medical_records {
 // ============================================
 
 model medicines {
-  id              String   @id @default(uuid())
-  medicine_code   String   @unique
-  medicine_name   String
-  generic_name    String?
-  category        String?
-  form            String?  // Tablet, Syrup, Injection, etc.
-  strength        String?
-  unit            String
-  selling_price   Decimal
-  purchase_price  Decimal?
-  min_stock       Int      @default(0)
-  is_active       Boolean  @default(true)
-  created_at      DateTime @default(now())
-  updated_at      DateTime @updatedAt
+  id                    String   @id @default(uuid())
+  medicine_code         String   @unique
+  medicine_name         String
+  generic_name          String?
+  category              String?
+  form                  String?
+  strength              String?
+  unit                  String
+  manufacturer          String?
+  selling_price         Decimal
+  purchase_price        Decimal?
+  min_stock             Int      @default(10)
+  max_stock             Int      @default(1000)
+  is_active             Boolean  @default(true)
+  requires_prescription Boolean  @default(true)
+  created_at            DateTime @default(now())
+  updated_at            DateTime @updatedAt
 
-  prescription_items prescription_items[]
-  inventory_items    inventory_items[]
+  medicine_batches medicine_batches[]
+}
+
+model medicine_batches {
+  id             String   @id @default(uuid())
+  medicine_id    String
+  batch_number   String
+  quantity       Int
+  expiry_date    DateTime
+  purchase_date  DateTime?
+  purchase_price Decimal?
+  supplier_id    String?
+  location       String?
+  status         String   @default("available")
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  medicines medicines @relation(fields: [medicine_id], references: [id])
+
+  @@index([medicine_id])
 }
 
 model prescriptions {
-  id              String   @id @default(uuid())
-  prescription_number String @unique
-  patient_id      String
-  visit_id        String
-  doctor_id       String?
-  status          String   @default("PENDING") // PENDING, PROCESSING, READY, DISPENSED, CANCELLED
-  notes           String?
-  created_at      DateTime @default(now())
-  updated_at      DateTime @updatedAt
+  id                  String   @id @default(uuid())
+  prescription_number String   @unique
+  patient_id          String
+  visit_id            String?
+  doctor_id           String?
+  prescription_date   DateTime @default(now())
+  status              String   @default("pending")
+  notes               String?
+  created_at          DateTime @default(now())
+  updated_at          DateTime @updatedAt
 
-  patient         patients @relation(fields: [patient_id], references: [id])
-  visit           visits   @relation(fields: [visit_id], references: [id])
-  items           prescription_items[]
+  patients           patients           @relation(fields: [patient_id], references: [id])
+  visits             visits?            @relation(fields: [visit_id], references: [id])
+  doctors            doctors?           @relation(fields: [doctor_id], references: [id])
+  prescription_items prescription_items[]
+
+  @@index([patient_id])
+  @@index([visit_id])
 }
 
 model prescription_items {
   id              String   @id @default(uuid())
   prescription_id String
-  medicine_id     String
-  dosage          String
-  frequency       String
+  medicine_id     String?
+  medicine_name   String
+  dosage          String?
+  frequency       String?
   duration        String?
-  quantity        Int
+  quantity        Int?
+  unit            String?
   instructions    String?
-  is_dispensed    Boolean  @default(false)
   created_at      DateTime @default(now())
 
-  prescription    prescriptions @relation(fields: [prescription_id], references: [id])
-  medicine        medicines     @relation(fields: [medicine_id], references: [id])
+  prescriptions prescriptions @relation(fields: [prescription_id], references: [id])
+
+  @@index([prescription_id])
 }
 
 // ============================================
 // LABORATORY
 // ============================================
 
-model lab_tests {
-  id            String   @id @default(uuid())
-  test_code     String   @unique
-  test_name     String
-  category      String?
-  sample_type   String?
-  normal_range  String?
-  unit          String?
-  price         Decimal?
-  is_active     Boolean  @default(true)
-  created_at    DateTime @default(now())
-
-  lab_order_items lab_order_items[]
-}
-
 model lab_orders {
-  id            String   @id @default(uuid())
-  order_number  String   @unique
-  patient_id    String
-  visit_id      String
-  ordered_by    String?
-  priority      String   @default("ROUTINE")
-  status        String   @default("ORDERED")
-  notes         String?
-  created_at    DateTime @default(now())
-  updated_at    DateTime @updatedAt
+  id           String   @id @default(uuid())
+  order_number String   @unique
+  patient_id   String
+  visit_id     String?
+  doctor_id    String?
+  order_date   DateTime @default(now())
+  priority     String   @default("normal")
+  status       String   @default("pending")
+  notes        String?
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
 
-  patient       patients @relation(fields: [patient_id], references: [id])
-  visit         visits   @relation(fields: [visit_id], references: [id])
-  items         lab_order_items[]
+  patients    patients    @relation(fields: [patient_id], references: [id])
+  visits      visits?     @relation(fields: [visit_id], references: [id])
+  doctors     doctors?    @relation(fields: [doctor_id], references: [id])
+  lab_results lab_results[]
+
+  @@index([patient_id])
+  @@index([visit_id])
 }
 
-model lab_order_items {
-  id            String   @id @default(uuid())
-  order_id      String
-  test_id       String
-  result        String?
-  result_value  Decimal?
-  result_flag   String?  // NORMAL, HIGH, LOW, CRITICAL
-  verified_by   String?
-  verified_at   DateTime?
-  notes         String?
-  created_at    DateTime @default(now())
+model lab_results {
+  id              String    @id @default(uuid())
+  order_id        String
+  test_code       String
+  test_name       String
+  result_value    String?
+  unit            String?
+  reference_range String?
+  flag            String?
+  performed_by    String?
+  verified_by     String?
+  result_date     DateTime?
+  notes           String?
+  created_at      DateTime  @default(now())
 
-  order         lab_orders @relation(fields: [order_id], references: [id])
-  test          lab_tests  @relation(fields: [test_id], references: [id])
+  lab_orders lab_orders @relation(fields: [order_id], references: [id])
+
+  @@unique([order_id, test_code])
+  @@index([order_id])
 }
 
 // ============================================
@@ -415,42 +445,48 @@ model lab_order_items {
 // ============================================
 
 model billings {
-  id              String        @id @default(uuid())
-  invoice_number  String        @unique
-  patient_id      String
-  visit_id        String
-  billing_date    DateTime      @default(now())
-  payment_type    PaymentType
-  subtotal        Decimal       @default(0)
-  discount        Decimal?
-  tax             Decimal?
-  total           Decimal       @default(0)
-  paid_amount     Decimal?
-  status          BillingStatus @default(DRAFT)
-  payment_method  String?
-  payment_date    DateTime?
-  notes           String?
-  created_by      String?
-  created_at      DateTime      @default(now())
-  updated_at      DateTime      @updatedAt
+  id             String        @id @default(uuid())
+  invoice_number String        @unique
+  patient_id     String
+  visit_id       String
+  billing_date   DateTime      @default(now())
+  payment_type   PaymentType
+  subtotal       Decimal       @default(0)
+  discount       Decimal?
+  tax            Decimal?
+  total          Decimal       @default(0)
+  paid_amount    Decimal?
+  status         BillingStatus @default(pending)
+  payment_method String?
+  payment_date   DateTime?
+  paid_by        String?
+  notes          String?
+  created_by     String?
+  created_at     DateTime      @default(now())
+  updated_at     DateTime      @updatedAt
 
-  patient         patients      @relation(fields: [patient_id], references: [id])
-  visit           visits        @relation(fields: [visit_id], references: [id])
-  items           billing_items[]
+  patients      patients      @relation(fields: [patient_id], references: [id])
+  visits        visits        @relation(fields: [visit_id], references: [id])
+  billing_items billing_items[]
+
+  @@index([patient_id])
+  @@index([visit_id])
 }
 
 model billing_items {
-  id            String   @id @default(uuid())
-  billing_id    String
-  item_type     String   // SERVICE, MEDICINE, LAB, RADIOLOGY, ROOM, etc.
-  item_name     String
-  quantity      Int      @default(1)
-  unit_price    Decimal
-  total_price   Decimal
-  notes         String?
-  created_at    DateTime @default(now())
+  id          String   @id @default(uuid())
+  billing_id  String
+  item_type   String
+  item_name   String
+  quantity    Int      @default(1)
+  unit_price  Decimal
+  total_price Decimal
+  notes       String?
+  created_at  DateTime @default(now())
 
-  billing       billings @relation(fields: [billing_id], references: [id])
+  billings billings @relation(fields: [billing_id], references: [id])
+
+  @@index([billing_id])
 }
 
 // ============================================
@@ -458,110 +494,58 @@ model billing_items {
 // ============================================
 
 model bpjs_claims {
-  id               String      @id @default(uuid())
-  claim_number     String      @unique
-  patient_id       String
-  visit_id         String
-  sep_number       String
-  claim_date       DateTime    @default(now())
-  claim_amount     Decimal
-  approved_amount  Decimal?
-  inacbg_code      String?
+  id                 String      @id @default(uuid())
+  claim_number       String      @unique
+  patient_id         String
+  visit_id           String
+  sep_number         String
+  claim_date         DateTime    @default(now())
+  claim_amount       Decimal
+  approved_amount    Decimal?
+  status             ClaimStatus @default(draft)
+  inacbg_code        String?
   inacbg_description String?
-  status           ClaimStatus @default(DRAFT)
-  submission_date  DateTime?
-  verification_date DateTime?
-  rejection_reason String?
-  notes            String?
-  created_by       String?
-  created_at       DateTime    @default(now())
-  updated_at       DateTime    @updatedAt
+  submission_date    DateTime?
+  verification_date  DateTime?
+  rejection_reason   String?
+  notes              String?
+  created_by         String?
+  created_at         DateTime    @default(now())
+  updated_at         DateTime    @updatedAt
+
+  @@index([patient_id])
+  @@index([visit_id])
 }
 
 // ============================================
-// INVENTORY
+// SUPPLIERS & PURCHASE ORDERS
 // ============================================
-
-model inventory_items {
-  id              String   @id @default(uuid())
-  item_code       String   @unique
-  item_name       String
-  category        String?
-  medicine_id     String?
-  unit            String
-  current_stock   Int      @default(0)
-  minimum_stock   Int      @default(0)
-  maximum_stock   Int?
-  reorder_point   Int?
-  reorder_quantity Int?
-  auto_reorder    Boolean  @default(false)
-  supplier_id     String?
-  is_active       Boolean  @default(true)
-  created_at      DateTime @default(now())
-  updated_at      DateTime @updatedAt
-
-  medicine        medicines? @relation(fields: [medicine_id], references: [id])
-  batches         inventory_batches[]
-  transactions    inventory_transactions[]
-}
-
-model inventory_batches {
-  id                String   @id @default(uuid())
-  item_id           String
-  batch_number      String
-  expiry_date       DateTime
-  initial_quantity  Int
-  remaining_quantity Int
-  purchase_order_id String?
-  created_at        DateTime @default(now())
-
-  item              inventory_items @relation(fields: [item_id], references: [id])
-  transactions      inventory_transactions[]
-
-  @@unique([item_id, batch_number])
-}
-
-model inventory_transactions {
-  id               String   @id @default(uuid())
-  item_id          String
-  batch_id         String?
-  transaction_type String   // PURCHASE, SALE, ADJUSTMENT, TRANSFER, EXPIRED
-  quantity         Int
-  reference_type   String?
-  reference_id     String?
-  reason           String?
-  performed_by     String?
-  created_at       DateTime @default(now())
-
-  item             inventory_items    @relation(fields: [item_id], references: [id])
-  batch            inventory_batches? @relation(fields: [batch_id], references: [id])
-}
 
 model suppliers {
-  id              String   @id @default(uuid())
-  supplier_code   String   @unique
-  supplier_name   String
-  contact_person  String?
-  phone           String?
-  email           String?
-  address         String?
-  payment_terms   String?
-  is_active       Boolean  @default(true)
-  created_by      String?
-  created_at      DateTime @default(now())
-  updated_at      DateTime @updatedAt
+  id             String   @id @default(uuid())
+  supplier_code  String   @unique
+  supplier_name  String
+  contact_person String?
+  phone          String?
+  email          String?
+  address        String?
+  npwp           String?
+  payment_terms  String?
+  is_active      Boolean  @default(true)
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
 
   purchase_orders purchase_orders[]
 }
 
 model purchase_orders {
-  id                String   @id @default(uuid())
-  po_number         String   @unique
+  id                String    @id @default(uuid())
+  po_number         String    @unique
   supplier_id       String
-  order_date        DateTime @default(now())
+  order_date        DateTime  @default(now())
   expected_delivery DateTime?
   total_amount      Decimal
-  status            String   @default("DRAFT")
+  status            String    @default("draft")
   submitted_at      DateTime?
   approved_by       String?
   approved_at       DateTime?
@@ -569,11 +553,13 @@ model purchase_orders {
   received_by       String?
   notes             String?
   created_by        String?
-  created_at        DateTime @default(now())
-  updated_at        DateTime @updatedAt
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @updatedAt
 
-  supplier          suppliers @relation(fields: [supplier_id], references: [id])
-  items             purchase_order_items[]
+  suppliers            suppliers              @relation(fields: [supplier_id], references: [id])
+  purchase_order_items purchase_order_items[]
+
+  @@index([supplier_id])
 }
 
 model purchase_order_items {
@@ -586,7 +572,9 @@ model purchase_order_items {
   received_quantity Int?
   created_at        DateTime @default(now())
 
-  purchase_order    purchase_orders @relation(fields: [purchase_order_id], references: [id])
+  purchase_orders purchase_orders @relation(fields: [purchase_order_id], references: [id])
+
+  @@index([purchase_order_id])
 }
 
 // ============================================
@@ -594,128 +582,144 @@ model purchase_order_items {
 // ============================================
 
 model employees {
-  id                String   @id @default(uuid())
-  user_id           String?
-  employee_number   String   @unique
-  nik               String?  @unique
-  full_name         String
-  date_of_birth     DateTime?
-  gender            Gender?
-  address           String?
-  phone             String?
-  email             String?
-  department_id     String?
-  position          String?
-  employment_status String   @default("ACTIVE")
-  join_date         DateTime?
-  end_date          DateTime?
-  base_salary       Decimal?
-  allowances        Decimal?
-  created_by        String?
-  created_at        DateTime @default(now())
-  updated_at        DateTime @updatedAt
+  id              String    @id @default(uuid())
+  user_id         String?
+  employee_code   String    @unique
+  full_name       String
+  nik             String?
+  birth_date      DateTime?
+  gender          String?
+  address         String?
+  phone           String?
+  email           String?
+  department_id   String?
+  position        String?
+  employment_type String?
+  join_date       DateTime?
+  resign_date     DateTime?
+  salary          Decimal?
+  is_active       Boolean   @default(true)
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
 
-  profile           profiles?    @relation(fields: [user_id], references: [user_id])
-  department        departments? @relation(fields: [department_id], references: [id])
-  attendance        attendance[]
-  leave_requests    leave_requests[]
-  payroll           payroll[]
+  profiles        profiles?    @relation(fields: [user_id], references: [user_id])
+  departments     departments? @relation(fields: [department_id], references: [id])
+  attendance      attendance[]
+  leave_requests  leave_requests[]
+  payroll         payroll[]
+
+  @@index([user_id])
+  @@index([department_id])
 }
 
 model attendance {
   id              String   @id @default(uuid())
   employee_id     String
-  attendance_date DateTime @default(now()) @db.Date
+  attendance_date DateTime @db.Date
   check_in        DateTime?
   check_out       DateTime?
-  location_in     String?
-  location_out    String?
-  status          String   @default("PRESENT")
+  status          String   @default("present")
   notes           String?
   created_at      DateTime @default(now())
   updated_at      DateTime @updatedAt
 
-  employee        employees @relation(fields: [employee_id], references: [id])
+  employees employees @relation(fields: [employee_id], references: [id])
 
   @@unique([employee_id, attendance_date])
+  @@index([employee_id])
 }
 
 model leave_requests {
-  id              String   @id @default(uuid())
-  employee_id     String
-  leave_type      String
-  start_date      DateTime
-  end_date        DateTime
-  reason          String?
-  status          String   @default("PENDING")
-  approved_by     String?
-  approved_at     DateTime?
-  approval_notes  String?
-  created_at      DateTime @default(now())
-  updated_at      DateTime @updatedAt
+  id             String    @id @default(uuid())
+  employee_id    String
+  leave_type     String
+  start_date     DateTime
+  end_date       DateTime
+  reason         String?
+  status         String    @default("pending")
+  approved_by    String?
+  approved_at    DateTime?
+  approval_notes String?
+  created_at     DateTime  @default(now())
+  updated_at     DateTime  @updatedAt
 
-  employee        employees @relation(fields: [employee_id], references: [id])
+  employees employees @relation(fields: [employee_id], references: [id])
+
+  @@index([employee_id])
 }
 
 model payroll {
-  id              String   @id @default(uuid())
-  employee_id     String
-  period_month    Int
-  period_year     Int
-  base_salary     Decimal
-  allowances      Decimal  @default(0)
-  deductions      Decimal  @default(0)
-  overtime        Decimal  @default(0)
-  net_salary      Decimal
-  status          String   @default("DRAFT")
-  paid_at         DateTime?
-  created_at      DateTime @default(now())
-  updated_at      DateTime @updatedAt
+  id           String    @id @default(uuid())
+  employee_id  String
+  period_month Int
+  period_year  Int
+  base_salary  Decimal
+  allowances   Decimal   @default(0)
+  deductions   Decimal   @default(0)
+  overtime     Decimal   @default(0)
+  net_salary   Decimal
+  status       String    @default("draft")
+  paid_at      DateTime?
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
 
-  employee        employees @relation(fields: [employee_id], references: [id])
+  employees employees @relation(fields: [employee_id], references: [id])
 
   @@unique([employee_id, period_month, period_year])
+  @@index([employee_id])
 }
 
 // ============================================
-// APPOINTMENTS & SCHEDULING
+// APPOINTMENTS
 // ============================================
 
 model appointments {
-  id                String   @id @default(uuid())
-  patient_id        String
-  doctor_id         String
-  department_id     String?
-  appointment_date  DateTime @db.Date
-  appointment_time  String
-  appointment_type  String   @default("CONSULTATION")
-  status            String   @default("SCHEDULED")
-  chief_complaint   String?
-  notes             String?
-  booking_source    String?
-  reminder_sent     Boolean  @default(false)
-  created_by        String?
-  created_at        DateTime @default(now())
-  updated_at        DateTime @updatedAt
+  id               String   @id @default(uuid())
+  patient_id       String
+  doctor_id        String
+  department_id    String?
+  appointment_date DateTime @db.Date
+  appointment_time String
+  end_time         String?
+  appointment_type String   @default("consultation")
+  status           String   @default("scheduled")
+  chief_complaint  String?
+  notes            String?
+  booking_source   String?
+  reminder_sent    Boolean  @default(false)
+  created_by       String?
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
 
-  patient           patients @relation(fields: [patient_id], references: [id])
-  doctor            doctors  @relation(fields: [doctor_id], references: [id])
+  patients    patients     @relation(fields: [patient_id], references: [id])
+  doctors     doctors      @relation(fields: [doctor_id], references: [id])
+  departments departments? @relation(fields: [department_id], references: [id])
+
+  @@index([patient_id])
+  @@index([doctor_id])
+  @@index([appointment_date])
 }
 
-model doctor_schedules {
-  id              String   @id @default(uuid())
-  doctor_id       String
-  day_of_week     Int      // 0-6 (Sunday-Saturday)
-  start_time      String
-  end_time        String
-  slot_duration   Int      @default(15) // minutes
-  max_patients    Int?
-  is_active       Boolean  @default(true)
-  created_at      DateTime @default(now())
+// ============================================
+// QUEUE MANAGEMENT
+// ============================================
 
-  doctor          doctors  @relation(fields: [doctor_id], references: [id])
+model queue_entries {
+  id            String    @id @default(uuid())
+  visit_id      String
+  department_id String
+  queue_number  Int
+  status        String    @default("waiting")
+  called_at     DateTime?
+  served_at     DateTime?
+  notes         String?
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
 
-  @@unique([doctor_id, day_of_week])
+  visits visits @relation(fields: [visit_id], references: [id])
+
+  @@index([department_id])
+  @@index([visit_id])
 }
 
 // ============================================
@@ -723,18 +727,18 @@ model doctor_schedules {
 // ============================================
 
 model audit_logs {
-  id          String   @id @default(uuid())
-  table_name  String
-  action      String   // INSERT, UPDATE, DELETE
-  record_id   String?
-  user_id     String?
-  old_data    Json?
-  new_data    Json?
-  ip_address  String?
-  user_agent  String?
-  created_at  DateTime @default(now())
+  id         String   @id @default(uuid())
+  user_id    String?
+  table_name String
+  record_id  String?
+  action     String
+  old_data   Json?
+  new_data   Json?
+  ip_address String?
+  user_agent String?
+  created_at DateTime @default(now())
 
-  user        profiles? @relation(fields: [user_id], references: [user_id])
+  user profiles? @relation(fields: [user_id], references: [user_id])
 
   @@index([table_name, created_at])
   @@index([user_id, created_at])
@@ -744,7 +748,24 @@ model system_settings {
   id            String   @id @default(uuid())
   setting_key   String   @unique
   setting_value String?
+  setting_type  String?
   description   String?
+  is_public     Boolean  @default(false)
   created_at    DateTime @default(now())
   updated_at    DateTime @updatedAt
+}
+
+model notifications {
+  id             String    @id @default(uuid())
+  user_id        String
+  title          String
+  message        String?
+  type           String?
+  reference_type String?
+  reference_id   String?
+  is_read        Boolean   @default(false)
+  read_at        DateTime?
+  created_at     DateTime  @default(now())
+
+  @@index([user_id])
 }
