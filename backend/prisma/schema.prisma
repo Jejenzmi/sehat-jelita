@@ -59,6 +59,29 @@ enum ClaimStatus {
   paid
 }
 
+enum BloodProductType {
+  whole_blood
+  packed_red_cells
+  fresh_frozen_plasma
+  platelets
+  cryoprecipitate
+}
+
+enum BloodStatus {
+  available
+  reserved
+  issued
+  expired
+  discarded
+  quarantine
+}
+
+enum CrossmatchResult {
+  compatible
+  incompatible
+  pending
+}
+
 // ============================================
 // AUTH & USERS
 // ============================================
@@ -240,6 +263,22 @@ model patients {
   medical_records medical_records[]
   prescriptions   prescriptions[]
   lab_orders      lab_orders[]
+  radiology_orders     radiology_orders[]
+  surgeries            surgeries[]
+  transfusion_requests transfusion_requests[]
+  crossmatch_tests     crossmatch_tests[]
+  inpatient_admissions inpatient_admissions[]
+  emergency_visits     emergency_visits[]
+  icu_admissions       icu_admissions[]
+  dialysis_schedules   dialysis_schedules[]
+  mcu_registrations    mcu_registrations[]
+  nutrition_assessments nutrition_assessments[]
+  patient_allergies     patient_allergies[]
+  nutrition_orders      nutrition_orders[]
+  meal_plans            meal_plans[]
+  rehabilitation_cases  rehabilitation_cases[]
+  mortuary_cases        mortuary_cases[]
+  visum_reports         visum_reports[]
 }
 
 // ============================================
@@ -806,7 +845,7 @@ model chat_participants {
 model chat_messages {
   id           String   @id @default(uuid())
   room_id      String
-  sender_id    String
+  sender_id    String?
   content      String
   message_type String   @default("text")
   created_at   DateTime @default(now())
@@ -816,4 +855,1164 @@ model chat_messages {
 
   @@index([room_id])
   @@index([sender_id])
+}
+
+// ============================================
+// RADIOLOGY
+// ============================================
+
+model radiology_orders {
+  id           String    @id @default(uuid())
+  order_number String    @unique
+  patient_id   String
+  visit_id     String?
+  doctor_id    String?
+  modality     String?
+  body_part    String?
+  clinical_info String?
+  order_date   DateTime  @default(now())
+  status       String    @default("pending")
+  priority     String    @default("normal")
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+
+  patients          patients           @relation(fields: [patient_id], references: [id])
+  radiology_results radiology_results?
+
+  @@index([patient_id])
+  @@index([visit_id])
+}
+
+model radiology_results {
+  id              String    @id @default(uuid())
+  order_id        String    @unique
+  findings        String?
+  impression      String?
+  recommendation  String?
+  radiologist_id  String?
+  report_date     DateTime?
+  image_urls      String[]
+  created_at      DateTime  @default(now())
+
+  radiology_orders radiology_orders @relation(fields: [order_id], references: [id])
+
+  @@index([order_id])
+}
+
+// ============================================
+// SURGERY
+// ============================================
+
+model surgeries {
+  id                    String    @id @default(uuid())
+  surgery_number        String    @unique
+  patient_id            String
+  visit_id              String?
+  operating_room_id     String?
+  scheduled_date        DateTime
+  scheduled_time        String?
+  actual_start_time     DateTime?
+  actual_end_time       DateTime?
+  procedure_name        String
+  procedure_code        String?
+  surgery_type          String?
+  surgeon_id            String?
+  anesthesiologist_id   String?
+  anesthesia_type       String?
+  pre_diagnosis         String?
+  post_diagnosis        String?
+  operative_findings    String?
+  procedure_notes       String?
+  complications         String?
+  blood_loss            Int?
+  status                String    @default("scheduled")
+  priority              String    @default("elective")
+  created_at            DateTime  @default(now())
+  updated_at            DateTime  @updatedAt
+
+  patients patients @relation(fields: [patient_id], references: [id])
+  anesthesia_records anesthesia_records?
+  operating_rooms    operating_rooms?    @relation(fields: [operating_room_id], references: [id])
+
+  @@index([patient_id])
+  @@index([visit_id])
+  @@index([scheduled_date])
+}
+
+// ============================================
+// BLOOD BANK
+// ============================================
+
+model blood_inventory {
+  id                       String            @id @default(uuid())
+  bag_number               String            @unique
+  blood_type               BloodType
+  product_type             BloodProductType
+  volume                   Int?
+  collection_date          DateTime
+  expiry_date              DateTime
+  donor_id                 String?
+  status                   BloodStatus       @default(available)
+  storage_location         String?
+  screening_date           DateTime?
+  hiv_status               String?
+  hbsag_status             String?
+  hcv_status               String?
+  vdrl_status              String?
+  malaria_status           String?
+  screened_by              String?
+  reserved_for_patient_id  String?
+  issued_date              DateTime?
+  issued_by                String?
+  issued_to_department     String?
+  source_blood_bank        String?
+  notes                    String?
+  created_at               DateTime          @default(now())
+  updated_at               DateTime          @updatedAt
+
+  crossmatch_tests crossmatch_tests[]
+
+  @@index([blood_type])
+  @@index([status])
+  @@index([expiry_date])
+}
+
+model transfusion_requests {
+  id                   String    @id @default(uuid())
+  request_number       String    @unique
+  patient_id           String
+  visit_id             String?
+  requesting_doctor_id String?
+  blood_type           BloodType
+  product_type         BloodProductType
+  units_requested      Int
+  units_issued         Int       @default(0)
+  urgency              String    @default("routine")
+  indication           String?
+  status               String    @default("pending")
+  request_date         DateTime  @default(now())
+  approved_by          String?
+  approved_date        DateTime?
+  notes                String?
+  created_at           DateTime  @default(now())
+  updated_at           DateTime  @updatedAt
+
+  patients         patients           @relation(fields: [patient_id], references: [id])
+  crossmatch_tests crossmatch_tests[]
+
+  @@index([patient_id])
+  @@index([status])
+}
+
+model crossmatch_tests {
+  id              String            @id @default(uuid())
+  request_id      String?
+  patient_id      String
+  blood_bag_id    String
+  test_date       DateTime          @default(now())
+  major_crossmatch CrossmatchResult?
+  minor_crossmatch CrossmatchResult?
+  is_compatible   Boolean?
+  antibody_screen String?
+  dat_result      String?
+  iat_result      String?
+  tested_by       String?
+  valid_until     DateTime?
+  notes           String?
+  created_at      DateTime          @default(now())
+
+  patients             patients              @relation(fields: [patient_id], references: [id])
+  blood_inventory      blood_inventory        @relation(fields: [blood_bag_id], references: [id])
+  transfusion_requests transfusion_requests? @relation(fields: [request_id], references: [id])
+
+  @@index([patient_id])
+  @@index([blood_bag_id])
+}
+
+// ============================================
+// INPATIENT
+// ============================================
+
+model inpatient_admissions {
+  id                    String    @id @default(uuid())
+  patient_id            String
+  visit_id              String?
+  room_id               String?
+  bed_id                String?
+  admission_date        DateTime  @default(now())
+  discharge_date        DateTime?
+  admission_type        String?
+  attending_doctor_id   String?
+  admission_diagnosis   String?
+  discharge_diagnosis   String?
+  payment_type          String?
+  insurance_info        Json?
+  status                String    @default("ADMITTED")
+  notes                 String?
+  admitted_by           String?
+  discharged_by         String?
+  created_at            DateTime  @default(now())
+  updated_at            DateTime  @updatedAt
+
+  patients       patients         @relation(fields: [patient_id], references: [id])
+  nursing_notes  nursing_notes[]
+  bed_transfers  bed_transfers[]
+
+  @@index([patient_id])
+  @@index([visit_id])
+  @@index([status])
+}
+
+model nursing_notes {
+  id                    String    @id @default(uuid())
+  admission_id          String
+  nurse_id              String?
+  note_type             String?
+  content               String
+  vital_signs           Json?
+  pain_score            Int?
+  fall_risk_score       Int?
+  pressure_ulcer_risk   Int?
+  recorded_at           DateTime  @default(now())
+  created_at            DateTime  @default(now())
+
+  inpatient_admissions inpatient_admissions @relation(fields: [admission_id], references: [id])
+
+  @@index([admission_id])
+}
+
+model bed_transfers {
+  id              String    @id @default(uuid())
+  admission_id    String
+  from_bed_id     String?
+  to_bed_id       String?
+  transfer_reason String?
+  transferred_by  String?
+  transferred_at  DateTime  @default(now())
+  created_at      DateTime  @default(now())
+
+  inpatient_admissions inpatient_admissions @relation(fields: [admission_id], references: [id])
+
+  @@index([admission_id])
+}
+
+// ============================================
+// EMERGENCY
+// ============================================
+
+model emergency_visits {
+  id                   String    @id @default(uuid())
+  visit_id             String?
+  patient_id           String
+  arrival_time         DateTime  @default(now())
+  arrival_mode         String?
+  chief_complaint      String?
+  triage_level         String?
+  triage_time          DateTime?
+  triaged_by           String?
+  vital_signs          Json?
+  allergies            String?
+  current_medications  String?
+  accompanying_person  Json?
+  diagnosis            String?
+  discharge_medications String?
+  disposition          String?
+  disposition_time     DateTime?
+  status               String    @default("TRIAGED")
+  notes                String?
+  created_at           DateTime  @default(now())
+  updated_at           DateTime  @updatedAt
+
+  patients              patients               @relation(fields: [patient_id], references: [id])
+  emergency_treatments  emergency_treatments[]
+
+  @@index([patient_id])
+  @@index([visit_id])
+  @@index([status])
+}
+
+model emergency_treatments {
+  id                  String    @id @default(uuid())
+  emergency_visit_id  String
+  treatment_type      String?
+  description         String?
+  medications         Json?
+  procedures          Json?
+  performed_by        String?
+  performed_at        DateTime  @default(now())
+  created_at          DateTime  @default(now())
+
+  emergency_visits emergency_visits @relation(fields: [emergency_visit_id], references: [id])
+
+  @@index([emergency_visit_id])
+}
+
+// ============================================
+// ICU
+// ============================================
+
+model icu_admissions {
+  id                      String    @id @default(uuid())
+  patient_id              String
+  visit_id                String?
+  bed_id                  String?
+  admission_date          DateTime  @default(now())
+  discharge_date          DateTime?
+  admission_reason        String?
+  admission_source        String?
+  diagnosis_on_admission  String?
+  apache_score            Int?
+  sofa_score              Int?
+  ventilator_required     Boolean   @default(false)
+  isolation_required      Boolean   @default(false)
+  attending_physician_id  String?
+  status                  String    @default("ADMITTED")
+  admitted_by             String?
+  created_at              DateTime  @default(now())
+  updated_at              DateTime  @updatedAt
+
+  patients               patients                 @relation(fields: [patient_id], references: [id])
+  icu_vital_signs        icu_vital_signs[]
+  icu_intake_output      icu_intake_output[]
+  icu_ventilator_records icu_ventilator_records[]
+
+  @@index([patient_id])
+  @@index([status])
+}
+
+model icu_vital_signs {
+  id                    String    @id @default(uuid())
+  admission_id          String
+  recorded_at           DateTime  @default(now())
+  recorded_by           String?
+  heart_rate            Int?
+  systolic_bp           Int?
+  diastolic_bp          Int?
+  mean_arterial_pressure Int?
+  respiratory_rate      Int?
+  temperature           Decimal?
+  spo2                  Decimal?
+  fio2                  Decimal?
+  gcs_eye               Int?
+  gcs_verbal            Int?
+  gcs_motor             Int?
+  gcs_total             Int?
+  pupil_left            String?
+  pupil_right           String?
+  cvp                   Int?
+  urine_output          Int?
+  notes                 String?
+  created_at            DateTime  @default(now())
+
+  icu_admissions icu_admissions @relation(fields: [admission_id], references: [id])
+
+  @@index([admission_id])
+  @@index([recorded_at])
+}
+
+model icu_intake_output {
+  id           String    @id @default(uuid())
+  admission_id String
+  recorded_at  DateTime  @default(now())
+  recorded_by  String?
+  type         String
+  category     String?
+  amount       Decimal?
+  route        String?
+  notes        String?
+  created_at   DateTime  @default(now())
+
+  icu_admissions icu_admissions @relation(fields: [admission_id], references: [id])
+
+  @@index([admission_id])
+}
+
+model icu_ventilator_records {
+  id                     String    @id @default(uuid())
+  admission_id           String
+  recorded_at            DateTime  @default(now())
+  recorded_by            String?
+  mode                   String?
+  fio2                   Decimal?
+  peep                   Decimal?
+  tidal_volume           Int?
+  respiratory_rate_set   Int?
+  respiratory_rate_actual Int?
+  pip                    Decimal?
+  plateau_pressure       Decimal?
+  ie_ratio               String?
+  minute_volume          Decimal?
+  notes                  String?
+  created_at             DateTime  @default(now())
+
+  icu_admissions icu_admissions @relation(fields: [admission_id], references: [id])
+
+  @@index([admission_id])
+}
+
+// ============================================
+// SURGERY (SUPPLEMENTAL)
+// ============================================
+
+model operating_rooms {
+  id         String    @id @default(uuid())
+  room_code  String    @unique
+  room_name  String
+  room_type  String?
+  status     String    @default("available")
+  floor      Int?
+  capacity   Int?
+  equipment  Json?
+  notes      String?
+  is_active  Boolean   @default(true)
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+
+  surgeries surgeries[]
+
+  @@index([status])
+}
+
+model anesthesia_records {
+  id                        String    @id @default(uuid())
+  surgery_id                String    @unique
+  anesthesiologist_name     String?
+  anesthesiologist_id       String?
+  pre_anesthesia_assessment String?
+  airway_assessment         String?
+  npo_status                Boolean?
+  premedication             String?
+  induction_agents          String?
+  maintenance_agents        String?
+  airway_device             String?
+  ett_size                  String?
+  intubation_grade          String?
+  iv_fluids                 Json?
+  blood_products            Json?
+  vital_signs_timeline      Json?
+  estimated_blood_loss      Int?
+  urine_output              Int?
+  emergence_time            DateTime?
+  extubation_time           DateTime?
+  complications             String?
+  post_anesthesia_score     Int?
+  notes                     String?
+  created_at                DateTime  @default(now())
+  updated_at                DateTime  @updatedAt
+
+  surgeries surgeries @relation(fields: [surgery_id], references: [id])
+
+  @@index([surgery_id])
+}
+
+// ============================================
+// INVENTORY
+// ============================================
+
+model inventory_items {
+  id               String    @id @default(uuid())
+  item_code        String    @unique
+  item_name        String
+  category         String?
+  unit             String?
+  current_stock    Int       @default(0)
+  minimum_stock    Int       @default(0)
+  maximum_stock    Int?
+  reorder_point    Int?
+  unit_price       Decimal?
+  storage_location String?
+  is_active        Boolean   @default(true)
+  notes            String?
+  created_at       DateTime  @default(now())
+  updated_at       DateTime  @updatedAt
+
+  inventory_batches inventory_batches[]
+
+  @@index([category])
+}
+
+model inventory_batches {
+  id                 String    @id @default(uuid())
+  item_id            String
+  batch_number       String?
+  expiry_date        DateTime?
+  initial_quantity   Int
+  remaining_quantity Int
+  purchase_order_id  String?
+  received_date      DateTime  @default(now())
+  notes              String?
+  created_at         DateTime  @default(now())
+
+  inventory_items inventory_items @relation(fields: [item_id], references: [id])
+
+  @@index([item_id])
+  @@index([expiry_date])
+}
+
+model purchase_requests {
+  id               String    @id @default(uuid())
+  pr_number        String    @unique
+  requested_by     String?
+  department_id    String?
+  request_date     DateTime  @default(now())
+  needed_by        DateTime?
+  priority         String    @default("NORMAL")
+  status           String    @default("DRAFT")
+  total_estimated  Decimal?
+  notes            String?
+  approved_by      String?
+  approved_date    DateTime?
+  created_at       DateTime  @default(now())
+  updated_at       DateTime  @updatedAt
+
+  @@index([status])
+}
+
+// ============================================
+// ACCOUNTING
+// ============================================
+
+model chart_of_accounts {
+  id               String    @id @default(uuid())
+  account_code     String    @unique
+  account_name     String
+  account_type     String
+  account_category String?
+  parent_id        String?
+  normal_balance   String    @default("DEBIT")
+  is_active        Boolean   @default(true)
+  description      String?
+  created_at       DateTime  @default(now())
+  updated_at       DateTime  @updatedAt
+
+  parent           chart_of_accounts?  @relation("AccountHierarchy", fields: [parent_id], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  children         chart_of_accounts[] @relation("AccountHierarchy")
+  journal_entry_lines journal_entry_lines[]
+
+  @@index([account_type])
+}
+
+model journal_entries {
+  id             String    @id @default(uuid())
+  entry_number   String    @unique
+  entry_date     DateTime
+  description    String
+  reference_type String?
+  reference_id   String?
+  total_debit    Decimal   @default(0)
+  total_credit   Decimal   @default(0)
+  status         String    @default("DRAFT")
+  created_by     String?
+  approved_by    String?
+  approved_at    DateTime?
+  posted_at      DateTime?
+  notes          String?
+  created_at     DateTime  @default(now())
+  updated_at     DateTime  @updatedAt
+
+  journal_entry_lines journal_entry_lines[]
+
+  @@index([entry_date])
+  @@index([status])
+}
+
+model journal_entry_lines {
+  id           String    @id @default(uuid())
+  entry_id     String
+  line_number  Int
+  account_id   String
+  description  String?
+  debit        Decimal   @default(0)
+  credit       Decimal   @default(0)
+  created_at   DateTime  @default(now())
+
+  journal_entries    journal_entries    @relation(fields: [entry_id], references: [id], onDelete: Cascade)
+  chart_of_accounts  chart_of_accounts  @relation(fields: [account_id], references: [id], onUpdate: Restrict)
+
+  @@index([entry_id])
+  @@index([account_id])
+}
+
+// ============================================
+// DIALYSIS
+// ============================================
+
+model dialysis_machines {
+  id               String    @id @default(uuid())
+  machine_code     String    @unique
+  machine_name     String
+  manufacturer     String?
+  model_number     String?
+  serial_number    String?
+  status           String    @default("available")
+  last_maintenance DateTime?
+  next_maintenance DateTime?
+  is_active        Boolean   @default(true)
+  notes            String?
+  created_at       DateTime  @default(now())
+  updated_at       DateTime  @updatedAt
+
+  dialysis_schedules dialysis_schedules[]
+
+  @@index([status])
+}
+
+model dialysis_schedules {
+  id               String    @id @default(uuid())
+  patient_id       String
+  machine_id       String?
+  scheduled_date   DateTime
+  scheduled_time   String?
+  duration_minutes Int       @default(240)
+  frequency        String?
+  dry_weight       Decimal?
+  vascular_access  String?
+  status           String    @default("scheduled")
+  notes            String?
+  created_by       String?
+  created_at       DateTime  @default(now())
+  updated_at       DateTime  @updatedAt
+
+  patients          patients           @relation(fields: [patient_id], references: [id])
+  dialysis_machines dialysis_machines? @relation(fields: [machine_id], references: [id])
+  dialysis_sessions dialysis_sessions[]
+
+  @@index([patient_id])
+  @@index([scheduled_date])
+}
+
+model dialysis_sessions {
+  id                  String    @id @default(uuid())
+  schedule_id         String?
+  start_time          DateTime  @default(now())
+  end_time            DateTime?
+  pre_weight          Decimal?
+  post_weight         Decimal?
+  pre_bp              String?
+  post_bp             String?
+  pre_pulse           Int?
+  post_pulse          Int?
+  pre_temp            Decimal?
+  post_temp           Decimal?
+  access_condition    String?
+  dialysate_solution  String?
+  heparin_dose        Int?
+  blood_flow_rate     Int?
+  dialysate_flow_rate Int?
+  uf_goal             Decimal?
+  uf_achieved         Decimal?
+  kt_v                Decimal?
+  complications       String?
+  status              String    @default("ongoing")
+  notes               String?
+  nurse_id            String?
+  created_at          DateTime  @default(now())
+  updated_at          DateTime  @updatedAt
+
+  dialysis_schedules dialysis_schedules? @relation(fields: [schedule_id], references: [id])
+  dialysis_vitals    dialysis_vitals[]
+
+  @@index([schedule_id])
+}
+
+model dialysis_vitals {
+  id              String    @id @default(uuid())
+  session_id      String
+  recorded_at     DateTime  @default(now())
+  bp              String?
+  pulse           Int?
+  temp            Decimal?
+  blood_flow_rate Int?
+  venous_pressure Int?
+  tmp             Int?
+  uf_rate         Decimal?
+  notes           String?
+  recorded_by     String?
+  created_at      DateTime  @default(now())
+
+  dialysis_sessions dialysis_sessions @relation(fields: [session_id], references: [id])
+
+  @@index([session_id])
+}
+
+// ============================================
+// MCU (MEDICAL CHECK UP)
+// ============================================
+
+model corporate_clients {
+  id                  String    @id @default(uuid())
+  company_code        String    @unique
+  company_name        String
+  address             String?
+  phone               String?
+  email               String?
+  pic_name            String?
+  pic_phone           String?
+  discount_percentage Decimal   @default(0)
+  contract_start      DateTime?
+  contract_end        DateTime?
+  payment_terms       String?
+  is_active           Boolean   @default(true)
+  created_at          DateTime  @default(now())
+  updated_at          DateTime  @updatedAt
+
+  mcu_registrations mcu_registrations[]
+}
+
+model mcu_packages {
+  id           String    @id @default(uuid())
+  package_code String    @unique
+  package_name String
+  description  String?
+  base_price   Decimal?
+  components   Json?
+  is_active    Boolean   @default(true)
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+
+  mcu_registrations mcu_registrations[]
+}
+
+model mcu_registrations {
+  id                  String    @id @default(uuid())
+  registration_number String?   @unique
+  patient_id          String
+  package_id          String?
+  corporate_client_id String?
+  registration_date   DateTime  @default(now())
+  total_price         Decimal?
+  status              String    @default("registered")
+  notes               String?
+  created_by          String?
+  created_at          DateTime  @default(now())
+  updated_at          DateTime  @updatedAt
+
+  patients          patients           @relation(fields: [patient_id], references: [id])
+  mcu_packages      mcu_packages?      @relation(fields: [package_id], references: [id])
+  corporate_clients corporate_clients? @relation(fields: [corporate_client_id], references: [id])
+  mcu_results       mcu_results[]
+
+  @@index([patient_id])
+  @@index([status])
+}
+
+model mcu_results {
+  id               String    @id @default(uuid())
+  registration_id  String
+  component_name   String
+  component_type   String?
+  result_value     String?
+  unit             String?
+  reference_range  String?
+  status           String?
+  examined_by      String?
+  examined_at      DateTime?
+  notes            String?
+  created_at       DateTime  @default(now())
+
+  mcu_registrations mcu_registrations @relation(fields: [registration_id], references: [id])
+
+  @@index([registration_id])
+}
+
+// ============================================
+// NUTRITION
+// ============================================
+
+model nutrition_assessments {
+  id                   String    @id @default(uuid())
+  patient_id           String
+  admission_id         String?
+  assessment_date      DateTime  @default(now())
+  weight               Decimal?
+  height               Decimal?
+  bmi                  Decimal?
+  nutrition_risk_score Int?
+  assessment_type      String?
+  findings             String?
+  recommendations      String?
+  assessed_by          String?
+  created_at           DateTime  @default(now())
+
+  patients patients @relation(fields: [patient_id], references: [id])
+
+  @@index([patient_id])
+}
+
+model patient_allergies {
+  id            String    @id @default(uuid())
+  patient_id    String
+  allergen      String
+  allergen_type String?
+  severity      String?
+  reaction      String?
+  reported_date DateTime?
+  noted_by      String?
+  created_at    DateTime  @default(now())
+
+  patients patients @relation(fields: [patient_id], references: [id])
+
+  @@index([patient_id])
+}
+
+model nutrition_orders {
+  id                   String    @id @default(uuid())
+  patient_id           String
+  admission_id         String?
+  diet_type            String?
+  diet_description     String?
+  caloric_requirement  Int?
+  protein_requirement  Decimal?
+  restrictions         String?
+  allergies            String?
+  texture_modification String?
+  fluid_restriction    Boolean   @default(false)
+  special_instructions String?
+  status               String    @default("ACTIVE")
+  ordered_by           String?
+  created_at           DateTime  @default(now())
+  updated_at           DateTime  @updatedAt
+
+  patients   patients    @relation(fields: [patient_id], references: [id])
+  meal_plans meal_plans[]
+
+  @@index([patient_id])
+  @@index([status])
+}
+
+model meal_plans {
+  id                   String    @id @default(uuid())
+  order_id             String?
+  patient_id           String
+  meal_date            DateTime
+  meal_type            String?
+  menu_description     String?
+  calories             Int?
+  protein              Decimal?
+  carbohydrates        Decimal?
+  fat                  Decimal?
+  fiber                Decimal?
+  served_at            DateTime?
+  consumed_percentage  Int?
+  notes                String?
+  prepared_by          String?
+  created_at           DateTime  @default(now())
+
+  patients         patients          @relation(fields: [patient_id], references: [id])
+  nutrition_orders nutrition_orders? @relation(fields: [order_id], references: [id])
+
+  @@index([patient_id])
+  @@index([meal_date])
+}
+
+// ============================================
+// REHABILITATION
+// ============================================
+
+model therapy_types {
+  id               String    @id @default(uuid())
+  type_code        String    @unique
+  type_name        String
+  category         String?
+  description      String?
+  default_duration Int       @default(60)
+  is_active        Boolean   @default(true)
+  created_at       DateTime  @default(now())
+}
+
+model rehabilitation_cases {
+  id                  String    @id @default(uuid())
+  case_number         String    @unique
+  patient_id          String
+  visit_id            String?
+  referring_doctor_id String?
+  diagnosis           String?
+  therapy_type        String?
+  goals               String?
+  estimated_sessions  Int?
+  frequency           String?
+  status              String    @default("ACTIVE")
+  notes               String?
+  created_by          String?
+  created_at          DateTime  @default(now())
+  updated_at          DateTime  @updatedAt
+
+  patients                  patients                    @relation(fields: [patient_id], references: [id])
+  rehabilitation_sessions   rehabilitation_sessions[]
+
+  @@index([patient_id])
+}
+
+model rehabilitation_sessions {
+  id                String    @id @default(uuid())
+  case_id           String
+  therapist_id      String?
+  scheduled_date    DateTime
+  scheduled_time    String?
+  actual_start      DateTime?
+  actual_end        DateTime?
+  duration_minutes  Int?
+  session_type      String?
+  interventions     Json?
+  patient_response  String?
+  functional_status String?
+  home_program      String?
+  status            String    @default("SCHEDULED")
+  notes             String?
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @updatedAt
+
+  rehabilitation_cases rehabilitation_cases @relation(fields: [case_id], references: [id])
+
+  @@index([case_id])
+  @@index([scheduled_date])
+}
+
+// ============================================
+// FORENSIC
+// ============================================
+
+model mortuary_cases {
+  id                         String    @id @default(uuid())
+  case_number                String    @unique
+  patient_id                 String?
+  case_type                  String?
+  admission_date             DateTime  @default(now())
+  time_of_death              DateTime?
+  place_of_death             String?
+  cause_of_death_preliminary String?
+  manner_of_death            String?
+  police_report_number       String?
+  informant_name             String?
+  informant_relation         String?
+  informant_phone            String?
+  refrigerator_number        String?
+  release_date               DateTime?
+  released_to                String?
+  status                     String    @default("admitted")
+  notes                      String?
+  admitted_by                String?
+  created_at                 DateTime  @default(now())
+  updated_at                 DateTime  @updatedAt
+
+  patients          patients?           @relation(fields: [patient_id], references: [id])
+  autopsy_records   autopsy_records[]
+  death_certificates death_certificates[]
+
+  @@index([status])
+}
+
+model autopsy_records {
+  id                   String    @id @default(uuid())
+  autopsy_number       String    @unique
+  case_id              String
+  autopsy_type         String?
+  request_date         DateTime?
+  requested_by         String?
+  pathologist_id       String?
+  pathologist_name     String?
+  assistant_names      String?
+  start_time           DateTime?
+  end_time             DateTime?
+  external_examination String?
+  internal_examination String?
+  organ_weights        Json?
+  histology_samples    Json?
+  toxicology_requested Boolean   @default(false)
+  cause_of_death       String?
+  manner_of_death      String?
+  summary              String?
+  status               String    @default("requested")
+  notes                String?
+  created_at           DateTime  @default(now())
+  updated_at           DateTime  @updatedAt
+
+  mortuary_cases mortuary_cases @relation(fields: [case_id], references: [id])
+
+  @@index([case_id])
+}
+
+model death_certificates {
+  id                       String    @id @default(uuid())
+  certificate_number       String    @unique
+  case_id                  String
+  patient_id               String?
+  death_date               DateTime
+  death_time               String?
+  place_of_death           String?
+  cause_of_death_1a        String?
+  cause_of_death_1b        String?
+  cause_of_death_1c        String?
+  contributing_conditions  String?
+  manner_of_death          String?
+  certifying_doctor_id     String?
+  certifying_doctor_name   String?
+  certificate_date         DateTime  @default(now())
+  issued_to                String?
+  status                   String    @default("draft")
+  notes                    String?
+  created_at               DateTime  @default(now())
+  updated_at               DateTime  @updatedAt
+
+  mortuary_cases mortuary_cases @relation(fields: [case_id], references: [id])
+
+  @@index([case_id])
+}
+
+model visum_reports {
+  id                    String    @id @default(uuid())
+  visum_number          String    @unique
+  patient_id            String?
+  visum_type            String?
+  police_request_number String?
+  police_request_date   DateTime?
+  requesting_unit       String?
+  case_description      String?
+  examination_date      DateTime?
+  physical_findings     String?
+  injuries              Json?
+  conclusions           String?
+  opinion               String?
+  status                String    @default("draft")
+  examining_doctor_id   String?
+  notes                 String?
+  created_at            DateTime  @default(now())
+  updated_at            DateTime  @updatedAt
+
+  patients patients? @relation(fields: [patient_id], references: [id])
+
+  @@index([status])
+}
+
+// ============================================
+// EDUCATION (TEACHING HOSPITAL)
+// ============================================
+
+model medical_trainees {
+  id                    String    @id @default(uuid())
+  trainee_code          String    @unique
+  full_name             String
+  trainee_type          String?
+  institution           String?
+  program               String?
+  start_date            DateTime?
+  end_date              DateTime?
+  primary_supervisor_id String?
+  email                 String?
+  phone                 String?
+  address               String?
+  status                String    @default("active")
+  notes                 String?
+  created_by            String?
+  created_at            DateTime  @default(now())
+  updated_at            DateTime  @updatedAt
+
+  clinical_rotations    clinical_rotations[]
+  activity_registrations activity_registrations[]
+}
+
+model clinical_rotations {
+  id                String    @id @default(uuid())
+  trainee_id        String
+  department_id     String?
+  supervisor_id     String?
+  start_date        DateTime
+  end_date          DateTime?
+  rotation_type     String?
+  objectives        String?
+  performance_score Decimal?
+  evaluation_notes  String?
+  status            String    @default("scheduled")
+  notes             String?
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @updatedAt
+
+  medical_trainees medical_trainees @relation(fields: [trainee_id], references: [id])
+
+  @@index([trainee_id])
+}
+
+model academic_activities {
+  id                String    @id @default(uuid())
+  activity_code     String    @unique
+  activity_type     String?
+  title             String
+  description       String?
+  activity_date     DateTime?
+  start_time        String?
+  end_time          String?
+  location          String?
+  department_id     String?
+  speaker_names     String?
+  max_participants  Int?
+  registered_count  Int       @default(0)
+  skp_points        Decimal?
+  status            String    @default("scheduled")
+  notes             String?
+  organizer_id      String?
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @updatedAt
+
+  activity_registrations activity_registrations[]
+}
+
+model activity_registrations {
+  id                String    @id @default(uuid())
+  activity_id       String
+  trainee_id        String?
+  employee_id       String?
+  registration_date DateTime  @default(now())
+  attendance_status String    @default("registered")
+  certificate_issued Boolean  @default(false)
+  notes             String?
+  created_at        DateTime  @default(now())
+
+  academic_activities academic_activities @relation(fields: [activity_id], references: [id])
+  medical_trainees    medical_trainees?   @relation(fields: [trainee_id], references: [id])
+
+  @@index([activity_id])
+}
+
+model research_projects {
+  id                      String    @id @default(uuid())
+  project_code            String    @unique
+  title                   String
+  principal_investigator  String?
+  co_investigators        Json?
+  department_id           String?
+  start_date              DateTime?
+  end_date                DateTime?
+  funding_source          String?
+  budget                  Decimal?
+  ethics_approval_number  String?
+  ethics_approval_date    DateTime?
+  abstract                String?
+  status                  String    @default("proposed")
+  publication_title       String?
+  publication_date        DateTime?
+  notes                   String?
+  created_at              DateTime  @default(now())
+  updated_at              DateTime  @updatedAt
+}
+
+// ============================================
+// HR (SUPPLEMENTAL)
+// ============================================
+
+model trainings {
+  id             String    @id @default(uuid())
+  training_code  String?   @unique
+  training_name  String
+  training_type  String?
+  provider       String?
+  start_date     DateTime?
+  end_date       DateTime?
+  location       String?
+  max_participants Int?
+  cost           Decimal?
+  description    String?
+  status         String    @default("planned")
+  created_by     String?
+  created_at     DateTime  @default(now())
+  updated_at     DateTime  @updatedAt
 }

@@ -869,6 +869,326 @@ INSERT INTO system_settings (setting_key, setting_value, setting_type, descripti
 ('satusehat_enabled', 'true', 'boolean', 'Aktifkan integrasi SATU SEHAT');
 
 -- ============================================
+-- INPATIENT
+-- ============================================
+
+CREATE TABLE inpatient_admissions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    patient_id UUID REFERENCES patients(id) NOT NULL,
+    visit_id UUID REFERENCES visits(id),
+    room_id UUID REFERENCES rooms(id),
+    bed_id UUID REFERENCES beds(id),
+    admission_date TIMESTAMPTZ DEFAULT NOW(),
+    discharge_date TIMESTAMPTZ,
+    admission_type VARCHAR(30),
+    attending_doctor_id UUID REFERENCES doctors(id),
+    admission_diagnosis TEXT,
+    discharge_diagnosis TEXT,
+    payment_type VARCHAR(30),
+    insurance_info JSONB,
+    status VARCHAR(20) DEFAULT 'ADMITTED',
+    notes TEXT,
+    admitted_by UUID,
+    discharged_by UUID,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE nursing_notes (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    admission_id UUID REFERENCES inpatient_admissions(id) NOT NULL,
+    nurse_id UUID,
+    note_type VARCHAR(30),
+    content TEXT NOT NULL,
+    vital_signs JSONB,
+    pain_score INTEGER,
+    fall_risk_score INTEGER,
+    pressure_ulcer_risk INTEGER,
+    recorded_at TIMESTAMPTZ DEFAULT NOW(),
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE bed_transfers (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    admission_id UUID REFERENCES inpatient_admissions(id) NOT NULL,
+    from_bed_id UUID REFERENCES beds(id),
+    to_bed_id UUID REFERENCES beds(id),
+    transfer_reason TEXT,
+    transferred_by UUID,
+    transferred_at TIMESTAMPTZ DEFAULT NOW(),
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ============================================
+-- EMERGENCY
+-- ============================================
+
+CREATE TABLE emergency_visits (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    visit_id UUID REFERENCES visits(id),
+    patient_id UUID REFERENCES patients(id) NOT NULL,
+    arrival_time TIMESTAMPTZ DEFAULT NOW(),
+    arrival_mode VARCHAR(30),
+    chief_complaint TEXT,
+    triage_level VARCHAR(30),
+    triage_time TIMESTAMPTZ,
+    triaged_by UUID,
+    vital_signs JSONB,
+    allergies TEXT,
+    current_medications TEXT,
+    accompanying_person JSONB,
+    diagnosis TEXT,
+    discharge_medications TEXT,
+    disposition VARCHAR(30),
+    disposition_time TIMESTAMPTZ,
+    status VARCHAR(20) DEFAULT 'TRIAGED',
+    notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE emergency_treatments (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    emergency_visit_id UUID REFERENCES emergency_visits(id) NOT NULL,
+    treatment_type VARCHAR(50),
+    description TEXT,
+    medications JSONB,
+    procedures JSONB,
+    performed_by UUID,
+    performed_at TIMESTAMPTZ DEFAULT NOW(),
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ============================================
+-- ICU
+-- ============================================
+
+CREATE TABLE icu_admissions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    patient_id UUID REFERENCES patients(id) NOT NULL,
+    visit_id UUID REFERENCES visits(id),
+    bed_id UUID REFERENCES beds(id),
+    admission_date TIMESTAMPTZ DEFAULT NOW(),
+    discharge_date TIMESTAMPTZ,
+    admission_reason TEXT,
+    admission_source VARCHAR(30),
+    diagnosis_on_admission TEXT,
+    apache_score INTEGER,
+    sofa_score INTEGER,
+    ventilator_required BOOLEAN DEFAULT false,
+    isolation_required BOOLEAN DEFAULT false,
+    attending_physician_id UUID REFERENCES doctors(id),
+    status VARCHAR(20) DEFAULT 'ADMITTED',
+    admitted_by UUID,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE icu_vital_signs (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    admission_id UUID REFERENCES icu_admissions(id) NOT NULL,
+    recorded_at TIMESTAMPTZ DEFAULT NOW(),
+    recorded_by UUID,
+    heart_rate INTEGER,
+    systolic_bp INTEGER,
+    diastolic_bp INTEGER,
+    mean_arterial_pressure INTEGER,
+    respiratory_rate INTEGER,
+    temperature DECIMAL(4,1),
+    spo2 DECIMAL(5,2),
+    fio2 DECIMAL(5,2),
+    gcs_eye INTEGER,
+    gcs_verbal INTEGER,
+    gcs_motor INTEGER,
+    gcs_total INTEGER,
+    pupil_left VARCHAR(20),
+    pupil_right VARCHAR(20),
+    cvp INTEGER,
+    urine_output INTEGER,
+    notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE icu_intake_output (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    admission_id UUID REFERENCES icu_admissions(id) NOT NULL,
+    recorded_at TIMESTAMPTZ DEFAULT NOW(),
+    recorded_by UUID,
+    type VARCHAR(10) NOT NULL,
+    category VARCHAR(30),
+    amount DECIMAL(8,2),
+    route VARCHAR(30),
+    notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE icu_ventilator_records (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    admission_id UUID REFERENCES icu_admissions(id) NOT NULL,
+    recorded_at TIMESTAMPTZ DEFAULT NOW(),
+    recorded_by UUID,
+    mode VARCHAR(30),
+    fio2 DECIMAL(5,2),
+    peep DECIMAL(5,2),
+    tidal_volume INTEGER,
+    respiratory_rate_set INTEGER,
+    respiratory_rate_actual INTEGER,
+    pip DECIMAL(5,2),
+    plateau_pressure DECIMAL(5,2),
+    ie_ratio VARCHAR(20),
+    minute_volume DECIMAL(6,2),
+    notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ============================================
+-- SURGERY (SUPPLEMENTAL)
+-- ============================================
+
+CREATE TABLE operating_rooms (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    room_code VARCHAR(20) UNIQUE NOT NULL,
+    room_name VARCHAR(100) NOT NULL,
+    room_type VARCHAR(30),
+    status VARCHAR(20) DEFAULT 'available',
+    floor INTEGER,
+    capacity INTEGER,
+    equipment JSONB,
+    notes TEXT,
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE anesthesia_records (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    surgery_id UUID REFERENCES surgeries(id) NOT NULL,
+    anesthesiologist_name VARCHAR(100),
+    anesthesiologist_id UUID REFERENCES doctors(id),
+    pre_anesthesia_assessment TEXT,
+    airway_assessment VARCHAR(50),
+    npo_status BOOLEAN,
+    premedication TEXT,
+    induction_agents TEXT,
+    maintenance_agents TEXT,
+    airway_device VARCHAR(50),
+    ett_size VARCHAR(10),
+    intubation_grade VARCHAR(10),
+    iv_fluids JSONB,
+    blood_products JSONB,
+    vital_signs_timeline JSONB,
+    estimated_blood_loss INTEGER,
+    urine_output INTEGER,
+    emergence_time TIMESTAMPTZ,
+    extubation_time TIMESTAMPTZ,
+    complications TEXT,
+    post_anesthesia_score INTEGER,
+    notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ============================================
+-- INVENTORY
+-- ============================================
+
+CREATE TABLE inventory_items (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    item_code VARCHAR(30) UNIQUE NOT NULL,
+    item_name VARCHAR(200) NOT NULL,
+    category VARCHAR(50),
+    unit VARCHAR(20),
+    current_stock INTEGER DEFAULT 0,
+    minimum_stock INTEGER DEFAULT 0,
+    maximum_stock INTEGER,
+    reorder_point INTEGER,
+    unit_price DECIMAL(12,2),
+    storage_location VARCHAR(100),
+    is_active BOOLEAN DEFAULT true,
+    notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE inventory_batches (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    item_id UUID REFERENCES inventory_items(id) NOT NULL,
+    batch_number VARCHAR(50),
+    expiry_date DATE,
+    initial_quantity INTEGER NOT NULL,
+    remaining_quantity INTEGER NOT NULL,
+    purchase_order_id UUID REFERENCES purchase_orders(id),
+    received_date DATE DEFAULT CURRENT_DATE,
+    notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE purchase_requests (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    pr_number VARCHAR(20) UNIQUE NOT NULL,
+    requested_by UUID,
+    department_id UUID REFERENCES departments(id),
+    request_date DATE DEFAULT CURRENT_DATE,
+    needed_by DATE,
+    priority VARCHAR(20) DEFAULT 'NORMAL',
+    status VARCHAR(20) DEFAULT 'DRAFT',
+    total_estimated DECIMAL(12,2),
+    notes TEXT,
+    approved_by UUID,
+    approved_date TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ============================================
+-- ACCOUNTING
+-- ============================================
+
+CREATE TABLE chart_of_accounts (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    account_code VARCHAR(20) UNIQUE NOT NULL,
+    account_name VARCHAR(200) NOT NULL,
+    account_type VARCHAR(30) NOT NULL,
+    account_category VARCHAR(50),
+    parent_id UUID REFERENCES chart_of_accounts(id),
+    normal_balance VARCHAR(10) DEFAULT 'DEBIT',
+    is_active BOOLEAN DEFAULT true,
+    description TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE journal_entries (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    entry_number VARCHAR(20) UNIQUE NOT NULL,
+    entry_date DATE NOT NULL,
+    description TEXT NOT NULL,
+    reference_type VARCHAR(30),
+    reference_id UUID,
+    total_debit DECIMAL(14,2) DEFAULT 0,
+    total_credit DECIMAL(14,2) DEFAULT 0,
+    status VARCHAR(20) DEFAULT 'DRAFT',
+    created_by UUID,
+    approved_by UUID,
+    approved_at TIMESTAMPTZ,
+    posted_at TIMESTAMPTZ,
+    notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE journal_entry_lines (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    entry_id UUID REFERENCES journal_entries(id) ON DELETE CASCADE NOT NULL,
+    line_number INTEGER NOT NULL,
+    account_id UUID REFERENCES chart_of_accounts(id) NOT NULL,
+    description TEXT,
+    debit DECIMAL(14,2) DEFAULT 0,
+    credit DECIMAL(14,2) DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ============================================
 -- DEFAULT ADMIN USER
 -- Email: multimediazen@gmail.com
 -- Password: admin123  (bcrypt hash, rounds=12)
@@ -892,3 +1212,489 @@ BEGIN
     VALUES (gen_random_uuid(), v_user_id, 'admin');
   END IF;
 END $$;
+
+-- ============================================
+-- DIALYSIS
+-- ============================================
+
+CREATE TABLE dialysis_machines (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    machine_code VARCHAR(20) UNIQUE NOT NULL,
+    machine_name VARCHAR(100) NOT NULL,
+    manufacturer VARCHAR(100),
+    model_number VARCHAR(50),
+    serial_number VARCHAR(50),
+    status VARCHAR(20) DEFAULT 'available',
+    last_maintenance DATE,
+    next_maintenance DATE,
+    is_active BOOLEAN DEFAULT true,
+    notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE dialysis_schedules (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    patient_id UUID REFERENCES patients(id) NOT NULL,
+    machine_id UUID REFERENCES dialysis_machines(id),
+    scheduled_date DATE NOT NULL,
+    scheduled_time TIME,
+    duration_minutes INTEGER DEFAULT 240,
+    frequency VARCHAR(20),
+    dry_weight DECIMAL(5,2),
+    vascular_access VARCHAR(50),
+    status VARCHAR(20) DEFAULT 'scheduled',
+    notes TEXT,
+    created_by UUID,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE dialysis_sessions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    schedule_id UUID REFERENCES dialysis_schedules(id),
+    start_time TIMESTAMPTZ DEFAULT NOW(),
+    end_time TIMESTAMPTZ,
+    pre_weight DECIMAL(5,2),
+    post_weight DECIMAL(5,2),
+    pre_bp VARCHAR(20),
+    post_bp VARCHAR(20),
+    pre_pulse INTEGER,
+    post_pulse INTEGER,
+    pre_temp DECIMAL(4,1),
+    post_temp DECIMAL(4,1),
+    access_condition VARCHAR(50),
+    dialysate_solution VARCHAR(100),
+    heparin_dose INTEGER,
+    blood_flow_rate INTEGER,
+    dialysate_flow_rate INTEGER,
+    uf_goal DECIMAL(5,2),
+    uf_achieved DECIMAL(5,2),
+    kt_v DECIMAL(5,2),
+    complications TEXT,
+    status VARCHAR(20) DEFAULT 'ongoing',
+    notes TEXT,
+    nurse_id UUID,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE dialysis_vitals (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    session_id UUID REFERENCES dialysis_sessions(id) NOT NULL,
+    recorded_at TIMESTAMPTZ DEFAULT NOW(),
+    bp VARCHAR(20),
+    pulse INTEGER,
+    temp DECIMAL(4,1),
+    blood_flow_rate INTEGER,
+    venous_pressure INTEGER,
+    tmp INTEGER,
+    uf_rate DECIMAL(5,2),
+    notes TEXT,
+    recorded_by UUID,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ============================================
+-- MCU (MEDICAL CHECK UP)
+-- ============================================
+
+CREATE TABLE corporate_clients (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    company_code VARCHAR(20) UNIQUE NOT NULL,
+    company_name VARCHAR(200) NOT NULL,
+    address TEXT,
+    phone VARCHAR(20),
+    email VARCHAR(100),
+    pic_name VARCHAR(100),
+    pic_phone VARCHAR(20),
+    discount_percentage DECIMAL(5,2) DEFAULT 0,
+    contract_start DATE,
+    contract_end DATE,
+    payment_terms VARCHAR(50),
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE mcu_packages (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    package_code VARCHAR(20) UNIQUE NOT NULL,
+    package_name VARCHAR(200) NOT NULL,
+    description TEXT,
+    base_price DECIMAL(12,2),
+    components JSONB,
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE mcu_registrations (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    registration_number VARCHAR(20) UNIQUE,
+    patient_id UUID REFERENCES patients(id) NOT NULL,
+    package_id UUID REFERENCES mcu_packages(id),
+    corporate_client_id UUID REFERENCES corporate_clients(id),
+    registration_date DATE DEFAULT CURRENT_DATE,
+    total_price DECIMAL(12,2),
+    status VARCHAR(20) DEFAULT 'registered',
+    notes TEXT,
+    created_by UUID,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE mcu_results (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    registration_id UUID REFERENCES mcu_registrations(id) NOT NULL,
+    component_name VARCHAR(100) NOT NULL,
+    component_type VARCHAR(50),
+    result_value TEXT,
+    unit VARCHAR(20),
+    reference_range VARCHAR(50),
+    status VARCHAR(20),
+    examined_by UUID,
+    examined_at TIMESTAMPTZ,
+    notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ============================================
+-- NUTRITION
+-- ============================================
+
+CREATE TABLE nutrition_assessments (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    patient_id UUID REFERENCES patients(id) NOT NULL,
+    admission_id UUID REFERENCES inpatient_admissions(id),
+    assessment_date TIMESTAMPTZ DEFAULT NOW(),
+    weight DECIMAL(5,2),
+    height DECIMAL(5,2),
+    bmi DECIMAL(5,2),
+    nutrition_risk_score INTEGER,
+    assessment_type VARCHAR(50),
+    findings TEXT,
+    recommendations TEXT,
+    assessed_by UUID,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE patient_allergies (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    patient_id UUID REFERENCES patients(id) NOT NULL,
+    allergen VARCHAR(100) NOT NULL,
+    allergen_type VARCHAR(50),
+    severity VARCHAR(20),
+    reaction TEXT,
+    reported_date DATE,
+    noted_by UUID,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE nutrition_orders (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    patient_id UUID REFERENCES patients(id) NOT NULL,
+    admission_id UUID REFERENCES inpatient_admissions(id),
+    diet_type VARCHAR(50),
+    diet_description TEXT,
+    caloric_requirement INTEGER,
+    protein_requirement DECIMAL(6,2),
+    restrictions TEXT,
+    allergies TEXT,
+    texture_modification VARCHAR(50),
+    fluid_restriction BOOLEAN DEFAULT false,
+    special_instructions TEXT,
+    status VARCHAR(20) DEFAULT 'ACTIVE',
+    ordered_by UUID,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE meal_plans (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    order_id UUID REFERENCES nutrition_orders(id),
+    patient_id UUID REFERENCES patients(id) NOT NULL,
+    meal_date DATE NOT NULL,
+    meal_type VARCHAR(20),
+    menu_description TEXT,
+    calories INTEGER,
+    protein DECIMAL(6,2),
+    carbohydrates DECIMAL(6,2),
+    fat DECIMAL(6,2),
+    fiber DECIMAL(6,2),
+    served_at TIMESTAMPTZ,
+    consumed_percentage INTEGER,
+    notes TEXT,
+    prepared_by UUID,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ============================================
+-- REHABILITATION
+-- ============================================
+
+CREATE TABLE therapy_types (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    type_code VARCHAR(20) UNIQUE NOT NULL,
+    type_name VARCHAR(100) NOT NULL,
+    category VARCHAR(50),
+    description TEXT,
+    default_duration INTEGER DEFAULT 60,
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE rehabilitation_cases (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    case_number VARCHAR(20) UNIQUE NOT NULL,
+    patient_id UUID REFERENCES patients(id) NOT NULL,
+    visit_id UUID REFERENCES visits(id),
+    referring_doctor_id UUID REFERENCES doctors(id),
+    diagnosis TEXT,
+    therapy_type VARCHAR(50),
+    goals TEXT,
+    estimated_sessions INTEGER,
+    frequency VARCHAR(50),
+    status VARCHAR(20) DEFAULT 'ACTIVE',
+    notes TEXT,
+    created_by UUID,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE rehabilitation_sessions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    case_id UUID REFERENCES rehabilitation_cases(id) NOT NULL,
+    therapist_id UUID,
+    scheduled_date DATE NOT NULL,
+    scheduled_time TIME,
+    actual_start TIMESTAMPTZ,
+    actual_end TIMESTAMPTZ,
+    duration_minutes INTEGER,
+    session_type VARCHAR(50),
+    interventions JSONB,
+    patient_response TEXT,
+    functional_status TEXT,
+    home_program TEXT,
+    status VARCHAR(20) DEFAULT 'SCHEDULED',
+    notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ============================================
+-- FORENSIC
+-- ============================================
+
+CREATE TABLE mortuary_cases (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    case_number VARCHAR(20) UNIQUE NOT NULL,
+    patient_id UUID REFERENCES patients(id),
+    case_type VARCHAR(20),
+    admission_date TIMESTAMPTZ DEFAULT NOW(),
+    time_of_death TIMESTAMPTZ,
+    place_of_death VARCHAR(100),
+    cause_of_death_preliminary TEXT,
+    manner_of_death VARCHAR(30),
+    police_report_number VARCHAR(50),
+    informant_name VARCHAR(100),
+    informant_relation VARCHAR(50),
+    informant_phone VARCHAR(20),
+    refrigerator_number VARCHAR(20),
+    release_date TIMESTAMPTZ,
+    released_to VARCHAR(100),
+    status VARCHAR(20) DEFAULT 'admitted',
+    notes TEXT,
+    admitted_by UUID,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE autopsy_records (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    autopsy_number VARCHAR(20) UNIQUE NOT NULL,
+    case_id UUID REFERENCES mortuary_cases(id) NOT NULL,
+    autopsy_type VARCHAR(30),
+    request_date DATE,
+    requested_by VARCHAR(100),
+    pathologist_id UUID REFERENCES doctors(id),
+    pathologist_name VARCHAR(100),
+    assistant_names TEXT,
+    start_time TIMESTAMPTZ,
+    end_time TIMESTAMPTZ,
+    external_examination TEXT,
+    internal_examination TEXT,
+    organ_weights JSONB,
+    histology_samples JSONB,
+    toxicology_requested BOOLEAN DEFAULT false,
+    cause_of_death TEXT,
+    manner_of_death VARCHAR(30),
+    summary TEXT,
+    status VARCHAR(20) DEFAULT 'requested',
+    notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE death_certificates (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    certificate_number VARCHAR(20) UNIQUE NOT NULL,
+    case_id UUID REFERENCES mortuary_cases(id) NOT NULL,
+    patient_id UUID REFERENCES patients(id),
+    death_date DATE NOT NULL,
+    death_time TIME,
+    place_of_death VARCHAR(100),
+    cause_of_death_1a TEXT,
+    cause_of_death_1b TEXT,
+    cause_of_death_1c TEXT,
+    contributing_conditions TEXT,
+    manner_of_death VARCHAR(30),
+    certifying_doctor_id UUID REFERENCES doctors(id),
+    certifying_doctor_name VARCHAR(100),
+    certificate_date DATE DEFAULT CURRENT_DATE,
+    issued_to VARCHAR(100),
+    status VARCHAR(20) DEFAULT 'draft',
+    notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE visum_reports (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    visum_number VARCHAR(20) UNIQUE NOT NULL,
+    patient_id UUID REFERENCES patients(id),
+    visum_type VARCHAR(30),
+    police_request_number VARCHAR(50),
+    police_request_date DATE,
+    requesting_unit VARCHAR(100),
+    case_description TEXT,
+    examination_date DATE,
+    physical_findings TEXT,
+    injuries JSONB,
+    conclusions TEXT,
+    opinion TEXT,
+    status VARCHAR(20) DEFAULT 'draft',
+    examining_doctor_id UUID REFERENCES doctors(id),
+    notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ============================================
+-- EDUCATION (TEACHING HOSPITAL)
+-- ============================================
+
+CREATE TABLE medical_trainees (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    trainee_code VARCHAR(20) UNIQUE NOT NULL,
+    full_name VARCHAR(100) NOT NULL,
+    trainee_type VARCHAR(30),
+    institution VARCHAR(200),
+    program VARCHAR(100),
+    start_date DATE,
+    end_date DATE,
+    primary_supervisor_id UUID REFERENCES doctors(id),
+    email VARCHAR(100),
+    phone VARCHAR(20),
+    address TEXT,
+    status VARCHAR(20) DEFAULT 'active',
+    notes TEXT,
+    created_by UUID,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE clinical_rotations (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    trainee_id UUID REFERENCES medical_trainees(id) NOT NULL,
+    department_id UUID REFERENCES departments(id),
+    supervisor_id UUID REFERENCES doctors(id),
+    start_date DATE NOT NULL,
+    end_date DATE,
+    rotation_type VARCHAR(50),
+    objectives TEXT,
+    performance_score DECIMAL(5,2),
+    evaluation_notes TEXT,
+    status VARCHAR(20) DEFAULT 'scheduled',
+    notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE academic_activities (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    activity_code VARCHAR(20) UNIQUE NOT NULL,
+    activity_type VARCHAR(50),
+    title VARCHAR(200) NOT NULL,
+    description TEXT,
+    activity_date DATE,
+    start_time TIME,
+    end_time TIME,
+    location VARCHAR(100),
+    department_id UUID REFERENCES departments(id),
+    speaker_names TEXT,
+    max_participants INTEGER,
+    registered_count INTEGER DEFAULT 0,
+    skp_points DECIMAL(4,1),
+    status VARCHAR(20) DEFAULT 'scheduled',
+    notes TEXT,
+    organizer_id UUID,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE activity_registrations (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    activity_id UUID REFERENCES academic_activities(id) NOT NULL,
+    trainee_id UUID REFERENCES medical_trainees(id),
+    employee_id UUID REFERENCES employees(id),
+    registration_date TIMESTAMPTZ DEFAULT NOW(),
+    attendance_status VARCHAR(20) DEFAULT 'registered',
+    certificate_issued BOOLEAN DEFAULT false,
+    notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE research_projects (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    project_code VARCHAR(20) UNIQUE NOT NULL,
+    title VARCHAR(300) NOT NULL,
+    principal_investigator VARCHAR(100),
+    co_investigators JSONB,
+    department_id UUID REFERENCES departments(id),
+    start_date DATE,
+    end_date DATE,
+    funding_source VARCHAR(100),
+    budget DECIMAL(14,2),
+    ethics_approval_number VARCHAR(50),
+    ethics_approval_date DATE,
+    abstract TEXT,
+    status VARCHAR(20) DEFAULT 'proposed',
+    publication_title TEXT,
+    publication_date DATE,
+    notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ============================================
+-- HR (SUPPLEMENTAL)
+-- ============================================
+
+CREATE TABLE trainings (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    training_code VARCHAR(20) UNIQUE,
+    training_name VARCHAR(200) NOT NULL,
+    training_type VARCHAR(50),
+    provider VARCHAR(100),
+    start_date DATE,
+    end_date DATE,
+    location VARCHAR(100),
+    max_participants INTEGER,
+    cost DECIMAL(12,2),
+    description TEXT,
+    status VARCHAR(20) DEFAULT 'planned',
+    created_by UUID,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);

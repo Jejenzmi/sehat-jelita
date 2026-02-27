@@ -333,10 +333,55 @@ function noopChannel(): RealtimeChannel {
   return ch;
 }
 
+// ---- RPC function → backend endpoint mapping ----
+const RPC_ENDPOINTS: Record<string, { path: string; method: 'GET' | 'POST' }> = {
+  is_setup_completed:              { path: '/admin/setup-status',              method: 'GET'  },
+  get_available_modules:           { path: '/admin/modules',                   method: 'GET'  },
+  reset_system_to_initial:         { path: '/admin/reset-system',              method: 'POST' },
+  get_user_menu_access:            { path: '/admin/menu-access',               method: 'GET'  },
+  generate_invoice_number:         { path: '/billing/next-invoice-number',     method: 'GET'  },
+  generate_journal_number:         { path: '/accounting/next-journal-number',  method: 'GET'  },
+  generate_po_number:              { path: '/inventory/next-po-number',        method: 'GET'  },
+  generate_pr_number:              { path: '/inventory/next-pr-number',        method: 'GET'  },
+  generate_dispatch_number:        { path: '/ambulance/next-dispatch-number',  method: 'GET'  },
+  generate_home_care_visit_number: { path: '/home-care/next-visit-number',     method: 'GET'  },
+  calculate_rl6_indicators:        { path: '/reports/rl6-indicators',          method: 'POST' },
+  preview_hospital_type_migration: { path: '/admin/hospital-migration/preview',method: 'POST' },
+  migrate_hospital_type:           { path: '/admin/hospital-migration/execute',method: 'POST' },
+};
+
 // ---- Main export ----
 export const db = {
   from(table: string): QueryBuilder {
     return new QueryBuilder(table);
+  },
+  /** Call a server-side RPC function mapped to a backend endpoint. */
+  async rpc(funcName: string, params?: Record<string, unknown>): Promise<{ data: unknown; error: { message: string } | null }> {
+    const config = RPC_ENDPOINTS[funcName];
+    if (!config) {
+      console.warn(`[db.rpc] Unknown function: ${funcName}`);
+      return { data: null, error: null };
+    }
+    const hasParams = params && Object.keys(params).length > 0;
+    const method = config.method;
+    let url = `${API_BASE_URL}${config.path}`;
+    if (method === 'GET' && hasParams) {
+      const qs = new URLSearchParams();
+      Object.entries(params as Record<string, unknown>).forEach(([k, v]) => qs.append(k, String(v)));
+      const qsStr = qs.toString();
+      if (qsStr) url += `?${qsStr}`;
+    }
+    try {
+      const init: RequestInit = { method, headers: getAuthHeaders() };
+      if (method === 'POST' && hasParams) init.body = JSON.stringify(params);
+      const res = await fetch(url, init);
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) return { data: null, error: { message: json.error || res.statusText } };
+      const data = json?.data !== undefined ? json.data : json;
+      return { data, error: null };
+    } catch (err) {
+      return { data: null, error: { message: (err as Error).message } };
+    }
   },
   auth: authShim,
   functions: functionsShim,
@@ -347,4 +392,4 @@ export const db = {
   removeChannel(_channel: RealtimeChannel): void {
     // no-op
   },
-} as const;
+};

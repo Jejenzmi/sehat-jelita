@@ -361,8 +361,33 @@ async function generatePONumber() {
     orderBy: { po_number: 'desc' }
   });
 
-  const seq = last ? parseInt(last.po_number.slice(-4)) + 1 : 1;
+  const seq = last ? parseInt(last.po_number.slice(-4), 10) + 1 : 1;
   return `${prefix}${String(seq).padStart(4, '0')}`;
 }
+
+// GET /api/inventory/next-po-number
+// Returns a preview of the next PO number without creating one.
+router.get('/next-po-number', asyncHandler(async (req, res) => {
+  const number = await generatePONumber();
+  res.json({ success: true, data: number });
+}));
+
+// GET /api/inventory/next-pr-number
+// Returns a preview of the next Purchase Request number without creating one.
+router.get('/next-pr-number', asyncHandler(async (req, res) => {
+  const today = new Date();
+  const prefix = `PR${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, '0')}`;
+  let seq = 1;
+  try {
+    const last = await prisma.purchase_requests.findFirst({
+      where: { pr_number: { startsWith: prefix } },
+      orderBy: { pr_number: 'desc' }
+    });
+    if (last) seq = parseInt(last.pr_number.slice(-4), 10) + 1;
+  } catch {
+    // purchase_requests table may not exist yet; return a placeholder number
+  }
+  res.json({ success: true, data: `${prefix}${String(seq).padStart(4, '0')}` });
+}));
 
 export default router;
