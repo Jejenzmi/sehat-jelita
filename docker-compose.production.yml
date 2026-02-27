@@ -62,6 +62,8 @@ services:
       SATU_SEHAT_CLIENT_ID: ${SATUSEHAT_CLIENT_ID:-}
       SATU_SEHAT_CLIENT_SECRET: ${SATUSEHAT_CLIENT_SECRET:-}
       SATU_SEHAT_ORG_ID: ${SATUSEHAT_ORGANIZATION_ID:-}
+    ports:
+      - "127.0.0.1:3000:3000"
     depends_on:
       postgres:
         condition: service_healthy

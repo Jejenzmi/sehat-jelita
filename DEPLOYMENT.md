@@ -97,7 +97,20 @@ docker build -t simrs-zen-api:latest ./backend
 docker compose -f docker-compose.prod.yml up -d
 ```
 
-### Opsi B: Gunakan image dari GitHub Container Registry
+### Opsi B: Gunakan image dari GitHub Container Registry (GHCR)
+
+Image GHCR harus berstatus **public** agar VPS dapat menariknya tanpa login.
+Workflow CI/CD (`docker-build.yml`) secara otomatis mengubah visibility paket ke public
+setelah setiap push ke `main`, asalkan secret **`GH_PAT`** tersedia di repository:
+
+1. Buat Personal Access Token (classic) di GitHub → Settings → Developer settings → Tokens
+   dengan scope `write:packages` dan `read:packages`.
+2. Tambahkan token tersebut sebagai secret `GH_PAT` di repository:
+   Settings → Secrets and variables → Actions → New repository secret.
+3. Jalankan workflow sekali (push ke main) agar paket diubah ke public.
+
+Atau ubah secara manual:
+GitHub → Profile → Packages → pilih paket → Package Settings → Change visibility → Public.
 
 ```bash
 # Edit IMAGE_NAMESPACE dan IMAGE_TAG di .env sesuai registry
