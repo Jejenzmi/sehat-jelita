@@ -97,10 +97,24 @@ docker build -t simrs-zen-api:latest ./backend
 docker compose -f docker-compose.prod.yml up -d
 ```
 
-### Opsi B: Gunakan image dari GitHub Container Registry
+### Opsi B: Gunakan image dari Docker Hub (public)
+
+```bash
+# Images di-push otomatis ke Docker Hub saat merge ke main.
+# Default registry sudah diset ke docker.io/jejenzmi — tidak perlu login.
+docker compose -f docker-compose.prod.yml pull
+docker compose -f docker-compose.prod.yml up -d
+```
+
+> **Catatan CI/CD:** Sebelum CI dapat push ke Docker Hub, tambahkan dua repository secrets di GitHub:
+> - `DOCKERHUB_USERNAME` — username Docker Hub kamu
+> - `DOCKERHUB_TOKEN`    — Docker Hub Access Token (buat di hub.docker.com → Account Settings → Security)
+
+### Opsi C: Gunakan image dari GitHub Container Registry (GHCR)
 
 ```bash
 # Edit IMAGE_NAMESPACE dan IMAGE_TAG di .env sesuai registry
+# Contoh untuk GHCR: REGISTRY=ghcr.io IMAGE_NAMESPACE=jejenzmi/sehat-jelita
 docker compose -f docker-compose.prod.yml pull
 docker compose -f docker-compose.prod.yml up -d
 ```

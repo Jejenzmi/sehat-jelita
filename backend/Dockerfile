@@ -15,7 +15,7 @@ RUN npx prisma generate
 FROM node:20-bookworm-slim AS production
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates curl \
+RUN apt-get update && apt-get install -y --no-install-recommends openssl libssl3 ca-certificates curl \
  && rm -rf /var/lib/apt/lists/*
 
 # optional non-root
