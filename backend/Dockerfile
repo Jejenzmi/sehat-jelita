@@ -4,9 +4,12 @@
 # ==========================================
 # Stage 1: Build
 # ==========================================
-FROM node:20-alpine AS builder
+FROM node:20-bookworm-slim AS builder
 
 WORKDIR /app
+
+# Install openssl required by Prisma
+RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates && rm -rf /var/lib/apt/lists/*
 
 # Install dependencies
 COPY package*.json ./
@@ -21,13 +24,13 @@ RUN npx prisma generate
 # ==========================================
 # Stage 2: Production
 # ==========================================
-FROM node:20-alpine AS production
+FROM node:20-bookworm-slim AS production
 
-# Install security updates
-RUN apk update && apk upgrade && apk add --no-cache curl
+# Install security updates and required packages
+RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends curl openssl ca-certificates && rm -rf /var/lib/apt/lists/*
 
 # Create non-root user
-RUN addgroup -S nodejs && adduser -S nodejs -G nodejs
+RUN groupadd --system nodejs && useradd --system --gid nodejs nodejs
 
 WORKDIR /app
 
