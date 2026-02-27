@@ -65,7 +65,6 @@ export const errorLogger = (err, req, res, next) => {
     requestId: req.requestId,
     method: req.method,
     path: req.path,
-    body: req.body,
     user: req.user?.id
   });
 

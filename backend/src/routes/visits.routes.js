@@ -6,14 +6,12 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../config/database.js';
-import { authenticateToken } from '../middleware/auth.middleware.js';
 import { requireRole, checkMenuAccess } from '../middleware/role.middleware.js';
 import { asyncHandler, ApiError } from '../middleware/errorHandler.js';
 
 const router = Router();
 
-router.use(authenticateToken);
-
+// Authentication applied globally in routes/index.js
 // Validation schemas
 const visitSchema = z.object({
   patient_id: z.string().uuid(),

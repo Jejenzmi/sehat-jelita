@@ -6,13 +6,11 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../config/database.js';
-import { authenticateToken } from '../middleware/auth.middleware.js';
 import { requireRole, ROLES } from '../middleware/role.middleware.js';
 import { asyncHandler, ApiError } from '../middleware/errorHandler.js';
 
 const router = Router();
 
-router.use(authenticateToken);
 
 // Validation schemas
 const triageSchema = z.object({

@@ -5,13 +5,11 @@
 
 import { Router } from 'express';
 import { prisma } from '../config/database.js';
-import { authenticateToken } from '../middleware/auth.middleware.js';
 import { requireRole, ROLES } from '../middleware/role.middleware.js';
 import { asyncHandler, ApiError } from '../middleware/errorHandler.js';
 
 const router = Router();
 
-router.use(authenticateToken);
 
 /**
  * GET /api/rehabilitation/patients

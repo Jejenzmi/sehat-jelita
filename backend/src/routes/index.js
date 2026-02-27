@@ -6,6 +6,7 @@
 import { Router } from 'express';
 import { authenticateToken } from '../middleware/auth.middleware.js';
 import { requireRole } from '../middleware/role.middleware.js';
+import { asyncHandler } from '../middleware/errorHandler.js';
 
 // Import route modules
 import authRoutes from './auth.routes.js';
@@ -31,6 +32,7 @@ import bloodbankRoutes from './bloodbank.routes.js';
 import dialysisRoutes from './dialysis.routes.js';
 import forensicRoutes from './forensic.routes.js';
 import educationRoutes from './education.routes.js';
+import eklaimIDRGRoutes from './eklaim-idrg.routes.js';
 
 const router = Router();
 
@@ -78,6 +80,7 @@ router.use('/accounting', accountingRoutes);
 // External Integration Modules
 router.use('/bpjs', bpjsRoutes);
 router.use('/satusehat', satusehatRoutes);
+router.use('/eklaim', eklaimIDRGRoutes);
 
 // Education Module (Teaching Hospital)
 router.use('/education', educationRoutes);
@@ -87,7 +90,7 @@ router.use('/education', educationRoutes);
 // ============================================
 
 // System administration routes
-router.get('/admin/audit-logs', requireRole(['admin']), async (req, res) => {
+router.get('/admin/audit-logs', requireRole(['admin']), asyncHandler(async (req, res) => {
   const { prisma } = await import('../config/database.js');
   const { page = 1, limit = 50, table_name, action, user_id } = req.query;
   
@@ -119,15 +122,15 @@ router.get('/admin/audit-logs', requireRole(['admin']), async (req, res) => {
     data: logs,
     pagination: { page: parseInt(page), limit: parseInt(limit), total }
   });
-});
+}));
 
-router.get('/admin/system-settings', requireRole(['admin']), async (req, res) => {
+router.get('/admin/system-settings', requireRole(['admin']), asyncHandler(async (req, res) => {
   const { prisma } = await import('../config/database.js');
   const settings = await prisma.system_settings.findMany();
   res.json({ success: true, data: settings });
-});
+}));
 
-router.put('/admin/system-settings/:key', requireRole(['admin']), async (req, res) => {
+router.put('/admin/system-settings/:key', requireRole(['admin']), asyncHandler(async (req, res) => {
   const { prisma } = await import('../config/database.js');
   const { key } = req.params;
   const { value } = req.body;
@@ -139,13 +142,13 @@ router.put('/admin/system-settings/:key', requireRole(['admin']), async (req, re
   });
   
   res.json({ success: true, data: setting });
-});
+}));
 
 // ============================================
 // REPORTS ROUTES
 // ============================================
 
-router.get('/reports/dashboard', async (req, res) => {
+router.get('/reports/dashboard', asyncHandler(async (req, res) => {
   const { prisma } = await import('../config/database.js');
   
   const today = new Date();
@@ -176,9 +179,9 @@ router.get('/reports/dashboard', async (req, res) => {
       occupiedBeds
     }
   });
-});
+}));
 
-router.get('/reports/revenue', requireRole(['admin', 'keuangan', 'direktur']), async (req, res) => {
+router.get('/reports/revenue', requireRole(['admin', 'keuangan', 'direktur']), asyncHandler(async (req, res) => {
   const { prisma } = await import('../config/database.js');
   const { date_from, date_to, group_by = 'day' } = req.query;
   
@@ -211,9 +214,9 @@ router.get('/reports/revenue', requireRole(['admin', 'keuangan', 'direktur']), a
       byPaymentType
     }
   });
-});
+}));
 
-router.get('/reports/visits', async (req, res) => {
+router.get('/reports/visits', asyncHandler(async (req, res) => {
   const { prisma } = await import('../config/database.js');
   const { date_from, date_to } = req.query;
   
@@ -250,13 +253,13 @@ router.get('/reports/visits', async (req, res) => {
     success: true,
     data: { byType, byDepartment, byStatus }
   });
-});
+}));
 
 // ============================================
 // QUEUE MANAGEMENT
 // ============================================
 
-router.get('/queue/:departmentId', async (req, res) => {
+router.get('/queue/:departmentId', asyncHandler(async (req, res) => {
   const { prisma } = await import('../config/database.js');
   const { departmentId } = req.params;
   
@@ -282,9 +285,9 @@ router.get('/queue/:departmentId', async (req, res) => {
   });
   
   res.json({ success: true, data: queue });
-});
+}));
 
-router.post('/queue/:id/call', async (req, res) => {
+router.post('/queue/:id/call', asyncHandler(async (req, res) => {
   const { prisma } = await import('../config/database.js');
   const { id } = req.params;
   
@@ -308,6 +311,6 @@ router.post('/queue/:id/call', async (req, res) => {
   }
   
   res.json({ success: true, data: entry });
-});
+}));
 
 export default router;

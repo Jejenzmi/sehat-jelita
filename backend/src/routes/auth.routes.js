@@ -5,6 +5,7 @@
 
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
+import { randomBytes } from 'node:crypto';
 import { z } from 'zod';
 import { prisma } from '../config/database.js';
 import { generateTokens, refreshAccessToken, authenticateToken } from '../middleware/auth.middleware.js';
@@ -235,6 +236,85 @@ router.post('/change-password', authenticateToken, asyncHandler(async (req, res)
   res.json({
     success: true,
     message: 'Password berhasil diubah'
+  });
+}));
+
+/**
+ * POST /api/auth/forgot-password
+ * Request password reset link
+ */
+router.post('/forgot-password', authRateLimiter, asyncHandler(async (req, res) => {
+  const { email } = req.body;
+
+  if (!email || !z.string().email().safeParse(email).success) {
+    throw new ApiError(400, 'Email tidak valid', 'INVALID_EMAIL');
+  }
+
+  const profile = await prisma.profiles.findUnique({ where: { email } });
+
+  if (profile) {
+    const resetToken = randomBytes(32).toString('hex');
+    const resetExpires = new Date(Date.now() + 3600000); // 1 hour
+
+    await prisma.profiles.update({
+      where: { user_id: profile.user_id },
+      data: {
+        reset_token: resetToken,
+        reset_token_expires: resetExpires
+      }
+    });
+
+    // TODO: Send email with reset link
+    // await emailService.sendPasswordResetEmail(email, resetToken);
+  }
+
+  // Always return success to prevent email enumeration
+  res.json({
+    success: true,
+    message: 'Jika email terdaftar, link reset password akan dikirim'
+  });
+}));
+
+/**
+ * POST /api/auth/reset-password
+ * Reset password using token
+ */
+router.post('/reset-password', authRateLimiter, asyncHandler(async (req, res) => {
+  const { token, newPassword } = req.body;
+
+  if (!token || !newPassword) {
+    throw new ApiError(400, 'Token dan password baru diperlukan');
+  }
+
+  if (newPassword.length < 8) {
+    throw new ApiError(400, 'Password baru minimal 8 karakter');
+  }
+
+  const profile = await prisma.profiles.findFirst({
+    where: {
+      reset_token: token,
+      reset_token_expires: { gt: new Date() }
+    }
+  });
+
+  if (!profile) {
+    throw new ApiError(400, 'Token tidak valid atau sudah kadaluarsa', 'INVALID_TOKEN');
+  }
+
+  const passwordHash = await bcrypt.hash(newPassword, 12);
+
+  await prisma.profiles.update({
+    where: { user_id: profile.user_id },
+    data: {
+      password_hash: passwordHash,
+      reset_token: null,
+      reset_token_expires: null
+    }
+  });
+
+  res.json({
+    success: true,
+    message: 'Password berhasil direset. Silakan login.'
   });
 }));
 
