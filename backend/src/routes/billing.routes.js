@@ -548,4 +548,11 @@ router.get('/print/:id', asyncHandler(async (req, res) => {
   });
 }));
 
+// GET /api/billing/next-invoice-number
+// Returns a preview of the next invoice number without creating one.
+router.get('/next-invoice-number', asyncHandler(async (req, res) => {
+  const result = await prisma.$queryRaw`SELECT generate_invoice_number() as inv`;
+  res.json({ success: true, data: result[0].inv });
+}));
+
 export default router;

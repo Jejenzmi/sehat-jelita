@@ -144,6 +144,64 @@ router.put('/admin/system-settings/:key', requireRole(['admin']), asyncHandler(a
   res.json({ success: true, data: setting });
 }));
 
+// Check whether initial hospital setup has been completed
+router.get('/admin/setup-status', asyncHandler(async (req, res) => {
+  const { prisma } = await import('../config/database.js');
+  const setting = await prisma.system_settings.findUnique({
+    where: { setting_key: 'setup_completed' }
+  });
+  res.json({ success: true, data: setting?.setting_value === 'true' });
+}));
+
+// Get available modules (optionally filtered by hospital type)
+router.get('/admin/modules', asyncHandler(async (req, res) => {
+  const { prisma } = await import('../config/database.js');
+  const { hospital_type } = req.query;
+  const where = { setting_key: { startsWith: 'module_' } };
+  if (hospital_type) where.setting_value = hospital_type;
+  const settings = await prisma.system_settings.findMany({ where });
+  res.json({ success: true, data: settings });
+}));
+
+// Get menu access for the current user's roles
+router.get('/admin/menu-access', asyncHandler(async (req, res) => {
+  const { prisma } = await import('../config/database.js');
+  const userRoles = req.user?.roles ?? [];
+  const access = await prisma.menu_access.findMany({
+    where: { role: { in: userRoles } }
+  });
+  res.json({ success: true, data: access });
+}));
+
+// Reset system to initial state (admin only)
+router.post('/admin/reset-system', requireRole(['admin']), asyncHandler(async (req, res) => {
+  const { prisma } = await import('../config/database.js');
+  await prisma.system_settings.upsert({
+    where: { setting_key: 'setup_completed' },
+    update: { setting_value: 'false' },
+    create: { setting_key: 'setup_completed', setting_value: 'false' }
+  });
+  res.json({ success: true, data: true });
+}));
+
+// Preview hospital type migration
+router.post('/admin/hospital-migration/preview', requireRole(['admin']), asyncHandler(async (req, res) => {
+  const { target_type } = req.body;
+  res.json({ success: true, data: { target_type, modules_affected: [] } });
+}));
+
+// Execute hospital type migration
+router.post('/admin/hospital-migration/execute', requireRole(['admin']), asyncHandler(async (req, res) => {
+  const { prisma } = await import('../config/database.js');
+  const { target_type } = req.body;
+  await prisma.system_settings.upsert({
+    where: { setting_key: 'hospital_type' },
+    update: { setting_value: target_type },
+    create: { setting_key: 'hospital_type', setting_value: target_type }
+  });
+  res.json({ success: true, data: true });
+}));
+
 // ============================================
 // REPORTS ROUTES
 // ============================================

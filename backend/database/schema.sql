@@ -869,6 +869,326 @@ INSERT INTO system_settings (setting_key, setting_value, setting_type, descripti
 ('satusehat_enabled', 'true', 'boolean', 'Aktifkan integrasi SATU SEHAT');
 
 -- ============================================
+-- INPATIENT
+-- ============================================
+
+CREATE TABLE inpatient_admissions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    patient_id UUID REFERENCES patients(id) NOT NULL,
+    visit_id UUID REFERENCES visits(id),
+    room_id UUID REFERENCES rooms(id),
+    bed_id UUID REFERENCES beds(id),
+    admission_date TIMESTAMPTZ DEFAULT NOW(),
+    discharge_date TIMESTAMPTZ,
+    admission_type VARCHAR(30),
+    attending_doctor_id UUID REFERENCES doctors(id),
+    admission_diagnosis TEXT,
+    discharge_diagnosis TEXT,
+    payment_type VARCHAR(30),
+    insurance_info JSONB,
+    status VARCHAR(20) DEFAULT 'ADMITTED',
+    notes TEXT,
+    admitted_by UUID,
+    discharged_by UUID,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE nursing_notes (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    admission_id UUID REFERENCES inpatient_admissions(id) NOT NULL,
+    nurse_id UUID,
+    note_type VARCHAR(30),
+    content TEXT NOT NULL,
+    vital_signs JSONB,
+    pain_score INTEGER,
+    fall_risk_score INTEGER,
+    pressure_ulcer_risk INTEGER,
+    recorded_at TIMESTAMPTZ DEFAULT NOW(),
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE bed_transfers (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    admission_id UUID REFERENCES inpatient_admissions(id) NOT NULL,
+    from_bed_id UUID REFERENCES beds(id),
+    to_bed_id UUID REFERENCES beds(id),
+    transfer_reason TEXT,
+    transferred_by UUID,
+    transferred_at TIMESTAMPTZ DEFAULT NOW(),
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ============================================
+-- EMERGENCY
+-- ============================================
+
+CREATE TABLE emergency_visits (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    visit_id UUID REFERENCES visits(id),
+    patient_id UUID REFERENCES patients(id) NOT NULL,
+    arrival_time TIMESTAMPTZ DEFAULT NOW(),
+    arrival_mode VARCHAR(30),
+    chief_complaint TEXT,
+    triage_level VARCHAR(30),
+    triage_time TIMESTAMPTZ,
+    triaged_by UUID,
+    vital_signs JSONB,
+    allergies TEXT,
+    current_medications TEXT,
+    accompanying_person JSONB,
+    diagnosis TEXT,
+    discharge_medications TEXT,
+    disposition VARCHAR(30),
+    disposition_time TIMESTAMPTZ,
+    status VARCHAR(20) DEFAULT 'TRIAGED',
+    notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE emergency_treatments (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    emergency_visit_id UUID REFERENCES emergency_visits(id) NOT NULL,
+    treatment_type VARCHAR(50),
+    description TEXT,
+    medications JSONB,
+    procedures JSONB,
+    performed_by UUID,
+    performed_at TIMESTAMPTZ DEFAULT NOW(),
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ============================================
+-- ICU
+-- ============================================
+
+CREATE TABLE icu_admissions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    patient_id UUID REFERENCES patients(id) NOT NULL,
+    visit_id UUID REFERENCES visits(id),
+    bed_id UUID REFERENCES beds(id),
+    admission_date TIMESTAMPTZ DEFAULT NOW(),
+    discharge_date TIMESTAMPTZ,
+    admission_reason TEXT,
+    admission_source VARCHAR(30),
+    diagnosis_on_admission TEXT,
+    apache_score INTEGER,
+    sofa_score INTEGER,
+    ventilator_required BOOLEAN DEFAULT false,
+    isolation_required BOOLEAN DEFAULT false,
+    attending_physician_id UUID REFERENCES doctors(id),
+    status VARCHAR(20) DEFAULT 'ADMITTED',
+    admitted_by UUID,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE icu_vital_signs (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    admission_id UUID REFERENCES icu_admissions(id) NOT NULL,
+    recorded_at TIMESTAMPTZ DEFAULT NOW(),
+    recorded_by UUID,
+    heart_rate INTEGER,
+    systolic_bp INTEGER,
+    diastolic_bp INTEGER,
+    mean_arterial_pressure INTEGER,
+    respiratory_rate INTEGER,
+    temperature DECIMAL(4,1),
+    spo2 DECIMAL(5,2),
+    fio2 DECIMAL(5,2),
+    gcs_eye INTEGER,
+    gcs_verbal INTEGER,
+    gcs_motor INTEGER,
+    gcs_total INTEGER,
+    pupil_left VARCHAR(20),
+    pupil_right VARCHAR(20),
+    cvp INTEGER,
+    urine_output INTEGER,
+    notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE icu_intake_output (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    admission_id UUID REFERENCES icu_admissions(id) NOT NULL,
+    recorded_at TIMESTAMPTZ DEFAULT NOW(),
+    recorded_by UUID,
+    type VARCHAR(10) NOT NULL,
+    category VARCHAR(30),
+    amount DECIMAL(8,2),
+    route VARCHAR(30),
+    notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE icu_ventilator_records (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    admission_id UUID REFERENCES icu_admissions(id) NOT NULL,
+    recorded_at TIMESTAMPTZ DEFAULT NOW(),
+    recorded_by UUID,
+    mode VARCHAR(30),
+    fio2 DECIMAL(5,2),
+    peep DECIMAL(5,2),
+    tidal_volume INTEGER,
+    respiratory_rate_set INTEGER,
+    respiratory_rate_actual INTEGER,
+    pip DECIMAL(5,2),
+    plateau_pressure DECIMAL(5,2),
+    ie_ratio VARCHAR(20),
+    minute_volume DECIMAL(6,2),
+    notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ============================================
+-- SURGERY (SUPPLEMENTAL)
+-- ============================================
+
+CREATE TABLE operating_rooms (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    room_code VARCHAR(20) UNIQUE NOT NULL,
+    room_name VARCHAR(100) NOT NULL,
+    room_type VARCHAR(30),
+    status VARCHAR(20) DEFAULT 'available',
+    floor INTEGER,
+    capacity INTEGER,
+    equipment JSONB,
+    notes TEXT,
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE anesthesia_records (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    surgery_id UUID REFERENCES surgeries(id) NOT NULL,
+    anesthesiologist_name VARCHAR(100),
+    anesthesiologist_id UUID REFERENCES doctors(id),
+    pre_anesthesia_assessment TEXT,
+    airway_assessment VARCHAR(50),
+    npo_status BOOLEAN,
+    premedication TEXT,
+    induction_agents TEXT,
+    maintenance_agents TEXT,
+    airway_device VARCHAR(50),
+    ett_size VARCHAR(10),
+    intubation_grade VARCHAR(10),
+    iv_fluids JSONB,
+    blood_products JSONB,
+    vital_signs_timeline JSONB,
+    estimated_blood_loss INTEGER,
+    urine_output INTEGER,
+    emergence_time TIMESTAMPTZ,
+    extubation_time TIMESTAMPTZ,
+    complications TEXT,
+    post_anesthesia_score INTEGER,
+    notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ============================================
+-- INVENTORY
+-- ============================================
+
+CREATE TABLE inventory_items (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    item_code VARCHAR(30) UNIQUE NOT NULL,
+    item_name VARCHAR(200) NOT NULL,
+    category VARCHAR(50),
+    unit VARCHAR(20),
+    current_stock INTEGER DEFAULT 0,
+    minimum_stock INTEGER DEFAULT 0,
+    maximum_stock INTEGER,
+    reorder_point INTEGER,
+    unit_price DECIMAL(12,2),
+    storage_location VARCHAR(100),
+    is_active BOOLEAN DEFAULT true,
+    notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE inventory_batches (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    item_id UUID REFERENCES inventory_items(id) NOT NULL,
+    batch_number VARCHAR(50),
+    expiry_date DATE,
+    initial_quantity INTEGER NOT NULL,
+    remaining_quantity INTEGER NOT NULL,
+    purchase_order_id UUID REFERENCES purchase_orders(id),
+    received_date DATE DEFAULT CURRENT_DATE,
+    notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE purchase_requests (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    pr_number VARCHAR(20) UNIQUE NOT NULL,
+    requested_by UUID,
+    department_id UUID REFERENCES departments(id),
+    request_date DATE DEFAULT CURRENT_DATE,
+    needed_by DATE,
+    priority VARCHAR(20) DEFAULT 'NORMAL',
+    status VARCHAR(20) DEFAULT 'DRAFT',
+    total_estimated DECIMAL(12,2),
+    notes TEXT,
+    approved_by UUID,
+    approved_date TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ============================================
+-- ACCOUNTING
+-- ============================================
+
+CREATE TABLE chart_of_accounts (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    account_code VARCHAR(20) UNIQUE NOT NULL,
+    account_name VARCHAR(200) NOT NULL,
+    account_type VARCHAR(30) NOT NULL,
+    account_category VARCHAR(50),
+    parent_id UUID REFERENCES chart_of_accounts(id),
+    normal_balance VARCHAR(10) DEFAULT 'DEBIT',
+    is_active BOOLEAN DEFAULT true,
+    description TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE journal_entries (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    entry_number VARCHAR(20) UNIQUE NOT NULL,
+    entry_date DATE NOT NULL,
+    description TEXT NOT NULL,
+    reference_type VARCHAR(30),
+    reference_id UUID,
+    total_debit DECIMAL(14,2) DEFAULT 0,
+    total_credit DECIMAL(14,2) DEFAULT 0,
+    status VARCHAR(20) DEFAULT 'DRAFT',
+    created_by UUID,
+    approved_by UUID,
+    approved_at TIMESTAMPTZ,
+    posted_at TIMESTAMPTZ,
+    notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE journal_entry_lines (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    entry_id UUID REFERENCES journal_entries(id) ON DELETE CASCADE NOT NULL,
+    line_number INTEGER NOT NULL,
+    account_id UUID REFERENCES chart_of_accounts(id) NOT NULL,
+    description TEXT,
+    debit DECIMAL(14,2) DEFAULT 0,
+    credit DECIMAL(14,2) DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ============================================
 -- DEFAULT ADMIN USER
 -- Email: multimediazen@gmail.com
 -- Password: admin123  (bcrypt hash, rounds=12)

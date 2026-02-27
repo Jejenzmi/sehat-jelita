@@ -333,4 +333,22 @@ async function generateJournalNumber() {
   return `${prefix}${String(seq).padStart(4, '0')}`;
 }
 
+// GET /api/accounting/next-journal-number
+// Returns a preview of the next journal entry number without creating one.
+router.get('/next-journal-number', asyncHandler(async (req, res) => {
+  const today = new Date();
+  const prefix = `JV${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, '0')}`;
+  let seq = 1;
+  try {
+    const last = await prisma.journal_entries.findFirst({
+      where: { entry_number: { startsWith: prefix } },
+      orderBy: { entry_number: 'desc' }
+    });
+    if (last) seq = parseInt(last.entry_number.slice(-4)) + 1;
+  } catch {
+    // journal_entries table may not exist yet; return a placeholder number
+  }
+  res.json({ success: true, data: `${prefix}${String(seq).padStart(4, '0')}` });
+}));
+
 export default router;
