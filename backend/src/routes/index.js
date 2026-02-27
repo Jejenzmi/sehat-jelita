@@ -158,9 +158,12 @@ router.get('/admin/modules', asyncHandler(async (req, res) => {
   const { prisma } = await import('../config/database.js');
   const { hospital_type } = req.query;
   const where = { setting_key: { startsWith: 'module_' } };
-  if (hospital_type) where.setting_value = hospital_type;
   const settings = await prisma.system_settings.findMany({ where });
-  res.json({ success: true, data: settings });
+  // If hospital_type is provided, filter client-side using description or key naming convention
+  const filtered = hospital_type
+    ? settings.filter(s => !s.description || s.description.includes(hospital_type) || s.description.includes('all'))
+    : settings;
+  res.json({ success: true, data: filtered });
 }));
 
 // Get menu access for the current user's roles

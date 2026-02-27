@@ -329,7 +329,7 @@ async function generateJournalNumber() {
     orderBy: { entry_number: 'desc' }
   });
 
-  const seq = last ? parseInt(last.entry_number.slice(-4)) + 1 : 1;
+  const seq = last ? parseInt(last.entry_number.slice(-4), 10) + 1 : 1;
   return `${prefix}${String(seq).padStart(4, '0')}`;
 }
 
@@ -344,7 +344,7 @@ router.get('/next-journal-number', asyncHandler(async (req, res) => {
       where: { entry_number: { startsWith: prefix } },
       orderBy: { entry_number: 'desc' }
     });
-    if (last) seq = parseInt(last.entry_number.slice(-4)) + 1;
+    if (last) seq = parseInt(last.entry_number.slice(-4), 10) + 1;
   } catch {
     // journal_entries table may not exist yet; return a placeholder number
   }

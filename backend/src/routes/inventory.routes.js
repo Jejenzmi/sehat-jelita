@@ -361,7 +361,7 @@ async function generatePONumber() {
     orderBy: { po_number: 'desc' }
   });
 
-  const seq = last ? parseInt(last.po_number.slice(-4)) + 1 : 1;
+  const seq = last ? parseInt(last.po_number.slice(-4), 10) + 1 : 1;
   return `${prefix}${String(seq).padStart(4, '0')}`;
 }
 
@@ -383,7 +383,7 @@ router.get('/next-pr-number', asyncHandler(async (req, res) => {
       where: { pr_number: { startsWith: prefix } },
       orderBy: { pr_number: 'desc' }
     });
-    if (last) seq = parseInt(last.pr_number.slice(-4)) + 1;
+    if (last) seq = parseInt(last.pr_number.slice(-4), 10) + 1;
   } catch {
     // purchase_requests table may not exist yet; return a placeholder number
   }

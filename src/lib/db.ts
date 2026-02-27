@@ -362,16 +362,18 @@ export const db = {
       console.warn(`[db.rpc] Unknown function: ${funcName}`);
       return { data: null, error: null };
     }
-    const hasBody = params && Object.keys(params).length > 0;
-    const method = hasBody ? 'POST' : config.method;
+    const hasParams = params && Object.keys(params).length > 0;
+    const method = config.method;
     let url = `${API_BASE_URL}${config.path}`;
-    if (method === 'GET' && hasBody) {
-      const qs = new URLSearchParams(params as Record<string, string>).toString();
-      if (qs) url += `?${qs}`;
+    if (method === 'GET' && hasParams) {
+      const qs = new URLSearchParams();
+      Object.entries(params as Record<string, unknown>).forEach(([k, v]) => qs.append(k, String(v)));
+      const qsStr = qs.toString();
+      if (qsStr) url += `?${qsStr}`;
     }
     try {
       const init: RequestInit = { method, headers: getAuthHeaders() };
-      if (method === 'POST' && hasBody) init.body = JSON.stringify(params);
+      if (method === 'POST' && hasParams) init.body = JSON.stringify(params);
       const res = await fetch(url, init);
       const json = await res.json().catch(() => ({}));
       if (!res.ok) return { data: null, error: { message: json.error || res.statusText } };

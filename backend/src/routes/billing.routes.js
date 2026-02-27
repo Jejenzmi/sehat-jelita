@@ -551,8 +551,20 @@ router.get('/print/:id', asyncHandler(async (req, res) => {
 // GET /api/billing/next-invoice-number
 // Returns a preview of the next invoice number without creating one.
 router.get('/next-invoice-number', asyncHandler(async (req, res) => {
-  const result = await prisma.$queryRaw`SELECT generate_invoice_number() as inv`;
-  res.json({ success: true, data: result[0].inv });
+  try {
+    const result = await prisma.$queryRaw`SELECT generate_invoice_number() as inv`;
+    res.json({ success: true, data: result[0].inv });
+  } catch {
+    // Fallback if the generate_invoice_number() SQL function is not yet installed
+    const today = new Date();
+    const prefix = `INV${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, '0')}${String(today.getDate()).padStart(2, '0')}`;
+    const last = await prisma.billings.findFirst({
+      where: { invoice_number: { startsWith: prefix } },
+      orderBy: { invoice_number: 'desc' }
+    }).catch(() => null);
+    const seq = last ? parseInt(last.invoice_number.slice(-4), 10) + 1 : 1;
+    res.json({ success: true, data: `${prefix}${String(seq).padStart(4, '0')}` });
+  }
 }));
 
 export default router;
