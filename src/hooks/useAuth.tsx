@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useRef, useState, ReactNode } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { api, isNodeMode } from "@/lib/api-client";
 
 type AppRole = "admin" | "dokter" | "perawat" | "kasir" | "farmasi" | "laboratorium" | "radiologi" | "pendaftaran" | "keuangan" | "gizi" | "icu" | "bedah" | "rehabilitasi" | "mcu" | "forensik" | "cssd" | "manajemen" | "bank_darah";
 
@@ -17,6 +18,22 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Helper: build a minimal User-compatible object from Node.js backend response
+function buildNodeUser(userData: { id: string; email: string; fullName?: string }): User {
+  const now = new Date().toISOString();
+  return {
+    id: userData.id,
+    email: userData.email,
+    role: "authenticated",
+    app_metadata: {},
+    user_metadata: { full_name: userData.fullName ?? "" },
+    aud: "authenticated",
+    created_at: now,
+    updated_at: now,
+    confirmed_at: now,
+  } as User;
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -27,7 +44,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let cancelled = false;
 
-    // Listener FIRST (synchronous state updates only)
+    if (isNodeMode()) {
+      // Node.js backend mode: restore session from stored JWT
+      const initialize = async () => {
+        try {
+          const response = await api.auth.getCurrentUser() as { success: boolean; data: { id: string; email: string; fullName: string; roles: string[] } };
+          if (!cancelled && response?.success && response.data) {
+            const nodeUser = buildNodeUser(response.data);
+            setUser(nodeUser);
+            setRoles((response.data.roles ?? []) as AppRole[]);
+          }
+        } catch (err) {
+          // No valid token stored or network error — user is treated as logged out
+          console.debug("[Auth] Session restore failed:", (err as Error).message);
+        } finally {
+          if (!cancelled) setLoading(false);
+        }
+      };
+      initialize();
+      return () => { cancelled = true; };
+    }
+
+    // Supabase mode (original behaviour)
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, nextSession) => {
@@ -35,7 +73,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(nextSession?.user ?? null);
     });
 
-    // THEN validate existing session before releasing loading state
     const initialize = async () => {
       try {
         const {
@@ -45,7 +82,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         let validatedSession: Session | null = initialSession;
         let validatedUser: User | null = initialSession?.user ?? null;
 
-        // If there is a stored session, validate it (prevents UI "flash" on expired tokens)
         if (initialSession) {
           const {
             data: { user: verifiedUser },
@@ -77,8 +113,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  // Fetch roles when user changes (keeps auth listener callback clean)
+  // Fetch roles when user changes — Supabase mode only
   useEffect(() => {
+    if (isNodeMode()) return; // roles come from login response in Node.js mode
+
     if (!user) {
       lastRolesUserIdRef.current = null;
       setRoles([]);
@@ -88,7 +126,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (lastRolesUserIdRef.current === user.id) return;
     lastRolesUserIdRef.current = user.id;
 
-    // Defer DB call to avoid coupling with auth state updates
     const id = user.id;
     setTimeout(() => {
       fetchUserRoles(id);
@@ -115,29 +152,52 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    return { error };
+    try {
+      if (isNodeMode()) {
+        const response = await api.auth.login(email, password) as { success: boolean; data: { user: { id: string; email: string; fullName: string; roles: string[] } } };
+        if (response?.success && response.data) {
+          const nodeUser = buildNodeUser(response.data.user);
+          setUser(nodeUser);
+          setRoles((response.data.user.roles ?? []) as AppRole[]);
+        }
+        return { error: null };
+      }
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      return { error };
+    } catch (err) {
+      return { error: err as Error };
+    }
   };
 
   const signUp = async (email: string, password: string, fullName: string) => {
-    const redirectUrl = `${window.location.origin}/`;
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: redirectUrl,
-        data: {
-          full_name: fullName,
+    try {
+      if (isNodeMode()) {
+        await api.auth.register(email, password, fullName);
+        return { error: null };
+      }
+      const redirectUrl = `${window.location.origin}/`;
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: redirectUrl,
+          data: { full_name: fullName },
         },
-      },
-    });
-    return { error };
+      });
+      return { error };
+    } catch (err) {
+      return { error: err as Error };
+    }
   };
 
   const signOut = async () => {
+    if (isNodeMode()) {
+      await api.auth.logout();
+      setUser(null);
+      setSession(null);
+      setRoles([]);
+      return;
+    }
     await supabase.auth.signOut();
     setRoles([]);
   };
