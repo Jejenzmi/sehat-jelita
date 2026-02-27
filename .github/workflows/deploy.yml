@@ -1,0 +1,37 @@
+name: Deploy ke Hostinger VPS
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Auto Deploy
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Deploy ke server via SSH
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            cd ${{ secrets.DEPLOY_PATH || '/opt/simrs-zen' }}
+            git pull origin main
+            docker compose up -d --build
+            docker system prune -f
+            # Cek kesehatan API (retry hingga 5 kali dengan jeda 15 detik)
+            for i in $(seq 1 5); do
+              if curl -sf http://localhost:3000/health; then
+                echo "Aplikasi berjalan dengan baik"
+                exit 0
+              fi
+              echo "Percobaan $i gagal, menunggu 15 detik..."
+              sleep 15
+            done
+            echo "Health check gagal setelah 5 percobaan"
+            exit 1
