@@ -78,6 +78,22 @@ services:
       timeout: 10s
       retries: 3
 
+  # React Frontend
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: simrs-zen-frontend
+    restart: unless-stopped
+    environment:
+      VITE_API_MODE: nodejs
+      VITE_API_URL: http://api:3000/api
+    ports:
+      - "80:80"
+    depends_on:
+      api:
+        condition: service_healthy
+
 volumes:
   postgres_data:
     driver: local
