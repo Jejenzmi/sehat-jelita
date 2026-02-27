@@ -7,24 +7,38 @@ import Redis from 'ioredis';
 
 const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
 
-// Create Redis client
+// Create Redis client with graceful error handling
 const redis = new Redis(REDIS_URL, {
   maxRetriesPerRequest: 3,
   retryDelayOnFailover: 100,
   enableReadyCheck: true,
-  lazyConnect: true
+  lazyConnect: true,
+  // Reconnect on ECONNRESET/ETIMEDOUT but not on authentication errors
+  reconnectOnError: (err) => {
+    const targetErrors = ['ECONNRESET', 'ETIMEDOUT', 'ECONNREFUSED'];
+    return targetErrors.some(e => err.message.includes(e)) ? 1 : false;
+  },
 });
+
+let redisAvailable = false;
 
 // Connection event handlers
 redis.on('connect', () => {
+  redisAvailable = true;
   console.log('Redis connected');
 });
 
+redis.on('ready', () => {
+  redisAvailable = true;
+});
+
 redis.on('error', (error) => {
-  console.error('Redis error:', error.message);
+  redisAvailable = false;
+  console.warn('Redis unavailable:', error.message);
 });
 
 redis.on('close', () => {
+  redisAvailable = false;
   console.log('Redis connection closed');
 });
 
@@ -52,6 +66,7 @@ export const disconnect = async () => {
  * Set cache value
  */
 export const set = async (key, value, ttlSeconds = 3600) => {
+  if (!redisAvailable) return null;
   const serialized = typeof value === 'string' ? value : JSON.stringify(value);
   if (ttlSeconds) {
     return redis.setex(key, ttlSeconds, serialized);
@@ -63,6 +78,7 @@ export const set = async (key, value, ttlSeconds = 3600) => {
  * Get cache value
  */
 export const get = async (key) => {
+  if (!redisAvailable) return null;
   const value = await redis.get(key);
   if (!value) return null;
   
@@ -77,6 +93,7 @@ export const get = async (key) => {
  * Delete cache key
  */
 export const del = async (key) => {
+  if (!redisAvailable) return 0;
   return redis.del(key);
 };
 
@@ -84,6 +101,7 @@ export const del = async (key) => {
  * Delete keys by pattern
  */
 export const delByPattern = async (pattern) => {
+  if (!redisAvailable) return 0;
   const keys = await redis.keys(pattern);
   if (keys.length > 0) {
     return redis.del(...keys);
@@ -95,6 +113,7 @@ export const delByPattern = async (pattern) => {
  * Check if key exists
  */
 export const exists = async (key) => {
+  if (!redisAvailable) return 0;
   return redis.exists(key);
 };
 
@@ -102,6 +121,7 @@ export const exists = async (key) => {
  * Set expiration on key
  */
 export const expire = async (key, ttlSeconds) => {
+  if (!redisAvailable) return 0;
   return redis.expire(key, ttlSeconds);
 };
 
@@ -109,6 +129,7 @@ export const expire = async (key, ttlSeconds) => {
  * Get TTL of key
  */
 export const ttl = async (key) => {
+  if (!redisAvailable) return -2;
   return redis.ttl(key);
 };
 
@@ -116,6 +137,7 @@ export const ttl = async (key) => {
  * Increment value
  */
 export const incr = async (key) => {
+  if (!redisAvailable) return null;
   return redis.incr(key);
 };
 
@@ -123,10 +145,12 @@ export const incr = async (key) => {
  * Hash operations
  */
 export const hset = async (key, field, value) => {
+  if (!redisAvailable) return null;
   return redis.hset(key, field, typeof value === 'string' ? value : JSON.stringify(value));
 };
 
 export const hget = async (key, field) => {
+  if (!redisAvailable) return null;
   const value = await redis.hget(key, field);
   if (!value) return null;
   try {
@@ -137,6 +161,7 @@ export const hget = async (key, field) => {
 };
 
 export const hgetall = async (key) => {
+  if (!redisAvailable) return null;
   const hash = await redis.hgetall(key);
   if (!hash) return null;
   
@@ -152,6 +177,7 @@ export const hgetall = async (key) => {
 };
 
 export const hdel = async (key, ...fields) => {
+  if (!redisAvailable) return 0;
   return redis.hdel(key, ...fields);
 };
 
@@ -159,14 +185,17 @@ export const hdel = async (key, ...fields) => {
  * List operations
  */
 export const lpush = async (key, value) => {
+  if (!redisAvailable) return null;
   return redis.lpush(key, typeof value === 'string' ? value : JSON.stringify(value));
 };
 
 export const rpush = async (key, value) => {
+  if (!redisAvailable) return null;
   return redis.rpush(key, typeof value === 'string' ? value : JSON.stringify(value));
 };
 
 export const lrange = async (key, start = 0, stop = -1) => {
+  if (!redisAvailable) return [];
   const items = await redis.lrange(key, start, stop);
   return items.map(item => {
     try {
@@ -178,6 +207,7 @@ export const lrange = async (key, start = 0, stop = -1) => {
 };
 
 export const ltrim = async (key, start, stop) => {
+  if (!redisAvailable) return null;
   return redis.ltrim(key, start, stop);
 };
 

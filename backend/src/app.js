@@ -13,6 +13,17 @@ import dotenv from 'dotenv';
 // Load environment variables
 dotenv.config();
 
+// ============================================
+// STARTUP VALIDATION
+// ============================================
+
+const REQUIRED_ENV_VARS = ['DATABASE_URL', 'JWT_SECRET'];
+const missingEnvVars = REQUIRED_ENV_VARS.filter(key => !process.env[key]);
+if (missingEnvVars.length > 0) {
+  console.error(`❌ Missing required environment variables: ${missingEnvVars.join(', ')}`);
+  process.exit(1);
+}
+
 // Import middleware
 import { errorHandler } from './middleware/errorHandler.js';
 import { rateLimiter } from './middleware/rateLimiter.js';
@@ -20,6 +31,8 @@ import { requestLogger } from './middleware/logger.js';
 
 // Import centralized routes
 import apiRouter from './routes/index.js';
+
+import { checkDatabaseConnection } from './config/database.js';
 
 // Import Socket handlers
 import { initializeSocketHandlers } from './socket/index.js';
@@ -124,6 +137,13 @@ initializeSocketHandlers(io);
 // ============================================
 
 const PORT = process.env.PORT || 3000;
+
+// Verify database connection before binding to the port
+const dbConnected = await checkDatabaseConnection();
+if (!dbConnected) {
+  console.error('❌ Could not connect to the database. Exiting.');
+  process.exit(1);
+}
 
 httpServer.listen(PORT, () => {
   console.log(`

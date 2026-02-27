@@ -73,12 +73,15 @@ model profiles {
   password_hash String?
   is_active     Boolean   @default(true)
   last_login    DateTime?
+  reset_token         String?
+  reset_token_expires DateTime?
   created_at    DateTime  @default(now())
   updated_at    DateTime  @updatedAt
 
   user_roles user_roles[]
   employees  employees[]
   audit_logs audit_logs[]
+  chat_messages chat_messages[]
 }
 
 model user_roles {
@@ -768,4 +771,49 @@ model notifications {
   created_at     DateTime  @default(now())
 
   @@index([user_id])
+}
+
+// ============================================
+// CHAT
+// ============================================
+
+model chat_rooms {
+  id           String   @id @default(uuid())
+  room_name    String?
+  room_type    String   @default("direct")
+  created_by   String?
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  chat_messages     chat_messages[]
+  chat_participants chat_participants[]
+}
+
+model chat_participants {
+  id           String    @id @default(uuid())
+  room_id      String
+  user_id      String
+  joined_at    DateTime  @default(now())
+  last_read_at DateTime?
+
+  chat_rooms chat_rooms @relation(fields: [room_id], references: [id], onDelete: Cascade)
+
+  @@unique([room_id, user_id])
+  @@index([room_id])
+  @@index([user_id])
+}
+
+model chat_messages {
+  id           String   @id @default(uuid())
+  room_id      String
+  sender_id    String
+  content      String
+  message_type String   @default("text")
+  created_at   DateTime @default(now())
+
+  chat_rooms chat_rooms @relation(fields: [room_id], references: [id], onDelete: Cascade)
+  profiles   profiles?  @relation(fields: [sender_id], references: [user_id], onDelete: SetNull)
+
+  @@index([room_id])
+  @@index([sender_id])
 }
