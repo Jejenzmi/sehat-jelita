@@ -10,7 +10,7 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Upload, FileSpreadsheet, ArrowRight, CheckCircle2, AlertCircle, Download, Trash2, Eye } from "lucide-react";
-import ExcelJS from "exceljs";
+import * as ExcelJS from "exceljs";
 
 // Target schema definitions for each entity type
 const TARGET_SCHEMAS: Record<string, { field: string; label: string; required: boolean; type: string }[]> = {
@@ -95,27 +95,36 @@ export function MigrationTool() {
 
     try {
       const data = await file.arrayBuffer();
-      const workbook = new ExcelJS.Workbook();
-      await workbook.xlsx.load(data);
-      const worksheet = workbook.worksheets[0];
+      const wb = new ExcelJS.Workbook();
+      await wb.xlsx.load(data);
+      const worksheet = wb.worksheets[0];
+      if (!worksheet) {
+        toast({
+          title: "File Kosong",
+          description: "File yang diupload tidak memiliki data",
+          variant: "destructive",
+        });
+        return;
+      }
 
-      // Extract headers from first row, filtering out empty cells
-      const headers: string[] = [];
-      worksheet.getRow(1).eachCell((cell) => {
+      // Build JSON records from the worksheet rows
+      // Use a column-number keyed map to preserve alignment even with sparse headers
+      const headerRow = worksheet.getRow(1);
+      const headersByCol: Record<number, string> = {};
+      headerRow.eachCell((cell, colNumber) => {
         const val = String(cell.value ?? "").trim();
-        if (val) headers.push(val);
+        if (val) headersByCol[colNumber] = val;
       });
 
-      // Extract data rows as objects keyed by header, ensuring all header keys are present
       const jsonData: Record<string, unknown>[] = [];
       worksheet.eachRow((row, rowNumber) => {
         if (rowNumber === 1) return;
-        const obj: Record<string, unknown> = {};
-        headers.forEach((header, idx) => {
-          const cell = row.getCell(idx + 1);
-          obj[header] = cell.value ?? null;
+        const record: Record<string, unknown> = {};
+        row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+          const key = headersByCol[colNumber];
+          if (key) record[key] = cell.value ?? null;
         });
-        if (Object.values(obj).some((v) => v !== null)) jsonData.push(obj);
+        if (Object.keys(record).length > 0) jsonData.push(record);
       });
 
       if (jsonData.length === 0) {
@@ -127,7 +136,7 @@ export function MigrationTool() {
         return;
       }
 
-      const columns = headers;
+      const columns = Object.keys(jsonData[0]);
       setSourceColumns(columns);
       setSourceData(jsonData);
 
@@ -274,12 +283,15 @@ export function MigrationTool() {
 
     const schema = TARGET_SCHEMAS[entityType];
     const headers = schema.map((f) => f.label);
-    const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet(entityType);
-    worksheet.addRow(headers);
 
-    const buffer = await workbook.xlsx.writeBuffer();
-    const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet(entityType);
+    ws.addRow(headers);
+
+    const buffer = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buffer], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;

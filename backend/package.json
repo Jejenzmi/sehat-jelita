@@ -9,7 +9,9 @@
     "start": "node src/app.js",
     "db:migrate": "npx prisma migrate deploy",
     "db:seed": "node src/scripts/seed.js",
-    "db:studio": "npx prisma studio"
+    "db:studio": "npx prisma studio",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@prisma/client": "^5.10.0",
@@ -30,7 +32,8 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
-    "nodemon": "^3.0.3"
+    "nodemon": "^3.0.3",
+    "vitest": "^4.0.18"
   },
   "engines": {
     "node": ">=20.0.0"

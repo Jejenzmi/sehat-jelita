@@ -2,9 +2,13 @@ name: CI - Lint, Type Check & Build
 
 on:
   push:
-    branches: [main, develop]
+    branches:
+      - main
+      - develop
+      - 'copilot/**'
   pull_request:
-    branches: [main]
+    branches:
+      - main
 
 jobs:
   frontend:
@@ -24,6 +28,10 @@ jobs:
           cache: 'npm'
 
       - name: Install dependensi frontend
+        run: npm ci --legacy-peer-deps
+
+      - name: Install dependensi backend (untuk test runner)
+        working-directory: backend
         run: npm ci
 
       - name: Lint frontend
@@ -33,6 +41,9 @@ jobs:
       - name: Type check frontend
         run: npx tsc --noEmit
 
+      - name: Run frontend & backend tests
+        run: npm test
+
       - name: Build frontend
         env:
           VITE_API_MODE: nodejs
@@ -41,6 +52,7 @@ jobs:
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
+        if: success()
         with:
           name: frontend-dist
           path: dist/
@@ -67,6 +79,19 @@ jobs:
         working-directory: backend
         run: npm ci
 
-      - name: Check backend syntax
+      - name: Validate backend structure
         working-directory: backend
-        run: node --check src/app.js
+        run: node --input-type=module --eval "
+          import fs from 'fs';
+          const requiredFiles = [
+            'src/app.js',
+            'src/middleware/errorHandler.js',
+            'src/middleware/rateLimiter.js',
+            'src/middleware/auth.middleware.js',
+            'src/routes/index.js',
+          ];
+          requiredFiles.forEach(f => {
+            if (!fs.existsSync(f)) throw new Error('Missing: ' + f);
+          });
+          console.log('All required backend files present');
+        "

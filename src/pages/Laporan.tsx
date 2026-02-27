@@ -124,7 +124,8 @@ export default function Laporan() {
     const wb = new ExcelJS.Workbook();
 
     // Summary sheet
-    const summaryData = [
+    const wsSummary = wb.addWorksheet("Ringkasan");
+    wsSummary.addRows([
       ["LAPORAN SIMRS"],
       [`Periode: ${dateRange.start} - ${dateRange.end}`],
       [],
@@ -135,12 +136,11 @@ export default function Laporan() {
       ["IGD", stats?.emergencyVisits || 0],
       ["Total Pendapatan (Rp)", stats?.totalRevenue || 0],
       ["Rata-rata LOS (hari)", stats?.avgLOS || 0],
-    ];
-    const wsSummary = wb.addWorksheet("Ringkasan");
-    summaryData.forEach(row => wsSummary.addRow(row));
+    ]);
 
     // Monthly visits sheet
-    const visitsData = [
+    const wsVisits = wb.addWorksheet("Kunjungan Bulanan");
+    wsVisits.addRows([
       ["Bulan", "Rawat Jalan", "Rawat Inap", "IGD", "Total"],
       ...monthlyVisits.map(m => [
         m.month,
@@ -149,12 +149,11 @@ export default function Laporan() {
         m.igd,
         m.rawatJalan + m.rawatInap + m.igd,
       ]),
-    ];
-    const wsVisits = wb.addWorksheet("Kunjungan Bulanan");
-    visitsData.forEach(row => wsVisits.addRow(row));
+    ]);
 
     // Revenue sheet
-    const revenueData = [
+    const wsRevenue = wb.addWorksheet("Pendapatan Bulanan");
+    wsRevenue.addRows([
       ["Bulan", "BPJS (Jt)", "Umum (Jt)", "Asuransi (Jt)", "Total (Jt)"],
       ...monthlyRevenue.map(m => [
         m.month,
@@ -163,22 +162,21 @@ export default function Laporan() {
         m.asuransi,
         m.bpjs + m.umum + m.asuransi,
       ]),
-    ];
-    const wsRevenue = wb.addWorksheet("Pendapatan Bulanan");
-    revenueData.forEach(row => wsRevenue.addRow(row));
+    ]);
 
     // Diagnoses sheet
     if (topDiagnoses.length > 0) {
-      const diagnosesData = [
+      const wsDiagnoses = wb.addWorksheet("Top Diagnosa");
+      wsDiagnoses.addRows([
         ["Kode ICD", "Diagnosa", "Jumlah", "Persentase"],
         ...topDiagnoses.map(d => [d.code, d.description, d.count, `${d.percentage}%`]),
-      ];
-      const wsDiagnoses = wb.addWorksheet("Top Diagnosa");
-      diagnosesData.forEach(row => wsDiagnoses.addRow(row));
+      ]);
     }
 
     const buffer = await wb.xlsx.writeBuffer();
-    const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    const blob = new Blob([buffer], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;

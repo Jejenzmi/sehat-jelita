@@ -1,51 +1,80 @@
-# ARCHITECTURE.md - Arsitektur Sistem SIMRS ZEN
+# 🏗️ Arsitektur Sistem SIMRS ZEN
 
-## Gambaran Umum
-
-SIMRS ZEN adalah Sistem Informasi Manajemen Rumah Sakit berbasis web yang terdiri dari:
-
-- **Frontend**: React + Vite SPA (TypeScript)
-- **Backend**: Node.js/Express REST API
-- **Database**: PostgreSQL (via Prisma ORM)
-- **Cache**: Redis (rate limiting, sesi)
-- **Realtime**: Socket.IO
+Gambaran teknis komprehensif arsitektur SIMRS ZEN (Sistem Informasi Manajemen Rumah Sakit ZEN).
 
 ---
 
-## Diagram Arsitektur
+## Gambaran Umum
 
 ```
-┌─────────────────────────────────────────────────────┐
-│                    Browser / Client                 │
-└────────────────────┬────────────────────────────────┘
-                     │ HTTPS (80/443)
-┌────────────────────▼────────────────────────────────┐
-│              nginx (Reverse Proxy)                  │
-│   /          → React SPA (static files)             │
-│   /api/*     → Backend API (proxy)                  │
-│   /socket.io → Socket.IO (proxy)                    │
-└──────────┬──────────────────────┬───────────────────┘
-           │                      │
-┌──────────▼──────────┐  ┌───────▼──────────────────┐
-│   React Frontend    │  │   Node.js/Express API     │
-│   (port 80)         │  │   (port 3000)             │
-│                     │  │                           │
-│  - React Router v6  │  │  - REST endpoints /api/*  │
-│  - React Query      │  │  - JWT authentication     │
-│  - Radix UI         │  │  - Socket.IO server       │
-│  - Tailwind CSS     │  │  - Rate limiting          │
-└─────────────────────┘  └──────────┬────────────────┘
-                                    │
-                    ┌───────────────┴───────────────┐
-                    │                               │
-         ┌──────────▼──────────┐    ┌──────────────▼─────┐
-         │     PostgreSQL      │    │        Redis        │
-         │   (port 5432)       │    │    (port 6379)      │
-         │                     │    │                     │
-         │  - Prisma ORM       │    │  - Rate limiting    │
-         │  - Migrations       │    │  - Session cache    │
-         └─────────────────────┘    └────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                        Internet / Browser                    │
+└───────────────────────────┬─────────────────────────────────┘
+                            │ HTTPS :443 / HTTP :80
+┌───────────────────────────▼─────────────────────────────────┐
+│                  nginx (Reverse Proxy + Frontend)            │
+│   - Serve React SPA (static files)                          │
+│   - Proxy /api/* → API Backend :3000                        │
+│   - SSL termination                                         │
+│   - Gzip compression, security headers                      │
+└──────────────┬────────────────────────────────┬─────────────┘
+               │ /api/*                         │ WebSocket
+┌──────────────▼────────────────────────────────▼─────────────┐
+│                  Node.js / Express API (Port 3000)           │
+│   - REST API routes (/api/v1/...)                           │
+│   - Socket.IO untuk real-time notifications                 │
+│   - JWT authentication & RBAC authorization                 │
+│   - Rate limiting, security headers (Helmet)                │
+│   - Prisma ORM                                              │
+└──────────────┬────────────────────────────────┬─────────────┘
+               │                                │
+┌──────────────▼───────────┐    ┌───────────────▼─────────────┐
+│   PostgreSQL :5432       │    │   Redis :6379                │
+│   (Primary data store)   │    │   (Caching, rate limiting)  │
+└──────────────────────────┘    └─────────────────────────────┘
 ```
+
+---
+
+## Stack Teknologi
+
+### Frontend
+| Teknologi | Versi | Kegunaan |
+|---|---|---|
+| React | 18.x | UI framework |
+| TypeScript | 5.x | Type safety |
+| Vite | 5.x | Build tool & dev server |
+| React Router | 6.x | Client-side routing |
+| TanStack Query | 5.x | Server state management & caching |
+| Tailwind CSS | 3.x | Utility-first CSS |
+| shadcn/ui + Radix UI | Latest | Accessible UI components |
+| React Hook Form + Zod | Latest | Form validation |
+| Recharts | 2.x | Charts & data visualization |
+| Socket.IO Client | 4.x | Real-time WebSocket |
+
+### Backend
+| Teknologi | Versi | Kegunaan |
+|---|---|---|
+| Node.js | ≥ 20 | Runtime |
+| Express.js | 4.x | HTTP framework |
+| Prisma | 5.x | ORM & database migrations |
+| PostgreSQL | 15 | Relational database |
+| Redis | 7 | Caching & session store |
+| Socket.IO | 4.x | Real-time bidirectional events |
+| JWT (jsonwebtoken) | 9.x | Authentication tokens |
+| bcryptjs | 2.x | Password hashing |
+| Helmet | 7.x | HTTP security headers |
+| express-rate-limit | 7.x | Rate limiting |
+| Winston | 3.x | Structured logging |
+| Zod | 3.x | Input validation |
+
+### Infrastructure
+| Teknologi | Kegunaan |
+|---|---|
+| Docker | Container runtime |
+| Docker Compose | Multi-container orchestration |
+| nginx | Web server & reverse proxy |
+| GitHub Actions | CI/CD pipeline |
 
 ---
 
@@ -53,78 +82,110 @@ SIMRS ZEN adalah Sistem Informasi Manajemen Rumah Sakit berbasis web yang terdir
 
 ```
 sehat-jelita/
+├── .github/
+│   └── workflows/          # GitHub Actions CI/CD
+│       ├── ci.yml           # Lint, type check, build
+│       ├── docker-build.yml # Docker image builds
+│       └── deploy.yml       # Auto-deploy ke hosting
 ├── src/                    # Frontend React source
-│   ├── components/         # Reusable UI components
+│   ├── components/          # Reusable UI components
+│   │   ├── ui/              # shadcn/ui base components
+│   │   ├── layout/          # AppLayout, Sidebar, dll
+│   │   ├── ErrorBoundary.tsx
+│   │   └── ProtectedRoute.tsx
 │   ├── hooks/              # Custom React hooks
-│   ├── pages/              # Page components (50+ modules)
-│   ├── lib/                # Utilities
+│   ├── pages/              # Route-level page components
+│   ├── lib/                # Utilities & API client
 │   └── App.tsx             # Root component & routing
-│
-├── backend/                # Backend Node.js/Express
-│   └── src/
-│       ├── app.js          # Entry point
-│       ├── controllers/    # Request handlers
-│       ├── middleware/     # Auth, rate limit, error handling
-│       ├── routes/         # API route definitions
-│       ├── services/       # Business logic
-│       └── prisma/         # Database schema & migrations
-│
-├── .github/workflows/      # CI/CD pipelines
+├── backend/                # Node.js API source
+│   ├── src/
+│   │   ├── app.js           # Express app entry point
+│   │   ├── config/          # Config (database, etc.)
+│   │   ├── controllers/     # Route handler logic
+│   │   ├── middleware/      # Express middleware
+│   │   ├── routes/          # API route definitions
+│   │   ├── services/        # Business logic layer
+│   │   └── socket/          # Socket.IO event handlers
+│   └── prisma/             # Prisma schema & migrations
+├── docs/                   # Extended documentation
 ├── docker-compose.yml      # Development stack
 ├── docker-compose.prod.yml # Production stack
-├── Dockerfile.frontend     # Frontend Docker image
-├── backend/Dockerfile      # Backend Docker image
-└── nginx.conf              # nginx configuration
+├── Dockerfile.frontend     # Frontend Docker build
+├── nginx.conf              # nginx SPA + proxy config
+├── DEPLOYMENT.md           # Deployment guide
+├── ENVIRONMENT.md          # Environment variables guide
+├── ARCHITECTURE.md         # This file
+└── SECURITY.md             # Security best practices
 ```
 
 ---
 
-## Modul Fungsional
+## API Endpoint Struktur
 
-| Modul | Rute | Keterangan |
-|-------|------|------------|
-| Pendaftaran | `/pendaftaran` | Registrasi pasien & antrian |
-| Rawat Jalan | `/rawat-jalan` | Poliklinik & konsultasi |
-| Rawat Inap | `/rawat-inap` | Manajemen kamar & perawatan |
-| IGD | `/igd` | Instalasi Gawat Darurat |
-| Farmasi | `/farmasi` | Resep & stok obat |
-| Laboratorium | `/laboratorium` | Pemeriksaan lab |
-| Radiologi | `/radiologi` | Pemeriksaan radiologi & DICOM |
-| Billing | `/billing` | Tagihan & pembayaran |
-| BPJS | `/bpjs` | Integrasi BPJS Kesehatan |
-| SatuSehat | `/satu-sehat` | Integrasi platform Kemenkes |
-| Rekam Medis | `/rekam-medis` | Electronic Health Records |
-| Laporan | `/laporan` | Pelaporan & analitik |
+```
+/health              → Health check (unauthenticated)
+/api/auth/           → Authentication (login, register, refresh)
+/api/patients/       → Manajemen pasien
+/api/visits/         → Kunjungan & rawat jalan
+/api/inpatient/      → Rawat inap
+/api/emergency/      → IGD
+/api/pharmacy/       → Farmasi
+/api/lab/            → Laboratorium
+/api/radiology/      → Radiologi
+/api/billing/        → Billing & pembayaran
+/api/bpjs/           → Integrasi BPJS
+/api/satusehat/      → Integrasi SatuSehat
+/api/inventory/      → Inventori
+/api/hr/             → SDM
+/api/accounting/     → Akuntansi
+/api/icu/            → ICU
+/api/surgery/        → Kamar operasi
+/api/dialysis/       → Hemodialisa
+/api/bloodbank/      → Bank darah
+/api/nutrition/      → Gizi
+/api/rehabilitation/ → Rehabilitasi
+/api/mcu/            → Medical Check Up
+/api/forensic/       → Forensik
+/api/education/      → Pendidikan & riset
+```
 
 ---
 
 ## Alur Autentikasi
 
 ```
-1. User POST /api/auth/login (username + password)
-2. Backend verifikasi bcrypt hash
-3. Backend return JWT access token + refresh token
-4. Frontend simpan token di localStorage
-5. Setiap request berikutnya: Authorization: Bearer <token>
-6. Backend middleware validasi JWT di setiap protected endpoint
-7. Token expired → frontend kirim refresh token ke /api/auth/refresh
+1. POST /api/auth/login  →  {email, password}
+2. Backend: bcrypt.compare(password, hash)
+3. Backend: jwt.sign({userId, roles}, JWT_SECRET, {expiresIn})
+4. Response: {token, refreshToken, user}
+5. Frontend: simpan token di localStorage/httpOnly cookie
+6. Request berikutnya: Authorization: Bearer <token>
+7. Backend middleware: jwt.verify(token, JWT_SECRET)
+8. Inject req.user → route handler
 ```
 
 ---
 
-## Teknologi Stack
+## Real-time Features (Socket.IO)
 
-| Layer | Teknologi | Versi |
-|-------|-----------|-------|
-| Frontend Framework | React | 18 |
-| Build Tool | Vite | 5 |
-| UI Components | Radix UI + Tailwind CSS | - |
-| State Management | React Query (TanStack) | 5 |
-| Form Handling | React Hook Form + Zod | - |
-| Backend Framework | Express.js | 4 |
-| ORM | Prisma | 5 |
-| Database | PostgreSQL | 15 |
-| Cache | Redis | 7 |
-| Realtime | Socket.IO | 4 |
-| Container | Docker + nginx | - |
-| CI/CD | GitHub Actions | - |
+Events yang didukung:
+- `notification:new` — Notifikasi masuk baru
+- `patient:registered` — Pasien baru terdaftar
+- `queue:update` — Update antrian
+- `bed:status` — Perubahan status tempat tidur
+
+---
+
+## Data Flow
+
+```
+Browser → React Component
+       → TanStack Query (cache layer)
+       → api-client.ts (axios)
+       → nginx /api/* proxy
+       → Express route
+       → Middleware (auth, rate limit, validate)
+       → Controller
+       → Service / Prisma
+       → PostgreSQL
+```
