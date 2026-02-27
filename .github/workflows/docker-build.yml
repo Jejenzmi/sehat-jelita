@@ -11,6 +11,7 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAMESPACE: ${{ github.repository }}
+  OCI_SOURCE_LABEL: org.opencontainers.image.source=https://github.com/${{ github.repository }}
 
 jobs:
   build:
@@ -44,6 +45,7 @@ jobs:
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/simrs-zen-api:latest
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/simrs-zen-api:${{ github.sha }}
+          labels: ${{ env.OCI_SOURCE_LABEL }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -56,6 +58,7 @@ jobs:
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/simrs-zen-frontend:latest
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/simrs-zen-frontend:${{ github.sha }}
+          labels: ${{ env.OCI_SOURCE_LABEL }}
           build-args: |
             VITE_API_MODE=nodejs
             VITE_API_URL=/api

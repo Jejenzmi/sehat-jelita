@@ -15,6 +15,10 @@ RUN npx prisma generate
 FROM node:20-bookworm-slim AS production
 WORKDIR /app
 
+# Link this image to the source repository so that GITHUB_TOKEN can manage
+# the GHCR package visibility (private → public) without needing a PAT.
+LABEL org.opencontainers.image.source=https://github.com/Jejenzmi/sehat-jelita
+
 RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates curl \
  && rm -rf /var/lib/apt/lists/*
 
