@@ -1,0 +1,313 @@
+/**
+ * SIMRS ZEN - Routes Index
+ * Central routing configuration
+ */
+
+import { Router } from 'express';
+import { authenticateToken } from '../middleware/auth.middleware.js';
+import { requireRole } from '../middleware/role.middleware.js';
+
+// Import route modules
+import authRoutes from './auth.routes.js';
+import patientRoutes from './patients.routes.js';
+import visitRoutes from './visits.routes.js';
+import billingRoutes from './billing.routes.js';
+import pharmacyRoutes from './pharmacy.routes.js';
+import labRoutes from './lab.routes.js';
+import radiologyRoutes from './radiology.routes.js';
+import surgeryRoutes from './surgery.routes.js';
+import icuRoutes from './icu.routes.js';
+import inpatientRoutes from './inpatient.routes.js';
+import emergencyRoutes from './emergency.routes.js';
+import bpjsRoutes from './bpjs.routes.js';
+import satusehatRoutes from './satusehat.routes.js';
+import hrRoutes from './hr.routes.js';
+import inventoryRoutes from './inventory.routes.js';
+import accountingRoutes from './accounting.routes.js';
+import nutritionRoutes from './nutrition.routes.js';
+import rehabilitationRoutes from './rehabilitation.routes.js';
+import mcuRoutes from './mcu.routes.js';
+import bloodbankRoutes from './bloodbank.routes.js';
+import dialysisRoutes from './dialysis.routes.js';
+import forensicRoutes from './forensic.routes.js';
+import educationRoutes from './education.routes.js';
+
+const router = Router();
+
+// ============================================
+// PUBLIC ROUTES (No Authentication)
+// ============================================
+
+// Auth routes (login, register, password reset)
+router.use('/auth', authRoutes);
+
+// ============================================
+// PROTECTED ROUTES (Require Authentication)
+// ============================================
+
+// Apply authentication middleware to all routes below
+router.use(authenticateToken);
+
+// Core Clinical Modules
+router.use('/patients', patientRoutes);
+router.use('/visits', visitRoutes);
+router.use('/pharmacy', pharmacyRoutes);
+router.use('/lab', labRoutes);
+router.use('/radiology', radiologyRoutes);
+
+// Specialized Clinical Modules
+router.use('/surgery', surgeryRoutes);
+router.use('/icu', icuRoutes);
+router.use('/inpatient', inpatientRoutes);
+router.use('/emergency', emergencyRoutes);
+
+// Support Clinical Modules
+router.use('/nutrition', nutritionRoutes);
+router.use('/rehabilitation', rehabilitationRoutes);
+router.use('/mcu', mcuRoutes);
+router.use('/bloodbank', bloodbankRoutes);
+router.use('/dialysis', dialysisRoutes);
+router.use('/forensic', forensicRoutes);
+
+// Administrative Modules
+router.use('/billing', billingRoutes);
+router.use('/hr', hrRoutes);
+router.use('/inventory', inventoryRoutes);
+router.use('/accounting', accountingRoutes);
+
+// External Integration Modules
+router.use('/bpjs', bpjsRoutes);
+router.use('/satusehat', satusehatRoutes);
+
+// Education Module (Teaching Hospital)
+router.use('/education', educationRoutes);
+
+// ============================================
+// ADMIN ONLY ROUTES
+// ============================================
+
+// System administration routes
+router.get('/admin/audit-logs', requireRole(['admin']), async (req, res) => {
+  const { prisma } = await import('../config/database.js');
+  const { page = 1, limit = 50, table_name, action, user_id } = req.query;
+  
+  const skip = (parseInt(page) - 1) * parseInt(limit);
+  const take = parseInt(limit);
+  
+  const where = {};
+  if (table_name) where.table_name = table_name;
+  if (action) where.action = action;
+  if (user_id) where.user_id = user_id;
+  
+  const [total, logs] = await Promise.all([
+    prisma.audit_logs.count({ where }),
+    prisma.audit_logs.findMany({
+      where,
+      skip,
+      take,
+      orderBy: { created_at: 'desc' },
+      include: {
+        user: {
+          select: { id: true, email: true, full_name: true }
+        }
+      }
+    })
+  ]);
+  
+  res.json({
+    success: true,
+    data: logs,
+    pagination: { page: parseInt(page), limit: parseInt(limit), total }
+  });
+});
+
+router.get('/admin/system-settings', requireRole(['admin']), async (req, res) => {
+  const { prisma } = await import('../config/database.js');
+  const settings = await prisma.system_settings.findMany();
+  res.json({ success: true, data: settings });
+});
+
+router.put('/admin/system-settings/:key', requireRole(['admin']), async (req, res) => {
+  const { prisma } = await import('../config/database.js');
+  const { key } = req.params;
+  const { value } = req.body;
+  
+  const setting = await prisma.system_settings.upsert({
+    where: { setting_key: key },
+    update: { setting_value: value },
+    create: { setting_key: key, setting_value: value }
+  });
+  
+  res.json({ success: true, data: setting });
+});
+
+// ============================================
+// REPORTS ROUTES
+// ============================================
+
+router.get('/reports/dashboard', async (req, res) => {
+  const { prisma } = await import('../config/database.js');
+  
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  
+  const [
+    totalPatients,
+    todayVisits,
+    pendingBillings,
+    occupiedBeds
+  ] = await Promise.all([
+    prisma.patients.count({ where: { is_active: true } }),
+    prisma.visits.count({
+      where: { visit_date: { gte: today, lt: tomorrow } }
+    }),
+    prisma.billings.count({ where: { status: 'pending' } }),
+    prisma.beds.count({ where: { status: 'occupied' } })
+  ]);
+  
+  res.json({
+    success: true,
+    data: {
+      totalPatients,
+      todayVisits,
+      pendingBillings,
+      occupiedBeds
+    }
+  });
+});
+
+router.get('/reports/revenue', requireRole(['admin', 'keuangan', 'direktur']), async (req, res) => {
+  const { prisma } = await import('../config/database.js');
+  const { date_from, date_to, group_by = 'day' } = req.query;
+  
+  const where = { status: 'paid' };
+  if (date_from || date_to) {
+    where.payment_date = {};
+    if (date_from) where.payment_date.gte = new Date(date_from);
+    if (date_to) where.payment_date.lte = new Date(date_to);
+  }
+  
+  const revenue = await prisma.billings.aggregate({
+    where,
+    _sum: { total: true, paid_amount: true },
+    _count: true
+  });
+  
+  const byPaymentType = await prisma.billings.groupBy({
+    by: ['payment_type'],
+    where,
+    _sum: { total: true },
+    _count: true
+  });
+  
+  res.json({
+    success: true,
+    data: {
+      totalRevenue: revenue._sum.total || 0,
+      totalPaid: revenue._sum.paid_amount || 0,
+      transactionCount: revenue._count,
+      byPaymentType
+    }
+  });
+});
+
+router.get('/reports/visits', async (req, res) => {
+  const { prisma } = await import('../config/database.js');
+  const { date_from, date_to } = req.query;
+  
+  const where = {};
+  if (date_from || date_to) {
+    where.visit_date = {};
+    if (date_from) where.visit_date.gte = new Date(date_from);
+    if (date_to) where.visit_date.lte = new Date(date_to);
+  }
+  
+  const [
+    byType,
+    byDepartment,
+    byStatus
+  ] = await Promise.all([
+    prisma.visits.groupBy({
+      by: ['visit_type'],
+      where,
+      _count: true
+    }),
+    prisma.visits.groupBy({
+      by: ['department_id'],
+      where,
+      _count: true
+    }),
+    prisma.visits.groupBy({
+      by: ['status'],
+      where,
+      _count: true
+    })
+  ]);
+  
+  res.json({
+    success: true,
+    data: { byType, byDepartment, byStatus }
+  });
+});
+
+// ============================================
+// QUEUE MANAGEMENT
+// ============================================
+
+router.get('/queue/:departmentId', async (req, res) => {
+  const { prisma } = await import('../config/database.js');
+  const { departmentId } = req.params;
+  
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  const queue = await prisma.queue_entries.findMany({
+    where: {
+      department_id: departmentId,
+      created_at: { gte: today },
+      status: { in: ['waiting', 'called'] }
+    },
+    include: {
+      visit: {
+        include: {
+          patient: {
+            select: { id: true, full_name: true, medical_record_number: true }
+          }
+        }
+      }
+    },
+    orderBy: { queue_number: 'asc' }
+  });
+  
+  res.json({ success: true, data: queue });
+});
+
+router.post('/queue/:id/call', async (req, res) => {
+  const { prisma } = await import('../config/database.js');
+  const { id } = req.params;
+  
+  const entry = await prisma.queue_entries.update({
+    where: { id },
+    data: {
+      status: 'called',
+      called_at: new Date()
+    },
+    include: {
+      visit: {
+        include: { patient: true }
+      }
+    }
+  });
+  
+  // Emit socket event for queue display
+  const io = req.app.get('io');
+  if (io) {
+    io.to(`queue:${entry.department_id}`).emit('queue:called', entry);
+  }
+  
+  res.json({ success: true, data: entry });
+});
+
+export default router;
