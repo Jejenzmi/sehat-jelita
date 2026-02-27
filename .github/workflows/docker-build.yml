@@ -1,0 +1,46 @@
+name: Build Docker Images
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build Docker Images
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout kode
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build backend Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          dockerfile: ./backend/Dockerfile
+          push: false
+          tags: simrs-zen-api:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build frontend Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          dockerfile: ./Dockerfile.frontend
+          push: false
+          tags: simrs-zen-frontend:latest
+          build-args: |
+            VITE_API_MODE=nodejs
+            VITE_API_URL=/api
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
