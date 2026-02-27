@@ -1,8 +1,6 @@
 # SIMRS ZEN - Docker Compose for Local Development
 # Local PostgreSQL + Redis + Node.js API Backend
 
-version: '3.8'
-
 services:
   # PostgreSQL Database
   postgres:
