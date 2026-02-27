@@ -102,7 +102,6 @@ export default function Auth() {
               <img src={simrsZenLogo} alt="SIMRS ZEN" className="h-24 mx-auto" />
             </div>
           </div>
-          <h1 className="text-4xl font-bold mb-4">SIMRS ZEN</h1>
           <p className="text-xl mb-6 opacity-90">Sistem Informasi Manajemen Rumah Sakit</p>
           <p className="text-sm opacity-75">
             Platform terintegrasi untuk pengelolaan rumah sakit. 
@@ -131,7 +130,6 @@ export default function Auth() {
         <div className="w-full max-w-md">
           <div className="lg:hidden text-center mb-8">
              <img src={simrsZenLogo} alt="SIMRS ZEN" className="h-20 mx-auto mb-4" />
-            <h1 className="text-2xl font-bold">SIMRS ZEN</h1>
           </div>
 
           <div className="space-y-6">
