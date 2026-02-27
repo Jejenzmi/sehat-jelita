@@ -103,7 +103,7 @@ export function useSystemSettings() {
 
   // Convenience methods for specific settings
   const hospitalInfo = getSetting<HospitalInfo>("hospital_info", {
-    name: "RSUD Dr. Moewardi",
+    name: "SIMRS ZEN",
     code: "3372058",
     address: "Jl. Kolonel Sutarto No.132, Jebres, Kec. Jebres, Kota Surakarta, Jawa Tengah 57126",
     city: "Surakarta",

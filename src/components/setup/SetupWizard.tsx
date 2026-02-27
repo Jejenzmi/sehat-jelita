@@ -114,7 +114,7 @@ export default function SetupWizard({ onComplete }: SetupWizardProps) {
           <div className="flex justify-center mb-4">
             <img src={simrsZenLogo} alt="SIMRS ZEN" className="h-16" />
           </div>
-          <CardTitle className="text-2xl">Setup Awal SIMRS RSUD Dr. Moewardi</CardTitle>
+          <CardTitle className="text-2xl">Setup Awal SIMRS ZEN</CardTitle>
           <CardDescription>
             Langkah {step} dari 4 - Konfigurasi sistem pertama kali
           </CardDescription>
@@ -141,7 +141,7 @@ export default function SetupWizard({ onComplete }: SetupWizardProps) {
               <div>
                 <h3 className="text-xl font-semibold mb-2">Selamat Datang!</h3>
                 <p className="text-muted-foreground">
-                  Terima kasih telah memilih SIMRS RSUD Dr. Moewardi. Wizard ini akan membantu Anda
+                  Terima kasih telah memilih SIMRS ZEN. Wizard ini akan membantu Anda
                   mengkonfigurasi sistem sesuai dengan tipe dan kebutuhan fasilitas kesehatan Anda.
                 </p>
               </div>

@@ -87,7 +87,7 @@ export default function Auth() {
     } else {
           toast({
             title: "Login Berhasil",
-            description: "Selamat datang di SIMRS RSUD Dr. Moewardi",
+            description: "Selamat datang di SIMRS ZEN",
           });
     }
   };
@@ -98,14 +98,14 @@ export default function Auth() {
       <div className="hidden lg:flex lg:w-1/2 gradient-hero items-center justify-center p-12">
         <div className="max-w-md text-center text-primary-foreground">
           <div className="mb-8">
-            <div className="bg-white/90 rounded-xl p-3 inline-block">
-              <img src={simrsZenLogo} alt="SIMRS ZEN" className="h-16 mx-auto" />
+            <div className="bg-white/90 rounded-xl p-4 inline-block">
+              <img src={simrsZenLogo} alt="SIMRS ZEN" className="h-24 mx-auto" />
             </div>
           </div>
-          <h1 className="text-4xl font-bold mb-4">SIMRS RSUD Dr. Moewardi</h1>
+          <h1 className="text-4xl font-bold mb-4">SIMRS ZEN</h1>
           <p className="text-xl mb-6 opacity-90">Sistem Informasi Manajemen Rumah Sakit</p>
           <p className="text-sm opacity-75">
-            Platform terintegrasi untuk pengelolaan RSUD Dr. Moewardi. 
+            Platform terintegrasi untuk pengelolaan rumah sakit. 
             Mendukung BPJS Kesehatan, SATU SEHAT, dan standar Kemenkes RI.
           </p>
           
@@ -130,14 +130,14 @@ export default function Auth() {
       <div className="flex-1 flex items-center justify-center p-8 bg-background">
         <div className="w-full max-w-md">
           <div className="lg:hidden text-center mb-8">
-             <img src={simrsZenLogo} alt="SIMRS ZEN" className="h-12 mx-auto mb-4" />
-            <h1 className="text-2xl font-bold">SIMRS RSUD Dr. Moewardi</h1>
+             <img src={simrsZenLogo} alt="SIMRS ZEN" className="h-20 mx-auto mb-4" />
+            <h1 className="text-2xl font-bold">SIMRS ZEN</h1>
           </div>
 
           <div className="space-y-6">
             <div>
               <h2 className="text-2xl font-bold">Selamat Datang</h2>
-              <p className="text-muted-foreground">Masuk ke akun SIMRS RSUD Dr. Moewardi Anda</p>
+              <p className="text-muted-foreground">Masuk ke akun SIMRS ZEN Anda</p>
             </div>
 
             <form onSubmit={handleLogin} className="space-y-4">

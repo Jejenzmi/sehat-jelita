@@ -286,7 +286,7 @@ export default function Kiosk() {
           </div>
           <div className="text-white">
             <h1 className="text-3xl font-black tracking-tight">Self-Service Kiosk</h1>
-            <p className="text-white/70 text-sm">RSUD Dr. Moewardi — Cepat, Tepat, Nyaman & Mudah</p>
+            <p className="text-white/70 text-sm">SIMRS ZEN — Cepat, Tepat, Nyaman & Mudah</p>
           </div>
         </div>
         <KioskClock />
