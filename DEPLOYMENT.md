@@ -104,7 +104,7 @@ Workflow CI/CD (`docker-build.yml`) secara otomatis mengubah visibility paket ke
 setelah setiap push ke `main`, asalkan secret **`GH_PAT`** tersedia di repository:
 
 1. Buat Personal Access Token (classic) di GitHub → Settings → Developer settings → Tokens
-   dengan scope `write:packages` dan `read:packages`.
+   dengan scope `write:packages`, `read:packages`, dan **`delete:packages`** (diperlukan untuk mengubah visibility).
 2. Tambahkan token tersebut sebagai secret `GH_PAT` di repository:
    Settings → Secrets and variables → Actions → New repository secret.
 3. Jalankan workflow sekali (push ke main) agar paket diubah ke public.
