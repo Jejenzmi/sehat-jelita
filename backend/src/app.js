@@ -94,12 +94,27 @@ app.use('/api/', rateLimiter);
 // ============================================
 
 // Health check
-app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'ok', 
+app.get('/health', async (req, res) => {
+  const { prisma } = await import('./config/database.js');
+  let dbStatus = 'disconnected';
+  let dbLatencyMs = null;
+  try {
+    const start = Date.now();
+    await prisma.$queryRaw`SELECT 1`;
+    dbLatencyMs = Date.now() - start;
+    dbStatus = 'connected';
+  } catch {
+    dbStatus = 'disconnected';
+  }
+  res.json({
+    status: dbStatus === 'connected' ? 'ok' : 'degraded',
     timestamp: new Date().toISOString(),
     version: '1.0.0',
-    service: 'SIMRS ZEN API'
+    service: 'SIMRS ZEN API',
+    database: {
+      status: dbStatus,
+      latencyMs: dbLatencyMs
+    }
   });
 });
 
