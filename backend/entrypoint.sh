@@ -1,11 +1,11 @@
 #!/bin/sh
 set -e
 
-echo "⏳ Syncing database schema with Prisma..."
-npx prisma db push --skip-generate
+echo "⏳ Running database migrations..."
+npx prisma migrate deploy
 
-echo "🌱 Running database seed..."
-node src/scripts/seed.js
+echo "🌱 Running database seed (first-run only)..."
+node src/scripts/seed.js || true
 
 echo "🚀 Starting application..."
 exec node src/app.js
