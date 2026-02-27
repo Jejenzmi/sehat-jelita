@@ -15,7 +15,7 @@ const variantStyles = {
 };
 
 const defaultMessages = [
-  "🏥 Selamat datang di RSUD Dr. Moewardi — Melayani dengan Sepenuh Hati",
+  "🏥 Selamat datang di SIMRS ZEN — Melayani dengan Sepenuh Hati",
   "📋 Pendaftaran online tersedia melalui aplikasi Mobile JKN dan website resmi rumah sakit",
   "💉 Vaksinasi Influenza tersedia untuk dewasa & anak-anak — Hubungi Poli Umum",
   "🩺 Paket Medical Check Up Executive diskon 30% — Berlaku hingga akhir bulan",

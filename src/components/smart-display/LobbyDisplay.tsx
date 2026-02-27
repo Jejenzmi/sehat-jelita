@@ -71,7 +71,7 @@ export function LobbyDisplay({ departmentId, departmentName }: LobbyDisplayProps
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <div className="flex-shrink-0">
-        <DisplayHeader title="RSUD Dr. Moewardi" subtitle={headerSubtitle} variant="primary" />
+        <DisplayHeader title="SIMRS ZEN" subtitle={headerSubtitle} variant="primary" />
         <RunningText />
       </div>
 

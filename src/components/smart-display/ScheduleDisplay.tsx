@@ -11,7 +11,7 @@ export function ScheduleDisplay() {
     <div className="space-y-5">
       <DisplayHeader
         title="Jadwal Dokter Hari Ini"
-        subtitle={`${new Date().toLocaleDateString("id-ID", { weekday: "long", year: "numeric", month: "long", day: "numeric" })} — RSUD Dr. Moewardi`}
+        subtitle={`${new Date().toLocaleDateString("id-ID", { weekday: "long", year: "numeric", month: "long", day: "numeric" })} — SIMRS ZEN`}
         variant="purple"
       />
 

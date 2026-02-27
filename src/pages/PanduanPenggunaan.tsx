@@ -149,7 +149,7 @@ const PanduanPenggunaan = () => {
         <div className="flex flex-col items-center justify-center h-full text-center px-8">
           <motion.img
             src={simrsZenLogo}
-            alt="RSUD Dr. Moewardi"
+            alt="SIMRS ZEN"
             className="h-32 mb-8"
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
@@ -169,7 +169,7 @@ const PanduanPenggunaan = () => {
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.3 }}
           >
-            SIMRS RSUD Dr. Moewardi
+            SIMRS ZEN
           </motion.h2>
           <motion.p
             className="text-xl text-muted-foreground mb-8"
@@ -225,20 +225,20 @@ const PanduanPenggunaan = () => {
       ),
     },
 
-    // ========== SLIDE 2: Tentang SIMRS RSUD Dr. Moewardi ==========
+    // ========== SLIDE 2: Tentang SIMRS ZEN ==========
     {
       id: "about",
       content: (
         <div className="px-12 py-8">
           <h2 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
             <Home className="h-8 w-8" />
-            Tentang SIMRS RSUD Dr. Moewardi
+            Tentang SIMRS ZEN
           </h2>
           <div className="grid grid-cols-2 gap-8">
             <div className="space-y-4">
               <p className="text-lg text-foreground leading-relaxed">
-                <strong>SIMRS RSUD Dr. Moewardi</strong> adalah Sistem Informasi Manajemen Rumah Sakit terintegrasi 
-                yang dirancang untuk mendukung operasional RSUD Dr. Moewardi secara menyeluruh.
+                <strong>SIMRS ZEN</strong> adalah Sistem Informasi Manajemen Rumah Sakit terintegrasi 
+                yang dirancang untuk mendukung operasional rumah sakit secara menyeluruh.
               </p>
               <div className="space-y-3">
                 <div className="flex items-start gap-3 p-4 bg-primary/5 rounded-lg">
@@ -438,7 +438,7 @@ const PanduanPenggunaan = () => {
             Role & Hak Akses
           </h2>
           <p className="text-lg text-muted-foreground mb-6">
-            SIMRS RSUD Dr. Moewardi memiliki sistem role-based access control (RBAC) untuk mengatur hak akses setiap pengguna.
+            SIMRS ZEN memiliki sistem role-based access control (RBAC) untuk mengatur hak akses setiap pengguna.
           </p>
           <div className="grid grid-cols-3 gap-4">
             {[
@@ -4682,7 +4682,7 @@ const PanduanPenggunaan = () => {
             </div>
             <div className="p-4 bg-muted rounded-lg">
               <h4 className="font-semibold mb-3">Cara Registrasi:</h4>
-              {["Buka portal RSUD Dr. Moewardi", "Klik 'Daftar'", "Input NIK dan data pribadi", "Verifikasi email/WA", "Login dengan NIK + password"].map((item, i) => (
+              {["Buka portal SIMRS ZEN", "Klik 'Daftar'", "Input NIK dan data pribadi", "Verifikasi email/WA", "Login dengan NIK + password"].map((item, i) => (
                 <div key={i} className="flex items-center gap-2 text-sm mb-2">
                   <div className="w-5 h-5 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xs">{i + 1}</div>
                   <span>{item}</span>
@@ -5314,7 +5314,7 @@ const PanduanPenggunaan = () => {
             </Button>
             <img src={simrsZenLogo} alt="SIMRS ZEN" className="h-8" />
             <div>
-              <h1 className="font-semibold text-sm">Panduan Penggunaan SIMRS RSUD Dr. Moewardi</h1>
+              <h1 className="font-semibold text-sm">Panduan Penggunaan SIMRS ZEN</h1>
               <p className="text-xs text-muted-foreground">
                 {getCurrentSection()?.title} • Slide {currentSlide + 1} / {totalSlides}
               </p>
