@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
@@ -96,7 +96,7 @@ export default function RawatJalan() {
   };
 
   const fetchDepartments = async () => {
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from("departments")
       .select("id, name")
       .eq("is_active", true)
@@ -111,7 +111,7 @@ export default function RawatJalan() {
     const today = new Date().toISOString().split("T")[0];
 
     // Get visits grouped by department
-    const { data: visits, error } = await supabase
+    const { data: visits, error } = await db
       .from("visits")
       .select(`
         id,
@@ -179,7 +179,7 @@ export default function RawatJalan() {
   const fetchCurrentPatients = async () => {
     const today = new Date().toISOString().split("T")[0];
 
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from("visits")
       .select(`
         id,
@@ -219,7 +219,7 @@ export default function RawatJalan() {
   const fetchQueuePatients = async () => {
     const today = new Date().toISOString().split("T")[0];
 
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from("visits")
       .select(`
         id,
@@ -254,7 +254,7 @@ export default function RawatJalan() {
 
   const handleStartExamination = async (patient: CurrentPatient) => {
     // Update status to "diperiksa"
-    const { error } = await supabase
+    const { error } = await db
       .from("visits")
       .update({ status: "dilayani" })
       .eq("id", patient.visit_id);
@@ -275,7 +275,7 @@ export default function RawatJalan() {
     setSavingRecord(true);
     try {
       // Get doctor info (use first doctor for now)
-      const { data: doctorData } = await supabase
+      const { data: doctorData } = await db
         .from("doctors")
         .select("id")
         .limit(1)
@@ -287,7 +287,7 @@ export default function RawatJalan() {
       }
 
       // Create medical record
-      const { error: mrError } = await supabase
+      const { error: mrError } = await db
         .from("medical_records")
         .insert({
           visit_id: selectedVisit.visit_id,
@@ -309,7 +309,7 @@ export default function RawatJalan() {
       if (mrError) throw mrError;
 
       // Update visit status to selesai
-      const { error: visitError } = await supabase
+      const { error: visitError } = await db
         .from("visits")
         .update({ status: "selesai" as const })
         .eq("id", selectedVisit.visit_id);

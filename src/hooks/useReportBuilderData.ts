@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { useAuth } from "./useAuth";
 import { toast } from "sonner";
 
@@ -38,7 +38,7 @@ export function useReportBuilderData() {
   const { data: templates = [], isLoading } = useQuery({
     queryKey: ["custom-report-templates"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("custom_report_templates")
         .select("*")
         .eq("is_active", true)
@@ -61,7 +61,7 @@ export function useReportBuilderData() {
       filters: ReportFilter[];
       chart_type: string;
     }) => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("custom_report_templates")
         .insert({
           name: template.name,
@@ -86,7 +86,7 @@ export function useReportBuilderData() {
 
   const deleteTemplate = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("custom_report_templates").delete().eq("id", id);
+      const { error } = await db.from("custom_report_templates").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -106,7 +106,7 @@ export function useReportData(dataSource: string) {
     queryFn: async () => {
       switch (dataSource) {
         case "visits": {
-          const { data, error } = await supabase
+          const { data, error } = await db
             .from("visits")
             .select("*, patients(full_name), doctors(full_name), departments(name)")
             .order("visit_date", { ascending: false })
@@ -124,7 +124,7 @@ export function useReportData(dataSource: string) {
           }));
         }
         case "billing": {
-          const { data, error } = await supabase
+          const { data, error } = await db
             .from("billings")
             .select("*, patients(full_name)")
             .order("billing_date", { ascending: false })
@@ -141,7 +141,7 @@ export function useReportData(dataSource: string) {
           }));
         }
         case "pharmacy": {
-          const { data, error } = await supabase
+          const { data, error } = await db
             .from("prescriptions")
             .select("*, patients(full_name)")
             .order("prescription_date", { ascending: false })
@@ -156,7 +156,7 @@ export function useReportData(dataSource: string) {
           }));
         }
         case "lab": {
-          const { data, error } = await supabase
+          const { data, error } = await db
             .from("lab_results")
             .select("*, patients(full_name)")
             .order("order_date", { ascending: false })
@@ -171,7 +171,7 @@ export function useReportData(dataSource: string) {
           }));
         }
         case "employees": {
-          const { data, error } = await supabase
+          const { data, error } = await db
             .from("employees")
             .select("*, departments(name)")
             .order("full_name")
@@ -186,7 +186,7 @@ export function useReportData(dataSource: string) {
           }));
         }
         case "inventory": {
-          const { data, error } = await supabase
+          const { data, error } = await db
             .from("medicines")
             .select("*")
             .order("name")
@@ -202,7 +202,7 @@ export function useReportData(dataSource: string) {
           }));
         }
         case "bpjs": {
-          const { data, error } = await supabase
+          const { data, error } = await db
             .from("bpjs_claims")
             .select("*, patients(full_name)")
             .order("claim_date", { ascending: false })

@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, Plus, Edit, Package, AlertTriangle } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { toast } from "sonner";
 
 interface Medicine {
@@ -48,7 +48,7 @@ export default function InventoryStock({ onStockUpdate }: InventoryStockProps) {
 
   const fetchMedicines = async () => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("medicines")
         .select("*")
         .eq("is_active", true)
@@ -83,7 +83,7 @@ export default function InventoryStock({ onStockUpdate }: InventoryStockProps) {
 
     try {
       // Update medicine stock
-      const { error: updateError } = await supabase
+      const { error: updateError } = await db
         .from("medicines")
         .update({ stock: newStock })
         .eq("id", selectedMedicine.id);
@@ -91,7 +91,7 @@ export default function InventoryStock({ onStockUpdate }: InventoryStockProps) {
       if (updateError) throw updateError;
 
       // Record transaction
-      const { error: transactionError } = await supabase
+      const { error: transactionError } = await db
         .from("inventory_transactions")
         .insert({
           medicine_id: selectedMedicine.id,

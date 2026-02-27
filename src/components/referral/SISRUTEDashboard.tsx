@@ -14,7 +14,7 @@ import {
   Plus, Edit, Send, ArrowDownLeft, ArrowUpRight, 
   CheckCircle, Clock, XCircle, Truck, RefreshCw 
 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
@@ -79,11 +79,11 @@ export default function SISRUTEDashboard() {
 
   const fetchData = async () => {
     const [referralsRes, patientsRes, doctorsRes] = await Promise.all([
-      supabase.from("sisrute_referrals")
+      db.from("sisrute_referrals")
         .select("*, patients(full_name, medical_record_number)")
         .order("created_at", { ascending: false }),
-      supabase.from("patients").select("id, full_name, medical_record_number").limit(100),
-      supabase.from("doctors").select("id, full_name").eq("is_active", true)
+      db.from("patients").select("id, full_name, medical_record_number").limit(100),
+      db.from("doctors").select("id, full_name").eq("is_active", true)
     ]);
     
     if (referralsRes.data) setReferrals(referralsRes.data as any);
@@ -106,11 +106,11 @@ export default function SISRUTEDashboard() {
       };
 
       if (editingReferral) {
-        const { error } = await supabase.from("sisrute_referrals").update(payload).eq("id", editingReferral.id);
+        const { error } = await db.from("sisrute_referrals").update(payload).eq("id", editingReferral.id);
         if (error) throw error;
         toast({ title: "Berhasil", description: "Rujukan berhasil diperbarui" });
       } else {
-        const { error } = await supabase.from("sisrute_referrals").insert(payload);
+        const { error } = await db.from("sisrute_referrals").insert(payload);
         if (error) throw error;
         toast({ title: "Berhasil", description: "Rujukan berhasil ditambahkan" });
       }

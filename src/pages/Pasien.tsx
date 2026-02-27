@@ -28,7 +28,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { useToast } from "@/hooks/use-toast";
 import { format, differenceInYears } from "date-fns";
 import { ConfirmationDialog } from "@/components/shared/ConfirmationDialog";
@@ -96,11 +96,11 @@ export default function Pasien() {
 
   const fetchStats = async () => {
     try {
-      const { count: total } = await supabase
+      const { count: total } = await db
         .from("patients")
         .select("*", { count: "exact", head: true });
 
-      const { count: bpjs } = await supabase
+      const { count: bpjs } = await db
         .from("patients")
         .select("*", { count: "exact", head: true })
         .not("bpjs_number", "is", null);
@@ -109,7 +109,7 @@ export default function Pasien() {
       startOfMonth.setDate(1);
       startOfMonth.setHours(0, 0, 0, 0);
 
-      const { count: newThisMonth } = await supabase
+      const { count: newThisMonth } = await db
         .from("patients")
         .select("*", { count: "exact", head: true })
         .gte("created_at", startOfMonth.toISOString());
@@ -128,7 +128,7 @@ export default function Pasien() {
   const fetchPatients = async () => {
     setLoading(true);
     try {
-      let query = supabase
+      let query = db
         .from("patients")
         .select("*", { count: "exact" })
         .order("created_at", { ascending: false })
@@ -179,7 +179,7 @@ export default function Pasien() {
     try {
       if (editingPatient) {
         // Update existing patient
-        const { error } = await supabase
+        const { error } = await db
           .from("patients")
           .update({
             nik: formData.nik,
@@ -200,9 +200,9 @@ export default function Pasien() {
         });
       } else {
         // Create new patient
-        const { data: mrn } = await supabase.rpc("generate_medical_record_number");
+        const { data: mrn } = await db.rpc("generate_medical_record_number");
         
-        const { error } = await supabase.from("patients").insert({
+        const { error } = await db.from("patients").insert({
           medical_record_number: mrn,
           nik: formData.nik,
           full_name: formData.full_name,
@@ -246,7 +246,7 @@ export default function Pasien() {
     
     setIsDeleting(true);
     try {
-      const { error } = await supabase
+      const { error } = await db
         .from("patients")
         .delete()
         .eq("id", patientToDelete.id);

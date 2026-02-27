@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { useToast } from "@/hooks/use-toast";
 
 /**
@@ -32,7 +32,7 @@ export function useIGDToAdmission() {
       doctorId?: string;
     }) => {
       // Update emergency visit disposition
-      await supabase
+      await db
         .from("emergency_visits")
         .update({
           disposition,
@@ -42,7 +42,7 @@ export function useIGDToAdmission() {
 
       // If rawat inap, create inpatient admission
       if (disposition === "rawat_inap" && roomId) {
-        await supabase.from("inpatient_admissions").insert({
+        await db.from("inpatient_admissions").insert({
           patient_id: patientId,
           visit_id: visitId,
           room_id: roomId,
@@ -52,12 +52,12 @@ export function useIGDToAdmission() {
         });
 
         if (bedId) {
-          await supabase.from("beds").update({ status: "terisi", current_patient_id: patientId }).eq("id", bedId);
+          await db.from("beds").update({ status: "terisi", current_patient_id: patientId }).eq("id", bedId);
         }
       }
 
       // Update visit status
-      await supabase.from("visits").update({ status: "selesai" }).eq("id", visitId);
+      await db.from("visits").update({ status: "selesai" }).eq("id", visitId);
 
       return { disposition };
     },
@@ -92,13 +92,13 @@ export function useInpatientWorkflow() {
       newBedId: string;
     }) => {
       if (currentBedId) {
-        await supabase.from("beds").update({ status: "tersedia", current_patient_id: null }).eq("id", currentBedId);
+        await db.from("beds").update({ status: "tersedia", current_patient_id: null }).eq("id", currentBedId);
       }
 
-      const { data: admission } = await supabase.from("inpatient_admissions").select("patient_id").eq("id", admissionId).single();
+      const { data: admission } = await db.from("inpatient_admissions").select("patient_id").eq("id", admissionId).single();
       
-      await supabase.from("beds").update({ status: "terisi", current_patient_id: admission?.patient_id }).eq("id", newBedId);
-      await supabase.from("inpatient_admissions").update({ room_id: newRoomId, bed_id: newBedId }).eq("id", admissionId);
+      await db.from("beds").update({ status: "terisi", current_patient_id: admission?.patient_id }).eq("id", newBedId);
+      await db.from("inpatient_admissions").update({ room_id: newRoomId, bed_id: newBedId }).eq("id", admissionId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["inpatient-admissions"] });
@@ -119,9 +119,9 @@ export function useInpatientWorkflow() {
       paymentType: "umum" | "bpjs" | "asuransi";
       amount: number;
     }) => {
-      const { data: invoiceNumber } = await supabase.rpc("generate_invoice_number");
+      const { data: invoiceNumber } = await db.rpc("generate_invoice_number");
 
-      const { data: billing, error } = await supabase
+      const { data: billing, error } = await db
         .from("billings")
         .insert({
           invoice_number: invoiceNumber,
@@ -172,7 +172,7 @@ export function useLabIntegration() {
         templateIds.map(async (templateId) => {
           const labNumber = `LAB-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 5).toUpperCase()}`;
 
-          const { data, error } = await supabase
+          const { data, error } = await db
             .from("lab_results")
             .insert({
               lab_number: labNumber,
@@ -210,7 +210,7 @@ export function useLabIntegration() {
       results: Record<string, string>;
       notes?: string;
     }) => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("lab_results")
         .update({
           results,
@@ -252,7 +252,7 @@ export function useSurgeryIntegration() {
       postoperativeDiagnosis?: string;
       operativeNotes?: string;
     }) => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("surgeries")
         .update({
           status: "completed",
@@ -266,7 +266,7 @@ export function useSurgeryIntegration() {
 
       if (error) throw error;
 
-      await supabase.from("operating_rooms").update({ is_available: true }).eq("id", operatingRoomId);
+      await db.from("operating_rooms").update({ is_available: true }).eq("id", operatingRoomId);
 
       return data;
     },
@@ -294,9 +294,9 @@ export function useSurgeryIntegration() {
       roomFee: number;
     }) => {
       const total = surgeonFee + anesthesiaFee + roomFee;
-      const { data: invoiceNumber } = await supabase.rpc("generate_invoice_number");
+      const { data: invoiceNumber } = await db.rpc("generate_invoice_number");
 
-      const { data: billing, error } = await supabase
+      const { data: billing, error } = await db
         .from("billings")
         .insert({
           invoice_number: invoiceNumber,
@@ -313,7 +313,7 @@ export function useSurgeryIntegration() {
 
       if (error) throw error;
 
-      await supabase.from("billing_items").insert([
+      await db.from("billing_items").insert([
         { billing_id: billing.id, item_type: "surgery", item_name: "Jasa Dokter Bedah", quantity: 1, unit_price: surgeonFee, total_price: surgeonFee },
         { billing_id: billing.id, item_type: "anesthesia", item_name: "Jasa Anestesi", quantity: 1, unit_price: anesthesiaFee, total_price: anesthesiaFee },
         { billing_id: billing.id, item_type: "room", item_name: "Penggunaan Ruang OK", quantity: 1, unit_price: roomFee, total_price: roomFee },
@@ -354,7 +354,7 @@ export function useICUIntegration() {
     }) => {
       const admissionNumber = `ICU-${Date.now().toString(36).toUpperCase()}`;
 
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("icu_admissions")
         .insert({
           admission_number: admissionNumber,
@@ -371,7 +371,7 @@ export function useICUIntegration() {
 
       if (error) throw error;
 
-      await supabase.from("icu_beds").update({ is_available: false }).eq("id", icuBedId);
+      await db.from("icu_beds").update({ is_available: false }).eq("id", icuBedId);
 
       return data;
     },
@@ -394,7 +394,7 @@ export function useICUIntegration() {
       dischargeReason: string;
       totalDays: number;
     }) => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("icu_admissions")
         .update({
           status: "discharged",
@@ -408,7 +408,7 @@ export function useICUIntegration() {
 
       if (error) throw error;
 
-      await supabase.from("icu_beds").update({ is_available: true }).eq("id", icuBedId);
+      await db.from("icu_beds").update({ is_available: true }).eq("id", icuBedId);
 
       return data;
     },
@@ -442,7 +442,7 @@ export function useDialysisIntegration() {
       actualUf?: number;
       ktV?: number;
     }) => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("dialysis_sessions")
         .update({
           status: "completed",
@@ -457,7 +457,7 @@ export function useDialysisIntegration() {
 
       if (error) throw error;
 
-      await supabase.from("dialysis_machines").update({ is_available: true }).eq("id", machineId);
+      await db.from("dialysis_machines").update({ is_available: true }).eq("id", machineId);
 
       return data;
     },
@@ -494,7 +494,7 @@ export function useBloodBankIntegration() {
       const validUntil = new Date();
       validUntil.setHours(validUntil.getHours() + 72);
 
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("crossmatch_tests")
         .insert({
           request_id: requestId,
@@ -510,7 +510,7 @@ export function useBloodBankIntegration() {
       if (error) throw error;
 
       if (isCompatible) {
-        await supabase.from("blood_inventory").update({ status: "reserved", reserved_for_patient_id: patientId }).eq("id", bloodBagId);
+        await db.from("blood_inventory").update({ status: "reserved", reserved_for_patient_id: patientId }).eq("id", bloodBagId);
       }
 
       return data;
@@ -542,13 +542,13 @@ export function useClinicalDashboardStats() {
         { count: labPending },
         { count: transfusionPending },
       ] = await Promise.all([
-        supabase.from("emergency_visits").select("*", { count: "exact", head: true }).is("disposition_time", null),
-        supabase.from("inpatient_admissions").select("*", { count: "exact", head: true }).eq("status", "active"),
-        supabase.from("icu_admissions").select("*", { count: "exact", head: true }).eq("status", "active"),
-        supabase.from("surgeries").select("*", { count: "exact", head: true }).eq("scheduled_date", today),
-        supabase.from("dialysis_sessions").select("*", { count: "exact", head: true }).eq("session_date", today),
-        supabase.from("lab_results").select("*", { count: "exact", head: true }).eq("status", "pending"),
-        supabase.from("transfusion_requests").select("*", { count: "exact", head: true }).eq("status", "pending"),
+        db.from("emergency_visits").select("*", { count: "exact", head: true }).is("disposition_time", null),
+        db.from("inpatient_admissions").select("*", { count: "exact", head: true }).eq("status", "active"),
+        db.from("icu_admissions").select("*", { count: "exact", head: true }).eq("status", "active"),
+        db.from("surgeries").select("*", { count: "exact", head: true }).eq("scheduled_date", today),
+        db.from("dialysis_sessions").select("*", { count: "exact", head: true }).eq("session_date", today),
+        db.from("lab_results").select("*", { count: "exact", head: true }).eq("status", "pending"),
+        db.from("transfusion_requests").select("*", { count: "exact", head: true }).eq("status", "pending"),
       ]);
 
       return {

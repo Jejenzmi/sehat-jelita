@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { toast } from "sonner";
 import PatientLabResults from "@/components/patient-portal/PatientLabResults";
 import PatientMedicalRecords from "@/components/patient-portal/PatientMedicalRecords";

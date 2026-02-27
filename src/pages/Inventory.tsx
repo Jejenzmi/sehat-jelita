@@ -6,7 +6,7 @@ import {
   Package, AlertTriangle, TrendingDown, ShoppingCart, 
   Calendar, BarChart3, Clock, CheckCircle, Building2 
 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import InventoryStock from "@/components/inventory/InventoryStock";
 import InventoryBatches from "@/components/inventory/InventoryBatches";
 import InventoryTransactions from "@/components/inventory/InventoryTransactions";
@@ -38,13 +38,13 @@ export default function Inventory() {
   const fetchStats = async () => {
     try {
       // Get total medicines
-      const { count: totalMedicines } = await supabase
+      const { count: totalMedicines } = await db
         .from("medicines")
         .select("*", { count: "exact", head: true })
         .eq("is_active", true);
 
       // Get low stock count
-      const { data: lowStockData } = await supabase
+      const { data: lowStockData } = await db
         .from("medicines")
         .select("id, stock, min_stock")
         .eq("is_active", true);
@@ -55,7 +55,7 @@ export default function Inventory() {
       const ninetyDaysFromNow = new Date();
       ninetyDaysFromNow.setDate(ninetyDaysFromNow.getDate() + 90);
       
-      const { count: expiringCount } = await supabase
+      const { count: expiringCount } = await db
         .from("medicine_batches")
         .select("*", { count: "exact", head: true })
         .eq("status", "active")
@@ -63,7 +63,7 @@ export default function Inventory() {
         .gt("quantity", 0);
 
       // Get pending orders
-      const { count: pendingOrders } = await supabase
+      const { count: pendingOrders } = await db
         .from("purchase_orders")
         .select("*", { count: "exact", head: true })
         .in("status", ["draft", "pending", "approved", "ordered", "shipped"]);

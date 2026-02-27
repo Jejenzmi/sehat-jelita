@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Shield, Plus, Star, Calendar, Percent, Building2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -83,7 +83,7 @@ export default function PatientInsurances() {
   }, [patientId]);
 
   const fetchPatientId = async () => {
-    const { data } = await supabase
+    const { data } = await db
       .from("patients")
       .select("id")
       .eq("user_id", user?.id)
@@ -95,7 +95,7 @@ export default function PatientInsurances() {
   };
 
   const fetchProviders = async () => {
-    const { data } = await supabase
+    const { data } = await db
       .from("insurance_providers")
       .select("*")
       .eq("is_active", true)
@@ -108,7 +108,7 @@ export default function PatientInsurances() {
 
   const fetchInsurances = async () => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("patient_insurances")
         .select(`
           *,
@@ -138,7 +138,7 @@ export default function PatientInsurances() {
     }
 
     try {
-      const { error } = await supabase
+      const { error } = await db
         .from("patient_insurances")
         .insert({
           patient_id: patientId,
@@ -174,13 +174,13 @@ export default function PatientInsurances() {
   const handleSetPrimary = async (insuranceId: string) => {
     try {
       // Remove primary from all
-      await supabase
+      await db
         .from("patient_insurances")
         .update({ is_primary: false })
         .eq("patient_id", patientId);
 
       // Set new primary
-      await supabase
+      await db
         .from("patient_insurances")
         .update({ is_primary: true })
         .eq("id", insuranceId);

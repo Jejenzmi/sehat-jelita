@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { useToast } from "./use-toast";
 
 export type HospitalType = 'A' | 'B' | 'C' | 'D' | 'FKTP';
@@ -28,7 +28,7 @@ export function useIsSetupCompleted() {
   return useQuery({
     queryKey: ["setup-completed"],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("is_setup_completed");
+      const { data, error } = await db.rpc("is_setup_completed");
       if (error) throw error;
       return data as boolean;
     },
@@ -40,7 +40,7 @@ export function useHospitalProfile() {
   return useQuery({
     queryKey: ["hospital-profile"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("hospital_profile")
         .select("*")
         .limit(1)
@@ -56,7 +56,7 @@ export function useModuleConfigurations(hospitalType?: HospitalType) {
     queryKey: ["module-configurations", hospitalType],
     queryFn: async () => {
       if (!hospitalType) {
-        const { data, error } = await supabase
+        const { data, error } = await db
           .from("module_configurations")
           .select("*")
           .eq("is_active", true)
@@ -65,7 +65,7 @@ export function useModuleConfigurations(hospitalType?: HospitalType) {
         return data;
       }
 
-      const { data, error } = await supabase.rpc("get_available_modules", {
+      const { data, error } = await db.rpc("get_available_modules", {
         p_hospital_type: hospitalType,
       });
       if (error) throw error;
@@ -81,11 +81,11 @@ export function useCompleteSetup() {
 
   return useMutation({
     mutationFn: async (profileData: HospitalProfileData) => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await db.auth.getUser();
       if (!user) throw new Error("User not authenticated");
 
       // Check if profile exists
-      const { data: existing } = await supabase
+      const { data: existing } = await db
         .from("hospital_profile")
         .select("id")
         .limit(1)
@@ -93,7 +93,7 @@ export function useCompleteSetup() {
 
       if (existing) {
         // Update existing
-        const { error } = await supabase
+        const { error } = await db
           .from("hospital_profile")
           .update({
             ...profileData,
@@ -106,7 +106,7 @@ export function useCompleteSetup() {
         if (error) throw error;
       } else {
         // Insert new
-        const { error } = await supabase
+        const { error } = await db
           .from("hospital_profile")
           .insert({
             ...profileData,
@@ -142,7 +142,7 @@ export function useAvailableModulesForType(hospitalType: HospitalType) {
   return useQuery({
     queryKey: ["available-modules", hospitalType],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("get_available_modules", {
+      const { data, error } = await db.rpc("get_available_modules", {
         p_hospital_type: hospitalType,
       });
       if (error) throw error;

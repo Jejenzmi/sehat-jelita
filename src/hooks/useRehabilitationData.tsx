@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { Database } from "@/integrations/supabase/types";
+import { db } from "@/lib/db";
+import { Database } from "@/types/database";
 import { toast } from "sonner";
 
 type TherapyType = Database["public"]["Tables"]["therapy_types"]["Row"];
@@ -15,7 +15,7 @@ export function useRehabilitationData() {
   const { data: therapyTypes, isLoading: loadingTherapyTypes } = useQuery({
     queryKey: ["therapy-types"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("therapy_types")
         .select("*")
         .eq("is_active", true)
@@ -29,7 +29,7 @@ export function useRehabilitationData() {
   const { data: assessments, isLoading: loadingAssessments } = useQuery({
     queryKey: ["rehab-assessments"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("rehabilitation_assessments")
         .select(`
           *,
@@ -48,7 +48,7 @@ export function useRehabilitationData() {
     queryKey: ["today-therapy-sessions"],
     queryFn: async () => {
       const today = new Date().toISOString().split("T")[0];
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("therapy_sessions")
         .select(`
           *,
@@ -66,7 +66,7 @@ export function useRehabilitationData() {
   const { data: allSessions, isLoading: loadingAllSessions } = useQuery({
     queryKey: ["all-therapy-sessions"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("therapy_sessions")
         .select(`
           *,
@@ -86,7 +86,7 @@ export function useRehabilitationData() {
   const { data: goals, isLoading: loadingGoals } = useQuery({
     queryKey: ["rehab-goals"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("rehabilitation_goals")
         .select(`
           *,
@@ -105,7 +105,7 @@ export function useRehabilitationData() {
   // Create assessment
   const createAssessment = useMutation({
     mutationFn: async (assessment: Database["public"]["Tables"]["rehabilitation_assessments"]["Insert"]) => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("rehabilitation_assessments")
         .insert(assessment)
         .select()
@@ -125,7 +125,7 @@ export function useRehabilitationData() {
   // Schedule therapy session
   const scheduleSession = useMutation({
     mutationFn: async (session: Database["public"]["Tables"]["therapy_sessions"]["Insert"]) => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("therapy_sessions")
         .insert(session)
         .select()
@@ -154,7 +154,7 @@ export function useRehabilitationData() {
       }
       if (notes) updateData.progress_notes = notes;
       
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("therapy_sessions")
         .update(updateData)
         .eq("id", id)

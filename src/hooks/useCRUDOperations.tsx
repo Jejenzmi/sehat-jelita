@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -19,7 +19,7 @@ export function useCRUDOperations() {
   ): Promise<{ data: Record<string, unknown> | null; error: Error | null }> => {
     setIsLoading(true);
     try {
-      const { data: result, error } = await (supabase as any)
+      const { data: result, error } = await (db as any)
         .from(table)
         .insert(data)
         .select()
@@ -63,7 +63,7 @@ export function useCRUDOperations() {
   ): Promise<{ data: Record<string, unknown> | null; error: Error | null }> => {
     setIsLoading(true);
     try {
-      const { data: result, error } = await (supabase as any)
+      const { data: result, error } = await (db as any)
         .from(table)
         .update(data)
         .eq("id", id)
@@ -107,7 +107,7 @@ export function useCRUDOperations() {
   ): Promise<{ success: boolean; error: Error | null }> => {
     setIsLoading(true);
     try {
-      const { error } = await (supabase as any).from(table).delete().eq("id", id);
+      const { error } = await (db as any).from(table).delete().eq("id", id);
 
       if (error) throw error;
 
@@ -146,7 +146,7 @@ export function useCRUDOperations() {
   ): Promise<{ data: Record<string, unknown>[]; error: Error | null }> => {
     setIsLoading(true);
     try {
-      const { data: result, error } = await (supabase as any)
+      const { data: result, error } = await (db as any)
         .from(table)
         .insert(dataArray)
         .select();

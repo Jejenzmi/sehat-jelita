@@ -2,7 +2,7 @@
  * SIMRS ZEN - Socket.IO Configuration
  * Real-time features: Chat, Notifications, Queue Updates
  * 
- * Replaces Supabase Realtime subscriptions
+ * WebSocket event subscriptions
  */
 
 import jwt from 'jsonwebtoken';

@@ -13,7 +13,7 @@ import {
   Plus, ShoppingCart, Calendar as CalendarIcon, 
   CheckCircle, Clock, XCircle, Send, Package
 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
@@ -82,16 +82,16 @@ export default function PurchaseOrders({ onOrderUpdate }: PurchaseOrdersProps) {
   const fetchData = async () => {
     try {
       const [ordersRes, medicinesRes, vendorsRes] = await Promise.all([
-        supabase
+        db
           .from("purchase_orders")
           .select("id, order_number, supplier_name, order_date, expected_delivery_date, status, total, auto_generated")
           .order("created_at", { ascending: false }),
-        supabase
+        db
           .from("medicines")
           .select("id, name, code, unit, price")
           .eq("is_active", true)
           .order("name"),
-        supabase
+        db
           .from("vendors")
           .select("id, vendor_code, vendor_name")
           .eq("is_active", true)
@@ -106,7 +106,7 @@ export default function PurchaseOrders({ onOrderUpdate }: PurchaseOrdersProps) {
       // Fetch items for each order
       const ordersWithItems = await Promise.all(
         (ordersRes.data || []).map(async (order) => {
-          const { data: items } = await supabase
+          const { data: items } = await db
             .from("purchase_order_items")
             .select(`
               id, quantity, received_quantity, unit_price,
@@ -137,7 +137,7 @@ export default function PurchaseOrders({ onOrderUpdate }: PurchaseOrdersProps) {
 
     try {
       // Generate PO number
-      const { data: poNumber } = await supabase.rpc("generate_po_number");
+      const { data: poNumber } = await db.rpc("generate_po_number");
 
       // Calculate total
       const validItems = orderItems.filter(i => i.medicineId && i.quantity);
@@ -146,7 +146,7 @@ export default function PurchaseOrders({ onOrderUpdate }: PurchaseOrdersProps) {
       }, 0);
 
       // Create order
-      const { data: order, error: orderError } = await supabase
+      const { data: order, error: orderError } = await db
         .from("purchase_orders")
         .insert({
           order_number: poNumber,
@@ -170,7 +170,7 @@ export default function PurchaseOrders({ onOrderUpdate }: PurchaseOrdersProps) {
         total_price: (parseFloat(item.unitPrice) || 0) * parseInt(item.quantity),
       }));
 
-      const { error: itemsError } = await supabase
+      const { error: itemsError } = await db
         .from("purchase_order_items")
         .insert(itemsToInsert);
 
@@ -190,7 +190,7 @@ export default function PurchaseOrders({ onOrderUpdate }: PurchaseOrdersProps) {
 
   const handleUpdateStatus = async (orderId: string, newStatus: string) => {
     try {
-      const { error } = await supabase
+      const { error } = await db
         .from("purchase_orders")
         .update({ status: newStatus })
         .eq("id", orderId);
@@ -210,7 +210,7 @@ export default function PurchaseOrders({ onOrderUpdate }: PurchaseOrdersProps) {
       // Update each item's stock
       for (const item of order.items) {
         if (item.medicine) {
-          const { data: med } = await supabase
+          const { data: med } = await db
             .from("medicines")
             .select("id, stock")
             .eq("name", item.medicine.name)
@@ -219,12 +219,12 @@ export default function PurchaseOrders({ onOrderUpdate }: PurchaseOrdersProps) {
           if (med) {
             const newStock = (med.stock || 0) + item.quantity;
             
-            await supabase
+            await db
               .from("medicines")
               .update({ stock: newStock })
               .eq("id", med.id);
 
-            await supabase
+            await db
               .from("inventory_transactions")
               .insert({
                 medicine_id: med.id,
@@ -241,14 +241,14 @@ export default function PurchaseOrders({ onOrderUpdate }: PurchaseOrdersProps) {
         }
 
         // Update received quantity
-        await supabase
+        await db
           .from("purchase_order_items")
           .update({ received_quantity: item.quantity })
           .eq("id", item.id);
       }
 
       // Update order status
-      await supabase
+      await db
         .from("purchase_orders")
         .update({ 
           status: "received",

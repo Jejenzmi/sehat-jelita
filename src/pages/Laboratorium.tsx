@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { FlaskConical, Search, Plus, Clock, CheckCircle, XCircle, Beaker, Activity, Printer, Loader2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
@@ -78,7 +78,7 @@ export default function Laboratorium() {
   const { data: labResults = [], isLoading: isLoadingResults } = useQuery({
     queryKey: ['lab-results'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from('lab_results')
         .select(`
           *,
@@ -93,7 +93,7 @@ export default function Laboratorium() {
       const doctorIds = [...new Set((data || []).map(d => d.requested_by).filter(Boolean))];
       let doctorMap: Record<string, string> = {};
       if (doctorIds.length > 0) {
-        const { data: doctors } = await supabase
+        const { data: doctors } = await db
           .from('doctors')
           .select('id, full_name')
           .in('id', doctorIds);
@@ -119,7 +119,7 @@ export default function Laboratorium() {
   const { data: labTemplates = [], isLoading: isLoadingTemplates } = useQuery({
     queryKey: ['lab-templates'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from('lab_templates')
         .select('*')
         .eq('is_active', true)
@@ -138,7 +138,7 @@ export default function Laboratorium() {
   const { data: patients = [] } = useQuery({
     queryKey: ['patients-dropdown'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from('patients')
         .select('id, full_name, medical_record_number')
         .eq('status', 'aktif')
@@ -154,7 +154,7 @@ export default function Laboratorium() {
   const { data: doctors = [] } = useQuery({
     queryKey: ['doctors-dropdown'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from('doctors')
         .select('id, full_name, specialization')
         .eq('is_active', true)
@@ -170,7 +170,7 @@ export default function Laboratorium() {
     queryKey: ['visits-for-patient', newRequest.patient_id],
     queryFn: async () => {
       if (!newRequest.patient_id) return [];
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from('visits')
         .select('id, visit_number, visit_date')
         .eq('patient_id', newRequest.patient_id)
@@ -192,7 +192,7 @@ export default function Laboratorium() {
         updateData.sample_date = new Date().toISOString();
       }
       
-      const { error } = await supabase
+      const { error } = await db
         .from('lab_results')
         .update(updateData)
         .eq('id', id);
@@ -211,7 +211,7 @@ export default function Laboratorium() {
   // Save results mutation
   const saveResultsMutation = useMutation({
     mutationFn: async ({ id, results, notes }: { id: string; results: Record<string, string>; notes: string }) => {
-      const { error } = await supabase
+      const { error } = await db
         .from('lab_results')
         .update({
           results,
@@ -243,7 +243,7 @@ export default function Laboratorium() {
         // Generate lab number
         const labNumber = `LAB-${format(new Date(), 'yyyyMMdd')}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
         
-        const { error } = await supabase
+        const { error } = await db
           .from('lab_results')
           .insert({
             lab_number: labNumber,

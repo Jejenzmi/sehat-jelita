@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { PaymentGateway } from "@/components/billing/PaymentGateway";
@@ -82,7 +82,7 @@ export default function Billing() {
   const { data: billings = [], isLoading } = useQuery({
     queryKey: ["billings", statusFilter],
     queryFn: async () => {
-      let query = supabase
+      let query = db
         .from("billings")
         .select(`
           *,
@@ -133,7 +133,7 @@ export default function Billing() {
       const newPaidAmount = (billing.paid_amount || 0) + amount;
       const newStatus = newPaidAmount >= billing.total ? "lunas" : "pending";
 
-      const { error } = await supabase
+      const { error } = await db
         .from("billings")
         .update({
           paid_amount: newPaidAmount,

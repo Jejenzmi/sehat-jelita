@@ -205,7 +205,7 @@ const DokumentasiSistem = () => {
           <div className="flex flex-col items-center space-y-4">
             {[
               { label: "Frontend Layer", tech: "React 18 + TypeScript + Vite + TailwindCSS", color: "bg-blue-500" },
-              { label: "API Layer", tech: "Supabase Edge Functions (Deno) / Node.js Express", color: "bg-teal-500" },
+              { label: "API Layer", tech: "Node.js Express REST API", color: "bg-teal-500" },
               { label: "Database Layer", tech: "PostgreSQL 15 + Row Level Security", color: "bg-green-500" },
               { label: "External APIs", tech: "SATU SEHAT • BPJS • SISRUTE • ASPAK", color: "bg-purple-500" }
             ].map((layer, i) => (

@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { QrCode, Search, CheckCircle, Package, Clock, User, Pill, AlertCircle } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
@@ -56,7 +56,7 @@ export default function PharmacyScanner() {
 
     try {
       // Search by pickup_code or qr_token
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("prescriptions")
         .select(`
           id,
@@ -82,7 +82,7 @@ export default function PharmacyScanner() {
       }
 
       // Fetch items
-      const { data: items } = await supabase
+      const { data: items } = await db
         .from("prescription_items")
         .select(`
           id,
@@ -116,7 +116,7 @@ export default function PharmacyScanner() {
 
     try {
       // Update prescription status
-      const { error: updateError } = await supabase
+      const { error: updateError } = await db
         .from("prescriptions")
         .update({
           status: "diproses",
@@ -130,7 +130,7 @@ export default function PharmacyScanner() {
       for (const item of prescription.items) {
         if (item.medicine) {
           const newStock = item.medicine.stock - item.quantity;
-          await supabase
+          await db
             .from("medicines")
             .update({ stock: Math.max(0, newStock) })
             .eq("name", item.medicine.name);
@@ -156,7 +156,7 @@ export default function PharmacyScanner() {
     setProcessing(true);
 
     try {
-      const { error } = await supabase
+      const { error } = await db
         .from("prescriptions")
         .update({ status: "siap" })
         .eq("id", prescription.id);
@@ -181,7 +181,7 @@ export default function PharmacyScanner() {
     setProcessing(true);
 
     try {
-      const { error } = await supabase
+      const { error } = await db
         .from("prescriptions")
         .update({ status: "diserahkan" })
         .eq("id", prescription.id);

@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { CreditCard, Smartphone, QrCode, Globe, CheckCircle, Settings, Search, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 
 const gateways = [
   { id: "midtrans", name: "Midtrans", logo: "🏦", methods: ["QRIS", "VA BCA", "VA Mandiri", "VA BNI", "GoPay", "OVO", "Dana", "Kartu Kredit"], status: "active" },
@@ -31,7 +31,7 @@ export function PaymentGateway() {
   const { data: payments = [], isLoading } = useQuery({
     queryKey: ["payment-gateway-transactions"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("billings")
         .select("id, invoice_number, total, status, payment_method, payment_date, billing_date, paid_amount, patients(full_name)")
         .order("billing_date", { ascending: false })

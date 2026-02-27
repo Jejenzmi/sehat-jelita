@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { toast } from "sonner";
 
 export interface SmartDisplayConfig {
@@ -22,7 +22,7 @@ export function useSmartDisplayConfig(displayType = "lobby") {
   return useQuery({
     queryKey: ["smart-display-config", displayType],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await (db as any)
         .from("smart_display_config")
         .select("*")
         .eq("display_type", displayType)
@@ -37,9 +37,9 @@ export function useUpdateSmartDisplayConfig() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...updates }: { id: string } & Partial<SmartDisplayConfig>) => {
-      const { error } = await (supabase as any)
+      const { error } = await (db as any)
         .from("smart_display_config")
-        .update({ ...updates, updated_by: (await supabase.auth.getUser()).data.user?.id })
+        .update({ ...updates, updated_by: (await db.auth.getUser()).data.user?.id })
         .eq("id", id);
       if (error) throw error;
     },

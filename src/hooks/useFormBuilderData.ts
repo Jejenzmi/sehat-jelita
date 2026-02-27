@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { useAuth } from "./useAuth";
 import { toast } from "sonner";
 
@@ -33,7 +33,7 @@ export function useFormBuilderData() {
   const { data: templates = [], isLoading } = useQuery({
     queryKey: ["custom-form-templates"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("custom_form_templates")
         .select("*")
         .eq("is_active", true)
@@ -48,7 +48,7 @@ export function useFormBuilderData() {
 
   const saveTemplate = useMutation({
     mutationFn: async (template: { name: string; description: string; category: string; fields: FormField[] }) => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("custom_form_templates")
         .insert({
           name: template.name,
@@ -71,7 +71,7 @@ export function useFormBuilderData() {
 
   const deleteTemplate = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("custom_form_templates").delete().eq("id", id);
+      const { error } = await db.from("custom_form_templates").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {

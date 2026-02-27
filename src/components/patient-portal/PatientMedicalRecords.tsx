@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { FileText, Calendar, User, Eye, Activity, Thermometer, Heart } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { useAuth } from "@/hooks/useAuth";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
@@ -54,7 +54,7 @@ export default function PatientMedicalRecords() {
 
   const fetchMedicalRecords = async () => {
     try {
-      const { data: patient } = await supabase
+      const { data: patient } = await db
         .from("patients")
         .select("id")
         .eq("user_id", user?.id)
@@ -62,7 +62,7 @@ export default function PatientMedicalRecords() {
 
       if (!patient) return;
 
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("medical_records")
         .select(`
           id,

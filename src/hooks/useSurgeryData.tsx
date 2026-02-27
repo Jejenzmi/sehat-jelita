@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { toast } from "sonner";
 
 export interface OperatingRoom {
@@ -86,7 +86,7 @@ export function useSurgeryData() {
   const { data: operatingRooms = [], isLoading: loadingRooms } = useQuery({
     queryKey: ["operating-rooms"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("operating_rooms")
         .select("*")
         .eq("is_active", true)
@@ -101,7 +101,7 @@ export function useSurgeryData() {
   const { data: surgeries = [], isLoading: loadingSurgeries, refetch: refetchSurgeries } = useQuery({
     queryKey: ["surgeries"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("surgeries")
         .select(`
           *,
@@ -121,7 +121,7 @@ export function useSurgeryData() {
     queryKey: ["surgeries-today"],
     queryFn: async () => {
       const today = new Date().toISOString().split("T")[0];
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("surgeries")
         .select(`
           *,
@@ -140,7 +140,7 @@ export function useSurgeryData() {
   const createSurgery = useMutation({
     mutationFn: async (surgeryData: Partial<Surgery>) => {
       // Generate surgery number
-      const { data: surgeryNumber } = await supabase.rpc("generate_surgery_number");
+      const { data: surgeryNumber } = await db.rpc("generate_surgery_number");
       
       const insertData = {
         patient_id: surgeryData.patient_id!,
@@ -160,7 +160,7 @@ export function useSurgeryData() {
         preoperative_notes: surgeryData.preoperative_notes || null,
       };
       
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("surgeries")
         .insert(insertData)
         .select()
@@ -182,7 +182,7 @@ export function useSurgeryData() {
   // Update surgery
   const updateSurgery = useMutation({
     mutationFn: async ({ id, ...updateData }: Partial<Surgery> & { id: string }) => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("surgeries")
         .update(updateData)
         .eq("id", id)
@@ -215,7 +215,7 @@ export function useSurgeryData() {
         updateData.cancellation_reason = notes;
       }
 
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("surgeries")
         .update(updateData)
         .eq("id", id)
@@ -238,7 +238,7 @@ export function useSurgeryData() {
   // Surgery team operations
   const addTeamMember = useMutation({
     mutationFn: async (member: Omit<SurgeryTeamMember, 'id'>) => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("surgery_teams")
         .insert(member)
         .select()
@@ -255,7 +255,7 @@ export function useSurgeryData() {
 
   // Fetch surgery team
   const fetchSurgeryTeam = async (surgeryId: string) => {
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from("surgery_teams")
       .select("*")
       .eq("surgery_id", surgeryId);
@@ -268,14 +268,14 @@ export function useSurgeryData() {
   const updateSafetyChecklist = useMutation({
     mutationFn: async ({ surgeryId, ...checklistData }: Partial<SurgicalSafetyChecklist> & { surgeryId: string }) => {
       // Check if checklist exists
-      const { data: existing } = await supabase
+      const { data: existing } = await db
         .from("surgical_safety_checklists")
         .select("id")
         .eq("surgery_id", surgeryId)
         .single();
 
       if (existing) {
-        const { data, error } = await supabase
+        const { data, error } = await db
           .from("surgical_safety_checklists")
           .update(checklistData)
           .eq("surgery_id", surgeryId)
@@ -284,7 +284,7 @@ export function useSurgeryData() {
         if (error) throw error;
         return data;
       } else {
-        const { data, error } = await supabase
+        const { data, error } = await db
           .from("surgical_safety_checklists")
           .insert({ surgery_id: surgeryId, ...checklistData })
           .select()

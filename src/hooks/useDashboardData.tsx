@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { startOfDay, endOfDay, startOfWeek, endOfWeek, subDays, format } from "date-fns";
 
 export interface DashboardStats {
@@ -34,14 +34,14 @@ export function useDashboardStats() {
       const endToday = endOfDay(today).toISOString();
 
       // Get today's visits count
-      const { count: visitsToday } = await supabase
+      const { count: visitsToday } = await db
         .from("visits")
         .select("*", { count: "exact", head: true })
         .gte("visit_date", startToday)
         .lte("visit_date", endToday);
 
       // Get outpatient visits today
-      const { count: outpatientToday } = await supabase
+      const { count: outpatientToday } = await db
         .from("visits")
         .select("*", { count: "exact", head: true })
         .eq("visit_type", "rawat_jalan")
@@ -49,13 +49,13 @@ export function useDashboardStats() {
         .lte("visit_date", endToday);
 
       // Get inpatient admissions (active)
-      const { count: inpatientCount } = await supabase
+      const { count: inpatientCount } = await db
         .from("inpatient_admissions")
         .select("*", { count: "exact", head: true })
         .eq("status", "active");
 
       // Get beds for occupancy calculation
-      const { data: bedsData } = await supabase
+      const { data: bedsData } = await db
         .from("beds")
         .select("status");
 
@@ -64,7 +64,7 @@ export function useDashboardStats() {
       const occupancyRate = totalBeds > 0 ? Math.round((occupiedBeds / totalBeds) * 100) : 0;
 
       // Get today's revenue
-      const { data: billingData } = await supabase
+      const { data: billingData } = await db
         .from("billings")
         .select("paid_amount")
         .eq("status", "lunas")
@@ -74,7 +74,7 @@ export function useDashboardStats() {
       const revenueToday = billingData?.reduce((sum, b) => sum + (b.paid_amount || 0), 0) || 0;
 
       // Get pending billings count
-      const { count: pendingBillings } = await supabase
+      const { count: pendingBillings } = await db
         .from("billings")
         .select("*", { count: "exact", head: true })
         .eq("status", "pending");
@@ -97,7 +97,7 @@ export function useBedOccupancy() {
     queryKey: ["bed-occupancy"],
     queryFn: async (): Promise<BedOccupancyData[]> => {
       // Get rooms with their beds
-      const { data: rooms } = await supabase
+      const { data: rooms } = await db
         .from("rooms")
         .select(`
           id,
@@ -147,7 +147,7 @@ export function useWeeklyVisits() {
       const weekStart = startOfWeek(today, { weekStartsOn: 1 });
       const weekEnd = endOfWeek(today, { weekStartsOn: 1 });
 
-      const { data: visits } = await supabase
+      const { data: visits } = await db
         .from("visits")
         .select("visit_date, visit_type")
         .gte("visit_date", weekStart.toISOString())
@@ -185,7 +185,7 @@ export function useRecentPatients() {
   return useQuery({
     queryKey: ["recent-patients"],
     queryFn: async () => {
-      const { data } = await supabase
+      const { data } = await db
         .from("visits")
         .select(`
           id,

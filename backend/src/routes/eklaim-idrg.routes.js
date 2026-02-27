@@ -2,7 +2,7 @@
  * SIMRS ZEN - E-Klaim IDRG Routes
  * Full bridging for all 31 E-Klaim IDRG API endpoints
  * 
- * Migrated from Supabase Edge Function: eklaim-idrg
+ * E-Klaim IDRG routes
  */
 
 import { Router } from 'express';

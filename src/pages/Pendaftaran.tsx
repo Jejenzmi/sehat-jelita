@@ -29,7 +29,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { PatientFormFields } from "@/components/forms/PatientFormFields";
@@ -151,18 +151,18 @@ export default function Pendaftaran() {
   const fetchStats = async () => {
     const today = format(new Date(), "yyyy-MM-dd");
     try {
-      const { count: total } = await supabase
+      const { count: total } = await db
         .from("visits")
         .select("*", { count: "exact", head: true })
         .eq("visit_date", today);
 
-      const { count: served } = await supabase
+      const { count: served } = await db
         .from("visits")
         .select("*", { count: "exact", head: true })
         .eq("visit_date", today)
         .in("status", ["selesai", "dilayani"]);
 
-      const { count: waiting } = await supabase
+      const { count: waiting } = await db
         .from("visits")
         .select("*", { count: "exact", head: true })
         .eq("visit_date", today)
@@ -170,7 +170,7 @@ export default function Pendaftaran() {
 
       const startOfMonth = new Date();
       startOfMonth.setDate(1);
-      const { count: newPatients } = await supabase
+      const { count: newPatients } = await db
         .from("patients")
         .select("*", { count: "exact", head: true })
         .gte("created_at", startOfMonth.toISOString());
@@ -190,7 +190,7 @@ export default function Pendaftaran() {
     setLoading(true);
     const today = format(new Date(), "yyyy-MM-dd");
     try {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("visits")
         .select(`
           id,
@@ -222,7 +222,7 @@ export default function Pendaftaran() {
   };
 
   const fetchDepartments = async () => {
-    const { data } = await supabase
+    const { data } = await db
       .from("departments")
       .select("id, name, code")
       .eq("is_active", true)
@@ -231,7 +231,7 @@ export default function Pendaftaran() {
   };
 
   const fetchDoctors = async () => {
-    const { data } = await supabase
+    const { data } = await db
       .from("doctors")
       .select("id, full_name, specialization, department_id")
       .eq("is_active", true)
@@ -246,7 +246,7 @@ export default function Pendaftaran() {
     }
     setIsSearching(true);
     try {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("patients")
         .select("id, medical_record_number, nik, full_name, gender, birth_date, phone, bpjs_number")
         .or(`full_name.ilike.%${term}%,nik.ilike.%${term}%,medical_record_number.ilike.%${term}%`)
@@ -310,9 +310,9 @@ export default function Pendaftaran() {
     try {
       // Create new patient if needed
       if (activeTab === "new") {
-        const { data: mrn } = await supabase.rpc("generate_medical_record_number");
+        const { data: mrn } = await db.rpc("generate_medical_record_number");
         
-        const { data: newPatient, error: patientError } = await supabase
+        const { data: newPatient, error: patientError } = await db
           .from("patients")
           .insert({
             medical_record_number: mrn,
@@ -353,10 +353,10 @@ export default function Pendaftaran() {
       }
 
       // Generate visit number and get next queue number
-      const { data: visitNumber } = await supabase.rpc("generate_visit_number");
+      const { data: visitNumber } = await db.rpc("generate_visit_number");
       
       const today = format(new Date(), "yyyy-MM-dd");
-      const { count: currentQueue } = await supabase
+      const { count: currentQueue } = await db
         .from("visits")
         .select("*", { count: "exact", head: true })
         .eq("visit_date", today)
@@ -365,7 +365,7 @@ export default function Pendaftaran() {
       const nextQueueNumber = (currentQueue || 0) + 1;
 
       // Create visit
-      const { error: visitError } = await supabase.from("visits").insert({
+      const { error: visitError } = await db.from("visits").insert({
         visit_number: visitNumber,
         patient_id: patientId,
         department_id: formData.department_id,
@@ -444,7 +444,7 @@ export default function Pendaftaran() {
 
   const handleCallPatient = async (visitId: string) => {
     try {
-      const { error } = await supabase
+      const { error } = await db
         .from("visits")
         .update({ status: "dipanggil" })
         .eq("id", visitId);
@@ -468,7 +468,7 @@ export default function Pendaftaran() {
     
     setIsCancelling(true);
     try {
-      const { error } = await supabase
+      const { error } = await db
         .from("visits")
         .update({ status: "batal" })
         .eq("id", visitToCancel.id);

@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Plus, Edit, Users, UserCheck, UserX, Clock } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 
@@ -64,10 +64,10 @@ export default function MedicalTrainees() {
   const fetchData = async () => {
     setIsLoading(true);
     const [traineesRes, programsRes] = await Promise.all([
-      supabase.from("medical_trainees")
+      db.from("medical_trainees")
         .select("*, education_programs(program_name, program_type)")
         .order("full_name"),
-      supabase.from("education_programs").select("id, program_name, program_type").eq("is_active", true)
+      db.from("education_programs").select("id, program_name, program_type").eq("is_active", true)
     ]);
     
     if (traineesRes.data) setTrainees(traineesRes.data);
@@ -84,11 +84,11 @@ export default function MedicalTrainees() {
       };
 
       if (editingTrainee) {
-        const { error } = await supabase.from("medical_trainees").update(payload).eq("id", editingTrainee.id);
+        const { error } = await db.from("medical_trainees").update(payload).eq("id", editingTrainee.id);
         if (error) throw error;
         toast({ title: "Berhasil", description: "Data residen berhasil diperbarui" });
       } else {
-        const { error } = await supabase.from("medical_trainees").insert(payload);
+        const { error } = await db.from("medical_trainees").insert(payload);
         if (error) throw error;
         toast({ title: "Berhasil", description: "Residen berhasil ditambahkan" });
       }

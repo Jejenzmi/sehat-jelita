@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { useToast } from "@/hooks/use-toast";
 
 export type TriageLevel = "merah" | "kuning" | "hijau" | "hitam";
@@ -42,7 +42,7 @@ export function useEmergencyVisits() {
   return useQuery({
     queryKey: ["emergency-visits"],
     queryFn: async (): Promise<EmergencyVisit[]> => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("emergency_visits")
         .select(`
           *,
@@ -67,7 +67,7 @@ export function useEmergencyStats() {
       const startOfDay = new Date(today.setHours(0, 0, 0, 0)).toISOString();
 
       // Get active emergency visits
-      const { data: activeVisits, error } = await supabase
+      const { data: activeVisits, error } = await db
         .from("emergency_visits")
         .select("triage_level, arrival_time, triage_time")
         .is("disposition_time", null);
@@ -75,7 +75,7 @@ export function useEmergencyStats() {
       if (error) throw error;
 
       // Get today's total
-      const { count: todayTotal } = await supabase
+      const { count: todayTotal } = await db
         .from("emergency_visits")
         .select("*", { count: "exact", head: true })
         .gte("arrival_time", startOfDay);
@@ -136,7 +136,7 @@ export function useCreateEmergencyVisit() {
     }) => {
       // First create a visit - generate a visit number
       const visitNumber = `IGD-${Date.now()}`;
-      const { data: visit, error: visitError } = await supabase
+      const { data: visit, error: visitError } = await db
         .from("visits")
         .insert([{
           visit_number: visitNumber,
@@ -151,7 +151,7 @@ export function useCreateEmergencyVisit() {
       if (visitError) throw visitError;
 
       // Then create emergency visit
-      const { data: emergencyVisit, error } = await supabase
+      const { data: emergencyVisit, error } = await db
         .from("emergency_visits")
         .insert({
           patient_id: data.patient_id,
@@ -200,7 +200,7 @@ export function useUpdateEmergencyDisposition() {
       disposition: string;
       notes?: string;
     }) => {
-      const { error } = await supabase
+      const { error } = await db
         .from("emergency_visits")
         .update({
           disposition,

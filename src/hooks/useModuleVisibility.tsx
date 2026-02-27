@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { useMemo } from "react";
 
 interface ModuleConfig {
@@ -15,7 +15,7 @@ export function useModuleVisibility() {
   const { data: hospitalProfile, isLoading: loadingProfile } = useQuery({
     queryKey: ["hospital-profile-for-modules"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("hospital_profile")
         .select("facility_level, setup_completed")
         .limit(1)
@@ -32,7 +32,7 @@ export function useModuleVisibility() {
     queryFn: async () => {
       if (!hospitalProfile?.facility_level) {
         // If no hospital type set, return all modules (setup not done)
-        const { data, error } = await supabase
+        const { data, error } = await db
           .from("module_configurations")
           .select("module_code, module_name, module_category, module_path, is_core_module")
           .eq("is_active", true);
@@ -40,7 +40,7 @@ export function useModuleVisibility() {
         return data as ModuleConfig[];
       }
 
-      const { data, error } = await supabase.rpc("get_available_modules", {
+      const { data, error } = await db.rpc("get_available_modules", {
         p_hospital_type: hospitalProfile.facility_level,
       });
       if (error) throw error;

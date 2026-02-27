@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { toast } from "sonner";
 import { Loader2, User, Heart, Shield, Calendar } from "lucide-react";
 
@@ -25,7 +25,7 @@ export default function PatientAuth() {
     setIsLoading(true);
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await db.auth.signInWithPassword({
         email: loginEmail,
         password: loginPassword,
       });
@@ -33,7 +33,7 @@ export default function PatientAuth() {
       if (error) throw error;
 
       // Check if user has linked patient record
-      const { data: patient } = await supabase
+      const { data: patient } = await db
         .from("patients")
         .select("id")
         .eq("user_id", data.user.id)
@@ -41,7 +41,7 @@ export default function PatientAuth() {
 
       if (!patient) {
         toast.error("Akun Anda belum terhubung dengan data pasien. Silakan hubungi admin rumah sakit.");
-        await supabase.auth.signOut();
+        await db.auth.signOut();
         return;
       }
 
@@ -60,7 +60,7 @@ export default function PatientAuth() {
 
     try {
       // First check if patient with NIK exists
-      const { data: existingPatient } = await supabase
+      const { data: existingPatient } = await db
         .from("patients")
         .select("id, user_id")
         .eq("nik", registerNIK)
@@ -79,7 +79,7 @@ export default function PatientAuth() {
       }
 
       // Create auth user
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      const { data: authData, error: authError } = await db.auth.signUp({
         email: registerEmail,
         password: registerPassword,
         options: {
@@ -95,7 +95,7 @@ export default function PatientAuth() {
 
       if (authData.user) {
         // Link patient record to user
-        const { error: updateError } = await supabase
+        const { error: updateError } = await db
           .from("patients")
           .update({ 
             user_id: authData.user.id,

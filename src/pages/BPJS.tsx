@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 
@@ -58,7 +58,7 @@ export default function BPJS() {
   const { data: claims = [], isLoading } = useQuery({
     queryKey: ["bpjs-claims", statusFilter],
     queryFn: async () => {
-      let query = supabase
+      let query = db
         .from("bpjs_claims")
         .select(`
           *,
@@ -93,7 +93,7 @@ export default function BPJS() {
         updates.submission_date = new Date().toISOString();
       }
 
-      const { error } = await supabase
+      const { error } = await db
         .from("bpjs_claims")
         .update(updates)
         .eq("id", claimId);

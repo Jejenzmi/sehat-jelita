@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Edit, Calendar, Users, Award, Clock } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
@@ -61,10 +61,10 @@ export default function AcademicActivities() {
 
   const fetchData = async () => {
     const [activitiesRes, deptsRes] = await Promise.all([
-      supabase.from("academic_activities")
+      db.from("academic_activities")
         .select("*, departments(name)")
         .order("activity_date", { ascending: false }),
-      supabase.from("departments").select("id, name").eq("is_active", true)
+      db.from("departments").select("id, name").eq("is_active", true)
     ]);
     
     if (activitiesRes.data) setActivities(activitiesRes.data);
@@ -83,11 +83,11 @@ export default function AcademicActivities() {
       };
 
       if (editingActivity) {
-        const { error } = await supabase.from("academic_activities").update(payload).eq("id", editingActivity.id);
+        const { error } = await db.from("academic_activities").update(payload).eq("id", editingActivity.id);
         if (error) throw error;
         toast({ title: "Berhasil", description: "Kegiatan berhasil diperbarui" });
       } else {
-        const { error } = await supabase.from("academic_activities").insert(payload);
+        const { error } = await db.from("academic_activities").insert(payload);
         if (error) throw error;
         toast({ title: "Berhasil", description: "Kegiatan berhasil ditambahkan" });
       }

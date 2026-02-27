@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Calendar as CalendarIcon, Clock, User, Plus, CheckCircle, XCircle, AlertCircle } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { useAuth } from "@/hooks/useAuth";
 import { format, addDays, isBefore, startOfToday } from "date-fns";
 import { id } from "date-fns/locale";
@@ -74,7 +74,7 @@ export default function PatientAppointments() {
   const fetchData = async () => {
     try {
       // Get patient ID
-      const { data: patient } = await supabase
+      const { data: patient } = await db
         .from("patients")
         .select("id")
         .eq("user_id", user?.id)
@@ -84,7 +84,7 @@ export default function PatientAppointments() {
         setPatientId(patient.id);
 
         // Fetch appointments
-        const { data: appointmentsData, error: appointmentsError } = await supabase
+        const { data: appointmentsData, error: appointmentsError } = await db
           .from("appointments")
           .select(`
             id,
@@ -109,7 +109,7 @@ export default function PatientAppointments() {
       }
 
       // Fetch doctors
-      const { data: doctorsData } = await supabase
+      const { data: doctorsData } = await db
         .from("doctors")
         .select(`
           id,
@@ -146,7 +146,7 @@ export default function PatientAppointments() {
     try {
       const doctor = doctors.find(d => d.id === selectedDoctor);
       
-      const { error } = await supabase
+      const { error } = await db
         .from("appointments")
         .insert({
           patient_id: patientId,

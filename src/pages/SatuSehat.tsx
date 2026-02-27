@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { toast } from "sonner";
 
 interface SyncStat {
@@ -65,7 +65,7 @@ export default function SatuSehat() {
 
   const loadStats = async () => {
     try {
-      const { data, error } = await supabase.functions.invoke('satusehat', {
+      const { data, error } = await db.functions.invoke('satusehat', {
         body: { action: 'get-sync-stats' },
       });
 
@@ -81,7 +81,7 @@ export default function SatuSehat() {
 
   const loadLogs = async () => {
     try {
-      const { data, error } = await supabase.functions.invoke('satusehat', {
+      const { data, error } = await db.functions.invoke('satusehat', {
         body: { action: 'get-sync-logs', data: { limit: 10 } },
       });
 
@@ -98,7 +98,7 @@ export default function SatuSehat() {
 
   const loadConfig = async () => {
     try {
-      const { data, error } = await supabase.functions.invoke('satusehat', {
+      const { data, error } = await db.functions.invoke('satusehat', {
         body: { action: 'get-config' },
       });
 
@@ -119,7 +119,7 @@ export default function SatuSehat() {
   const testConnection = async () => {
     setIsTesting(true);
     try {
-      const { data, error } = await supabase.functions.invoke('satusehat', {
+      const { data, error } = await db.functions.invoke('satusehat', {
         body: { action: 'test-connection' },
       });
 
@@ -142,7 +142,7 @@ export default function SatuSehat() {
 
   const saveConfig = async () => {
     try {
-      const { error } = await supabase.functions.invoke('satusehat', {
+      const { error } = await db.functions.invoke('satusehat', {
         body: {
           action: 'save-config',
           data: {
@@ -164,7 +164,7 @@ export default function SatuSehat() {
   const bulkSyncPatients = async () => {
     setIsSyncing(true);
     try {
-      const { data, error } = await supabase.functions.invoke('satusehat', {
+      const { data, error } = await db.functions.invoke('satusehat', {
         body: { action: 'bulk-sync-patients' },
       });
 

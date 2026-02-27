@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { useAuth } from "./useAuth";
 
 /**
@@ -22,7 +22,7 @@ export function useBootstrapAdmin() {
     setError(null);
 
     try {
-      const { error: insertErr } = await supabase.from("user_roles").insert({
+      const { error: insertErr } = await db.from("user_roles").insert({
         user_id: user.id,
         role: "admin",
       });

@@ -1,5 +1,5 @@
 import { useEffect, useCallback, useRef } from "react";
-import { supabase, RealtimeChannel } from "@/integrations/supabase/client";
+import { db, RealtimeChannel } from "@/lib/db";
 
 interface SignalMessage {
   type: "offer" | "answer" | "ice-candidate";
@@ -32,7 +32,7 @@ export function useWebRTCSignaling({
       console.log(`[WebRTC] Sending signal: ${signal.type}`);
 
       try {
-        const { error } = await supabase.from("webrtc_signals").insert({
+        const { error } = await db.from("webrtc_signals").insert({
           session_id: sessionId,
           sender_id: localUserId,
           signal_type: signal.type,
@@ -57,7 +57,7 @@ export function useWebRTCSignaling({
 
     console.log(`[WebRTC] Subscribing to signals for session: ${sessionId}`);
 
-    const channel = supabase
+    const channel = db
       .channel(`webrtc-${sessionId}`)
       .on(
         "postgres_changes",
@@ -96,7 +96,7 @@ export function useWebRTCSignaling({
     return () => {
       console.log("[WebRTC] Unsubscribing from signals");
       if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
+        db.removeChannel(channelRef.current);
         channelRef.current = null;
       }
     };

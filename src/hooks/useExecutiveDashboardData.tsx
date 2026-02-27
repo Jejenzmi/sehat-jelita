@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { startOfMonth, endOfMonth, subMonths, format, startOfDay, endOfDay } from "date-fns";
 
 export interface ExecutiveKPI {
@@ -55,27 +55,27 @@ export function useExecutiveKPIs() {
       const lastMonth = { start: startOfMonth(subMonths(today, 1)), end: endOfMonth(subMonths(today, 1)) };
 
       // Total patients this month
-      const { count: patientsThisMonth } = await supabase
+      const { count: patientsThisMonth } = await db
         .from("patients")
         .select("*", { count: "exact", head: true })
         .gte("created_at", thisMonth.start.toISOString())
         .lte("created_at", thisMonth.end.toISOString());
 
-      const { count: patientsLastMonth } = await supabase
+      const { count: patientsLastMonth } = await db
         .from("patients")
         .select("*", { count: "exact", head: true })
         .gte("created_at", lastMonth.start.toISOString())
         .lte("created_at", lastMonth.end.toISOString());
 
       // Revenue this month
-      const { data: revenueThisMonth } = await supabase
+      const { data: revenueThisMonth } = await db
         .from("billings")
         .select("paid_amount")
         .eq("status", "lunas")
         .gte("payment_date", thisMonth.start.toISOString())
         .lte("payment_date", thisMonth.end.toISOString());
 
-      const { data: revenueLastMonth } = await supabase
+      const { data: revenueLastMonth } = await db
         .from("billings")
         .select("paid_amount")
         .eq("status", "lunas")
@@ -86,13 +86,13 @@ export function useExecutiveKPIs() {
       const totalRevenueLastMonth = revenueLastMonth?.reduce((sum, b) => sum + (b.paid_amount || 0), 0) || 0;
 
       // Bed Occupancy Rate (BOR)
-      const { data: bedsData } = await supabase.from("beds").select("status");
+      const { data: bedsData } = await db.from("beds").select("status");
       const totalBeds = bedsData?.length || 0;
       const occupiedBeds = bedsData?.filter(b => b.status === "terisi").length || 0;
       const bor = totalBeds > 0 ? Math.round((occupiedBeds / totalBeds) * 100 * 10) / 10 : 0;
 
       // ALOS (Average Length of Stay) - calculate from inpatient admissions
-      const { data: dischargedPatients } = await supabase
+      const { data: dischargedPatients } = await db
         .from("inpatient_admissions")
         .select("admission_date, actual_discharge_date")
         .eq("status", "discharged")
@@ -111,7 +111,7 @@ export function useExecutiveKPIs() {
       }
 
       // BTO (Bed Turnover) - number of patients per bed this month
-      const { count: dischargedCount } = await supabase
+      const { count: dischargedCount } = await db
         .from("inpatient_admissions")
         .select("*", { count: "exact", head: true })
         .eq("status", "discharged")
@@ -175,7 +175,7 @@ export function useRevenueData() {
         const end = endOfMonth(month);
 
         // Get revenue from billings
-        const { data: billings } = await supabase
+        const { data: billings } = await db
           .from("billings")
           .select("paid_amount, payment_type")
           .eq("status", "lunas")
@@ -183,7 +183,7 @@ export function useRevenueData() {
           .lte("payment_date", end.toISOString());
 
         // Get visits to distinguish rawat jalan vs rawat inap revenue
-        const { data: visits } = await supabase
+        const { data: visits } = await db
           .from("visits")
           .select("id, visit_type")
           .gte("visit_date", start.toISOString())
@@ -193,7 +193,7 @@ export function useRevenueData() {
         const rawatJalanIds = visits?.filter(v => v.visit_type === "rawat_jalan").map(v => v.id) || [];
         const rawatInapIds = visits?.filter(v => v.visit_type === "rawat_inap").map(v => v.id) || [];
 
-        const { data: visitBillings } = await supabase
+        const { data: visitBillings } = await db
           .from("billings")
           .select("visit_id, paid_amount")
           .eq("status", "lunas")
@@ -242,7 +242,7 @@ export function useVisitTrends() {
         const start = startOfMonth(month);
         const end = endOfMonth(month);
 
-        const { data: visits } = await supabase
+        const { data: visits } = await db
           .from("visits")
           .select("visit_type")
           .gte("visit_date", start.toISOString())
@@ -269,7 +269,7 @@ export function usePaymentDistribution() {
     queryFn: async (): Promise<PaymentDistribution[]> => {
       const thisMonth = { start: startOfMonth(new Date()), end: endOfMonth(new Date()) };
 
-      const { data: billings } = await supabase
+      const { data: billings } = await db
         .from("billings")
         .select("payment_type, paid_amount")
         .eq("status", "lunas")
@@ -309,7 +309,7 @@ export function useBedOccupancyByClass() {
   return useQuery({
     queryKey: ["executive-beds"],
     queryFn: async (): Promise<BedOccupancyByClass[]> => {
-      const { data: rooms } = await supabase
+      const { data: rooms } = await db
         .from("rooms")
         .select(`
           id,
@@ -356,7 +356,7 @@ export function useDepartmentPerformance() {
     queryFn: async (): Promise<DepartmentPerformance[]> => {
       const thisMonth = { start: startOfMonth(new Date()), end: endOfMonth(new Date()) };
 
-      const { data: departments } = await supabase
+      const { data: departments } = await db
         .from("departments")
         .select("id, name")
         .eq("is_active", true)
@@ -366,7 +366,7 @@ export function useDepartmentPerformance() {
 
       for (const dept of departments || []) {
         // Get visits for this department
-        const { count: visits } = await supabase
+        const { count: visits } = await db
           .from("visits")
           .select("*", { count: "exact", head: true })
           .eq("department_id", dept.id)
@@ -374,7 +374,7 @@ export function useDepartmentPerformance() {
           .lte("visit_date", thisMonth.end.toISOString());
 
         // Get billings for visits in this department
-        const { data: deptVisits } = await supabase
+        const { data: deptVisits } = await db
           .from("visits")
           .select("id")
           .eq("department_id", dept.id)
@@ -383,7 +383,7 @@ export function useDepartmentPerformance() {
 
         const visitIds = deptVisits?.map(v => v.id) || [];
 
-        const { data: billings } = await supabase
+        const { data: billings } = await db
           .from("billings")
           .select("paid_amount")
           .eq("status", "lunas")
@@ -392,7 +392,7 @@ export function useDepartmentPerformance() {
         const revenue = billings?.reduce((sum, b) => sum + (b.paid_amount || 0), 0) || 0;
 
         // Get real satisfaction score from survey data
-        const { data: surveyData } = await supabase
+        const { data: surveyData } = await db
           .from("survey_responses")
           .select("overall_score")
           .eq("department_id", dept.id)

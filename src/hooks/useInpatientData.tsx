@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { useToast } from "@/hooks/use-toast";
 
 export interface Room {
@@ -54,7 +54,7 @@ export function useRooms() {
   return useQuery({
     queryKey: ["rooms"],
     queryFn: async (): Promise<Room[]> => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("rooms")
         .select(`
           *,
@@ -73,7 +73,7 @@ export function useInpatientAdmissions() {
   return useQuery({
     queryKey: ["inpatient-admissions"],
     queryFn: async (): Promise<InpatientAdmission[]> => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("inpatient_admissions")
         .select(`
           *,
@@ -96,7 +96,7 @@ export function useDischargeQueue() {
     queryKey: ["discharge-queue"],
     queryFn: async () => {
       const today = new Date().toISOString().split("T")[0];
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("inpatient_admissions")
         .select(`
           *,
@@ -127,7 +127,7 @@ export function useCreateAdmission() {
       visit_id: string;
     }) => {
       // Create the admission
-      const { data: admissionData, error: admissionError } = await supabase
+      const { data: admissionData, error: admissionError } = await db
         .from("inpatient_admissions")
         .insert({
           patient_id: admission.patient_id,
@@ -145,7 +145,7 @@ export function useCreateAdmission() {
 
       // Update bed status if bed is assigned
       if (admission.bed_id) {
-        await supabase
+        await db
           .from("beds")
           .update({ 
             status: "terisi" as const, 
@@ -192,7 +192,7 @@ export function useDischargePatient() {
       dischargeType?: string;
     }) => {
       // Update admission
-      const { error: admissionError } = await supabase
+      const { error: admissionError } = await db
         .from("inpatient_admissions")
         .update({
           status: "discharged",
@@ -206,7 +206,7 @@ export function useDischargePatient() {
 
       // Release bed
       if (bedId) {
-        await supabase
+        await db
           .from("beds")
           .update({ 
             status: "tersedia" as const, 

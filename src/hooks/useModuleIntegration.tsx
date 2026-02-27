@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { useToast } from "@/hooks/use-toast";
 
 // Shared types for module integration
@@ -64,7 +64,7 @@ export function usePatientFullProfile(patientId: string | null) {
       if (!patientId) return null;
 
       // Get patient basic info
-      const { data: patient, error: patientError } = await supabase
+      const { data: patient, error: patientError } = await db
         .from("patients")
         .select("*")
         .eq("id", patientId)
@@ -73,7 +73,7 @@ export function usePatientFullProfile(patientId: string | null) {
       if (patientError) throw patientError;
 
       // Get visits
-      const { data: visits } = await supabase
+      const { data: visits } = await db
         .from("visits")
         .select(`
           id,
@@ -92,7 +92,7 @@ export function usePatientFullProfile(patientId: string | null) {
         .limit(20);
 
       // Get medical records
-      const { data: medicalRecords } = await supabase
+      const { data: medicalRecords } = await db
         .from("medical_records")
         .select(`
           id,
@@ -106,7 +106,7 @@ export function usePatientFullProfile(patientId: string | null) {
         .limit(10);
 
       // Get prescriptions
-      const { data: prescriptions } = await supabase
+      const { data: prescriptions } = await db
         .from("prescriptions")
         .select(`
           id,
@@ -120,7 +120,7 @@ export function usePatientFullProfile(patientId: string | null) {
         .limit(10);
 
       // Get billings
-      const { data: billings } = await supabase
+      const { data: billings } = await db
         .from("billings")
         .select(`
           id,
@@ -156,7 +156,7 @@ export function useVisitFullDetails(visitId: string | null) {
       if (!visitId) return null;
 
       // Get visit with patient and doctor
-      const { data: visit, error: visitError } = await supabase
+      const { data: visit, error: visitError } = await db
         .from("visits")
         .select(`
           *,
@@ -170,7 +170,7 @@ export function useVisitFullDetails(visitId: string | null) {
       if (visitError) throw visitError;
 
       // Get medical record for this visit
-      const { data: medicalRecord } = await supabase
+      const { data: medicalRecord } = await db
         .from("medical_records")
         .select(`
           *,
@@ -183,7 +183,7 @@ export function useVisitFullDetails(visitId: string | null) {
         .maybeSingle();
 
       // Get prescriptions for this visit
-      const { data: prescriptions } = await supabase
+      const { data: prescriptions } = await db
         .from("prescriptions")
         .select(`
           id,
@@ -201,7 +201,7 @@ export function useVisitFullDetails(visitId: string | null) {
         .eq("visit_id", visitId);
 
       // Get billing for this visit
-      const { data: billing } = await supabase
+      const { data: billing } = await db
         .from("billings")
         .select(`
           *,
@@ -250,7 +250,7 @@ export function useCreatePrescription() {
       const prescriptionNumber = `RX-${timestamp}-${random}`;
 
       // Create prescription
-      const { data: prescription, error: prescError } = await supabase
+      const { data: prescription, error: prescError } = await db
         .from("prescriptions")
         .insert({
           prescription_number: prescriptionNumber,
@@ -274,7 +274,7 @@ export function useCreatePrescription() {
         instructions: item.instructions || null,
       }));
 
-      const { error: itemsError } = await supabase
+      const { error: itemsError } = await db
         .from("prescription_items")
         .insert(prescriptionItems);
 
@@ -323,7 +323,7 @@ export function useCreateBilling() {
       }>;
     }) => {
       // Generate invoice number
-      const { data: invoiceNumber } = await supabase.rpc("generate_invoice_number");
+      const { data: invoiceNumber } = await db.rpc("generate_invoice_number");
 
       // Calculate totals
       const subtotal = items.reduce((sum, item) => sum + item.quantity * item.unit_price, 0);
@@ -331,7 +331,7 @@ export function useCreateBilling() {
       const total = subtotal + tax;
 
       // Create billing
-      const { data: billing, error: billingError } = await supabase
+      const { data: billing, error: billingError } = await db
         .from("billings")
         .insert({
           invoice_number: invoiceNumber,
@@ -358,7 +358,7 @@ export function useCreateBilling() {
         total_price: item.quantity * item.unit_price,
       }));
 
-      const { error: itemsError } = await supabase
+      const { error: itemsError } = await db
         .from("billing_items")
         .insert(billingItems);
 
@@ -402,7 +402,7 @@ export function useCompleteVisitWorkflow() {
       consultationFee?: number;
     }) => {
       // Update visit status to selesai
-      const { error: visitError } = await supabase
+      const { error: visitError } = await db
         .from("visits")
         .update({ status: "selesai" })
         .eq("id", visitId);
@@ -411,9 +411,9 @@ export function useCompleteVisitWorkflow() {
 
       // Only create billing for non-BPJS (BPJS handled separately via claims)
       if (paymentType === "umum" || paymentType === "asuransi") {
-        const { data: invoiceNumber } = await supabase.rpc("generate_invoice_number");
+        const { data: invoiceNumber } = await db.rpc("generate_invoice_number");
 
-        const { data: billing, error: billingError } = await supabase
+        const { data: billing, error: billingError } = await db
           .from("billings")
           .insert({
             invoice_number: invoiceNumber,
@@ -431,7 +431,7 @@ export function useCompleteVisitWorkflow() {
         if (billingError) throw billingError;
 
         // Add consultation item
-        await supabase.from("billing_items").insert({
+        await db.from("billing_items").insert({
           billing_id: billing.id,
           item_type: "consultation",
           item_name: "Konsultasi Dokter",

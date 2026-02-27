@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { Database } from "@/integrations/supabase/types";
+import { db } from "@/lib/db";
+import { Database } from "@/types/database";
 import { toast } from "sonner";
 
 type MCUPackage = Database["public"]["Tables"]["mcu_packages"]["Row"];
@@ -15,7 +15,7 @@ export function useMCUData() {
   const { data: packages, isLoading: loadingPackages } = useQuery({
     queryKey: ["mcu-packages"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("mcu_packages")
         .select(`
           *,
@@ -32,7 +32,7 @@ export function useMCUData() {
   const { data: corporateClients, isLoading: loadingClients } = useQuery({
     queryKey: ["corporate-clients"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("corporate_clients")
         .select("*")
         .eq("is_active", true)
@@ -46,7 +46,7 @@ export function useMCUData() {
   const { data: registrations, isLoading: loadingRegistrations } = useQuery({
     queryKey: ["mcu-registrations"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("mcu_registrations")
         .select(`
           *,
@@ -66,7 +66,7 @@ export function useMCUData() {
     queryKey: ["today-mcu-schedule"],
     queryFn: async () => {
       const today = new Date().toISOString().split("T")[0];
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("mcu_registrations")
         .select(`
           *,
@@ -84,7 +84,7 @@ export function useMCUData() {
   const { data: summaryReports, isLoading: loadingReports } = useQuery({
     queryKey: ["mcu-summary-reports"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("mcu_summary_reports")
         .select(`
           *,
@@ -103,7 +103,7 @@ export function useMCUData() {
   // Create MCU registration
   const createRegistration = useMutation({
     mutationFn: async (registration: Database["public"]["Tables"]["mcu_registrations"]["Insert"]) => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("mcu_registrations")
         .insert(registration)
         .select()
@@ -124,7 +124,7 @@ export function useMCUData() {
   // Update registration status
   const updateRegistrationStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("mcu_registrations")
         .update({ status })
         .eq("id", id)
@@ -146,7 +146,7 @@ export function useMCUData() {
   // Record MCU result
   const recordResult = useMutation({
     mutationFn: async (result: Database["public"]["Tables"]["mcu_results"]["Insert"]) => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("mcu_results")
         .insert(result)
         .select()
@@ -166,7 +166,7 @@ export function useMCUData() {
   // Create corporate client
   const createCorporateClient = useMutation({
     mutationFn: async (client: Database["public"]["Tables"]["corporate_clients"]["Insert"]) => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("corporate_clients")
         .insert(client)
         .select()

@@ -1,6 +1,6 @@
 /**
  * SIMRS ZEN - Frontend API Client
- * Replace Supabase client with REST API calls
+ * Node.js REST API client
  * 
  * Usage in React:
  * import { api } from '@/lib/api-client';

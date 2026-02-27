@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Loader2, Plus, Trash2, Monitor, Copy, ExternalLink, Tv } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import {
   useSmartDisplayDevices,
   useCreateSmartDisplayDevice,
@@ -36,7 +36,7 @@ function useDepartments() {
   return useQuery({
     queryKey: ["departments-list"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("departments")
         .select("id, name")
         .order("name");

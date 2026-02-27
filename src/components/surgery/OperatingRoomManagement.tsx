@@ -12,14 +12,14 @@ import {
 } from "@/components/ui/table";
 import { Settings, CheckCircle, XCircle, Wrench } from "lucide-react";
 import { useSurgeryData } from "@/hooks/useSurgeryData";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { toast } from "sonner";
 
 export function OperatingRoomManagement() {
   const { operatingRooms, isLoading, refetchSurgeries } = useSurgeryData();
 
   const toggleAvailability = async (roomId: string, isAvailable: boolean) => {
-    const { error } = await supabase
+    const { error } = await db
       .from("operating_rooms")
       .update({ is_available: !isAvailable })
       .eq("id", roomId);

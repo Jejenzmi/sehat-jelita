@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { toast } from "sonner";
 
 export interface HomeCareVisit {
@@ -28,7 +28,7 @@ export function useHomeCareVisits() {
   return useQuery({
     queryKey: ["home-care-visits"],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await (db as any)
         .from("home_care_visits")
         .select("*")
         .order("visit_date", { ascending: false });
@@ -42,7 +42,7 @@ export function useCreateHomeCareVisit() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (visit: Omit<HomeCareVisit, "id" | "created_at" | "updated_at" | "completed_at" | "completion_notes">) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await (db as any)
         .from("home_care_visits")
         .insert(visit)
         .select()
@@ -62,7 +62,7 @@ export function useUpdateHomeCareVisit() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...data }: { id: string } & Partial<HomeCareVisit>) => {
-      const { error } = await (supabase as any)
+      const { error } = await (db as any)
         .from("home_care_visits")
         .update(data)
         .eq("id", id);
@@ -77,7 +77,7 @@ export function useUpdateHomeCareVisit() {
 }
 
 export async function generateHomeCareVisitNumber(): Promise<string> {
-  const { data, error } = await (supabase as any).rpc("generate_home_care_visit_number");
+  const { data, error } = await (db as any).rpc("generate_home_care_visit_number");
   if (error) throw error;
   return data;
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 
@@ -52,7 +52,7 @@ export function useTelemedicineData() {
   const fetchSessions = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("telemedicine_sessions")
         .select(`
           *,
@@ -95,7 +95,7 @@ export function useTelemedicineData() {
   const createSession = async (appointmentId: string) => {
     try {
       // Get appointment details
-      const { data: appointment, error: aptError } = await supabase
+      const { data: appointment, error: aptError } = await db
         .from("appointments")
         .select("*")
         .eq("id", appointmentId)
@@ -106,7 +106,7 @@ export function useTelemedicineData() {
       const roomName = `room-${Date.now()}-${Math.random().toString(36).substring(7)}`;
       const scheduledStart = `${appointment.appointment_date}T${appointment.appointment_time}`;
 
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("telemedicine_sessions")
         .insert([{
           appointment_id: appointmentId,
@@ -147,7 +147,7 @@ export function useTelemedicineData() {
         updates.patient_joined_at = new Date().toISOString();
       }
 
-      const { error } = await supabase
+      const { error } = await db
         .from("telemedicine_sessions")
         .update(updates)
         .eq("id", sessionId);
@@ -168,7 +168,7 @@ export function useTelemedicineData() {
   const endSession = async (sessionId: string, notes?: string) => {
     try {
       // Get session to calculate duration
-      const { data: session, error: sessionError } = await supabase
+      const { data: session, error: sessionError } = await db
         .from("telemedicine_sessions")
         .select("actual_start, appointment_id")
         .eq("id", sessionId)
@@ -183,7 +183,7 @@ export function useTelemedicineData() {
         durationMinutes = Math.round((end.getTime() - start.getTime()) / 60000);
       }
 
-      const { error } = await supabase
+      const { error } = await db
         .from("telemedicine_sessions")
         .update({
           status: "completed",
@@ -197,7 +197,7 @@ export function useTelemedicineData() {
 
       // Update appointment status
       if (session.appointment_id) {
-        await supabase
+        await db
           .from("appointments")
           .update({ status: "completed" })
           .eq("id", session.appointment_id);
@@ -217,7 +217,7 @@ export function useTelemedicineData() {
 
   const updateSessionNotes = async (sessionId: string, notes: string) => {
     try {
-      const { error } = await supabase
+      const { error } = await db
         .from("telemedicine_sessions")
         .update({ notes })
         .eq("id", sessionId);
@@ -230,7 +230,7 @@ export function useTelemedicineData() {
 
   const reportTechnicalIssue = async (sessionId: string, issue: string) => {
     try {
-      const { error } = await supabase
+      const { error } = await db
         .from("telemedicine_sessions")
         .update({ technical_issues: issue })
         .eq("id", sessionId);

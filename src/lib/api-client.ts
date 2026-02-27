@@ -362,7 +362,6 @@ export const api = {
 
 // Export utilities
 export const isNodeMode = () => true;
-export const isSupabaseMode = () => false;
 export const getApiBaseUrl = () => API_BASE_URL;
 
 export default api;
