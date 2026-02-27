@@ -109,6 +109,7 @@ CREATE TABLE doctors (
     doctor_code VARCHAR(20) UNIQUE NOT NULL,
     sip_number VARCHAR(50),
     str_number VARCHAR(50),
+    full_name VARCHAR(100),
     specialization VARCHAR(100),
     department_id UUID REFERENCES departments(id),
     consultation_fee DECIMAL(12,2),
@@ -155,6 +156,8 @@ CREATE TABLE profiles (
     password_hash VARCHAR(255), -- Untuk Node.js auth
     is_active BOOLEAN DEFAULT true,
     last_login TIMESTAMPTZ,
+    reset_token VARCHAR(255),
+    reset_token_expires TIMESTAMPTZ,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -625,8 +628,8 @@ CREATE TABLE notifications (
 
 CREATE TABLE chat_rooms (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    name VARCHAR(100),
-    type VARCHAR(20) DEFAULT 'direct',
+    room_name VARCHAR(100),
+    room_type VARCHAR(20) DEFAULT 'direct',
     department_id UUID REFERENCES departments(id),
     created_by UUID,
     created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -652,6 +655,122 @@ CREATE TABLE chat_messages (
     is_edited BOOLEAN DEFAULT false,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ============================================
+-- MENU ACCESS
+-- ============================================
+
+CREATE TABLE menu_access (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    role VARCHAR(50) NOT NULL,
+    menu_path VARCHAR(200) NOT NULL,
+    can_view BOOLEAN DEFAULT false,
+    can_create BOOLEAN DEFAULT false,
+    can_edit BOOLEAN DEFAULT false,
+    can_delete BOOLEAN DEFAULT false,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(role, menu_path)
+);
+
+-- ============================================
+-- QUEUE MANAGEMENT
+-- ============================================
+
+CREATE TABLE queue_entries (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    visit_id UUID REFERENCES visits(id) NOT NULL,
+    department_id UUID REFERENCES departments(id) NOT NULL,
+    queue_number INTEGER NOT NULL,
+    status VARCHAR(20) DEFAULT 'waiting',
+    called_at TIMESTAMPTZ,
+    served_at TIMESTAMPTZ,
+    notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ============================================
+-- PURCHASE ORDERS
+-- ============================================
+
+CREATE TABLE purchase_orders (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    po_number VARCHAR(20) UNIQUE NOT NULL,
+    supplier_id UUID REFERENCES suppliers(id) NOT NULL,
+    order_date TIMESTAMPTZ DEFAULT NOW(),
+    expected_delivery TIMESTAMPTZ,
+    total_amount DECIMAL(12,2) NOT NULL,
+    status VARCHAR(20) DEFAULT 'draft',
+    submitted_at TIMESTAMPTZ,
+    approved_by UUID,
+    approved_at TIMESTAMPTZ,
+    received_at TIMESTAMPTZ,
+    received_by UUID,
+    notes TEXT,
+    created_by UUID,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE purchase_order_items (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    purchase_order_id UUID REFERENCES purchase_orders(id) NOT NULL,
+    item_id UUID NOT NULL,
+    quantity INTEGER NOT NULL,
+    unit_price DECIMAL(12,2) NOT NULL,
+    subtotal DECIMAL(12,2) NOT NULL,
+    received_quantity INTEGER,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ============================================
+-- HR - ATTENDANCE, LEAVE, PAYROLL
+-- ============================================
+
+CREATE TABLE attendance (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    employee_id UUID REFERENCES employees(id) NOT NULL,
+    attendance_date DATE NOT NULL,
+    check_in TIMESTAMPTZ,
+    check_out TIMESTAMPTZ,
+    status VARCHAR(20) DEFAULT 'present',
+    notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(employee_id, attendance_date)
+);
+
+CREATE TABLE leave_requests (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    employee_id UUID REFERENCES employees(id) NOT NULL,
+    leave_type VARCHAR(50) NOT NULL,
+    start_date TIMESTAMPTZ NOT NULL,
+    end_date TIMESTAMPTZ NOT NULL,
+    reason TEXT,
+    status VARCHAR(20) DEFAULT 'pending',
+    approved_by UUID,
+    approved_at TIMESTAMPTZ,
+    approval_notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE payroll (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    employee_id UUID REFERENCES employees(id) NOT NULL,
+    period_month INTEGER NOT NULL,
+    period_year INTEGER NOT NULL,
+    base_salary DECIMAL(12,2) NOT NULL,
+    allowances DECIMAL(12,2) DEFAULT 0,
+    deductions DECIMAL(12,2) DEFAULT 0,
+    overtime DECIMAL(12,2) DEFAULT 0,
+    net_salary DECIMAL(12,2) NOT NULL,
+    status VARCHAR(20) DEFAULT 'draft',
+    paid_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(employee_id, period_month, period_year)
 );
 
 -- ============================================

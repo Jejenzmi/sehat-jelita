@@ -36,6 +36,10 @@ COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nodejs:nodejs /app/src ./src
 COPY --from=builder --chown=nodejs:nodejs /app/package*.json ./
 COPY --from=builder --chown=nodejs:nodejs /app/prisma ./prisma
+COPY --from=builder --chown=nodejs:nodejs /app/entrypoint.sh ./entrypoint.sh
+
+# Make entrypoint executable
+RUN chmod +x entrypoint.sh
 
 # Set environment
 ENV NODE_ENV=production
@@ -51,5 +55,5 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
   CMD curl -f http://localhost:3000/health || exit 1
 
-# Start application
-CMD ["node", "src/app.js"]
+# Start application via entrypoint
+CMD ["sh", "entrypoint.sh"]
