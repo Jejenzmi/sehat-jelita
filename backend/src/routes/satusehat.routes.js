@@ -4,7 +4,6 @@
  */
 
 import { Router } from 'express';
-import { authenticateToken } from '../middleware/auth.middleware.js';
 import { requireRole, checkMenuAccess } from '../middleware/role.middleware.js';
 import { externalApiLimiter } from '../middleware/rateLimiter.js';
 import { asyncHandler, ApiError } from '../middleware/errorHandler.js';
@@ -12,7 +11,6 @@ import SatuSehatService from '../services/satusehat.service.js';
 
 const router = Router();
 
-router.use(authenticateToken);
 router.use(checkMenuAccess('satusehat'));
 router.use(externalApiLimiter);
 

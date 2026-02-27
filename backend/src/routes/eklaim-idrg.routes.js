@@ -6,7 +6,6 @@
  */
 
 import { Router } from 'express';
-import { authenticateToken } from '../middleware/auth.middleware.js';
 import { requireRole, checkMenuAccess } from '../middleware/role.middleware.js';
 import { externalApiLimiter } from '../middleware/rateLimiter.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
@@ -14,7 +13,6 @@ import EklaimIDRGService from '../services/eklaim-idrg.service.js';
 
 const router = Router();
 
-router.use(authenticateToken);
 router.use(checkMenuAccess('bpjs'));
 router.use(externalApiLimiter);
 
