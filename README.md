@@ -12,6 +12,147 @@ Sistem Informasi Manajemen Rumah Sakit (SIMRS) berbasis web modern, dibangun den
 
 ---
 
+## 💻 Panduan Penggunaan Terminal VPS (Tanpa SSH)
+
+Jika Anda tidak dapat menggunakan SSH dari komputer lokal, Anda bisa mengakses terminal VPS langsung melalui browser menggunakan fitur konsol/terminal yang disediakan oleh penyedia VPS (Hostinger, DigitalOcean, Vultr, Linode, dll.).
+
+### Cara Mengakses Terminal VPS via Browser
+
+#### Hostinger
+1. Login ke [hPanel Hostinger](https://hpanel.hostinger.com)
+2. Klik menu **VPS** → pilih server Anda
+3. Di bagian **Overview**, klik tombol **Terminal** (ikon layar hitam) atau **Browser Terminal**
+4. Terminal akan terbuka langsung di tab browser — Anda sudah login sebagai `root`
+
+#### DigitalOcean
+1. Login ke [Cloud DigitalOcean](https://cloud.digitalocean.com)
+2. Pilih **Droplets** → klik nama server Anda
+3. Klik tab **Access** → klik **Launch Droplet Console**
+4. Terminal browser akan terbuka otomatis
+
+#### Vultr
+1. Login ke [Vultr My Servers](https://my.vultr.com)
+2. Klik server yang ingin diakses
+3. Klik ikon **View Console** (ikon layar) di pojok kanan atas
+4. Masukkan username `root` dan password server Anda
+
+#### Linode / Akamai Cloud
+1. Login ke [Linode Manager](https://cloud.linode.com)
+2. Pilih **Linodes** → klik nama server Anda
+3. Klik tombol **Launch LISH Console**
+
+---
+
+### Instalasi SIMRS ZEN via Terminal VPS (Browser Console)
+
+Setelah terminal VPS terbuka di browser, jalankan perintah-perintah berikut secara berurutan:
+
+#### Langkah 1: Update Sistem & Install Paket Dasar
+
+```bash
+apt update && apt upgrade -y
+apt install -y curl wget git nano unzip htop ufw
+```
+
+#### Langkah 2: Install Docker
+
+```bash
+curl -fsSL https://get.docker.com | bash
+usermod -aG docker $USER
+newgrp docker
+
+# Verifikasi
+docker --version
+docker compose version
+```
+
+#### Langkah 3: Clone Repository
+
+```bash
+cd /opt
+mkdir -p simrs-zen && cd simrs-zen
+git clone https://github.com/Jejenzmi/sehat-jelita.git .
+```
+
+#### Langkah 4: Konfigurasi Environment
+
+```bash
+# Frontend
+cp .env.example .env
+
+# Backend
+cp backend/.env.example backend/.env
+nano backend/.env
+```
+
+Isi nilai penting di `backend/.env`:
+
+```env
+DB_PASSWORD=GANTI_DENGAN_PASSWORD_KUAT
+JWT_SECRET=GANTI_DENGAN_STRING_HEX_64_KARAKTER
+FRONTEND_URL=https://domain-anda.com
+REDIS_PASSWORD=GANTI_DENGAN_PASSWORD_REDIS
+```
+
+Generate `JWT_SECRET` (pilih salah satu perintah):
+
+```bash
+# Menggunakan openssl (tersedia di semua server Ubuntu)
+openssl rand -hex 64
+
+# Atau menggunakan Node.js jika sudah terinstall
+node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
+```
+
+#### Langkah 5: Konfigurasi Firewall
+
+```bash
+ufw default deny incoming
+ufw default allow outgoing
+ufw allow 80/tcp    # HTTP
+ufw allow 443/tcp   # HTTPS
+ufw enable
+ufw status
+```
+
+> **Catatan**: Tidak perlu membuka port 22 (SSH) jika Anda hanya menggunakan terminal browser.
+
+#### Langkah 6: Build dan Jalankan Aplikasi
+
+```bash
+docker compose up -d --build
+
+# Cek status
+docker compose ps
+
+# Lihat log (tekan Ctrl+C untuk keluar)
+docker compose logs -f
+```
+
+#### Langkah 7: Setup SSL (Opsional — jika domain sudah terhubung)
+
+> **Catatan**: Nginx sudah termasuk di dalam Docker Compose (`frontend` container). Langkah ini memasang Certbot di **host** untuk mendapatkan sertifikat SSL dan dikonfigurasi sebagai reverse proxy.
+
+```bash
+apt install -y nginx certbot python3-certbot-nginx
+systemctl enable nginx && systemctl start nginx
+certbot --nginx -d domain-anda.com
+certbot renew --dry-run
+```
+
+---
+
+### Tips Penggunaan Terminal Browser
+
+| Tips | Keterangan |
+|------|-----------|
+| **Copy-Paste** | Gunakan klik kanan → Paste (atau Shift+Insert) untuk menempelkan perintah |
+| **Sesi terputus** | Gunakan `tmux` atau `screen` agar proses tetap berjalan jika koneksi browser terputus |
+| **Jalankan tmux** | `tmux new -s simrs` → jalankan perintah → `Ctrl+B, D` untuk detach |
+| **Sambung kembali** | `tmux attach -t simrs` untuk melanjutkan sesi sebelumnya |
+
+---
+
 ## 🚀 Panduan Instalasi End-to-End ke VPS
 
 ### Persyaratan Sistem
