@@ -270,9 +270,9 @@ router.get('/queue/:departmentId', async (req, res) => {
       status: { in: ['waiting', 'called'] }
     },
     include: {
-      visit: {
+      visits: {
         include: {
-          patient: {
+          patients: {
             select: { id: true, full_name: true, medical_record_number: true }
           }
         }
@@ -295,8 +295,8 @@ router.post('/queue/:id/call', async (req, res) => {
       called_at: new Date()
     },
     include: {
-      visit: {
-        include: { patient: true }
+      visits: {
+        include: { patients: true }
       }
     }
   });
