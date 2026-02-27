@@ -10,7 +10,7 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Upload, FileSpreadsheet, ArrowRight, CheckCircle2, AlertCircle, Download, Trash2, Eye } from "lucide-react";
-import * as XLSX from "xlsx";
+import * as ExcelJS from "exceljs";
 
 // Target schema definitions for each entity type
 const TARGET_SCHEMAS: Record<string, { field: string; label: string; required: boolean; type: string }[]> = {
@@ -95,10 +95,37 @@ export function MigrationTool() {
 
     try {
       const data = await file.arrayBuffer();
-      const workbook = XLSX.read(data);
-      const sheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[sheetName];
-      const jsonData = XLSX.utils.sheet_to_json(worksheet) as Record<string, unknown>[];
+      const wb = new ExcelJS.Workbook();
+      await wb.xlsx.load(data);
+      const worksheet = wb.worksheets[0];
+      if (!worksheet) {
+        toast({
+          title: "File Kosong",
+          description: "File yang diupload tidak memiliki data",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Build JSON records from the worksheet rows
+      // Use a column-number keyed map to preserve alignment even with sparse headers
+      const headerRow = worksheet.getRow(1);
+      const headersByCol: Record<number, string> = {};
+      headerRow.eachCell((cell, colNumber) => {
+        const val = String(cell.value ?? "").trim();
+        if (val) headersByCol[colNumber] = val;
+      });
+
+      const jsonData: Record<string, unknown>[] = [];
+      worksheet.eachRow((row, rowNumber) => {
+        if (rowNumber === 1) return;
+        const record: Record<string, unknown> = {};
+        row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+          const key = headersByCol[colNumber];
+          if (key) record[key] = cell.value ?? null;
+        });
+        if (Object.keys(record).length > 0) jsonData.push(record);
+      });
 
       if (jsonData.length === 0) {
         toast({
@@ -251,15 +278,26 @@ export function MigrationTool() {
     setActiveTab("result");
   };
 
-  const downloadTemplate = () => {
+  const downloadTemplate = async () => {
     if (!entityType || !TARGET_SCHEMAS[entityType]) return;
 
     const schema = TARGET_SCHEMAS[entityType];
     const headers = schema.map((f) => f.label);
-    const worksheet = XLSX.utils.aoa_to_sheet([headers]);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, entityType);
-    XLSX.writeFile(workbook, `template_${entityType}.xlsx`);
+
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet(entityType);
+    ws.addRow(headers);
+
+    const buffer = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buffer], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `template_${entityType}.xlsx`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const resetMigration = () => {
