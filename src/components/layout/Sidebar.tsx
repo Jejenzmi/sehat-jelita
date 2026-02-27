@@ -44,7 +44,7 @@ import {
   Truck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import rsudLogo from "@/assets/logo-rsud-moewardi.png";
+import simrsZenLogo from "@/assets/simrs-zen-logo.png";
 import { useMenuAccess } from "@/hooks/useMenuAccess";
 import { useModuleVisibility } from "@/hooks/useModuleVisibility";
 
@@ -195,7 +195,7 @@ export function Sidebar() {
         <div className="flex items-center justify-between h-16 px-4 border-b border-sidebar-border bg-white/10 backdrop-blur-sm">
           {!collapsed && (
             <div className="flex items-center gap-3 animate-fade-in">
-              <img src={rsudLogo} alt="RSUD Dr. Moewardi" className="h-10 bg-white/90 rounded-lg px-1.5 py-0.5" />
+              <img src={simrsZenLogo} alt="SIMRS ZEN" className="h-10 bg-white/90 rounded-lg px-1.5 py-0.5" />
             </div>
           )}
           {collapsed && (

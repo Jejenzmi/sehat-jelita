@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import rsudLogo from "@/assets/logo-rsud-moewardi.png";
+import simrsZenLogo from "@/assets/simrs-zen-logo.png";
 
 export function CurrentTime() {
   const [time, setTime] = useState(new Date());
@@ -36,7 +36,7 @@ export function DisplayHeader({ title, subtitle, variant = "primary" }: DisplayH
   return (
     <div className={`bg-gradient-to-r ${variantStyles[variant]} text-white rounded-2xl p-5 flex items-center justify-between shadow-xl`}>
       <div className="flex items-center gap-4">
-        <img src={rsudLogo} alt="RSUD Dr. Moewardi" className="h-14 w-auto drop-shadow-lg bg-white/90 rounded-lg px-2 py-1" />
+        <img src={simrsZenLogo} alt="SIMRS ZEN" className="h-14 w-auto drop-shadow-lg bg-white/90 rounded-lg px-2 py-1" />
         <div>
           <h2 className="text-2xl font-bold tracking-tight">{title}</h2>
           <p className="text-sm opacity-90">{subtitle}</p>

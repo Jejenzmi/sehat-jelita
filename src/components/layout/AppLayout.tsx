@@ -14,6 +14,9 @@ export function AppLayout({ children }: AppLayoutProps) {
         <Header />
         <main className="flex-1 overflow-y-auto p-4 lg:p-6">
           {children}
+          <footer className="mt-8 py-4 border-t border-border text-center text-xs text-muted-foreground">
+            © {new Date().getFullYear()} PT Zen Multimedia Indonesia. All rights reserved.
+          </footer>
         </main>
       </div>
     </div>
