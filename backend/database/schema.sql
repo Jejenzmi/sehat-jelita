@@ -748,3 +748,28 @@ INSERT INTO system_settings (setting_key, setting_value, setting_type, descripti
 ('allow_registration', 'false', 'boolean', 'Izinkan registrasi user baru'),
 ('bpjs_enabled', 'true', 'boolean', 'Aktifkan integrasi BPJS'),
 ('satusehat_enabled', 'true', 'boolean', 'Aktifkan integrasi SATU SEHAT');
+
+-- ============================================
+-- DEFAULT ADMIN USER
+-- Email: multimediazen@gmail.com
+-- Password: admin123  (bcrypt hash, rounds=12)
+-- Run `npm run db:seed` from backend/ to seed via Node.js instead
+-- ============================================
+DO $$
+DECLARE
+  v_user_id UUID := gen_random_uuid();
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM profiles WHERE email = 'multimediazen@gmail.com') THEN
+    INSERT INTO profiles (id, user_id, email, full_name, password_hash, is_active)
+    VALUES (
+      gen_random_uuid(),
+      v_user_id,
+      'multimediazen@gmail.com',
+      'Administrator',
+      '$2a$12$FuRUdKaUMpDfcE4arzCmWO9/LPttkcmijYWRfqUq2ienI1lxhieWG',
+      true
+    );
+    INSERT INTO user_roles (id, user_id, role)
+    VALUES (gen_random_uuid(), v_user_id, 'admin');
+  END IF;
+END $$;
