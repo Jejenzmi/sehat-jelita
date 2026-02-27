@@ -1637,7 +1637,7 @@ const _rawSlides: Slide[] = [
                 </div>
               </motion.div>
               <p className="text-sm font-semibold text-slate-900">Live Demo</p>
-              <p className="text-xs text-slate-500">rsmoewardi.jatengprov.go.id</p>
+              <p className="text-xs text-slate-500">simrszen.id</p>
             </div>
             <div className="text-center">
               <motion.div 
@@ -1671,7 +1671,7 @@ const _rawSlides: Slide[] = [
               animate={{ opacity: 1 }}
             />
             <div className="flex flex-wrap justify-center gap-6 text-sm text-slate-500">
-              <motion.span whileHover={{ scale: 1.05, color: "#0066FF" }} className="cursor-pointer">📧 rsmoewardi@jatengprov.go.id</motion.span>
+              <motion.span whileHover={{ scale: 1.05, color: "#0066FF" }} className="cursor-pointer">📧 info@simrszen.id</motion.span>
               <motion.span whileHover={{ scale: 1.05, color: "#0066FF" }} className="cursor-pointer">📞 (0271) 637415</motion.span>
             </div>
             <p className="text-xs text-slate-400 mt-3">Jl. Kolonel Sutarto No.132, Kec. Jebres, Kota Surakarta, Jawa Tengah 57126</p>
