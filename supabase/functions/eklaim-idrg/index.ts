@@ -53,7 +53,7 @@ async function eklaimDecrypt(ciphertext: string, key: string): Promise<string> {
 
   const encryptedData = base64Decode(ciphertext);
   const decrypted = await crypto.subtle.decrypt(
-    { name: "AES-CBC", iv }, cryptoKey, encryptedData
+    { name: "AES-CBC", iv }, cryptoKey, encryptedData.buffer as ArrayBuffer
   );
 
   return decoder.decode(decrypted);

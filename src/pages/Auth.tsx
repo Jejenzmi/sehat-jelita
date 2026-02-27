@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Mail, Lock, Eye, EyeOff, Loader2 } from "lucide-react";
-import rsudLogo from "@/assets/logo-rsud-moewardi.png";
+import simrsZenLogo from "@/assets/simrs-zen-logo.png";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -99,7 +99,7 @@ export default function Auth() {
         <div className="max-w-md text-center text-primary-foreground">
           <div className="mb-8">
             <div className="bg-white/90 rounded-xl p-3 inline-block">
-              <img src={rsudLogo} alt="RSUD Dr. Moewardi" className="h-16 mx-auto" />
+              <img src={simrsZenLogo} alt="SIMRS ZEN" className="h-16 mx-auto" />
             </div>
           </div>
           <h1 className="text-4xl font-bold mb-4">SIMRS RSUD Dr. Moewardi</h1>
@@ -130,7 +130,7 @@ export default function Auth() {
       <div className="flex-1 flex items-center justify-center p-8 bg-background">
         <div className="w-full max-w-md">
           <div className="lg:hidden text-center mb-8">
-             <img src={rsudLogo} alt="RSUD Dr. Moewardi" className="h-12 mx-auto mb-4" />
+             <img src={simrsZenLogo} alt="SIMRS ZEN" className="h-12 mx-auto mb-4" />
             <h1 className="text-2xl font-bold">SIMRS RSUD Dr. Moewardi</h1>
           </div>
 
@@ -194,7 +194,10 @@ export default function Auth() {
           </div>
 
           <p className="mt-8 text-center text-sm text-muted-foreground">
-            Dengan masuk, Anda menyetujui Syarat & Ketentuan dan Kebijakan Privasi SIMRS RSUD Dr. Moewardi.
+            Dengan masuk, Anda menyetujui Syarat & Ketentuan dan Kebijakan Privasi.
+          </p>
+          <p className="mt-2 text-center text-xs text-muted-foreground">
+            © {new Date().getFullYear()} PT Zen Multimedia Indonesia
           </p>
         </div>
       </div>

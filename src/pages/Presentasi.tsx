@@ -13,7 +13,7 @@ import {
   Menu,
   X
 } from "lucide-react";
-import rsudLogo from "@/assets/logo-rsud-moewardi.png";
+import simrsZenLogo from "@/assets/simrs-zen-logo.png";
 
 // Animation variants
 const easeOut: Easing = [0.22, 1, 0.36, 1];
@@ -79,7 +79,7 @@ const _rawSlides: Slide[] = [
         
         <div className="relative z-10 text-center max-w-4xl">
           <motion.img 
-            src={rsudLogo} 
+            src={simrsZenLogo} 
             alt="RSUD Dr. Moewardi" 
             className="h-12 md:h-16 mx-auto mb-12"
             initial={{ opacity: 0, y: -20 }}
@@ -1664,7 +1664,7 @@ const _rawSlides: Slide[] = [
             custom={4}
           >
             <motion.img 
-              src={rsudLogo} 
+              src={simrsZenLogo} 
               alt="RSUD Dr. Moewardi" 
               className="h-10 mx-auto mb-4"
               initial={{ opacity: 0 }}

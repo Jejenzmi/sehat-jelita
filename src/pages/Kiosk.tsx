@@ -25,7 +25,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
-import rsudLogo from "@/assets/logo-rsud-moewardi.png";
+import simrsZenLogo from "@/assets/simrs-zen-logo.png";
 
 type KioskStep = "home" | "service-select" | "patient-search" | "department-select" | "confirmation" | "ticket";
 
@@ -282,7 +282,7 @@ export default function Kiosk() {
       <div className="bg-white/10 backdrop-blur-md border-b border-white/10 p-5 flex items-center justify-between">
         <div className="flex items-center gap-5">
           <div className="bg-white rounded-xl p-2 shadow-lg">
-            <img src={rsudLogo} alt="RSUD Dr. Moewardi" className="h-14 w-auto" />
+            <img src={simrsZenLogo} alt="SIMRS ZEN" className="h-14 w-auto" />
           </div>
           <div className="text-white">
             <h1 className="text-3xl font-black tracking-tight">Self-Service Kiosk</h1>

@@ -62,7 +62,7 @@ function buildHeaders(config: PACSConfig, extraHeaders?: Record<string, string>)
   };
 
   if (config.username && config.password) {
-    const credentials = base64Encode(new TextEncoder().encode(`${config.username}:${config.password}`));
+    const credentials = base64Encode(new TextEncoder().encode(`${config.username}:${config.password}`).buffer as ArrayBuffer);
     headers["Authorization"] = `Basic ${credentials}`;
   }
 
@@ -480,7 +480,7 @@ serve(async (req) => {
           url: renderUrl,
           auth: config.username ? {
             type: "basic",
-            credentials: base64Encode(new TextEncoder().encode(`${config.username}:${config.password}`)),
+            credentials: base64Encode(new TextEncoder().encode(`${config.username}:${config.password}`).buffer as ArrayBuffer),
           } : null,
         };
         break;

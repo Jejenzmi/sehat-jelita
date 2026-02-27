@@ -82,7 +82,7 @@ import {
   Headphones,
   LifeBuoy,
 } from "lucide-react";
-import rsudLogo from "@/assets/logo-rsud-moewardi.png";
+import simrsZenLogo from "@/assets/simrs-zen-logo.png";
 
 interface SlideSection {
   id: string;
@@ -148,7 +148,7 @@ const PanduanPenggunaan = () => {
       content: (
         <div className="flex flex-col items-center justify-center h-full text-center px-8">
           <motion.img
-            src={rsudLogo}
+            src={simrsZenLogo}
             alt="RSUD Dr. Moewardi"
             className="h-32 mb-8"
             initial={{ scale: 0.8, opacity: 0 }}
@@ -401,7 +401,7 @@ const PanduanPenggunaan = () => {
             <div className="bg-gradient-to-br from-primary/10 to-primary/5 rounded-xl p-8 flex flex-col items-center justify-center">
               <div className="w-full max-w-sm bg-card border rounded-lg p-6 shadow-lg">
                 <div className="flex justify-center mb-6">
-                  <img src={rsudLogo} alt="Logo" className="h-12" />
+                  <img src={simrsZenLogo} alt="Logo" className="h-12" />
                 </div>
                 <div className="space-y-4">
                   <div>
@@ -5210,10 +5210,10 @@ const PanduanPenggunaan = () => {
               </div>
             </div>
             <div className="p-4 bg-primary/5 rounded-lg flex flex-col items-center justify-center text-center">
-              <img src={rsudLogo} alt="RSUD Dr. Moewardi" className="h-20 mb-4" />
-              <h3 className="text-xl font-bold text-primary">SIMRS RSUD Dr. Moewardi</h3>
+              <img src={simrsZenLogo} alt="SIMRS ZEN" className="h-20 mb-4" />
+              <h3 className="text-xl font-bold text-primary">SIMRS ZEN</h3>
               <p className="text-muted-foreground">Sistem Informasi Manajemen Rumah Sakit Terintegrasi</p>
-              <p className="text-sm text-muted-foreground mt-4">© 2025 - Semua Hak Dilindungi</p>
+              <p className="text-sm text-muted-foreground mt-4">© 2025 PT Zen Multimedia Indonesia - Semua Hak Dilindungi</p>
             </div>
           </div>
         </div>
@@ -5312,7 +5312,7 @@ const PanduanPenggunaan = () => {
             >
               <Menu className="h-5 w-5" />
             </Button>
-            <img src={rsudLogo} alt="RSUD Dr. Moewardi" className="h-8" />
+            <img src={simrsZenLogo} alt="SIMRS ZEN" className="h-8" />
             <div>
               <h1 className="font-semibold text-sm">Panduan Penggunaan SIMRS RSUD Dr. Moewardi</h1>
               <p className="text-xs text-muted-foreground">

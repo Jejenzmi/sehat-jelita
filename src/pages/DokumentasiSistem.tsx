@@ -37,7 +37,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import rsudLogo from "@/assets/logo-rsud-moewardi.png";
+import simrsZenLogo from "@/assets/simrs-zen-logo.png";
 
 interface Slide {
   id: number;
@@ -60,7 +60,7 @@ const DokumentasiSistem = () => {
       content: (
         <div className="flex flex-col items-center justify-center h-full text-white text-center px-8">
           <motion.img 
-            src={rsudLogo} 
+            src={simrsZenLogo} 
             alt="RSUD Dr. Moewardi" 
             className="w-32 h-32 mb-8"
             initial={{ scale: 0 }}
@@ -720,7 +720,7 @@ const DokumentasiSistem = () => {
           <div className="max-w-2xl mx-auto w-full">
             <div className="bg-white/10 backdrop-blur rounded-2xl p-8 mb-8">
               <div className="text-center mb-6">
-                <img src={rsudLogo} alt="RSUD Dr. Moewardi" className="w-20 h-20 mx-auto mb-4" />
+                <img src={simrsZenLogo} alt="SIMRS ZEN" className="w-20 h-20 mx-auto mb-4" />
                 <h3 className="text-2xl font-bold">RSUD Dr. Moewardi</h3>
               </div>
               <div className="space-y-4">
@@ -762,7 +762,7 @@ const DokumentasiSistem = () => {
             animate={{ scale: 1 }}
             transition={{ type: "spring", duration: 0.8 }}
           >
-            <img src={rsudLogo} alt="RSUD Dr. Moewardi" className="w-24 h-24 mb-8" />
+            <img src={simrsZenLogo} alt="SIMRS ZEN" className="w-24 h-24 mb-8" />
           </motion.div>
           <motion.h1 
             className="text-5xl md:text-6xl font-bold mb-4"

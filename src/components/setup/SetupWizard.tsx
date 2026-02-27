@@ -21,7 +21,7 @@ import {
   Globe
 } from "lucide-react";
 import { useCompleteSetup, HospitalProfileData, HospitalType, useAvailableModulesForType } from "@/hooks/useSetupWizard";
-import rsudLogo from "@/assets/logo-rsud-moewardi.png";
+import simrsZenLogo from "@/assets/simrs-zen-logo.png";
 
 interface SetupWizardProps {
   onComplete: () => void;
@@ -112,7 +112,7 @@ export default function SetupWizard({ onComplete }: SetupWizardProps) {
       <Card className="w-full max-w-2xl shadow-2xl border-0">
         <CardHeader className="text-center pb-2">
           <div className="flex justify-center mb-4">
-            <img src={rsudLogo} alt="RSUD Dr. Moewardi" className="h-16" />
+            <img src={simrsZenLogo} alt="SIMRS ZEN" className="h-16" />
           </div>
           <CardTitle className="text-2xl">Setup Awal SIMRS RSUD Dr. Moewardi</CardTitle>
           <CardDescription>
