@@ -5187,25 +5187,12 @@ const PanduanPenggunaan = () => {
             <div className="space-y-4">
               <div className="p-4 bg-muted rounded-lg">
                 <h4 className="font-semibold flex items-center gap-2">
-                  <Headphones className="h-5 w-5 text-primary" />
-                  IT Helpdesk
-                </h4>
-                <ul className="text-sm space-y-2 mt-3">
-                  <li>📞 Ext. 1234 (Internal)</li>
-                  <li>📱 0812-3456-7890 (WhatsApp)</li>
-                  <li>📧 it.helpdesk@rs.co.id</li>
-                  <li>⏰ Senin-Jumat: 08.00-17.00</li>
-                </ul>
-              </div>
-              <div className="p-4 bg-muted rounded-lg">
-                <h4 className="font-semibold flex items-center gap-2">
                   <MessageSquare className="h-5 w-5 text-primary" />
-                  Vendor Support
+                  Hubungi Kami
                 </h4>
                 <ul className="text-sm space-y-2 mt-3">
-                  <li>📞 (0271) 637415</li>
-                  <li>📧 info@simrszen.id</li>
-                  <li>🌐 simrszen.id</li>
+                  <li>📍 Jl. Taman Pahlawan No.166, Purwamekar, Kec. Purwakarta, Kabupaten Purwakarta, Jawa Barat 41119</li>
+                  <li>📞 085121045798</li>
                 </ul>
               </div>
             </div>
