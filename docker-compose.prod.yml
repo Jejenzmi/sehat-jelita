@@ -1,0 +1,107 @@
+# SIMRS ZEN - Docker Compose for Production
+# Requires .env.production (or environment variables set in the host)
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: simrs-zen-db
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - simrs-zen-network
+
+  # Redis for caching and rate limiting
+  redis:
+    image: redis:7-alpine
+    container_name: simrs-zen-redis
+    restart: always
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - simrs-zen-network
+
+  # Node.js API Backend
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: simrs-zen-api
+    restart: always
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-30d}
+      FRONTEND_URL: ${FRONTEND_URL}
+      BPJS_CONS_ID: ${BPJS_CONS_ID:-}
+      BPJS_SECRET_KEY: ${BPJS_SECRET_KEY:-}
+      BPJS_USER_KEY: ${BPJS_USER_KEY:-}
+      SATUSEHAT_CLIENT_ID: ${SATUSEHAT_CLIENT_ID:-}
+      SATUSEHAT_CLIENT_SECRET: ${SATUSEHAT_CLIENT_SECRET:-}
+      SATUSEHAT_ORGANIZATION_ID: ${SATUSEHAT_ORGANIZATION_ID:-}
+      # Aliases used by some backend services (kept for compatibility)
+      SATU_SEHAT_CLIENT_ID: ${SATUSEHAT_CLIENT_ID:-}
+      SATU_SEHAT_CLIENT_SECRET: ${SATUSEHAT_CLIENT_SECRET:-}
+      SATU_SEHAT_ORG_ID: ${SATUSEHAT_ORGANIZATION_ID:-}
+      LOG_LEVEL: ${LOG_LEVEL:-warn}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - simrs-zen-network
+
+  # React Frontend served via nginx
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+      args:
+        VITE_API_MODE: nodejs
+        VITE_API_URL: /api
+    container_name: simrs-zen-frontend
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - simrs-zen-network
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  simrs-zen-network:
+    driver: bridge
