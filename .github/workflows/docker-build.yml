@@ -66,16 +66,23 @@ jobs:
         if: github.event_name == 'push'
         env:
           GH_PAT: ${{ secrets.GH_PAT }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO_NAME: ${{ github.event.repository.name }}
         run: |
-          if [ -z "${GH_PAT}" ]; then
-            echo "GH_PAT secret not set – skipping GHCR visibility update."
+          # Use GH_PAT if available, otherwise fall back to GITHUB_TOKEN.
+          # GH_PAT (a Personal Access Token with write:packages scope) is needed
+          # to change visibility of packages owned by a personal account.
+          # GITHUB_TOKEN may work when the package is linked to this repository.
+          TOKEN="${GH_PAT:-${GITHUB_TOKEN}}"
+          if [ -z "${TOKEN}" ]; then
+            echo "WARNING: No token available – GHCR package visibility NOT updated." >&2
+            echo "Set the GH_PAT repository secret (PAT with write:packages scope) to enable automatic visibility updates." >&2
             exit 0
           fi
           for suffix in "simrs-zen-api" "simrs-zen-frontend"; do
             pkg="${REPO_NAME}%2F${suffix}"
             status=$(curl -s -o /dev/null -w "%{http_code}" -X PATCH \
-              -H "Authorization: Bearer ${GH_PAT}" \
+              -H "Authorization: Bearer ${TOKEN}" \
               -H "Accept: application/vnd.github+json" \
               -H "X-GitHub-Api-Version: 2022-11-28" \
               "https://api.github.com/user/packages/container/${pkg}" \
@@ -83,6 +90,7 @@ jobs:
             if [ "${status}" -ge 200 ] && [ "${status}" -lt 300 ]; then
               echo "${suffix}: visibility set to public (HTTP ${status})"
             else
-              echo "WARNING: failed to set ${suffix} visibility (HTTP ${status})" >&2
+              echo "WARNING: failed to set ${suffix} visibility (HTTP ${status})." >&2
+              echo "If this persists, set GH_PAT secret (PAT with write:packages scope) and re-run the workflow." >&2
             fi
           done
