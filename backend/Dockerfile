@@ -1,35 +1,33 @@
-# Use the official Node.js image as the base image for the builder stage
+# Stage 1: deps + prisma generate
 FROM node:20-bookworm-slim AS builder
-
-# Set the working directory
 WORKDIR /app
 
-# Copy package files and install dependencies
-COPY package*.json ./
-RUN npm install
+RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
 
-# Copy application files
+COPY package*.json ./
+RUN npm ci
+
 COPY . .
+RUN npx prisma generate
 
-# Build the application
-RUN npm run build
-
-
-# Use the official Node.js image as the base image for the production stage
+# Stage 2: production runtime
 FROM node:20-bookworm-slim AS production
-
-# Install openssl
-RUN apt-get update && apt-get install -y openssl && apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# Set the working directory
 WORKDIR /app
 
-# Copy only the build artifacts from the builder stage
-COPY --from=builder /app/dist ./dist
+RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates curl \
+ && rm -rf /var/lib/apt/lists/*
 
-# Install production dependencies
-COPY package*.json ./
-RUN npm install --only=production
+# optional non-root
+RUN useradd -m nodejs
+USER nodejs
 
-# Command to run the application
-CMD [ "node", "dist/index.js" ]
+COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=nodejs:nodejs /app/src ./src
+COPY --from=builder --chown=nodejs:nodejs /app/prisma ./prisma
+COPY --from=builder --chown=nodejs:nodejs /app/package*.json ./
+COPY --from=builder --chown=nodejs:nodejs /app/entrypoint.sh ./entrypoint.sh
+
+EXPOSE 3000
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 CMD curl -f http://localhost:3000/health || exit 1
+CMD ["sh", "entrypoint.sh"]
