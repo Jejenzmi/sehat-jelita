@@ -191,7 +191,7 @@ export function LobbyDisplay({ departmentId, departmentName }: LobbyDisplayProps
                 <Phone className="h-3 w-3 shrink-0" />(0271) 637415
               </div>
               <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-                <Mail className="h-3 w-3 shrink-0" />rsmoewardi@jatengprov.go.id
+                <Mail className="h-3 w-3 shrink-0" />info@simrszen.id
               </div>
               <div className="flex items-start gap-2 text-[11px] text-muted-foreground">
                 <MapPin className="h-3 w-3 shrink-0 mt-0.5" />Jl. Kolonel Sutarto No.132, Surakarta

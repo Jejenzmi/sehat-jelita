@@ -743,7 +743,7 @@ const DokumentasiSistem = () => {
               </div>
             </div>
             <div className="text-center text-slate-400">
-              <p>Website: <span className="text-teal-400">rsmoewardi.jatengprov.go.id</span></p>
+              <p>Website: <span className="text-teal-400">simrszen.id</span></p>
               <p className="mt-4 text-sm">© 2026 PT Zen Multimedia Indonesia. All rights reserved.</p>
             </div>
           </div>

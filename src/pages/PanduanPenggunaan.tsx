@@ -366,7 +366,7 @@ const PanduanPenggunaan = () => {
           <div className="grid grid-cols-2 gap-8">
             <div className="space-y-4">
               <p className="text-lg text-foreground">
-                Akses aplikasi melalui URL: <code className="bg-muted px-2 py-1 rounded">https://rsmoewardi.jatengprov.go.id</code>
+                Akses aplikasi melalui URL: <code className="bg-muted px-2 py-1 rounded">https://simrszen.id</code>
               </p>
               <div className="space-y-4">
                 <div className="p-4 bg-muted rounded-lg">
@@ -5204,8 +5204,8 @@ const PanduanPenggunaan = () => {
                 </h4>
                 <ul className="text-sm space-y-2 mt-3">
                   <li>📞 (0271) 637415</li>
-                  <li>📧 rsmoewardi@jatengprov.go.id</li>
-                  <li>🌐 rsmoewardi.jatengprov.go.id</li>
+                  <li>📧 info@simrszen.id</li>
+                  <li>🌐 simrszen.id</li>
                 </ul>
               </div>
             </div>

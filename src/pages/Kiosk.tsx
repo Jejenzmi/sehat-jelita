@@ -512,7 +512,7 @@ export default function Kiosk() {
         <div className="max-w-4xl mx-auto flex items-center justify-between text-white/60 text-sm">
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-1.5"><Phone className="h-3.5 w-3.5" /> (0271) 637415</div>
-            <div className="flex items-center gap-1.5"><Mail className="h-3.5 w-3.5" /> rsmoewardi@jatengprov.go.id</div>
+            <div className="flex items-center gap-1.5"><Mail className="h-3.5 w-3.5" /> info@simrszen.id</div>
           </div>
           <div className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" /> Jl. Kolonel Sutarto No.132, Jebres, Surakarta</div>
         </div>

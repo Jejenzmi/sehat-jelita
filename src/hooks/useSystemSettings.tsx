@@ -108,8 +108,8 @@ export function useSystemSettings() {
     address: "Jl. Kolonel Sutarto No.132, Jebres, Kec. Jebres, Kota Surakarta, Jawa Tengah 57126",
     city: "Surakarta",
     phone: "(0271) 637415",
-    email: "rsmoewardi@jatengprov.go.id",
-    website: "https://rsmoewardi.com",
+    email: "info@simrszen.id",
+    website: "https://simrszen.id",
     npwp: "",
     director: "dr. Zulfachmi Wahab, Sp.PD",
   });
