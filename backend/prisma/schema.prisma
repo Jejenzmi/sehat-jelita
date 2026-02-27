@@ -851,7 +851,7 @@ model chat_messages {
   created_at   DateTime @default(now())
 
   chat_rooms chat_rooms @relation(fields: [room_id], references: [id], onDelete: Cascade)
-  profiles   profiles?  @relation(fields: [sender_id], references: [user_id], onDelete: SetNull)
+  profiles   profiles?  @relation(fields: [sender_id], references: [user_id], onDelete: Cascade)
 
   @@index([room_id])
   @@index([sender_id])
