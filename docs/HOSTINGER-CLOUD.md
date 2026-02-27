@@ -313,6 +313,56 @@ docker compose up -d --build
 
 ---
 
+---
+
+## 🤖 Langkah 11: Setup Auto-Deploy dari GitHub
+
+Setelah repository sudah tersinkron dengan GitHub, setiap push ke branch `main` akan otomatis men-deploy ulang aplikasi di server VPS.
+
+### 11.1 Buat SSH Key untuk GitHub Actions
+
+Jalankan di server VPS:
+
+```bash
+# Buat SSH key khusus untuk GitHub Actions
+ssh-keygen -t ed25519 -C "github-actions-deploy" -f ~/.ssh/github_actions -N ""
+
+# Tambahkan public key ke authorized_keys
+cat ~/.ssh/github_actions.pub >> ~/.ssh/authorized_keys
+
+# Tampilkan private key (akan dimasukkan ke GitHub Secrets)
+cat ~/.ssh/github_actions
+```
+
+### 11.2 Tambahkan Secrets ke GitHub Repository
+
+1. Buka repository GitHub → **Settings** → **Secrets and variables** → **Actions**
+2. Tambahkan secrets berikut:
+
+| Secret | Nilai |
+|--------|-------|
+| `VPS_HOST` | IP address VPS Anda (contoh: `123.456.789.0`) |
+| `VPS_USER` | Username SSH (biasanya `root`) |
+| `VPS_SSH_KEY` | Isi dari private key `~/.ssh/github_actions` |
+| `DEPLOY_PATH` | Path instalasi di VPS (opsional, default: `/opt/simrs-zen`) |
+
+### 11.3 Cara Kerja Auto-Deploy
+
+Setelah setup selesai, setiap kali Anda push ke branch `main`:
+
+```
+Push ke main → GitHub Actions berjalan → SSH ke VPS → git pull → docker compose up --build
+```
+
+Workflow terdapat di `.github/workflows/deploy.yml`.
+
+### 11.4 Cek Status Deploy
+
+- Buka tab **Actions** di repository GitHub untuk melihat status setiap deployment
+- Notifikasi gagal akan muncul di tab Actions jika ada error
+
+---
+
 ## 📞 Support
 
 - Dokumentasi Docker: `docs/nodejs-migration/DOCKER-DEPLOYMENT.md`
