@@ -10,7 +10,7 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Upload, FileSpreadsheet, ArrowRight, CheckCircle2, AlertCircle, Download, Trash2, Eye } from "lucide-react";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 
 // Target schema definitions for each entity type
 const TARGET_SCHEMAS: Record<string, { field: string; label: string; required: boolean; type: string }[]> = {
@@ -95,10 +95,71 @@ export function MigrationTool() {
 
     try {
       const data = await file.arrayBuffer();
-      const workbook = XLSX.read(data);
-      const sheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[sheetName];
-      const jsonData = XLSX.utils.sheet_to_json(worksheet) as Record<string, unknown>[];
+      let jsonData: Record<string, unknown>[];
+
+      if (file.name.toLowerCase().endsWith(".csv")) {
+        // RFC 4180-compliant CSV parsing
+        const text = new TextDecoder().decode(data);
+        const parseCSVRow = (line: string): string[] => {
+          const fields: string[] = [];
+          let i = 0;
+          while (i < line.length) {
+            if (line[i] === '"') {
+              let field = "";
+              i++; // skip opening quote
+              while (i < line.length) {
+                if (line[i] === '"' && line[i + 1] === '"') {
+                  field += '"'; i += 2; // escaped quote
+                } else if (line[i] === '"') {
+                  i++; break; // closing quote
+                } else {
+                  field += line[i++];
+                }
+              }
+              fields.push(field.trim());
+              if (line[i] === ",") i++;
+            } else {
+              const end = line.indexOf(",", i);
+              if (end === -1) {
+                fields.push(line.slice(i).trim());
+                break;
+              }
+              fields.push(line.slice(i, end).trim());
+              i = end + 1;
+            }
+          }
+          return fields;
+        };
+        const lines = text.split(/\r?\n/).filter(l => l.trim() !== "");
+        if (lines.length < 2) {
+          toast({ title: "File Kosong", description: "File CSV tidak memiliki data", variant: "destructive" });
+          return;
+        }
+        const headers = parseCSVRow(lines[0]);
+        jsonData = lines.slice(1).map(line => {
+          const values = parseCSVRow(line);
+          return Object.fromEntries(headers.map((h, i) => [h, values[i] ?? ""]));
+        });
+      } else {
+        const wb = new ExcelJS.Workbook();
+        await wb.xlsx.load(data);
+        const sheet = wb.worksheets[0];
+        const headers: string[] = [];
+        sheet.getRow(1).eachCell({ includeEmpty: true }, (cell) => {
+          headers.push(cell.value?.toString() ?? "");
+        });
+        jsonData = [];
+        sheet.eachRow((row, rowNum) => {
+          if (rowNum === 1) return;
+          const rowObj: Record<string, unknown> = {};
+          row.eachCell({ includeEmpty: true }, (cell, colNum) => {
+            rowObj[headers[colNum - 1]] = cell.value;
+          });
+          if (Object.values(rowObj).some(v => v !== null && v !== undefined && v !== "")) {
+            jsonData.push(rowObj);
+          }
+        });
+      }
 
       if (jsonData.length === 0) {
         toast({
@@ -251,15 +312,25 @@ export function MigrationTool() {
     setActiveTab("result");
   };
 
-  const downloadTemplate = () => {
+  const downloadTemplate = async () => {
     if (!entityType || !TARGET_SCHEMAS[entityType]) return;
 
     const schema = TARGET_SCHEMAS[entityType];
     const headers = schema.map((f) => f.label);
-    const worksheet = XLSX.utils.aoa_to_sheet([headers]);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, entityType);
-    XLSX.writeFile(workbook, `template_${entityType}.xlsx`);
+    const wb = new ExcelJS.Workbook();
+    const sheet = wb.addWorksheet(entityType);
+    sheet.addRow(headers);
+
+    const buffer = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buffer], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `template_${entityType}.xlsx`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const resetMigration = () => {
