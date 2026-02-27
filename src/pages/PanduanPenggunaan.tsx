@@ -5286,9 +5286,16 @@ const PanduanPenggunaan = () => {
     }
   };
 
-  const handleExportPDF = () => {
-    window.print();
-  };
+  const [isPrintingAll, setIsPrintingAll] = useState(false);
+
+  const handleExportPDF = useCallback(() => {
+    setIsPrintingAll(true);
+    // Give React time to render all slides before printing
+    setTimeout(() => {
+      window.print();
+      setIsPrintingAll(false);
+    }, 500);
+  }, []);
 
   const getCurrentSection = () => {
     for (const section of sections) {
@@ -5397,18 +5404,30 @@ const PanduanPenggunaan = () => {
 
       {/* Main Content */}
       <div className="pt-16 min-h-screen print:pt-0">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={currentSlide}
-            className="min-h-[calc(100vh-4rem)] bg-background print:min-h-0 print:page-break-after-always"
-            initial={{ opacity: 0, x: 50 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -50 }}
-            transition={{ duration: 0.3 }}
-          >
-            {slides[currentSlide]?.content}
-          </motion.div>
-        </AnimatePresence>
+        {isPrintingAll ? (
+          // Render ALL slides for PDF export
+          slides.map((slide, index) => (
+            <div
+              key={index}
+              className="min-h-[calc(100vh-4rem)] bg-background print:min-h-0 print:break-after-page"
+            >
+              {slide.content}
+            </div>
+          ))
+        ) : (
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentSlide}
+              className="min-h-[calc(100vh-4rem)] bg-background print:min-h-0 print:break-after-page"
+              initial={{ opacity: 0, x: 50 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -50 }}
+              transition={{ duration: 0.3 }}
+            >
+              {slides[currentSlide]?.content}
+            </motion.div>
+          </AnimatePresence>
+        )}
       </div>
 
       {/* Navigation Controls */}
@@ -5464,11 +5483,15 @@ const PanduanPenggunaan = () => {
         @media print {
           @page {
             size: landscape;
-            margin: 0.5in;
+            margin: 0.3in;
           }
           body {
             print-color-adjust: exact;
             -webkit-print-color-adjust: exact;
+          }
+          .print\\:break-after-page {
+            break-after: page;
+            page-break-after: always;
           }
         }
       `}</style>
