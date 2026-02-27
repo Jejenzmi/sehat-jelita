@@ -40,9 +40,7 @@ services:
 
   # Node.js API Backend
   api:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    image: ${REGISTRY:-ghcr.io}/${IMAGE_NAMESPACE:-jejenzmi/sehat-jelita}/simrs-zen-api:${IMAGE_TAG:-latest}
     container_name: simrs-zen-api
     restart: unless-stopped
     environment:
@@ -79,12 +77,7 @@ services:
 
   # React Frontend
   frontend:
-    build:
-      context: .
-      dockerfile: Dockerfile.frontend
-      args:
-        VITE_API_MODE: nodejs
-        VITE_API_URL: /api
+    image: ${REGISTRY:-ghcr.io}/${IMAGE_NAMESPACE:-jejenzmi/sehat-jelita}/simrs-zen-frontend:${IMAGE_TAG:-latest}
     container_name: simrs-zen-frontend
     restart: unless-stopped
     ports:
