@@ -1,73 +1,104 @@
-# ENVIRONMENT.md - Daftar Environment Variables
+# 🔐 Panduan Environment Variables SIMRS ZEN
 
-## Frontend (Vite)
-
-| Variable | Wajib | Default | Keterangan |
-|----------|-------|---------|------------|
-| `VITE_API_MODE` | Ya | `nodejs` | Mode API: `nodejs` |
-| `VITE_API_URL` | Ya | `/api` | Base URL untuk API calls |
-
-## Backend (Node.js)
-
-### Database
-
-| Variable | Wajib | Keterangan |
-|----------|-------|------------|
-| `DATABASE_URL` | **Ya** | PostgreSQL connection string |
-| `DB_USER` | Ya | Username database |
-| `DB_PASSWORD` | **Ya** | Password database (gunakan yang kuat) |
-| `DB_NAME` | Ya | Nama database |
-
-### Redis
-
-| Variable | Wajib | Keterangan |
-|----------|-------|------------|
-| `REDIS_URL` | Tidak | Redis connection URL (opsional) |
-| `REDIS_PASSWORD` | Tidak | Password Redis (wajib di production) |
-
-### Autentikasi
-
-| Variable | Wajib | Keterangan |
-|----------|-------|------------|
-| `JWT_SECRET` | **Ya** | Secret key JWT - min 64 karakter random |
-| `JWT_EXPIRES_IN` | Tidak | Masa berlaku access token (default: `7d`) |
-| `JWT_REFRESH_EXPIRES_IN` | Tidak | Masa berlaku refresh token (default: `30d`) |
-
-### Server
-
-| Variable | Wajib | Default | Keterangan |
-|----------|-------|---------|------------|
-| `NODE_ENV` | Tidak | `development` | Set ke `production` di produksi |
-| `PORT` | Tidak | `3000` | Port server backend |
-| `FRONTEND_URL` | Ya | - | URL frontend untuk CORS |
-
-### Integrasi BPJS (Opsional)
-
-| Variable | Keterangan |
-|----------|------------|
-| `BPJS_CONS_ID` | Consumer ID dari BPJS Kesehatan |
-| `BPJS_SECRET_KEY` | Secret Key dari BPJS Kesehatan |
-| `BPJS_USER_KEY` | User Key dari BPJS Kesehatan |
-| `BPJS_BASE_URL` | Base URL API BPJS |
-
-### Integrasi SatuSehat (Opsional)
-
-| Variable | Keterangan |
-|----------|------------|
-| `SATUSEHAT_CLIENT_ID` | Client ID dari Kemenkes |
-| `SATUSEHAT_CLIENT_SECRET` | Client Secret dari Kemenkes |
-| `SATUSEHAT_ORGANIZATION_ID` | Organization ID fasilitas kesehatan |
-| `SATUSEHAT_BASE_URL` | Base URL API SatuSehat |
+Daftar lengkap semua environment variables yang digunakan SIMRS ZEN beserta penjelasan dan contoh nilai.
 
 ---
 
-## Checklist Sebelum Deploy ke Production
+## Backend (`backend/.env`)
 
-- [ ] `DATABASE_URL` diisi dengan connection string yang valid
-- [ ] `JWT_SECRET` minimal 64 karakter dan dibuat secara random
-- [ ] `DB_PASSWORD` bukan password default
-- [ ] `REDIS_PASSWORD` diisi (jika Redis digunakan)
+### Wajib (Required)
+
+| Variabel | Contoh | Deskripsi |
+|---|---|---|
+| `DATABASE_URL` | `postgresql://simrs:pass@localhost:5432/simrs_zen` | Connection string PostgreSQL |
+| `JWT_SECRET` | *(64+ karakter random)* | Secret key untuk signing JWT token |
+
+### Opsional dengan Default
+
+| Variabel | Default | Deskripsi |
+|---|---|---|
+| `NODE_ENV` | `development` | Mode aplikasi: `development` / `production` |
+| `PORT` | `3000` | Port HTTP server |
+| `JWT_EXPIRES_IN` | `7d` | Masa berlaku access token |
+| `JWT_REFRESH_EXPIRES_IN` | `30d` | Masa berlaku refresh token |
+| `FRONTEND_URL` | `http://localhost:5173` | URL frontend untuk CORS whitelist |
+| `REDIS_URL` | *(tidak wajib)* | URL Redis untuk caching (opsional) |
+
+### Integrasi Eksternal (Opsional)
+
+| Variabel | Deskripsi |
+|---|---|
+| `BPJS_CONS_ID` | Consumer ID dari portal BPJS Kesehatan |
+| `BPJS_SECRET_KEY` | Secret Key BPJS |
+| `BPJS_USER_KEY` | User Key BPJS |
+| `BPJS_BASE_URL` | Base URL API BPJS (default: production URL) |
+| `SATUSEHAT_CLIENT_ID` | Client ID dari Platform SatuSehat |
+| `SATUSEHAT_CLIENT_SECRET` | Client Secret SatuSehat |
+| `SATUSEHAT_ORGANIZATION_ID` | ID Organisasi Fasilitas Kesehatan di SatuSehat |
+
+---
+
+## Frontend (`/.env`)
+
+| Variabel | Contoh | Deskripsi |
+|---|---|---|
+| `VITE_API_MODE` | `nodejs` | Mode API: `nodejs` untuk backend Express |
+| `VITE_API_URL` | `/api` | Base URL API (proxy nginx di production, `http://localhost:3000/api` untuk dev langsung) |
+
+---
+
+## Cara Generate Secret yang Aman
+
+```bash
+# JWT Secret (Node.js)
+node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
+
+# JWT Secret (OpenSSL)
+openssl rand -hex 64
+
+# Database Password
+openssl rand -base64 32
+```
+
+---
+
+## Docker Compose Variables
+
+Digunakan di `docker-compose.yml` dan `docker-compose.prod.yml`:
+
+| Variabel | Default (Dev) | Deskripsi |
+|---|---|---|
+| `DB_USER` | `simrs` | Username PostgreSQL |
+| `DB_PASSWORD` | `simrs2024` | Password PostgreSQL (wajib diganti di production!) |
+| `DB_NAME` | `simrs_zen` | Nama database |
+| `REDIS_PASSWORD` | *(kosong di dev)* | Password Redis (wajib di production) |
+| `JWT_SECRET` | `change-this-secret-in-production` | JWT secret (WAJIB diganti!) |
+| `FRONTEND_URL` | `http://localhost:5173` | URL frontend untuk CORS |
+| `REGISTRY` | `ghcr.io` | Docker image registry |
+| `IMAGE_NAMESPACE` | `jejenzmi/sehat-jelita` | Namespace image di registry |
+| `IMAGE_TAG` | `latest` | Tag versi image |
+
+---
+
+## Checklist Sebelum Deploy Production
+
+- [ ] `DB_PASSWORD` sudah diganti (bukan nilai default)
+- [ ] `REDIS_PASSWORD` sudah diset
+- [ ] `JWT_SECRET` minimal 64 karakter random (bukan nilai default)
+- [ ] `FRONTEND_URL` sudah diset ke domain production
 - [ ] `NODE_ENV=production` sudah diset
-- [ ] `FRONTEND_URL` diisi dengan URL produksi
-- [ ] File `.env` **tidak** di-commit ke repository
-- [ ] Backup `.env` disimpan di tempat yang aman
+- [ ] File `.env` **tidak** dicommit ke Git
+- [ ] BPJS credentials sudah diisi (jika menggunakan integrasi BPJS)
+- [ ] SatuSehat credentials sudah diisi (jika menggunakan integrasi SatuSehat)
+
+---
+
+## File .env untuk Berbagai Environment
+
+```
+.env                    → Development lokal (di .gitignore)
+.env.example            → Template untuk development
+.env.production.example → Template untuk production
+```
+
+> ⚠️ **PENTING**: Jangan pernah commit file `.env` yang berisi nilai nyata ke repository!
