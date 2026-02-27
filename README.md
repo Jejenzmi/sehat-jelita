@@ -64,6 +64,35 @@ This project is built with:
 
 Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
 
+### Deploy ke Cloud Hosting (simrszen.id)
+
+Proyek ini dikonfigurasi untuk auto-deploy ke cloud hosting melalui FTP setiap kali ada push ke branch `main`.
+
+**Spesifikasi Hosting:**
+- Disk Space: 250 GB
+- RAM: 6144 MB
+- CPU Cores: 5
+- Bandwidth: Unlimited
+- FTP Hostname: `simrszen.id`
+- File Upload Path: `public_html`
+
+**Konfigurasi GitHub Secrets yang diperlukan:**
+
+| Secret | Nilai | Keterangan |
+|--------|-------|-----------|
+| `FTP_USERNAME` | `u995084872.simrszen.id` | Username FTP |
+| `FTP_PASSWORD` | *(password FTP)* | Password FTP |
+
+**Konfigurasi GitHub Variables (opsional):**
+
+| Variable | Default | Keterangan |
+|----------|---------|-----------|
+| `FTP_SERVER` | `193.203.172.50` | Alamat server FTP |
+| `VITE_API_MODE` | `nodejs` | Mode API: `supabase` atau `nodejs` |
+| `VITE_API_URL` | `https://simrszen.id/api` | URL backend API |
+
+Tambahkan secret dan variable di **Settings → Secrets and variables → Actions** pada repositori GitHub.
+
 ## Can I connect a custom domain to my Lovable project?
 
 Yes, you can!
