@@ -8,6 +8,9 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
+# Install openssl required by Prisma on Alpine
+RUN apk add --no-cache openssl
+
 # Install dependencies
 COPY package*.json ./
 RUN npm ci --only=production
@@ -24,7 +27,7 @@ RUN npx prisma generate
 FROM node:20-alpine AS production
 
 # Install security updates
-RUN apk update && apk upgrade && apk add --no-cache curl
+RUN apk update && apk upgrade && apk add --no-cache curl openssl
 
 # Create non-root user
 RUN addgroup -S nodejs && adduser -S nodejs -G nodejs
@@ -48,7 +51,7 @@ USER nodejs
 EXPOSE 3000
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
   CMD curl -f http://localhost:3000/health || exit 1
 
 # Start application
