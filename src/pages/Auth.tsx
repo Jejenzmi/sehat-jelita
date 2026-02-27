@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { isNodeMode } from "@/lib/api-client";
 import { z } from "zod";
 
 const loginSchema = z.object({
@@ -24,12 +25,15 @@ export default function Auth() {
   const [loginData, setLoginData] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // In Node.js mode session is always null; only user is set after login
+  const isAuthenticated = isNodeMode() ? !!user : !!(user && session);
+
   // Redirect if already authenticated
   useEffect(() => {
-    if (!authLoading && user && session) {
+    if (!authLoading && isAuthenticated) {
       navigate("/", { replace: true });
     }
-  }, [user, session, authLoading, navigate]);
+  }, [isAuthenticated, authLoading, navigate]);
 
   // Show loading while checking auth state
   if (authLoading) {
@@ -44,7 +48,7 @@ export default function Auth() {
   }
 
   // If already authenticated, show loading while redirecting
-  if (user && session) {
+  if (isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">

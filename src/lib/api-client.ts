@@ -12,7 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 // API Mode Configuration
 type ApiMode = 'supabase' | 'nodejs';
 
-const API_MODE: ApiMode = (import.meta.env.VITE_API_MODE as ApiMode) || 'supabase';
+const API_MODE: ApiMode = (import.meta.env.VITE_API_MODE as ApiMode) || 'nodejs';
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 // ============================================
