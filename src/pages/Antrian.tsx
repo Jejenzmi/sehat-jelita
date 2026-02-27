@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Users, ChevronRight, Volume2, Pause, Play, SkipForward, RefreshCw, Monitor } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -49,7 +49,7 @@ export default function Antrian() {
   const { data: departments = [] } = useQuery({
     queryKey: ["departments"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("departments")
         .select("id, name, code")
         .eq("is_active", true)
@@ -64,7 +64,7 @@ export default function Antrian() {
     queryKey: ["queue-tickets", selectedServiceType, selectedDeptId],
     queryFn: async () => {
       const today = new Date().toISOString().split("T")[0];
-      let query = supabase
+      let query = db
         .from("queue_tickets")
         .select(`
           *,
@@ -87,7 +87,7 @@ export default function Antrian() {
 
   // Real-time subscription for queue updates
   useEffect(() => {
-    const channel = supabase
+    const channel = db
       .channel("queue-realtime")
       .on(
         "postgres_changes",
@@ -103,7 +103,7 @@ export default function Antrian() {
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      db.removeChannel(channel);
     };
   }, [queryClient]);
 
@@ -121,7 +121,7 @@ export default function Antrian() {
       if (servedAt) updates.served_at = servedAt;
       if (completedAt) updates.completed_at = completedAt;
 
-      const { error } = await supabase
+      const { error } = await db
         .from("queue_tickets")
         .update(updates)
         .eq("id", ticketId);

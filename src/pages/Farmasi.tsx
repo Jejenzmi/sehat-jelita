@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import PharmacyScanner from "@/components/pharmacy/PharmacyScanner";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -98,7 +98,7 @@ export default function Farmasi() {
   const fetchPrescriptions = async () => {
     const today = new Date().toISOString().split("T")[0];
 
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from("prescriptions")
       .select(`
         id,
@@ -160,7 +160,7 @@ export default function Farmasi() {
   };
 
   const fetchLowStockMedicines = async () => {
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from("medicines")
       .select("id, name, stock, min_stock, unit")
       .eq("is_active", true)
@@ -183,7 +183,7 @@ export default function Farmasi() {
       const newStatus = prescription.status === "menunggu" ? "diproses" : 
                         prescription.status === "diproses" ? "siap" : "diserahkan";
 
-      const { error } = await supabase
+      const { error } = await db
         .from("prescriptions")
         .update({ 
           status: newStatus as "menunggu" | "diproses" | "siap" | "diserahkan" | "batal",

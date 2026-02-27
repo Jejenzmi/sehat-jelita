@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -55,7 +55,7 @@ function useUserProfiles() {
   return useQuery({
     queryKey: ["admin-user-profiles"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("profiles")
         .select("*")
         .order("full_name");
@@ -70,7 +70,7 @@ function useAllUserRoles() {
   return useQuery({
     queryKey: ["admin-all-user-roles"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("user_roles")
         .select("*");
       if (error) throw error;
@@ -111,7 +111,7 @@ export default function ManajemenUser() {
   const updateRolesMutation = useMutation({
     mutationFn: async ({ userId, roles }: { userId: string; roles: AppRole[] }) => {
       // First, delete all existing roles for this user
-      const { error: deleteError } = await supabase
+      const { error: deleteError } = await db
         .from("user_roles")
         .delete()
         .eq("user_id", userId);
@@ -125,7 +125,7 @@ export default function ManajemenUser() {
           role,
         }));
 
-        const { error: insertError } = await supabase
+        const { error: insertError } = await db
           .from("user_roles")
           .insert(rolesToInsert);
 
@@ -212,9 +212,9 @@ export default function ManajemenUser() {
     setIsCreatingUser(true);
 
     try {
-      // Create user via Supabase Auth Admin API (requires service role key)
-      // For now, we'll use signUp which will create the user and they can login
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      // Create user via Auth API
+      // Use signUp which will create the user and they can login
+      const { data: authData, error: authError } = await db.auth.signUp({
         email: newUserEmail,
         password: newUserPassword,
         options: {
@@ -233,7 +233,7 @@ export default function ManajemenUser() {
           role,
         }));
 
-        const { error: rolesError } = await supabase
+        const { error: rolesError } = await db
           .from("user_roles")
           .insert(rolesToInsert);
 

@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { useToast } from "./use-toast";
 
 export type HospitalType = 'A' | 'B' | 'C' | 'D' | 'FKTP';
@@ -45,7 +45,7 @@ export function usePreviewMigration(newType: HospitalType | null) {
     queryFn: async () => {
       if (!newType) return null;
       
-      const { data, error } = await supabase.rpc("preview_hospital_type_migration", {
+      const { data, error } = await db.rpc("preview_hospital_type_migration", {
         p_new_type: newType,
       });
       
@@ -62,7 +62,7 @@ export function useMigrateHospitalType() {
 
   return useMutation({
     mutationFn: async ({ newType, notes }: { newType: HospitalType; notes?: string }) => {
-      const { data, error } = await supabase.rpc("migrate_hospital_type", {
+      const { data, error } = await db.rpc("migrate_hospital_type", {
         p_new_type: newType,
         p_notes: notes || null,
       });
@@ -100,7 +100,7 @@ export function useMigrationLogs() {
   return useQuery({
     queryKey: ["migration-logs"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("hospital_type_migrations")
         .select("*")
         .order("created_at", { ascending: false });

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -23,7 +23,7 @@ function useDoctors() {
   return useQuery({
     queryKey: ["master-doctors"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("doctors")
         .select(`*, departments (name)`)
         .order("full_name");
@@ -38,7 +38,7 @@ function useDepartments() {
   return useQuery({
     queryKey: ["master-departments"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("departments")
         .select("*")
         .order("name");
@@ -53,7 +53,7 @@ function useMedicines() {
   return useQuery({
     queryKey: ["master-medicines"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("medicines")
         .select("*")
         .order("name");
@@ -68,7 +68,7 @@ function useRooms() {
   return useQuery({
     queryKey: ["master-rooms"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("rooms")
         .select(`*, beds (id)`)
         .order("room_number");
@@ -92,7 +92,7 @@ export default function MasterData() {
   // Add doctor mutation
   const addDoctorMutation = useMutation({
     mutationFn: async (doctor: any) => {
-      const { data, error } = await supabase.from("doctors").insert(doctor).select().single();
+      const { data, error } = await db.from("doctors").insert(doctor).select().single();
       if (error) throw error;
       return data;
     },
@@ -109,7 +109,7 @@ export default function MasterData() {
   // Add department mutation
   const addDepartmentMutation = useMutation({
     mutationFn: async (dept: any) => {
-      const { data, error } = await supabase.from("departments").insert(dept).select().single();
+      const { data, error } = await db.from("departments").insert(dept).select().single();
       if (error) throw error;
       return data;
     },
@@ -126,7 +126,7 @@ export default function MasterData() {
   // Add medicine mutation
   const addMedicineMutation = useMutation({
     mutationFn: async (medicine: any) => {
-      const { data, error } = await supabase.from("medicines").insert(medicine).select().single();
+      const { data, error } = await db.from("medicines").insert(medicine).select().single();
       if (error) throw error;
       return data;
     },
@@ -143,7 +143,7 @@ export default function MasterData() {
   // Add room mutation
   const addRoomMutation = useMutation({
     mutationFn: async (room: any) => {
-      const { data, error } = await supabase.from("rooms").insert(room).select().single();
+      const { data, error } = await db.from("rooms").insert(room).select().single();
       if (error) throw error;
       return data;
     },
@@ -160,7 +160,7 @@ export default function MasterData() {
   // Toggle active status
   const toggleActiveMutation = useMutation({
     mutationFn: async ({ table, id, is_active }: { table: string; id: string; is_active: boolean }) => {
-      const { error } = await supabase.from(table as any).update({ is_active }).eq("id", id);
+      const { error } = await db.from(table as any).update({ is_active }).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {

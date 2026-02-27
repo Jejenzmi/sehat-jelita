@@ -6,7 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { TestTube, Calendar, Download, Eye, CheckCircle, Clock, AlertCircle } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { useAuth } from "@/hooks/useAuth";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
@@ -42,7 +42,7 @@ export default function PatientLabResults() {
   const fetchLabResults = async () => {
     try {
       // First get patient ID
-      const { data: patient } = await supabase
+      const { data: patient } = await db
         .from("patients")
         .select("id")
         .eq("user_id", user?.id)
@@ -50,7 +50,7 @@ export default function PatientLabResults() {
 
       if (!patient) return;
 
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("lab_results")
         .select(`
           id,

@@ -1,162 +1,284 @@
-# Welcome to your Lovable project
+# SIMRS ZEN - Sistem Informasi Manajemen Rumah Sakit
 
-## Project info
+Sistem Informasi Manajemen Rumah Sakit (SIMRS) berbasis web modern, dibangun dengan React, TypeScript, Node.js, dan PostgreSQL.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## Teknologi
 
-## How can I edit this code?
-
-There are several ways of editing your application.
-
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## Menjalankan dengan Docker
-
-Proyek ini sudah dilengkapi dengan konfigurasi Docker. Anda dapat menjalankan seluruh stack (Frontend, Backend API, PostgreSQL, dan Redis) hanya dengan satu perintah.
-
-### Prasyarat
-
-- [Docker](https://docs.docker.com/get-docker/) dan [Docker Compose](https://docs.docker.com/compose/install/) sudah terpasang.
-
-### Langkah-langkah
-
-**1. Salin file environment dan sesuaikan nilainya:**
-
-```sh
-# Frontend
-cp .env.example .env
-
-# Backend
-cp backend/.env.example backend/.env
-```
-
-Edit `backend/.env` dan isi nilai yang diperlukan seperti `JWT_SECRET`, kredensial BPJS, dan Satu Sehat.
-
-**2. Jalankan semua layanan dengan Docker Compose:**
-
-```sh
-docker compose up --build
-```
-
-Setelah selesai build, layanan akan tersedia di:
-
-| Layanan       | URL                         |
-|---------------|-----------------------------|
-| Frontend      | http://localhost             |
-| Backend API   | http://localhost:3000        |
-| PostgreSQL    | localhost:5432               |
-| Redis         | localhost:6379               |
-
-**3. Menghentikan layanan:**
-
-```sh
-docker compose down
-```
-
-Untuk menghapus data volume (database) sekaligus:
-
-```sh
-docker compose down -v
-```
-
-### File Docker yang tersedia
-
-| File                   | Keterangan                                      |
-|------------------------|-------------------------------------------------|
-| `Dockerfile.frontend`  | Multi-stage build React/Vite → nginx            |
-| `backend/Dockerfile`   | Multi-stage build Node.js API                   |
-| `docker-compose.yml`   | Orkestrasi seluruh layanan (dev/prod)           |
-| `nginx.conf`           | Konfigurasi nginx dengan proxy ke backend API   |
+- **Frontend**: React 18, TypeScript, Vite, TailwindCSS, shadcn/ui
+- **Backend**: Node.js, Express.js, Prisma ORM
+- **Database**: PostgreSQL 15
+- **Cache**: Redis
+- **Deployment**: Docker, Nginx
 
 ---
 
-## What technologies are used for this project?
+## 🚀 Panduan Instalasi End-to-End ke VPS
 
-This project is built with:
+### Persyaratan Sistem
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+| Resource | Minimum | Rekomendasi |
+|----------|---------|-------------|
+| CPU | 2 vCPU | 4 vCPU |
+| RAM | 4 GB | 8 GB |
+| Storage | 40 GB SSD | 100 GB NVMe |
+| OS | Ubuntu 22.04 LTS | Ubuntu 22.04 LTS |
+| Network | Static IP | Static IP + SSL |
 
-## How can I deploy this project?
+---
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+### Langkah 1: Setup Server
 
-### Deploy ke Cloud Hosting (simrszen.id)
+```bash
+# Login ke VPS via SSH
+ssh root@YOUR_VPS_IP
 
-Proyek ini dikonfigurasi untuk auto-deploy ke cloud hosting melalui FTP setiap kali ada push ke branch `main`.
+# Update sistem
+apt update && apt upgrade -y
+apt install -y curl wget git nano unzip htop ufw
 
-**Spesifikasi Hosting:**
-- Disk Space: 250 GB
-- RAM: 6144 MB
-- CPU Cores: 5
-- Bandwidth: Unlimited
-- FTP Hostname: `simrszen.id`
-- File Upload Path: `public_html`
+# Buat user non-root
+adduser simrs
+usermod -aG sudo simrs
 
-**Konfigurasi GitHub Secrets yang diperlukan:**
+# Setup SSH key untuk user baru
+mkdir -p /home/simrs/.ssh
+cp ~/.ssh/authorized_keys /home/simrs/.ssh/
+chown -R simrs:simrs /home/simrs/.ssh
+chmod 700 /home/simrs/.ssh
+chmod 600 /home/simrs/.ssh/authorized_keys
+```
 
-| Secret | Nilai | Keterangan |
-|--------|-------|-----------|
-| `FTP_USERNAME` | `u995084872.simrszen.id` | Username FTP |
-| `FTP_PASSWORD` | *(password FTP)* | Password FTP |
+#### Konfigurasi Firewall
 
-**Konfigurasi GitHub Variables (opsional):**
+```bash
+ufw default deny incoming
+ufw default allow outgoing
+ufw allow 22/tcp    # SSH
+ufw allow 80/tcp    # HTTP
+ufw allow 443/tcp   # HTTPS
+ufw enable
+ufw status
+```
 
-| Variable | Default | Keterangan |
-|----------|---------|-----------|
-| `FTP_SERVER` | `193.203.172.50` | Alamat server FTP |
-| `VITE_API_MODE` | `nodejs` | Mode API: `supabase` atau `nodejs` |
-| `VITE_API_URL` | `https://simrszen.id/api` | URL backend API |
+---
 
-Tambahkan secret dan variable di **Settings → Secrets and variables → Actions** pada repositori GitHub.
+### Langkah 2: Install Docker
 
-## Can I connect a custom domain to my Lovable project?
+```bash
+# Login sebagai user simrs
+su - simrs
 
-Yes, you can!
+# Install Docker
+curl -fsSL https://get.docker.com | sudo bash
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+# Tambahkan user ke grup docker
+sudo usermod -aG docker $USER
+newgrp docker
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+# Verifikasi
+docker --version
+docker compose version
+```
+
+---
+
+### Langkah 3: Clone Repository
+
+```bash
+cd /home/simrs
+git clone https://github.com/Jejenzmi/sehat-jelita.git simrs-zen
+cd simrs-zen
+```
+
+---
+
+### Langkah 4: Konfigurasi Environment
+
+```bash
+# Frontend environment
+cp .env.example .env
+
+# Backend environment
+cp backend/.env.example backend/.env
+```
+
+Edit file `backend/.env` dan isi semua nilai yang diperlukan:
+
+```bash
+nano backend/.env
+```
+
+**Nilai penting yang harus diisi:**
+
+```env
+# Ganti dengan password yang kuat
+DB_PASSWORD=GANTI_DENGAN_PASSWORD_KUAT
+
+# Generate JWT secret: node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
+JWT_SECRET=GANTI_DENGAN_STRING_HEX_64_KARAKTER
+
+# URL frontend Anda
+FRONTEND_URL=https://domain-anda.com
+
+# Redis password
+REDIS_PASSWORD=GANTI_DENGAN_PASSWORD_REDIS
+
+# Integrasi BPJS (opsional)
+BPJS_CONS_ID=
+BPJS_SECRET_KEY=
+BPJS_USER_KEY=
+
+# Integrasi Satu Sehat (opsional)
+SATUSEHAT_CLIENT_ID=
+SATUSEHAT_CLIENT_SECRET=
+SATUSEHAT_ORGANIZATION_ID=
+```
+
+---
+
+### Langkah 5: Build dan Jalankan dengan Docker Compose
+
+```bash
+# Build dan jalankan semua layanan
+docker compose up -d --build
+
+# Cek status layanan
+docker compose ps
+
+# Lihat logs
+docker compose logs -f
+```
+
+Setelah selesai, layanan tersedia di:
+
+| Layanan | URL |
+|---------|-----|
+| Frontend (Nginx) | http://YOUR_VPS_IP |
+| Backend API | http://YOUR_VPS_IP:3000 |
+| PostgreSQL | localhost:5432 |
+| Redis | localhost:6379 |
+
+---
+
+### Langkah 6: Setup SSL dengan Certbot (HTTPS)
+
+```bash
+# Install Certbot
+sudo apt install -y certbot python3-certbot-nginx
+
+# Dapatkan sertifikat SSL (ganti domain-anda.com)
+sudo certbot --nginx -d domain-anda.com
+
+# Certbot akan otomatis memperbarui sertifikat
+sudo certbot renew --dry-run
+```
+
+---
+
+### Langkah 7: Konfigurasi Nginx untuk Domain
+
+Edit file `nginx.prod.conf` dan sesuaikan nama domain:
+
+```nginx
+server_name domain-anda.com www.domain-anda.com;
+```
+
+Kemudian restart container:
+
+```bash
+docker compose restart frontend
+```
+
+---
+
+## 📦 File Docker
+
+| File | Keterangan |
+|------|-----------|
+| `Dockerfile.frontend` | Build React/Vite → Nginx |
+| `backend/Dockerfile` | Build Node.js API |
+| `docker-compose.yml` | Orkestrasi semua layanan |
+| `nginx.conf` | Konfigurasi Nginx (dev) |
+| `nginx.prod.conf` | Konfigurasi Nginx (production) |
+
+---
+
+## 🔧 Development Lokal
+
+### Prasyarat
+
+- Node.js 20+ dan npm
+- Docker dan Docker Compose
+
+### Menjalankan secara lokal
+
+```bash
+# Clone repository
+git clone https://github.com/Jejenzmi/sehat-jelita.git
+cd sehat-jelita
+
+# Install dependensi frontend
+npm install
+
+# Jalankan seluruh stack dengan Docker (database, backend, frontend)
+docker compose up -d
+
+# Atau jalankan frontend saja (gunakan backend via Docker)
+npm run dev
+```
+
+Frontend akan tersedia di http://localhost:8080
+
+### Perintah berguna
+
+```bash
+# Hentikan semua layanan
+docker compose down
+
+# Hentikan dan hapus data (reset database)
+docker compose down -v
+
+# Lihat log backend
+docker compose logs -f backend
+
+# Masuk ke container database
+docker compose exec postgres psql -U simrs -d simrs_zen
+```
+
+---
+
+## 🔄 Update Aplikasi di VPS
+
+```bash
+cd /home/simrs/simrs-zen
+
+# Pull perubahan terbaru
+git pull origin main
+
+# Rebuild dan restart layanan
+docker compose up -d --build
+
+# Verifikasi
+docker compose ps
+```
+
+---
+
+## 🔒 Keamanan
+
+- Jangan pernah commit file `.env` ke version control
+- Gunakan password yang kuat dan unik untuk semua layanan
+- Perbarui sistem secara berkala: `sudo apt update && sudo apt upgrade -y`
+- Aktifkan firewall dan batasi akses hanya pada port yang dibutuhkan
+- Backup database secara rutin
+
+---
+
+## 📚 Dokumentasi Tambahan
+
+- [Arsitektur Sistem](ARCHITECTURE.md)
+- [Panduan Deployment](DEPLOYMENT.md)
+- [Konfigurasi Environment](ENVIRONMENT.md)
+- [Keamanan](SECURITY.md)
+- [VPS Setup Detail](docs/nodejs-migration/VPS-SETUP.md)
+- [Docker Deployment Detail](docs/nodejs-migration/DOCKER-DEPLOYMENT.md)

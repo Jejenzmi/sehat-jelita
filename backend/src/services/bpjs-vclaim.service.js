@@ -2,7 +2,7 @@
  * SIMRS ZEN - BPJS VClaim Service
  * Integration with BPJS Kesehatan VClaim API
  * 
- * Migrated from Supabase Edge Function: bpjs-vclaim
+ * BPJS VClaim service
  */
 
 import axios from 'axios';

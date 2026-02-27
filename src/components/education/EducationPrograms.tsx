@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Plus, Edit, GraduationCap, Users, Clock } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { useToast } from "@/hooks/use-toast";
 
 interface EducationProgram {
@@ -47,7 +47,7 @@ export default function EducationPrograms() {
 
   const fetchPrograms = async () => {
     setIsLoading(true);
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from("education_programs")
       .select("*")
       .order("program_name");
@@ -69,14 +69,14 @@ export default function EducationPrograms() {
       };
 
       if (editingProgram) {
-        const { error } = await supabase
+        const { error } = await db
           .from("education_programs")
           .update(payload)
           .eq("id", editingProgram.id);
         if (error) throw error;
         toast({ title: "Berhasil", description: "Program berhasil diperbarui" });
       } else {
-        const { error } = await supabase.from("education_programs").insert(payload);
+        const { error } = await db.from("education_programs").insert(payload);
         if (error) throw error;
         toast({ title: "Berhasil", description: "Program berhasil ditambahkan" });
       }

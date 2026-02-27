@@ -10,7 +10,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Edit, RotateCw, CheckCircle, Clock, Calendar } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 
@@ -53,11 +53,11 @@ export default function ClinicalRotations() {
 
   const fetchData = async () => {
     const [rotationsRes, traineesRes, deptsRes] = await Promise.all([
-      supabase.from("clinical_rotations")
+      db.from("clinical_rotations")
         .select("*, medical_trainees(full_name, trainee_code), departments(name)")
         .order("start_date", { ascending: false }),
-      supabase.from("medical_trainees").select("id, full_name, trainee_code").eq("status", "active"),
-      supabase.from("departments").select("id, name").eq("is_active", true)
+      db.from("medical_trainees").select("id, full_name, trainee_code").eq("status", "active"),
+      db.from("departments").select("id, name").eq("is_active", true)
     ]);
     
     if (rotationsRes.data) setRotations(rotationsRes.data);
@@ -74,11 +74,11 @@ export default function ClinicalRotations() {
       };
 
       if (editingRotation) {
-        const { error } = await supabase.from("clinical_rotations").update(payload).eq("id", editingRotation.id);
+        const { error } = await db.from("clinical_rotations").update(payload).eq("id", editingRotation.id);
         if (error) throw error;
         toast({ title: "Berhasil", description: "Rotasi berhasil diperbarui" });
       } else {
-        const { error } = await supabase.from("clinical_rotations").insert(payload);
+        const { error } = await db.from("clinical_rotations").insert(payload);
         if (error) throw error;
         toast({ title: "Berhasil", description: "Rotasi berhasil ditambahkan" });
       }

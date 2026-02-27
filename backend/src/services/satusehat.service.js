@@ -3,7 +3,7 @@
  * Integration with Indonesia's National Health Information Exchange
  * FHIR R4 Compliant
  * 
- * Migrated from Supabase Edge Function: satusehat
+ * Satu Sehat service
  */
 
 import axios from 'axios';

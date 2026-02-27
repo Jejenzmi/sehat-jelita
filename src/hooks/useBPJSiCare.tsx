@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { useToast } from "@/hooks/use-toast";
 
 interface SyncResult {
@@ -12,7 +12,7 @@ export function useBPJSRoomClasses() {
   return useQuery({
     queryKey: ["bpjs-room-classes"],
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke("bpjs-icare", {
+      const { data, error } = await db.functions.invoke("bpjs-icare", {
         body: { action: "get_room_classes" },
       });
       if (error) throw error;
@@ -26,7 +26,7 @@ export function useBPJSBedAvailability() {
   return useQuery({
     queryKey: ["bpjs-beds"],
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke("bpjs-icare", {
+      const { data, error } = await db.functions.invoke("bpjs-icare", {
         body: { action: "read_beds", data: { start: 1, limit: 100 } },
       });
       if (error) throw error;
@@ -42,7 +42,7 @@ export function useSyncBedsToBPJS() {
 
   return useMutation({
     mutationFn: async () => {
-      const { data, error } = await supabase.functions.invoke("bpjs-icare", {
+      const { data, error } = await db.functions.invoke("bpjs-icare", {
         body: { action: "sync_beds" },
       });
       if (error) throw error;
@@ -76,7 +76,7 @@ export function useUpdateBedToBPJS() {
       capacity: number;
       available: number;
     }) => {
-      const { data, error } = await supabase.functions.invoke("bpjs-icare", {
+      const { data, error } = await db.functions.invoke("bpjs-icare", {
         body: { action: "update_bed", data: roomData },
       });
       if (error) throw error;

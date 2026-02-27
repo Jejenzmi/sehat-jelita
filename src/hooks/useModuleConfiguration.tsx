@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { useToast } from "./use-toast";
 
 interface ModuleConfig {
@@ -21,7 +21,7 @@ export function useModuleConfiguration() {
     queryKey: ["all-modules-for-config"],
     queryFn: async () => {
       // First get hospital type
-      const { data: profile } = await supabase
+      const { data: profile } = await db
         .from("hospital_profile")
         .select("facility_level, enabled_modules")
         .limit(1)
@@ -29,7 +29,7 @@ export function useModuleConfiguration() {
 
       if (!profile?.facility_level) {
         // Return all modules if no profile
-        const { data, error } = await supabase
+        const { data, error } = await db
           .from("module_configurations")
           .select("*")
           .eq("is_active", true)
@@ -39,7 +39,7 @@ export function useModuleConfiguration() {
       }
 
       // Get modules for this hospital type
-      const { data, error } = await supabase.rpc("get_available_modules", {
+      const { data, error } = await db.rpc("get_available_modules", {
         p_hospital_type: profile.facility_level,
       });
       if (error) throw error;
@@ -61,7 +61,7 @@ export function useModuleConfiguration() {
   // Toggle module enabled/disabled
   const toggleModule = useMutation({
     mutationFn: async ({ moduleCode, enabled }: { moduleCode: string; enabled: boolean }) => {
-      const { error } = await supabase.rpc("toggle_module", {
+      const { error } = await db.rpc("toggle_module", {
         p_module_code: moduleCode,
         p_enabled: enabled,
       });
@@ -89,7 +89,7 @@ export function useModuleConfiguration() {
   // Batch update enabled modules
   const updateEnabledModules = useMutation({
     mutationFn: async (moduleCodes: string[]) => {
-      const { error } = await supabase.rpc("update_enabled_modules", {
+      const { error } = await db.rpc("update_enabled_modules", {
         p_module_codes: moduleCodes,
       });
       if (error) throw error;

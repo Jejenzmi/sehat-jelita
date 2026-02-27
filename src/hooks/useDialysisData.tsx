@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { useToast } from "@/hooks/use-toast";
-import type { Database } from "@/integrations/supabase/types";
+import type { Database } from "@/types/database";
 
 type DialysisType = Database['public']['Enums']['dialysis_type'];
 type SessionStatus = Database['public']['Enums']['session_status'];
@@ -86,7 +86,7 @@ export function useDialysisMachines() {
   return useQuery({
     queryKey: ["dialysis-machines"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("dialysis_machines")
         .select("*")
         .order("machine_number");
@@ -102,7 +102,7 @@ export function useDialysisSessions(date?: string, status?: SessionStatus) {
   return useQuery({
     queryKey: ["dialysis-sessions", date, status],
     queryFn: async () => {
-      let query = supabase
+      let query = db
         .from("dialysis_sessions")
         .select(`
           *,
@@ -139,7 +139,7 @@ export function useDialysisMonitoring(sessionId: string) {
   return useQuery({
     queryKey: ["dialysis-monitoring", sessionId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("dialysis_monitoring")
         .select("*")
         .eq("session_id", sessionId)
@@ -160,17 +160,17 @@ export function useDialysisStatistics() {
       const today = new Date().toISOString().split('T')[0];
       
       // Get machines
-      const { data: machines } = await supabase.from("dialysis_machines").select("*");
+      const { data: machines } = await db.from("dialysis_machines").select("*");
       
       // Get today's sessions
-      const { data: todaySessions } = await supabase
+      const { data: todaySessions } = await db
         .from("dialysis_sessions")
         .select("status")
         .eq("session_date", today);
 
       // Get this month's completed sessions
       const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
-      const { data: monthSessions, count } = await supabase
+      const { data: monthSessions, count } = await db
         .from("dialysis_sessions")
         .select("*", { count: 'exact' })
         .gte("session_date", monthStart)
@@ -220,7 +220,7 @@ export function useWeeklyDialysisSessions() {
         weekDays.push(date.toISOString().split('T')[0]);
       }
       
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("dialysis_sessions")
         .select("session_date")
         .in("session_date", weekDays);
@@ -252,7 +252,7 @@ export function useDialysisAdequacy() {
     queryFn: async () => {
       const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
       
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("dialysis_sessions")
         .select("kt_v")
         .gte("session_date", monthStart)
@@ -280,7 +280,7 @@ export function useUpdateDialysisSession() {
 
   return useMutation({
     mutationFn: async ({ id, ...data }: { id: string } & Database['public']['Tables']['dialysis_sessions']['Update']) => {
-      const { error } = await supabase.from("dialysis_sessions").update(data).eq("id", id);
+      const { error } = await db.from("dialysis_sessions").update(data).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -300,7 +300,7 @@ export function useAddDialysisMonitoring() {
 
   return useMutation({
     mutationFn: async (data: Database['public']['Tables']['dialysis_monitoring']['Insert']) => {
-      const { error } = await supabase.from("dialysis_monitoring").insert(data);
+      const { error } = await db.from("dialysis_monitoring").insert(data);
       if (error) throw error;
     },
     onSuccess: () => {

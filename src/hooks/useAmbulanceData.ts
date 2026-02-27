@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { toast } from "sonner";
 
 export interface AmbulanceFleet {
@@ -42,7 +42,7 @@ export function useAmbulanceFleet() {
   return useQuery({
     queryKey: ["ambulance-fleet"],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await (db as any)
         .from("ambulance_fleet")
         .select("*")
         .order("ambulance_code");
@@ -56,7 +56,7 @@ export function useAmbulanceDispatches() {
   return useQuery({
     queryKey: ["ambulance-dispatches"],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await (db as any)
         .from("ambulance_dispatches")
         .select("*")
         .order("request_time", { ascending: false });
@@ -70,7 +70,7 @@ export function useCreateAmbulanceFleet() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (fleet: Omit<AmbulanceFleet, "id" | "created_at" | "updated_at">) => {
-      const { data, error } = await (supabase as any).from("ambulance_fleet").insert(fleet).select().single();
+      const { data, error } = await (db as any).from("ambulance_fleet").insert(fleet).select().single();
       if (error) throw error;
       return data;
     },
@@ -83,11 +83,11 @@ export function useCreateDispatch() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (dispatch: Omit<AmbulanceDispatch, "id" | "created_at" | "updated_at">) => {
-      const { data, error } = await (supabase as any).from("ambulance_dispatches").insert(dispatch).select().single();
+      const { data, error } = await (db as any).from("ambulance_dispatches").insert(dispatch).select().single();
       if (error) throw error;
       // Update ambulance status to on_mission
       if (dispatch.ambulance_id) {
-        await (supabase as any).from("ambulance_fleet").update({ status: "on_mission" }).eq("id", dispatch.ambulance_id);
+        await (db as any).from("ambulance_fleet").update({ status: "on_mission" }).eq("id", dispatch.ambulance_id);
       }
       return data;
     },
@@ -104,7 +104,7 @@ export function useUpdateDispatch() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...data }: { id: string } & Partial<AmbulanceDispatch>) => {
-      const { error } = await (supabase as any).from("ambulance_dispatches").update(data).eq("id", id);
+      const { error } = await (db as any).from("ambulance_dispatches").update(data).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -116,7 +116,7 @@ export function useUpdateDispatch() {
 }
 
 export async function generateDispatchNumber(): Promise<string> {
-  const { data, error } = await (supabase as any).rpc("generate_dispatch_number");
+  const { data, error } = await (db as any).rpc("generate_dispatch_number");
   if (error) throw error;
   return data;
 }

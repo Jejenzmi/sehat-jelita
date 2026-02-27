@@ -2,7 +2,7 @@
  * SIMRS ZEN - E-Klaim IDRG Service
  * Integration with local E-Klaim server via ws.php webservice
  * 
- * Migrated from Supabase Edge Function: eklaim-idrg
+ * E-Klaim IDRG service
  */
 
 import crypto from 'crypto';

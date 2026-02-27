@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Calculator, Search, Plus, X, TrendingUp, TrendingDown, Minus } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 
@@ -84,9 +84,9 @@ export default function INACBGGrouper() {
     setIsLoading(true);
     try {
       const [icdRes, drgRes, historyRes] = await Promise.all([
-        supabase.from("icd10_codes").select("id, code, description_id").order("code").limit(100),
-        supabase.from("inadrg_codes").select("id, drg_code, drg_name, severity_level, national_tariff").order("drg_code").limit(100),
-        supabase.from("inacbg_calculations").select("*").order("calculated_at", { ascending: false }).limit(20)
+        db.from("icd10_codes").select("id, code, description_id").order("code").limit(100),
+        db.from("inadrg_codes").select("id, drg_code, drg_name, severity_level, national_tariff").order("drg_code").limit(100),
+        db.from("inacbg_calculations").select("*").order("calculated_at", { ascending: false }).limit(20)
       ]);
 
       if (icdRes.data) setIcd10Codes(icdRes.data);
@@ -106,7 +106,7 @@ export default function INACBGGrouper() {
       return;
     }
 
-    const { data } = await supabase
+    const { data } = await db
       .from("icd10_codes")
       .select("id, code, description_id")
       .or(`code.ilike.%${query}%,description_id.ilike.%${query}%`)
@@ -149,7 +149,7 @@ export default function INACBGGrouper() {
     setIsCalculating(true);
     try {
       // Find matching DRG based on primary diagnosis
-      const { data: mappingData } = await supabase
+      const { data: mappingData } = await db
         .from("diagnosis_drg_mapping")
         .select("*, inadrg_codes(*)")
         .eq("icd10_code", primaryDiagnosis)
@@ -161,7 +161,7 @@ export default function INACBGGrouper() {
         drg = mappingData.inadrg_codes as unknown as DRGCode;
       } else {
         // Fallback: get a sample DRG if no mapping exists
-        const { data: fallbackDrg } = await supabase
+        const { data: fallbackDrg } = await db
           .from("inadrg_codes")
           .select("*")
           .limit(1)
@@ -178,7 +178,7 @@ export default function INACBGGrouper() {
       // Get tariff for hospital class and regional
       let baseTariff = drg.national_tariff || 5000000;
       if (drg.id) {
-        const { data: tariffData } = await supabase
+        const { data: tariffData } = await db
           .from("inacbg_tariffs")
           .select("tariff_amount")
           .eq("drg_id", drg.id)
@@ -213,7 +213,7 @@ export default function INACBGGrouper() {
       setShowResultDialog(true);
 
       // Save calculation to history
-      await supabase.from("inacbg_calculations").insert({
+      await db.from("inacbg_calculations").insert({
         drg_code: drg.drg_code,
         drg_description: drg.drg_name,
         severity_level: drg.severity_level || 1,

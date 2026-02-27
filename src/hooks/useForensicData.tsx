@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { Database } from "@/integrations/supabase/types";
+import { db } from "@/lib/db";
+import { Database } from "@/types/database";
 import { toast } from "sonner";
 
 type MortuaryCase = Database["public"]["Tables"]["mortuary_cases"]["Row"];
@@ -15,7 +15,7 @@ export function useForensicData() {
   const { data: mortuaryCases, isLoading: loadingCases } = useQuery({
     queryKey: ["mortuary-cases"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("mortuary_cases")
         .select(`
           *,
@@ -32,7 +32,7 @@ export function useForensicData() {
   const { data: activeCases, isLoading: loadingActiveCases } = useQuery({
     queryKey: ["active-mortuary-cases"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("mortuary_cases")
         .select("*")
         .neq("status", "released")
@@ -46,7 +46,7 @@ export function useForensicData() {
   const { data: autopsyRecords, isLoading: loadingAutopsies } = useQuery({
     queryKey: ["autopsy-records"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("autopsy_records")
         .select(`
           *,
@@ -64,7 +64,7 @@ export function useForensicData() {
   const { data: visumReports, isLoading: loadingVisums } = useQuery({
     queryKey: ["visum-reports"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("visum_reports")
         .select(`
           *,
@@ -82,7 +82,7 @@ export function useForensicData() {
   const { data: deathCertificates, isLoading: loadingCertificates } = useQuery({
     queryKey: ["death-certificates"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("death_certificates")
         .select(`
           *,
@@ -98,7 +98,7 @@ export function useForensicData() {
   // Create mortuary case
   const createMortuaryCase = useMutation({
     mutationFn: async (caseData: Database["public"]["Tables"]["mortuary_cases"]["Insert"]) => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("mortuary_cases")
         .insert(caseData)
         .select()
@@ -119,7 +119,7 @@ export function useForensicData() {
   // Update mortuary case
   const updateMortuaryCase = useMutation({
     mutationFn: async ({ id, ...updates }: { id: string } & Partial<MortuaryCase>) => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("mortuary_cases")
         .update(updates)
         .eq("id", id)
@@ -141,7 +141,7 @@ export function useForensicData() {
   // Create autopsy record
   const createAutopsyRecord = useMutation({
     mutationFn: async (record: Database["public"]["Tables"]["autopsy_records"]["Insert"]) => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("autopsy_records")
         .insert(record)
         .select()
@@ -161,7 +161,7 @@ export function useForensicData() {
   // Create visum report
   const createVisumReport = useMutation({
     mutationFn: async (report: Database["public"]["Tables"]["visum_reports"]["Insert"]) => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("visum_reports")
         .insert(report)
         .select()
@@ -181,7 +181,7 @@ export function useForensicData() {
   // Create death certificate
   const createDeathCertificate = useMutation({
     mutationFn: async (cert: Database["public"]["Tables"]["death_certificates"]["Insert"]) => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("death_certificates")
         .insert(cert)
         .select()
@@ -201,7 +201,7 @@ export function useForensicData() {
   // Release body
   const releaseBody = useMutation({
     mutationFn: async ({ id, releasedTo, releasedBy }: { id: string; releasedTo: string; releasedBy: string }) => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("mortuary_cases")
         .update({
           status: "released",

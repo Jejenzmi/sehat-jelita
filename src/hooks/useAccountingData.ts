@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 
@@ -78,7 +78,7 @@ export function useChartOfAccounts() {
   return useQuery({
     queryKey: ["chart-of-accounts"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("chart_of_accounts")
         .select("*")
         .order("account_code");
@@ -93,7 +93,7 @@ export function useAccountsByType(type?: string) {
   return useQuery({
     queryKey: ["accounts-by-type", type],
     queryFn: async () => {
-      let query = supabase
+      let query = db
         .from("chart_of_accounts")
         .select("*")
         .eq("is_active", true)
@@ -116,7 +116,7 @@ export function useAddAccount() {
   
   return useMutation({
     mutationFn: async (account: Partial<ChartOfAccount>) => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("chart_of_accounts")
         .insert(account as any)
         .select()
@@ -139,7 +139,7 @@ export function useUpdateAccount() {
   
   return useMutation({
     mutationFn: async ({ id, ...account }: Partial<ChartOfAccount> & { id: string }) => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("chart_of_accounts")
         .update(account)
         .eq("id", id)
@@ -164,7 +164,7 @@ export function useFiscalPeriods(year?: number) {
   return useQuery({
     queryKey: ["fiscal-periods", year],
     queryFn: async () => {
-      let query = supabase
+      let query = db
         .from("fiscal_periods")
         .select("*")
         .order("start_date", { ascending: false });
@@ -185,7 +185,7 @@ export function useCurrentFiscalPeriod() {
     queryKey: ["current-fiscal-period"],
     queryFn: async () => {
       const today = format(new Date(), "yyyy-MM-dd");
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("fiscal_periods")
         .select("*")
         .lte("start_date", today)
@@ -205,7 +205,7 @@ export function useJournalEntries(month?: number, year?: number, status?: string
   return useQuery({
     queryKey: ["journal-entries", month, year, status],
     queryFn: async () => {
-      let query = supabase
+      let query = db
         .from("journal_entries")
         .select("*")
         .order("entry_date", { ascending: false })
@@ -232,7 +232,7 @@ export function useJournalEntryWithLines(id: string) {
   return useQuery({
     queryKey: ["journal-entry", id],
     queryFn: async () => {
-      const { data: journal, error: journalError } = await supabase
+      const { data: journal, error: journalError } = await db
         .from("journal_entries")
         .select("*")
         .eq("id", id)
@@ -240,7 +240,7 @@ export function useJournalEntryWithLines(id: string) {
       
       if (journalError) throw journalError;
       
-      const { data: lines, error: linesError } = await supabase
+      const { data: lines, error: linesError } = await db
         .from("journal_entry_lines")
         .select(`
           *,
@@ -263,7 +263,7 @@ export function useCreateJournalEntry() {
   return useMutation({
     mutationFn: async ({ entry, lines }: { entry: Partial<JournalEntry>; lines: JournalEntryLine[] }) => {
       // Generate journal number
-      const { data: numberData } = await supabase.rpc('generate_journal_number');
+      const { data: numberData } = await db.rpc('generate_journal_number');
       const journalNumber = numberData || `JV-${Date.now()}`;
       
       // Calculate totals
@@ -276,7 +276,7 @@ export function useCreateJournalEntry() {
       }
       
       // Insert journal entry
-      const { data: journal, error: journalError } = await supabase
+      const { data: journal, error: journalError } = await db
         .from("journal_entries")
         .insert({
           ...entry,
@@ -300,7 +300,7 @@ export function useCreateJournalEntry() {
         department_id: line.department_id,
       }));
       
-      const { error: linesError } = await supabase
+      const { error: linesError } = await db
         .from("journal_entry_lines")
         .insert(linesWithJournalId as any);
       
@@ -323,7 +323,7 @@ export function usePostJournal() {
   
   return useMutation({
     mutationFn: async (id: string) => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("journal_entries")
         .update({
           status: "posted",
@@ -352,7 +352,7 @@ export function useVoidJournal() {
   
   return useMutation({
     mutationFn: async ({ id, reason }: { id: string; reason: string }) => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("journal_entries")
         .update({
           status: "voided",
@@ -383,7 +383,7 @@ export function useGeneralLedger(year: number, month?: number) {
     queryKey: ["general-ledger", year, month],
     queryFn: async () => {
       // Get accounts with their balances from journal entries
-      const { data: accounts, error: accountsError } = await supabase
+      const { data: accounts, error: accountsError } = await db
         .from("chart_of_accounts")
         .select("*")
         .eq("is_active", true)
@@ -401,7 +401,7 @@ export function useGeneralLedger(year: number, month?: number) {
         endDate = `${year}-${String(month).padStart(2, '0')}-31`;
       }
       
-      const { data: journalLines, error: linesError } = await supabase
+      const { data: journalLines, error: linesError } = await db
         .from("journal_entry_lines")
         .select(`
           account_id,
@@ -469,7 +469,7 @@ export function useIncomeStatement(year: number, month?: number) {
       }
       
       // Get revenue accounts
-      const { data: revenueAccounts } = await supabase
+      const { data: revenueAccounts } = await db
         .from("chart_of_accounts")
         .select("*")
         .eq("account_type", "revenue")
@@ -477,7 +477,7 @@ export function useIncomeStatement(year: number, month?: number) {
         .eq("is_active", true);
       
       // Get expense accounts
-      const { data: expenseAccounts } = await supabase
+      const { data: expenseAccounts } = await db
         .from("chart_of_accounts")
         .select("*")
         .eq("account_type", "expense")
@@ -485,7 +485,7 @@ export function useIncomeStatement(year: number, month?: number) {
         .eq("is_active", true);
       
       // Get journal lines
-      const { data: journalLines } = await supabase
+      const { data: journalLines } = await db
         .from("journal_entry_lines")
         .select(`
           account_id,
@@ -531,7 +531,7 @@ export function useBalanceSheet(asOfDate: string) {
     queryKey: ["balance-sheet", asOfDate],
     queryFn: async () => {
       // Get all accounts
-      const { data: accounts } = await supabase
+      const { data: accounts } = await db
         .from("chart_of_accounts")
         .select("*")
         .eq("is_header", false)
@@ -539,7 +539,7 @@ export function useBalanceSheet(asOfDate: string) {
         .order("account_code");
       
       // Get all posted journal lines up to date
-      const { data: journalLines } = await supabase
+      const { data: journalLines } = await db
         .from("journal_entry_lines")
         .select(`
           account_id,
@@ -607,7 +607,7 @@ export function useCashFlowStatement(year: number, month?: number) {
       }
       
       // Get cash accounts (1101, 1102, 1103)
-      const { data: cashAccounts } = await supabase
+      const { data: cashAccounts } = await db
         .from("chart_of_accounts")
         .select("id, account_code, account_name")
         .in("account_code", ["1101", "1102", "1103"]);
@@ -615,7 +615,7 @@ export function useCashFlowStatement(year: number, month?: number) {
       const cashAccountIds = cashAccounts?.map(a => a.id) || [];
       
       // Get journal lines for cash accounts
-      const { data: cashLines } = await supabase
+      const { data: cashLines } = await db
         .from("journal_entry_lines")
         .select(`
           account_id,
@@ -680,7 +680,7 @@ export function useCashFlowStatement(year: number, month?: number) {
 
 export async function createBillingJournal(billingId: string, invoiceNumber: string, amount: number, paymentType: string) {
   // This would be called when a billing is paid
-  const { data: accounts } = await supabase
+  const { data: accounts } = await db
     .from("chart_of_accounts")
     .select("id, account_code")
     .in("account_code", ["1101", "4600"]); // Kas and Pendapatan Farmasi
@@ -708,7 +708,7 @@ export async function createBillingJournal(billingId: string, invoiceNumber: str
 
 export async function createPayrollJournal(payrollMonth: number, payrollYear: number, totalGross: number, totalDeductions: Record<string, number>) {
   // This would be called when payroll is processed
-  const { data: accounts } = await supabase
+  const { data: accounts } = await db
     .from("chart_of_accounts")
     .select("id, account_code")
     .in("account_code", ["1101", "5101", "2102", "2103", "2104", "2105"]);

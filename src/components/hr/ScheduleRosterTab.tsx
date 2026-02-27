@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useEmployees, useWorkShifts } from "@/hooks/useHRData";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { format, startOfWeek, addDays, parseISO } from "date-fns";
@@ -71,7 +71,7 @@ export function ScheduleRosterTab() {
       const startDate = format(weekStart, "yyyy-MM-dd");
       const endDate = format(addDays(weekStart, 6), "yyyy-MM-dd");
 
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("employee_schedules")
         .select(`
           *,
@@ -106,7 +106,7 @@ export function ScheduleRosterTab() {
       shiftId?: string;
       isOffDay: boolean;
     }) => {
-      const { error } = await supabase.from("employee_schedules").upsert(
+      const { error } = await db.from("employee_schedules").upsert(
         {
           employee_id: employeeId,
           schedule_date: date,
@@ -144,7 +144,7 @@ export function ScheduleRosterTab() {
         }))
       );
 
-      const { error } = await supabase
+      const { error } = await db
         .from("employee_schedules")
         .upsert(records, { onConflict: "employee_id,schedule_date" });
 
@@ -213,7 +213,7 @@ export function ScheduleRosterTab() {
       const prevStartDate = format(prevWeekStart, "yyyy-MM-dd");
       const prevEndDate = format(addDays(prevWeekStart, 6), "yyyy-MM-dd");
 
-      const { data: prevSchedules, error: fetchError } = await supabase
+      const { data: prevSchedules, error: fetchError } = await db
         .from("employee_schedules")
         .select("employee_id, shift_id, is_off_day, schedule_date")
         .gte("schedule_date", prevStartDate)
@@ -231,7 +231,7 @@ export function ScheduleRosterTab() {
         schedule_date: format(addDays(parseISO(s.schedule_date), 7), "yyyy-MM-dd"),
       }));
 
-      const { error: insertError } = await supabase
+      const { error: insertError } = await db
         .from("employee_schedules")
         .upsert(newSchedules, { onConflict: "employee_id,schedule_date" });
 

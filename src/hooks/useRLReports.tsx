@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { useToast } from "./use-toast";
 
 // Hospital Profile
@@ -7,7 +7,7 @@ export function useHospitalProfile() {
   return useQuery({
     queryKey: ["hospital-profile"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("hospital_profile")
         .select("*")
         .limit(1)
@@ -23,7 +23,7 @@ export function useRLReportSubmissions(year?: number) {
   return useQuery({
     queryKey: ["rl-report-submissions", year],
     queryFn: async () => {
-      let query = supabase
+      let query = db
         .from("rl_report_submissions")
         .select("*")
         .order("report_period_year", { ascending: false })
@@ -45,7 +45,7 @@ export function useRL3OutpatientStats(month?: number, year?: number) {
   return useQuery({
     queryKey: ["rl3-outpatient-stats", month, year],
     queryFn: async () => {
-      let query = supabase
+      let query = db
         .from("rl3_outpatient_stats")
         .select("*, department:departments(name)")
         .order("total_visits", { ascending: false });
@@ -66,7 +66,7 @@ export function useRL3InpatientStats(month?: number, year?: number) {
   return useQuery({
     queryKey: ["rl3-inpatient-stats", month, year],
     queryFn: async () => {
-      let query = supabase
+      let query = db
         .from("rl3_inpatient_stats")
         .select("*")
         .order("ward_class");
@@ -87,7 +87,7 @@ export function useRL4MorbidityStats(year?: number, patientType?: string) {
   return useQuery({
     queryKey: ["rl4-morbidity-stats", year, patientType],
     queryFn: async () => {
-      let query = supabase
+      let query = db
         .from("rl4_morbidity_stats")
         .select("*")
         .order("case_count", { ascending: false })
@@ -112,7 +112,7 @@ export function useRL4MortalityStats(year?: number) {
   return useQuery({
     queryKey: ["rl4-mortality-stats", year],
     queryFn: async () => {
-      let query = supabase
+      let query = db
         .from("rl4_mortality_stats")
         .select("*")
         .order("death_count", { ascending: false })
@@ -134,7 +134,7 @@ export function useRL5VisitorStats(month?: number, year?: number) {
   return useQuery({
     queryKey: ["rl5-visitor-stats", month, year],
     queryFn: async () => {
-      let query = supabase
+      let query = db
         .from("rl5_visitor_stats")
         .select("*")
         .order("visit_count", { ascending: false });
@@ -155,7 +155,7 @@ export function useRL6Indicators(year?: number) {
   return useQuery({
     queryKey: ["rl6-indicators", year],
     queryFn: async () => {
-      let query = supabase
+      let query = db
         .from("rl6_indicators")
         .select("*")
         .order("period_year", { ascending: false })
@@ -179,7 +179,7 @@ export function useCalculateRL6() {
 
   return useMutation({
     mutationFn: async ({ month, year }: { month: number; year: number }) => {
-      const { error } = await supabase.rpc("calculate_rl6_indicators", {
+      const { error } = await db.rpc("calculate_rl6_indicators", {
         p_month: month,
         p_year: year,
       });

@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { toast } from "sonner";
 
 export interface SmartDisplayMedia {
@@ -17,7 +17,7 @@ export function useSmartDisplayMedia(displayType: string, mediaType?: "image" | 
   return useQuery({
     queryKey: ["smart-display-media", displayType, mediaType],
     queryFn: async () => {
-      let query = (supabase as any)
+      let query = (db as any)
         .from("smart_display_media")
         .select("*")
         .eq("display_type", displayType)
@@ -52,17 +52,17 @@ export function useUploadSmartDisplayMedia() {
       const ext = file.name.split(".").pop();
       const filePath = `${displayType}/${mediaType}/${Date.now()}.${ext}`;
 
-      const { error: uploadError } = await supabase.storage
+      const { error: uploadError } = await db.storage
         .from("smart-display-media")
         .upload(filePath, file);
 
       if (uploadError) throw uploadError;
 
-      const { data: urlData } = supabase.storage
+      const { data: urlData } = db.storage
         .from("smart-display-media")
         .getPublicUrl(filePath);
 
-      const { error: dbError } = await (supabase as any)
+      const { error: dbError } = await (db as any)
         .from("smart_display_media")
         .insert({
           display_type: displayType,
@@ -70,7 +70,7 @@ export function useUploadSmartDisplayMedia() {
           file_url: urlData.publicUrl,
           file_name: file.name,
           title: title || file.name,
-          created_by: (await supabase.auth.getUser()).data.user?.id,
+          created_by: (await db.auth.getUser()).data.user?.id,
         });
 
       if (dbError) throw dbError;
@@ -92,10 +92,10 @@ export function useDeleteSmartDisplayMedia() {
       const url = new URL(media.file_url);
       const pathParts = url.pathname.split("/storage/v1/object/public/smart-display-media/");
       if (pathParts[1]) {
-        await supabase.storage.from("smart-display-media").remove([decodeURIComponent(pathParts[1])]);
+        await db.storage.from("smart-display-media").remove([decodeURIComponent(pathParts[1])]);
       }
 
-      const { error } = await (supabase as any)
+      const { error } = await (db as any)
         .from("smart_display_media")
         .delete()
         .eq("id", media.id);

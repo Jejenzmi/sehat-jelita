@@ -14,7 +14,7 @@ import {
   Plus, Search, Building2, Phone, Mail, MapPin, 
   Edit, Trash2, Star, Ban, CheckCircle, FileText
 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { toast } from "sonner";
 
 interface Vendor {
@@ -107,7 +107,7 @@ export default function SupplierManagement() {
 
   const fetchVendors = async () => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("vendors")
         .select("*")
         .order("vendor_name");
@@ -137,7 +137,7 @@ export default function SupplierManagement() {
   };
 
   const generateVendorCode = async () => {
-    const { count } = await supabase
+    const { count } = await db
       .from("vendors")
       .select("*", { count: "exact", head: true });
     
@@ -225,7 +225,7 @@ export default function SupplierManagement() {
 
       if (selectedVendor) {
         // Update
-        const { error } = await supabase
+        const { error } = await db
           .from("vendors")
           .update(payload)
           .eq("id", selectedVendor.id);
@@ -234,7 +234,7 @@ export default function SupplierManagement() {
         toast.success("Supplier berhasil diperbarui");
       } else {
         // Create
-        const { error } = await supabase
+        const { error } = await db
           .from("vendors")
           .insert(payload);
 
@@ -255,7 +255,7 @@ export default function SupplierManagement() {
     if (!selectedVendor) return;
 
     try {
-      const { error } = await supabase
+      const { error } = await db
         .from("vendors")
         .delete()
         .eq("id", selectedVendor.id);
@@ -273,7 +273,7 @@ export default function SupplierManagement() {
 
   const handleToggleStatus = async (vendor: Vendor) => {
     try {
-      const { error } = await supabase
+      const { error } = await db
         .from("vendors")
         .update({ is_active: !vendor.is_active })
         .eq("id", vendor.id);
@@ -288,7 +288,7 @@ export default function SupplierManagement() {
 
   const handleToggleBlacklist = async (vendor: Vendor) => {
     try {
-      const { error } = await supabase
+      const { error } = await db
         .from("vendors")
         .update({ 
           blacklisted: !vendor.blacklisted,

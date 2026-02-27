@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { User, Phone, Mail, MapPin, Calendar, CreditCard, Heart, AlertTriangle } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { useAuth } from "@/hooks/useAuth";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
@@ -42,7 +42,7 @@ export default function PatientProfile() {
 
   const fetchPatientData = async () => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("patients")
         .select("*")
         .eq("user_id", user?.id)

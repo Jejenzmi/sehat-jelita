@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { useToast } from "@/hooks/use-toast";
 
 /**
@@ -27,12 +27,12 @@ export function useInventoryIntegration() {
       }>;
     }) => {
       // Update PO status
-      await supabase.from("purchase_orders").update({ status: "received" }).eq("id", poId);
+      await db.from("purchase_orders").update({ status: "received" }).eq("id", poId);
 
       // Add medicine batches and update stock
       for (const item of receivedItems) {
         // Create batch
-        await supabase.from("medicine_batches").insert({
+        await db.from("medicine_batches").insert({
           medicine_id: item.medicineId,
           batch_number: item.batchNumber,
           expiry_date: item.expiryDate,
@@ -42,8 +42,8 @@ export function useInventoryIntegration() {
         });
 
         // Update medicine stock
-        const { data: medicine } = await supabase.from("medicines").select("stock").eq("id", item.medicineId).single();
-        await supabase.from("medicines").update({ stock: (medicine?.stock || 0) + item.quantityReceived }).eq("id", item.medicineId);
+        const { data: medicine } = await db.from("medicines").select("stock").eq("id", item.medicineId).single();
+        await db.from("medicines").update({ stock: (medicine?.stock || 0) + item.quantityReceived }).eq("id", item.medicineId);
       }
 
       return { success: true };
@@ -66,13 +66,13 @@ export function useInventoryIntegration() {
       quantity: number;
       notes?: string;
     }) => {
-      const { data: medicine } = await supabase.from("medicines").select("stock").eq("id", medicineId).single();
+      const { data: medicine } = await db.from("medicines").select("stock").eq("id", medicineId).single();
 
       if (!medicine || medicine.stock < quantity) {
         throw new Error("Stok tidak mencukupi");
       }
 
-      await supabase.from("medicines").update({ stock: medicine.stock - quantity }).eq("id", medicineId);
+      await db.from("medicines").update({ stock: medicine.stock - quantity }).eq("id", medicineId);
 
       return { success: true };
     },
@@ -107,7 +107,7 @@ export function useHRIntegration() {
     }) => {
       const today = new Date().toISOString().split("T")[0];
 
-      const { data: existing } = await supabase
+      const { data: existing } = await db
         .from("attendance")
         .select("id")
         .eq("employee_id", employeeId)
@@ -115,7 +115,7 @@ export function useHRIntegration() {
         .maybeSingle();
 
       if (existing) {
-        const { data, error } = await supabase
+        const { data, error } = await db
           .from("attendance")
           .update({
             check_in: checkIn,
@@ -130,7 +130,7 @@ export function useHRIntegration() {
         if (error) throw error;
         return data;
       } else {
-        const { data, error } = await supabase
+        const { data, error } = await db
           .from("attendance")
           .insert({
             employee_id: employeeId,
@@ -163,7 +163,7 @@ export function useHRIntegration() {
       periodMonth: number;
       periodYear: number;
     }) => {
-      const { data: employee } = await supabase.from("employees").select("*").eq("id", employeeId).single();
+      const { data: employee } = await db.from("employees").select("*").eq("id", employeeId).single();
 
       if (!employee) throw new Error("Karyawan tidak ditemukan");
 
@@ -176,7 +176,7 @@ export function useHRIntegration() {
       const taxAmount = Math.max(0, (grossSalary - 4500000) * 0.05);
       const netSalary = grossSalary - totalDeductions - taxAmount;
 
-      const { data: existingPayroll } = await supabase
+      const { data: existingPayroll } = await db
         .from("payroll")
         .select("id")
         .eq("employee_id", employeeId)
@@ -185,7 +185,7 @@ export function useHRIntegration() {
         .maybeSingle();
 
       if (existingPayroll) {
-        const { data, error } = await supabase
+        const { data, error } = await db
           .from("payroll")
           .update({
             basic_salary: basicSalary,
@@ -203,7 +203,7 @@ export function useHRIntegration() {
         if (error) throw error;
         return data;
       } else {
-        const { data, error } = await supabase
+        const { data, error } = await db
           .from("payroll")
           .insert({
             employee_id: employeeId,
@@ -232,7 +232,7 @@ export function useHRIntegration() {
 
   const processPayroll = useMutation({
     mutationFn: async ({ payrollId }: { payrollId: string }) => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("payroll")
         .update({
           status: "paid",
@@ -271,13 +271,13 @@ export function useAccountingIntegration() {
       cashAccountId: string;
       revenueAccountId: string;
     }) => {
-      const { data: billing } = await supabase.from("billings").select("*, patients(full_name)").eq("id", billingId).single();
+      const { data: billing } = await db.from("billings").select("*, patients(full_name)").eq("id", billingId).single();
 
       if (!billing) throw new Error("Billing tidak ditemukan");
 
-      const { data: journalNumber } = await supabase.rpc("generate_journal_number");
+      const { data: journalNumber } = await db.rpc("generate_journal_number");
 
-      const { data: journal, error: journalError } = await supabase
+      const { data: journal, error: journalError } = await db
         .from("journal_entries")
         .insert({
           journal_number: journalNumber,
@@ -296,7 +296,7 @@ export function useAccountingIntegration() {
 
       if (journalError) throw journalError;
 
-      await supabase.from("journal_entry_lines").insert([
+      await db.from("journal_entry_lines").insert([
         { journal_entry_id: journal.id, account_id: cashAccountId, description: "Penerimaan kas", debit_amount: billing.total, credit_amount: 0, line_number: 1 },
         { journal_entry_id: journal.id, account_id: revenueAccountId, description: "Pendapatan", debit_amount: 0, credit_amount: billing.total, line_number: 2 },
       ]);
@@ -319,18 +319,18 @@ export function useAccountingIntegration() {
       salaryExpenseAccountId: string;
       cashAccountId: string;
     }) => {
-      const { data: payrolls } = await supabase.from("payroll").select("*").in("id", payrollIds);
+      const { data: payrolls } = await db.from("payroll").select("*").in("id", payrollIds);
 
       if (!payrolls || payrolls.length === 0) throw new Error("Payroll tidak ditemukan");
 
       const totalNet = payrolls.reduce((sum, p) => sum + (p.net_salary || 0), 0);
       const totalGross = payrolls.reduce((sum, p) => sum + (p.gross_salary || 0), 0);
 
-      const { data: journalNumber } = await supabase.rpc("generate_journal_number");
+      const { data: journalNumber } = await db.rpc("generate_journal_number");
       const periodMonth = payrolls[0].period_month;
       const periodYear = payrolls[0].period_year;
 
-      const { data: journal, error } = await supabase
+      const { data: journal, error } = await db
         .from("journal_entries")
         .insert({
           journal_number: journalNumber,
@@ -348,7 +348,7 @@ export function useAccountingIntegration() {
 
       if (error) throw error;
 
-      await supabase.from("journal_entry_lines").insert([
+      await db.from("journal_entry_lines").insert([
         { journal_entry_id: journal.id, account_id: salaryExpenseAccountId, description: "Beban Gaji", debit_amount: totalGross, credit_amount: 0, line_number: 1 },
         { journal_entry_id: journal.id, account_id: cashAccountId, description: "Pembayaran Gaji", debit_amount: 0, credit_amount: totalNet, line_number: 2 },
       ]);
@@ -381,11 +381,11 @@ export function useSupportDashboardStats() {
         { count: pendingPayroll },
         { count: pendingJournals },
       ] = await Promise.all([
-        supabase.from("medicines").select("*", { count: "exact", head: true }).lte("stock", 10).eq("is_active", true),
-        supabase.from("purchase_orders").select("*", { count: "exact", head: true }).in("status", ["pending", "approved"]),
-        supabase.from("attendance").select("*", { count: "exact", head: true }).eq("attendance_date", today).eq("status", "present"),
-        supabase.from("payroll").select("*", { count: "exact", head: true }).eq("status", "pending").eq("period_month", currentMonth).eq("period_year", currentYear),
-        supabase.from("journal_entries").select("*", { count: "exact", head: true }).eq("status", "draft"),
+        db.from("medicines").select("*", { count: "exact", head: true }).lte("stock", 10).eq("is_active", true),
+        db.from("purchase_orders").select("*", { count: "exact", head: true }).in("status", ["pending", "approved"]),
+        db.from("attendance").select("*", { count: "exact", head: true }).eq("attendance_date", today).eq("status", "present"),
+        db.from("payroll").select("*", { count: "exact", head: true }).eq("status", "pending").eq("period_month", currentMonth).eq("period_year", currentYear),
+        db.from("journal_entries").select("*", { count: "exact", head: true }).eq("status", "draft"),
       ]);
 
       return {

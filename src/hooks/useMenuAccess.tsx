@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { useAuth } from "./useAuth";
 
 export interface MenuAccess {
@@ -59,7 +59,7 @@ export function useMenuAccess() {
         ];
       }
 
-      const { data, error } = await supabase.rpc("get_user_menu_access", {
+      const { data, error } = await db.rpc("get_user_menu_access", {
         _user_id: user.id,
       });
 

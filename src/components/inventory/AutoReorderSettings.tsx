@@ -8,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Search, Settings, RefreshCw, AlertTriangle, Zap } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { toast } from "sonner";
 
 interface Medicine {
@@ -51,7 +51,7 @@ export default function AutoReorderSettings() {
 
   const fetchMedicines = async () => {
     try {
-      const { data: medicinesData, error: medicinesError } = await supabase
+      const { data: medicinesData, error: medicinesError } = await db
         .from("medicines")
         .select("id, name, code, stock, min_stock, unit")
         .eq("is_active", true)
@@ -59,7 +59,7 @@ export default function AutoReorderSettings() {
 
       if (medicinesError) throw medicinesError;
 
-      const { data: settingsData, error: settingsError } = await supabase
+      const { data: settingsData, error: settingsError } = await db
         .from("inventory_settings")
         .select("*");
 
@@ -119,7 +119,7 @@ export default function AutoReorderSettings() {
 
       if (selectedMedicine.settings) {
         // Update existing
-        const { error } = await supabase
+        const { error } = await db
           .from("inventory_settings")
           .update(settingsData)
           .eq("id", selectedMedicine.settings.id);
@@ -127,7 +127,7 @@ export default function AutoReorderSettings() {
         if (error) throw error;
       } else {
         // Insert new
-        const { error } = await supabase
+        const { error } = await db
           .from("inventory_settings")
           .insert(settingsData);
 
@@ -166,13 +166,13 @@ export default function AutoReorderSettings() {
       }, {} as Record<string, Medicine[]>);
 
       for (const [supplier, meds] of Object.entries(supplierGroups)) {
-        const { data: poNumber } = await supabase.rpc("generate_po_number");
+        const { data: poNumber } = await db.rpc("generate_po_number");
 
         const total = meds.reduce((sum, med) => {
           return sum + (med.settings?.reorder_quantity || 100) * 10000;
         }, 0);
 
-        const { data: po, error: poError } = await supabase
+        const { data: po, error: poError } = await db
           .from("purchase_orders")
           .insert({
             order_number: poNumber,
@@ -195,12 +195,12 @@ export default function AutoReorderSettings() {
           total_price: (med.settings?.reorder_quantity || 100) * 10000,
         }));
 
-        await supabase.from("purchase_order_items").insert(items);
+        await db.from("purchase_order_items").insert(items);
 
         // Update last auto order date
         for (const med of meds) {
           if (med.settings) {
-            await supabase
+            await db
               .from("inventory_settings")
               .update({ last_auto_order_date: new Date().toISOString() })
               .eq("id", med.settings.id);

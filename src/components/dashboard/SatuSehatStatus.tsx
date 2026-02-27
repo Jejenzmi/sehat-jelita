@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Building2, CheckCircle, RefreshCw, AlertCircle, Upload, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { ForwardedLink } from "@/components/ForwardedLink";
 
 interface SyncStat {
@@ -25,7 +25,7 @@ export function SatuSehatStatus() {
 
   const loadStats = async () => {
     try {
-      const { data, error } = await supabase.functions.invoke('satusehat', {
+      const { data, error } = await db.functions.invoke('satusehat', {
         body: { action: 'get-sync-stats' },
       });
 
@@ -44,7 +44,7 @@ export function SatuSehatStatus() {
   const handleSync = async () => {
     setIsSyncing(true);
     try {
-      await supabase.functions.invoke('satusehat', {
+      await db.functions.invoke('satusehat', {
         body: { action: 'bulk-sync-patients' },
       });
       await loadStats();

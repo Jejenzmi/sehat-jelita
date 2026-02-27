@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { useToast } from "@/hooks/use-toast";
-import type { Database } from "@/integrations/supabase/types";
+import type { Database } from "@/types/database";
 
 type IcuType = Database['public']['Enums']['icu_type'];
 type IcuAdmissionStatus = Database['public']['Enums']['icu_admission_status'];
@@ -75,7 +75,7 @@ export function useICUBeds() {
   return useQuery({
     queryKey: ["icu-beds"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("icu_beds")
         .select("*")
         .order("bed_number");
@@ -91,7 +91,7 @@ export function useICUAdmissions(icuType?: IcuType) {
   return useQuery({
     queryKey: ["icu-admissions", icuType],
     queryFn: async () => {
-      let query = supabase
+      let query = db
         .from("icu_admissions")
         .select(`
           *,
@@ -117,7 +117,7 @@ export function useActiveICUPatients() {
   return useQuery({
     queryKey: ["active-icu-patients"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("icu_admissions")
         .select(`
           *,
@@ -139,7 +139,7 @@ export function useICUMonitoring(admissionId: string) {
   return useQuery({
     queryKey: ["icu-monitoring", admissionId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("icu_monitoring")
         .select("*")
         .eq("admission_id", admissionId)
@@ -158,7 +158,7 @@ export function useVentilatorSettings(admissionId: string) {
   return useQuery({
     queryKey: ["ventilator-settings", admissionId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("ventilator_settings")
         .select("*")
         .eq("admission_id", admissionId)
@@ -178,10 +178,10 @@ export function useICUStatistics() {
     queryKey: ["icu-statistics"],
     queryFn: async () => {
       // Get beds
-      const { data: beds } = await supabase.from("icu_beds").select("*");
+      const { data: beds } = await db.from("icu_beds").select("*");
       
       // Get active admissions
-      const { data: activeAdmissions } = await supabase
+      const { data: activeAdmissions } = await db
         .from("icu_admissions")
         .select("icu_type, status")
         .eq("status", "active");
@@ -230,7 +230,7 @@ export function useAddICUMonitoring() {
 
   return useMutation({
     mutationFn: async (data: Database['public']['Tables']['icu_monitoring']['Insert']) => {
-      const { error } = await supabase.from("icu_monitoring").insert(data);
+      const { error } = await db.from("icu_monitoring").insert(data);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -249,7 +249,7 @@ export function useUpdateICUBed() {
 
   return useMutation({
     mutationFn: async ({ id, ...data }: { id: string } & Database['public']['Tables']['icu_beds']['Update']) => {
-      const { error } = await supabase.from("icu_beds").update(data).eq("id", id);
+      const { error } = await db.from("icu_beds").update(data).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {

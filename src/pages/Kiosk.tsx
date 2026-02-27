@@ -21,7 +21,7 @@ import {
   Mail,
   MapPin,
 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
@@ -134,7 +134,7 @@ export default function Kiosk() {
   const { data: departments = [] } = useQuery({
     queryKey: ["kiosk-departments"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("departments").select("id, name, code").eq("is_active", true).order("name");
+      const { data, error } = await db.from("departments").select("id, name, code").eq("is_active", true).order("name");
       if (error) throw error;
       return data as Department[];
     },
@@ -145,7 +145,7 @@ export default function Kiosk() {
     queryKey: ["kiosk-patient-search", searchQuery],
     queryFn: async () => {
       if (!searchQuery || searchQuery.length < 3) return [];
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("patients")
         .select("id, full_name, medical_record_number, nik, phone")
         .or(`medical_record_number.ilike.%${searchQuery}%,nik.ilike.%${searchQuery}%,phone.ilike.%${searchQuery}%`)
@@ -162,7 +162,7 @@ export default function Kiosk() {
     queryFn: async () => {
       if (!selectedPatient) return [];
       const today = new Date().toISOString().split("T")[0];
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("appointments")
         .select("id, appointment_date, appointment_time, status, doctors (full_name), departments (name)")
         .eq("patient_id", selectedPatient.id)
@@ -179,7 +179,7 @@ export default function Kiosk() {
     mutationFn: async () => {
       if (!selectedPatient || !selectedService) throw new Error("Data tidak lengkap");
       const today = new Date().toISOString().split("T")[0];
-      const { data: existingTickets } = await supabase
+      const { data: existingTickets } = await db
         .from("queue_tickets").select("ticket_number")
         .eq("queue_date", today).eq("service_type", selectedService.id)
         .order("created_at", { ascending: false }).limit(1);
@@ -189,7 +189,7 @@ export default function Kiosk() {
         nextNumber = lastNum + 1;
       }
       const ticketNumber = `${selectedService.code}${String(nextNumber).padStart(3, "0")}`;
-      const { error } = await supabase.from("queue_tickets").insert({
+      const { error } = await db.from("queue_tickets").insert({
         ticket_number: ticketNumber, patient_id: selectedPatient.id,
         department_id: selectedDepartment?.id || null, service_type: selectedService.id,
         queue_date: today, status: "waiting", priority: 0,
@@ -210,7 +210,7 @@ export default function Kiosk() {
       const appointment = appointments.find(a => a.id === appointmentId);
       if (!appointment || !selectedPatient) throw new Error("Data tidak ditemukan");
       const today = new Date().toISOString().split("T")[0];
-      const { data: existingTickets } = await supabase
+      const { data: existingTickets } = await db
         .from("queue_tickets").select("ticket_number")
         .eq("queue_date", today).eq("service_type", "rawat_jalan")
         .order("created_at", { ascending: false }).limit(1);
@@ -220,13 +220,13 @@ export default function Kiosk() {
         nextNumber = lastNum + 1;
       }
       const ticketNumber = `RJ${String(nextNumber).padStart(3, "0")}`;
-      const { error: queueError } = await supabase.from("queue_tickets").insert({
+      const { error: queueError } = await db.from("queue_tickets").insert({
         ticket_number: ticketNumber, patient_id: selectedPatient.id,
         service_type: "rawat_jalan", queue_date: today, status: "waiting",
         priority: 1, notes: `Check-in dari booking - ${appointment.doctors?.full_name || ""}`,
       });
       if (queueError) throw queueError;
-      await supabase.from("appointments").update({ status: "checked_in" }).eq("id", appointmentId);
+      await db.from("appointments").update({ status: "checked_in" }).eq("id", appointmentId);
       return ticketNumber;
     },
     onSuccess: (ticketNumber) => {

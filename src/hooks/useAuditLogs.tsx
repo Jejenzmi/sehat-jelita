@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 
 export interface AuditLog {
   id: string;
@@ -32,7 +32,7 @@ export function useAuditLogs(options: UseAuditLogsOptions = {}) {
   return useQuery({
     queryKey: ["audit-logs", tableName, action, limit, startDate, endDate],
     queryFn: async (): Promise<AuditLog[]> => {
-      let query = supabase
+      let query = db
         .from("audit_logs")
         .select("*")
         .order("created_at", { ascending: false })
@@ -66,7 +66,7 @@ export function useAuditLogs(options: UseAuditLogsOptions = {}) {
       let profilesMap: Record<string, any> = {};
 
       if (userIds.length > 0) {
-        const { data: profiles } = await supabase
+        const { data: profiles } = await db
           .from("profiles")
           .select("user_id, full_name, email")
           .in("user_id", userIds);
@@ -92,19 +92,19 @@ export function useAuditStats() {
       const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
 
       // Get today's count
-      const { count: todayCount } = await supabase
+      const { count: todayCount } = await db
         .from("audit_logs")
         .select("*", { count: "exact", head: true })
         .gte("created_at", today);
 
       // Get this week's count
-      const { count: weekCount } = await supabase
+      const { count: weekCount } = await db
         .from("audit_logs")
         .select("*", { count: "exact", head: true })
         .gte("created_at", weekAgo);
 
       // Get action breakdown
-      const { data: actionBreakdown } = await supabase
+      const { data: actionBreakdown } = await db
         .from("audit_logs")
         .select("action")
         .gte("created_at", weekAgo);
@@ -122,7 +122,7 @@ export function useAuditStats() {
       });
 
       // Get table breakdown
-      const { data: tableBreakdown } = await supabase
+      const { data: tableBreakdown } = await db
         .from("audit_logs")
         .select("table_name")
         .gte("created_at", weekAgo);

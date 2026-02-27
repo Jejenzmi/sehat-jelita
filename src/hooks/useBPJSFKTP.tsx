@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { useToast } from "@/hooks/use-toast";
 
 // ============================================
@@ -78,7 +78,7 @@ export interface FKTPAmbilAntreanV2Request extends FKTPAmbilAntreanRequest {
 
 // Helper function to call BPJS Antrean edge function
 async function callBPJSAntrean(action: string, params: Record<string, any> = {}) {
-  const { data, error } = await supabase.functions.invoke("bpjs-antrean", {
+  const { data, error } = await db.functions.invoke("bpjs-antrean", {
     body: { action, ...params },
   });
 

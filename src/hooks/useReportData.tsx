@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { startOfMonth, endOfMonth, subMonths, format } from "date-fns";
 
 export interface MonthlyVisitData {
@@ -43,7 +43,7 @@ export function useReportStats(startDate: string, endDate: string) {
     queryKey: ["report-stats", startDate, endDate],
     queryFn: async (): Promise<ReportStats> => {
       // Total visits by type
-      const { data: visits } = await supabase
+      const { data: visits } = await db
         .from("visits")
         .select("visit_type")
         .gte("visit_date", startDate)
@@ -54,7 +54,7 @@ export function useReportStats(startDate: string, endDate: string) {
       const emergency = visits?.filter(v => v.visit_type === "igd").length || 0;
 
       // Total revenue
-      const { data: billings } = await supabase
+      const { data: billings } = await db
         .from("billings")
         .select("paid_amount")
         .eq("status", "lunas")
@@ -64,7 +64,7 @@ export function useReportStats(startDate: string, endDate: string) {
       const totalRevenue = billings?.reduce((sum, b) => sum + (b.paid_amount || 0), 0) || 0;
 
       // Average LOS
-      const { data: admissions } = await supabase
+      const { data: admissions } = await db
         .from("inpatient_admissions")
         .select("admission_date, actual_discharge_date")
         .not("actual_discharge_date", "is", null)
@@ -112,7 +112,7 @@ export function useMonthlyVisits(year: number) {
       }));
 
       // Get all visits for the year
-      const { data: visits } = await supabase
+      const { data: visits } = await db
         .from("visits")
         .select("visit_date, visit_type")
         .gte("visit_date", `${year}-01-01`)
@@ -147,7 +147,7 @@ export function useMonthlyRevenue(year: number) {
       }));
 
       // Get all billings for the year
-      const { data: billings } = await supabase
+      const { data: billings } = await db
         .from("billings")
         .select("billing_date, payment_type, paid_amount")
         .eq("status", "lunas")
@@ -183,7 +183,7 @@ export function useDepartmentStats(startDate: string, endDate: string) {
   return useQuery({
     queryKey: ["department-stats", startDate, endDate],
     queryFn: async (): Promise<DepartmentStats[]> => {
-      const { data: visits } = await supabase
+      const { data: visits } = await db
         .from("visits")
         .select(`
           department_id,
@@ -217,7 +217,7 @@ export function useTopDiagnoses(startDate: string, endDate: string) {
   return useQuery({
     queryKey: ["top-diagnoses", startDate, endDate],
     queryFn: async (): Promise<DiagnosisStats[]> => {
-      const { data: diagnoses } = await supabase
+      const { data: diagnoses } = await db
         .from("diagnoses")
         .select(`
           icd10_code,

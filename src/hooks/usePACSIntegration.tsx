@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { toast } from "sonner";
 
 // ============================================
@@ -7,7 +7,7 @@ import { toast } from "sonner";
 // ============================================
 
 async function callPACS(action: string, data: Record<string, any> = {}) {
-  const { data: result, error } = await supabase.functions.invoke("pacs-bridge", {
+  const { data: result, error } = await db.functions.invoke("pacs-bridge", {
     body: { action, data },
   });
 

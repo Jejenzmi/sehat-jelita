@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { Pill, Calendar, QrCode, CheckCircle, Clock, Package, Copy } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { useAuth } from "@/hooks/useAuth";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
@@ -55,7 +55,7 @@ export default function PatientPrescriptions() {
 
   const fetchPrescriptions = async () => {
     try {
-      const { data: patient } = await supabase
+      const { data: patient } = await db
         .from("patients")
         .select("id")
         .eq("user_id", user?.id)
@@ -63,7 +63,7 @@ export default function PatientPrescriptions() {
 
       if (!patient) return;
 
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("prescriptions")
         .select(`
           id,
@@ -86,7 +86,7 @@ export default function PatientPrescriptions() {
       // Fetch items for each prescription
       const prescriptionsWithItems = await Promise.all(
         (data || []).map(async (prescription) => {
-          const { data: items } = await supabase
+          const { data: items } = await db
             .from("prescription_items")
             .select(`
               id,

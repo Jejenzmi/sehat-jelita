@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { Database } from "@/integrations/supabase/types";
+import { db } from "@/lib/db";
+import { Database } from "@/types/database";
 import { toast } from "sonner";
 
 type DietType = Database["public"]["Tables"]["diet_types"]["Row"];
@@ -16,7 +16,7 @@ export function useNutritionData() {
   const { data: dietTypes, isLoading: loadingDietTypes } = useQuery({
     queryKey: ["diet-types"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("diet_types")
         .select("*")
         .eq("is_active", true)
@@ -30,7 +30,7 @@ export function useNutritionData() {
   const { data: patientDiets, isLoading: loadingPatientDiets } = useQuery({
     queryKey: ["patient-diets"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("patient_diets")
         .select(`
           *,
@@ -48,7 +48,7 @@ export function useNutritionData() {
   const { data: foodAllergies, isLoading: loadingAllergies } = useQuery({
     queryKey: ["food-allergies"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("food_allergies")
         .select(`
           *,
@@ -65,7 +65,7 @@ export function useNutritionData() {
     queryKey: ["today-meal-plans"],
     queryFn: async () => {
       const today = new Date().toISOString().split("T")[0];
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("meal_plans")
         .select(`
           *,
@@ -87,7 +87,7 @@ export function useNutritionData() {
     queryKey: ["meal-records"],
     queryFn: async () => {
       const today = new Date().toISOString().split("T")[0];
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("meal_records")
         .select(`
           *,
@@ -103,7 +103,7 @@ export function useNutritionData() {
   // Create patient diet
   const createPatientDiet = useMutation({
     mutationFn: async (diet: Database["public"]["Tables"]["patient_diets"]["Insert"]) => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("patient_diets")
         .insert(diet)
         .select()
@@ -123,7 +123,7 @@ export function useNutritionData() {
   // Record food allergy
   const recordFoodAllergy = useMutation({
     mutationFn: async (allergy: Database["public"]["Tables"]["food_allergies"]["Insert"]) => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("food_allergies")
         .insert(allergy)
         .select()
@@ -143,7 +143,7 @@ export function useNutritionData() {
   // Record meal consumption
   const recordMealConsumption = useMutation({
     mutationFn: async (record: Database["public"]["Tables"]["meal_records"]["Insert"]) => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("meal_records")
         .insert(record)
         .select()

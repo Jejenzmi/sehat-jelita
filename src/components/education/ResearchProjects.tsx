@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Edit, FlaskConical, FileCheck, Clock, CheckCircle } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 
@@ -63,11 +63,11 @@ export default function ResearchProjects() {
 
   const fetchData = async () => {
     const [projectsRes, doctorsRes, deptsRes] = await Promise.all([
-      supabase.from("research_projects")
+      db.from("research_projects")
         .select("*, doctors:principal_investigator_id(full_name), departments(name)")
         .order("created_at", { ascending: false }),
-      supabase.from("doctors").select("id, full_name").eq("is_active", true),
-      supabase.from("departments").select("id, name").eq("is_active", true)
+      db.from("doctors").select("id, full_name").eq("is_active", true),
+      db.from("departments").select("id, name").eq("is_active", true)
     ]);
     
     if (projectsRes.data) setProjects(projectsRes.data as any);
@@ -88,11 +88,11 @@ export default function ResearchProjects() {
       };
 
       if (editingProject) {
-        const { error } = await supabase.from("research_projects").update(payload).eq("id", editingProject.id);
+        const { error } = await db.from("research_projects").update(payload).eq("id", editingProject.id);
         if (error) throw error;
         toast({ title: "Berhasil", description: "Proyek penelitian berhasil diperbarui" });
       } else {
-        const { error } = await supabase.from("research_projects").insert(payload);
+        const { error } = await db.from("research_projects").insert(payload);
         if (error) throw error;
         toast({ title: "Berhasil", description: "Proyek penelitian berhasil ditambahkan" });
       }

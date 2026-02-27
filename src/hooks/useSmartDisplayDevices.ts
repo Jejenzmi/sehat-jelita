@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { toast } from "sonner";
 
 export interface SmartDisplayDevice {
@@ -22,7 +22,7 @@ export function useSmartDisplayDevices() {
   return useQuery({
     queryKey: ["smart-display-devices"],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await (db as any)
         .from("smart_display_devices")
         .select("*")
         .order("device_code");
@@ -37,7 +37,7 @@ export function useSmartDisplayDevice(deviceCode: string | null) {
     queryKey: ["smart-display-device", deviceCode],
     queryFn: async () => {
       if (!deviceCode) return null;
-      const { data, error } = await (supabase as any)
+      const { data, error } = await (db as any)
         .from("smart_display_devices")
         .select("*")
         .eq("device_code", deviceCode)
@@ -53,11 +53,11 @@ export function useCreateSmartDisplayDevice() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (device: Omit<SmartDisplayDevice, "id" | "created_at" | "updated_at">) => {
-      const { error } = await (supabase as any)
+      const { error } = await (db as any)
         .from("smart_display_devices")
         .insert({
           ...device,
-          created_by: (await supabase.auth.getUser()).data.user?.id,
+          created_by: (await db.auth.getUser()).data.user?.id,
         });
       if (error) throw error;
     },
@@ -70,7 +70,7 @@ export function useUpdateSmartDisplayDevice() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...updates }: { id: string } & Partial<SmartDisplayDevice>) => {
-      const { error } = await (supabase as any)
+      const { error } = await (db as any)
         .from("smart_display_devices")
         .update({ ...updates, updated_at: new Date().toISOString() })
         .eq("id", id);
@@ -85,7 +85,7 @@ export function useDeleteSmartDisplayDevice() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await (supabase as any)
+      const { error } = await (db as any)
         .from("smart_display_devices")
         .delete()
         .eq("id", id);

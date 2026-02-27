@@ -1,6 +1,6 @@
 /**
  * SIMRS ZEN - Express Application Entry Point
- * Migration from Lovable Cloud to Node.js/Express
+ * SIMRS ZEN Node.js/Express application
  */
 
 import express from 'express';

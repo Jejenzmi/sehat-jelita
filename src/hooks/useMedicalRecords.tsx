@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { useToast } from "@/hooks/use-toast";
 
 export interface MedicalRecord {
@@ -56,7 +56,7 @@ export function useMedicalRecords(patientId?: string) {
   return useQuery({
     queryKey: ["medical-records", patientId],
     queryFn: async (): Promise<MedicalRecord[]> => {
-      let query = supabase
+      let query = db
         .from("medical_records")
         .select(`
           *,
@@ -85,18 +85,18 @@ export function useMedicalRecordStats() {
       const startOfDay = new Date(today.setHours(0, 0, 0, 0)).toISOString();
 
       // Total records
-      const { count: totalRecords } = await supabase
+      const { count: totalRecords } = await db
         .from("medical_records")
         .select("*", { count: "exact", head: true });
 
       // Today's records
-      const { count: todayRecords } = await supabase
+      const { count: todayRecords } = await db
         .from("medical_records")
         .select("*", { count: "exact", head: true })
         .gte("record_date", startOfDay);
 
       // Active doctors (who have records today)
-      const { data: activeDoctors } = await supabase
+      const { data: activeDoctors } = await db
         .from("medical_records")
         .select("doctor_id")
         .gte("record_date", startOfDay);
@@ -104,7 +104,7 @@ export function useMedicalRecordStats() {
       const uniqueDoctors = new Set(activeDoctors?.map((d) => d.doctor_id)).size;
 
       // ICD-10 compliance (records with at least one diagnosis)
-      const { data: recordsWithDiagnosis } = await supabase
+      const { data: recordsWithDiagnosis } = await db
         .from("medical_records")
         .select(`
           id,
@@ -134,7 +134,7 @@ export function useICD10Codes(search?: string) {
   return useQuery({
     queryKey: ["icd10-codes", search],
     queryFn: async (): Promise<ICD10Code[]> => {
-      let query = supabase
+      let query = db
         .from("icd10_codes")
         .select("*")
         .eq("is_active", true)
@@ -182,7 +182,7 @@ export function useCreateMedicalRecord() {
       }[];
     }) => {
       // Create medical record
-      const { data: record, error: recordError } = await supabase
+      const { data: record, error: recordError } = await db
         .from("medical_records")
         .insert({
           patient_id: data.patient_id,
@@ -213,7 +213,7 @@ export function useCreateMedicalRecord() {
           medical_record_id: record.id,
         }));
 
-        const { error: diagnosisError } = await supabase
+        const { error: diagnosisError } = await db
           .from("diagnoses")
           .insert(diagnosesWithRecordId);
 

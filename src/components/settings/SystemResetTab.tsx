@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -30,7 +30,7 @@ export default function SystemResetTab() {
 
   const resetSystem = useMutation({
     mutationFn: async () => {
-      const { data, error } = await supabase.rpc("reset_system_to_initial");
+      const { data, error } = await db.rpc("reset_system_to_initial");
       if (error) throw error;
       return data;
     },

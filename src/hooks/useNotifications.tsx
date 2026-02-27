@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -25,7 +25,7 @@ export function useNotifications() {
   const fetchNotifications = useCallback(async () => {
     if (!user) return;
 
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from("notifications")
       .select("*")
       .order("created_at", { ascending: false })
@@ -50,7 +50,7 @@ export function useNotifications() {
 
   // Mark notification as read
   const markAsRead = async (id: string) => {
-    const { error } = await supabase
+    const { error } = await db
       .from("notifications")
       .update({ is_read: true })
       .eq("id", id);
@@ -68,7 +68,7 @@ export function useNotifications() {
     const unreadIds = notifications.filter((n) => !n.is_read).map((n) => n.id);
     if (unreadIds.length === 0) return;
 
-    const { error } = await supabase
+    const { error } = await db
       .from("notifications")
       .update({ is_read: true })
       .in("id", unreadIds);
@@ -85,7 +85,7 @@ export function useNotifications() {
 
     fetchNotifications();
 
-    const channel = supabase
+    const channel = db
       .channel("notifications-channel")
       .on(
         "postgres_changes",
@@ -121,7 +121,7 @@ export function useNotifications() {
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      db.removeChannel(channel);
     };
   }, [user, roles, fetchNotifications, toast]);
 
@@ -139,7 +139,7 @@ export function useMedicineStockAlerts() {
   const { toast } = useToast();
 
   useEffect(() => {
-    const channel = supabase
+    const channel = db
       .channel("medicine-stock-channel")
       .on(
         "postgres_changes",
@@ -163,7 +163,7 @@ export function useMedicineStockAlerts() {
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      db.removeChannel(channel);
     };
   }, [toast]);
 }
@@ -173,7 +173,7 @@ export function useQueueUpdates(onUpdate?: (visit: unknown) => void) {
   const { toast } = useToast();
 
   useEffect(() => {
-    const channel = supabase
+    const channel = db
       .channel("queue-channel")
       .on(
         "postgres_changes",
@@ -200,7 +200,7 @@ export function useQueueUpdates(onUpdate?: (visit: unknown) => void) {
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      db.removeChannel(channel);
     };
   }, [toast, onUpdate]);
 }

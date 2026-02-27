@@ -1,7 +1,7 @@
 /**
- * Supabase compatibility shim — routes all calls to the Node.js/Express backend.
- * Import the supabase client like this:
- *   import { supabase } from "@/integrations/supabase/client";
+ * Database client — routes all calls to the Node.js/Express backend.
+ * Import the db client like this:
+ *   import { db } from "@/lib/db";
  */
 
 import { api } from '@/lib/api-client';
@@ -334,7 +334,7 @@ function noopChannel(): RealtimeChannel {
 }
 
 // ---- Main export ----
-export const supabase = {
+export const db = {
   from(table: string): QueryBuilder {
     return new QueryBuilder(table);
   },

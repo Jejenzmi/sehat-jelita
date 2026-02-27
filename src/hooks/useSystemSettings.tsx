@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { useToast } from "./use-toast";
 
 export interface HospitalInfo {
@@ -56,7 +56,7 @@ export function useSystemSettings() {
   const { data: settings, isLoading } = useQuery({
     queryKey: ["system-settings"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("system_settings")
         .select("*")
         .order("setting_key");
@@ -81,7 +81,7 @@ export function useSystemSettings() {
   // Update setting mutation
   const updateSetting = useMutation({
     mutationFn: async ({ key, value }: { key: string; value: any }) => {
-      const { error } = await supabase
+      const { error } = await db
         .from("system_settings")
         .update({ setting_value: value, updated_at: new Date().toISOString() })
         .eq("setting_key", key);

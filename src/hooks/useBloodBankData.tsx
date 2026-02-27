@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { useToast } from "@/hooks/use-toast";
-import type { Database } from "@/integrations/supabase/types";
+import type { Database } from "@/types/database";
 
 type BloodType = Database['public']['Enums']['blood_type'];
 type BloodProductType = Database['public']['Enums']['blood_product_type'];
@@ -77,7 +77,7 @@ export function useBloodInventory(status?: BloodStatus) {
   return useQuery({
     queryKey: ["blood-inventory", status],
     queryFn: async () => {
-      let query = supabase
+      let query = db
         .from("blood_inventory")
         .select("*")
         .order("expiry_date", { ascending: true });
@@ -103,7 +103,7 @@ export function useBloodInventoryStats() {
   return useQuery({
     queryKey: ["blood-inventory-stats"],
     queryFn: async () => {
-      const { data: inventory } = await supabase
+      const { data: inventory } = await db
         .from("blood_inventory")
         .select("blood_type, product_type, status, expiry_date")
         .eq("status", "available");
@@ -135,14 +135,14 @@ export function useBloodInventoryStats() {
       });
 
       // Get pending requests count
-      const { count: pendingRequests } = await supabase
+      const { count: pendingRequests } = await db
         .from("transfusion_requests")
         .select("*", { count: 'exact', head: true })
         .eq("status", "pending");
 
       // Get today's transfusions
       const todayStr = today.toISOString().split('T')[0];
-      const { count: todayTransfusions } = await supabase
+      const { count: todayTransfusions } = await db
         .from("transfusion_records")
         .select("*", { count: 'exact', head: true })
         .gte("transfusion_date", todayStr);
@@ -164,7 +164,7 @@ export function useTransfusionRequests(status?: string) {
   return useQuery({
     queryKey: ["transfusion-requests", status],
     queryFn: async () => {
-      let query = supabase
+      let query = db
         .from("transfusion_requests")
         .select(`
           *,
@@ -189,7 +189,7 @@ export function useCrossmatchTests(requestId?: string) {
   return useQuery({
     queryKey: ["crossmatch-tests", requestId],
     queryFn: async () => {
-      let query = supabase
+      let query = db
         .from("crossmatch_tests")
         .select(`
           *,
@@ -214,7 +214,7 @@ export function useTransfusionReactions() {
   return useQuery({
     queryKey: ["transfusion-reactions"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("transfusion_reactions")
         .select(`
           *,
@@ -237,7 +237,7 @@ export function useUpdateBloodInventory() {
 
   return useMutation({
     mutationFn: async ({ id, ...data }: { id: string } & Database['public']['Tables']['blood_inventory']['Update']) => {
-      const { error } = await supabase.from("blood_inventory").update(data).eq("id", id);
+      const { error } = await db.from("blood_inventory").update(data).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -254,7 +254,7 @@ export function useCreateTransfusionRequest() {
 
   return useMutation({
     mutationFn: async (data: Database['public']['Tables']['transfusion_requests']['Insert']) => {
-      const { error } = await supabase.from("transfusion_requests").insert(data);
+      const { error } = await db.from("transfusion_requests").insert(data);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -271,7 +271,7 @@ export function useUpdateTransfusionRequest() {
 
   return useMutation({
     mutationFn: async ({ id, ...data }: { id: string } & Database['public']['Tables']['transfusion_requests']['Update']) => {
-      const { error } = await supabase.from("transfusion_requests").update(data).eq("id", id);
+      const { error } = await db.from("transfusion_requests").update(data).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {

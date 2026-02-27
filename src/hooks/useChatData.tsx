@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 
@@ -49,7 +49,7 @@ export function useChatRooms() {
       if (!user?.id) return [];
 
       // Get rooms the user is a participant in
-      const { data: participantRooms } = await supabase
+      const { data: participantRooms } = await db
         .from("chat_participants")
         .select("room_id")
         .eq("user_id", user.id);
@@ -59,7 +59,7 @@ export function useChatRooms() {
       const roomIds = participantRooms.map((p) => p.room_id);
 
       // Get room details
-      const { data: rooms, error } = await supabase
+      const { data: rooms, error } = await db
         .from("chat_rooms")
         .select("*")
         .in("id", roomIds)
@@ -70,7 +70,7 @@ export function useChatRooms() {
       // Get last messages for each room
       const roomsWithMessages = await Promise.all(
         (rooms || []).map(async (room) => {
-          const { data: lastMessage } = await supabase
+          const { data: lastMessage } = await db
             .from("chat_messages")
             .select("content, created_at")
             .eq("room_id", room.id)
@@ -79,7 +79,7 @@ export function useChatRooms() {
             .single();
 
           // Get unread count
-          const { data: participant } = await supabase
+          const { data: participant } = await db
             .from("chat_participants")
             .select("last_read_at")
             .eq("room_id", room.id)
@@ -88,7 +88,7 @@ export function useChatRooms() {
 
           let unreadCount = 0;
           if (participant?.last_read_at) {
-            const { count } = await supabase
+            const { count } = await db
               .from("chat_messages")
               .select("*", { count: "exact", head: true })
               .eq("room_id", room.id)
@@ -126,7 +126,7 @@ export function useChatMessages(roomId: string | null) {
   useEffect(() => {
     if (!roomId) return;
 
-    const channel = supabase
+    const channel = db
       .channel(`chat-messages-${roomId}`)
       .on(
         "postgres_changes",
@@ -172,7 +172,7 @@ export function useChatMessages(roomId: string | null) {
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      db.removeChannel(channel);
     };
   }, [roomId, queryClient, user?.id]);
 
@@ -181,7 +181,7 @@ export function useChatMessages(roomId: string | null) {
     queryFn: async (): Promise<ChatMessage[]> => {
       if (!roomId) return [];
 
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("chat_messages")
         .select("*")
         .eq("room_id", roomId)
@@ -218,7 +218,7 @@ export function useSendMessage() {
     }) => {
       if (!user?.id) throw new Error("User not authenticated");
 
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("chat_messages")
         .insert({
           room_id: roomId,
@@ -232,13 +232,13 @@ export function useSendMessage() {
       if (error) throw error;
 
       // Update room's updated_at
-      await supabase
+      await db
         .from("chat_rooms")
         .update({ updated_at: new Date().toISOString() })
         .eq("id", roomId);
 
       // Update participant's last_read_at
-      await supabase
+      await db
         .from("chat_participants")
         .update({ last_read_at: new Date().toISOString() })
         .eq("room_id", roomId)
@@ -268,7 +268,7 @@ export function useMarkRoomAsRead() {
     mutationFn: async (roomId: string) => {
       if (!user?.id) return;
 
-      await supabase
+      await db
         .from("chat_participants")
         .update({ last_read_at: new Date().toISOString() })
         .eq("room_id", roomId)
@@ -298,7 +298,7 @@ export function useCreateChatRoom() {
       if (!user?.id) throw new Error("User not authenticated");
 
       // Create room
-      const { data: room, error: roomError } = await supabase
+      const { data: room, error: roomError } = await db
         .from("chat_rooms")
         .insert({
           name,
@@ -317,7 +317,7 @@ export function useCreateChatRoom() {
         user_id: userId,
       }));
 
-      const { error: participantError } = await supabase
+      const { error: participantError } = await db
         .from("chat_participants")
         .insert(participantRows);
 
