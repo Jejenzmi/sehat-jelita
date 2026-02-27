@@ -58,6 +58,9 @@ services:
       SATUSEHAT_CLIENT_ID: ${SATUSEHAT_CLIENT_ID:-}
       SATUSEHAT_CLIENT_SECRET: ${SATUSEHAT_CLIENT_SECRET:-}
       SATUSEHAT_ORGANIZATION_ID: ${SATUSEHAT_ORGANIZATION_ID:-}
+      SATU_SEHAT_CLIENT_ID: ${SATUSEHAT_CLIENT_ID:-}
+      SATU_SEHAT_CLIENT_SECRET: ${SATUSEHAT_CLIENT_SECRET:-}
+      SATU_SEHAT_ORG_ID: ${SATUSEHAT_ORGANIZATION_ID:-}
     depends_on:
       postgres:
         condition: service_healthy
@@ -81,6 +84,7 @@ services:
       - "443:443"
     volumes:
       - ./ssl:/etc/nginx/ssl:ro
+      - ./nginx.prod.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
       api:
         condition: service_healthy

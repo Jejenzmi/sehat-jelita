@@ -7,59 +7,61 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AppLayout } from "@/components/layout/AppLayout";
-import Index from "./pages/Index";
-import Auth from "./pages/Auth";
-import PatientAuth from "./pages/PatientAuth";
-import PatientPortal from "./pages/PatientPortal";
-import Setup from "./pages/Setup";
-import Pendaftaran from "./pages/Pendaftaran";
-import Pasien from "./pages/Pasien";
-import RawatJalan from "./pages/RawatJalan";
-import Farmasi from "./pages/Farmasi";
-import BPJS from "./pages/BPJS";
-import Asuransi from "./pages/Asuransi";
-import SatuSehat from "./pages/SatuSehat";
-import Billing from "./pages/Billing";
-import IGD from "./pages/IGD";
-import RekamMedis from "./pages/RekamMedis";
-import Laporan from "./pages/Laporan";
-import Laboratorium from "./pages/Laboratorium";
-import RawatInap from "./pages/RawatInap";
-import Radiologi from "./pages/Radiologi";
-import Antrian from "./pages/Antrian";
-import DashboardExecutive from "./pages/DashboardExecutive";
-import Booking from "./pages/Booking";
-import Telemedicine from "./pages/Telemedicine";
-import Inventory from "./pages/Inventory";
-import SDM from "./pages/SDM";
-import MasterData from "./pages/MasterData";
-import ManajemenUser from "./pages/ManajemenUser";
-import Pengaturan from "./pages/Pengaturan";
-import KamarOperasi from "./pages/KamarOperasi";
-import ICU from "./pages/ICU";
-import Hemodialisa from "./pages/Hemodialisa";
-import BankDarah from "./pages/BankDarah";
-import Gizi from "./pages/Gizi";
-import Rehabilitasi from "./pages/Rehabilitasi";
-import MCU from "./pages/MCU";
-import Forensik from "./pages/Forensik";
-import Penunjang from "./pages/Penunjang";
-import Mutu from "./pages/Mutu";
-import Akuntansi from "./pages/Akuntansi";
-import Pendidikan from "./pages/Pendidikan";
-import LaporanKemenkes from "./pages/LaporanKemenkes";
-import Kiosk from "./pages/Kiosk";
-import MigrasiData from "./pages/MigrasiData";
-import Presentasi from "./pages/Presentasi";
-import DokumentasiSistem from "./pages/DokumentasiSistem";
-import PanduanPenggunaan from "./pages/PanduanPenggunaan";
-import FormBuilder from "./pages/FormBuilder";
-import ReportBuilder from "./pages/ReportBuilder";
-import SmartDisplay from "./pages/SmartDisplay";
-import DICOMIntegration from "./pages/DICOMIntegration";
-import HomeCare from "./pages/HomeCare";
-import AmbulanceCenter from "./pages/AmbulanceCenter";
-import NotFound from "./pages/NotFound";
+import { lazy, Suspense } from "react";
+
+const Index = lazy(() => import("./pages/Index"));
+const Auth = lazy(() => import("./pages/Auth"));
+const PatientAuth = lazy(() => import("./pages/PatientAuth"));
+const PatientPortal = lazy(() => import("./pages/PatientPortal"));
+const Setup = lazy(() => import("./pages/Setup"));
+const Pendaftaran = lazy(() => import("./pages/Pendaftaran"));
+const Pasien = lazy(() => import("./pages/Pasien"));
+const RawatJalan = lazy(() => import("./pages/RawatJalan"));
+const Farmasi = lazy(() => import("./pages/Farmasi"));
+const BPJS = lazy(() => import("./pages/BPJS"));
+const Asuransi = lazy(() => import("./pages/Asuransi"));
+const SatuSehat = lazy(() => import("./pages/SatuSehat"));
+const Billing = lazy(() => import("./pages/Billing"));
+const IGD = lazy(() => import("./pages/IGD"));
+const RekamMedis = lazy(() => import("./pages/RekamMedis"));
+const Laporan = lazy(() => import("./pages/Laporan"));
+const Laboratorium = lazy(() => import("./pages/Laboratorium"));
+const RawatInap = lazy(() => import("./pages/RawatInap"));
+const Radiologi = lazy(() => import("./pages/Radiologi"));
+const Antrian = lazy(() => import("./pages/Antrian"));
+const DashboardExecutive = lazy(() => import("./pages/DashboardExecutive"));
+const Booking = lazy(() => import("./pages/Booking"));
+const Telemedicine = lazy(() => import("./pages/Telemedicine"));
+const Inventory = lazy(() => import("./pages/Inventory"));
+const SDM = lazy(() => import("./pages/SDM"));
+const MasterData = lazy(() => import("./pages/MasterData"));
+const ManajemenUser = lazy(() => import("./pages/ManajemenUser"));
+const Pengaturan = lazy(() => import("./pages/Pengaturan"));
+const KamarOperasi = lazy(() => import("./pages/KamarOperasi"));
+const ICU = lazy(() => import("./pages/ICU"));
+const Hemodialisa = lazy(() => import("./pages/Hemodialisa"));
+const BankDarah = lazy(() => import("./pages/BankDarah"));
+const Gizi = lazy(() => import("./pages/Gizi"));
+const Rehabilitasi = lazy(() => import("./pages/Rehabilitasi"));
+const MCU = lazy(() => import("./pages/MCU"));
+const Forensik = lazy(() => import("./pages/Forensik"));
+const Penunjang = lazy(() => import("./pages/Penunjang"));
+const Mutu = lazy(() => import("./pages/Mutu"));
+const Akuntansi = lazy(() => import("./pages/Akuntansi"));
+const Pendidikan = lazy(() => import("./pages/Pendidikan"));
+const LaporanKemenkes = lazy(() => import("./pages/LaporanKemenkes"));
+const Kiosk = lazy(() => import("./pages/Kiosk"));
+const MigrasiData = lazy(() => import("./pages/MigrasiData"));
+const Presentasi = lazy(() => import("./pages/Presentasi"));
+const DokumentasiSistem = lazy(() => import("./pages/DokumentasiSistem"));
+const PanduanPenggunaan = lazy(() => import("./pages/PanduanPenggunaan"));
+const FormBuilder = lazy(() => import("./pages/FormBuilder"));
+const ReportBuilder = lazy(() => import("./pages/ReportBuilder"));
+const SmartDisplay = lazy(() => import("./pages/SmartDisplay"));
+const DICOMIntegration = lazy(() => import("./pages/DICOMIntegration"));
+const HomeCare = lazy(() => import("./pages/HomeCare"));
+const AmbulanceCenter = lazy(() => import("./pages/AmbulanceCenter"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
 
@@ -78,6 +80,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <Suspense fallback={<div className="flex h-screen items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" /></div>}>
           <Routes>
             {/* Public routes */}
             <Route path="/auth" element={<Auth />} />
@@ -453,6 +456,7 @@ const App = () => (
             />
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </Suspense>
         </BrowserRouter>
       </TooltipProvider>
     </AuthProvider>
