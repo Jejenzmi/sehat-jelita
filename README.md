@@ -50,6 +50,66 @@ npm run dev
 - Click on "New codespace" to launch a new Codespace environment.
 - Edit files directly within the Codespace and commit and push your changes once you're done.
 
+## Menjalankan dengan Docker
+
+Proyek ini sudah dilengkapi dengan konfigurasi Docker. Anda dapat menjalankan seluruh stack (Frontend, Backend API, PostgreSQL, dan Redis) hanya dengan satu perintah.
+
+### Prasyarat
+
+- [Docker](https://docs.docker.com/get-docker/) dan [Docker Compose](https://docs.docker.com/compose/install/) sudah terpasang.
+
+### Langkah-langkah
+
+**1. Salin file environment dan sesuaikan nilainya:**
+
+```sh
+# Frontend
+cp .env.example .env
+
+# Backend
+cp backend/.env.example backend/.env
+```
+
+Edit `backend/.env` dan isi nilai yang diperlukan seperti `JWT_SECRET`, kredensial BPJS, dan Satu Sehat.
+
+**2. Jalankan semua layanan dengan Docker Compose:**
+
+```sh
+docker compose up --build
+```
+
+Setelah selesai build, layanan akan tersedia di:
+
+| Layanan       | URL                         |
+|---------------|-----------------------------|
+| Frontend      | http://localhost             |
+| Backend API   | http://localhost:3000        |
+| PostgreSQL    | localhost:5432               |
+| Redis         | localhost:6379               |
+
+**3. Menghentikan layanan:**
+
+```sh
+docker compose down
+```
+
+Untuk menghapus data volume (database) sekaligus:
+
+```sh
+docker compose down -v
+```
+
+### File Docker yang tersedia
+
+| File                   | Keterangan                                      |
+|------------------------|-------------------------------------------------|
+| `Dockerfile.frontend`  | Multi-stage build React/Vite → nginx            |
+| `backend/Dockerfile`   | Multi-stage build Node.js API                   |
+| `docker-compose.yml`   | Orkestrasi seluruh layanan (dev/prod)           |
+| `nginx.conf`           | Konfigurasi nginx dengan proxy ke backend API   |
+
+---
+
 ## What technologies are used for this project?
 
 This project is built with:
