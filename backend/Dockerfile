@@ -2,8 +2,12 @@
 FROM node:20-bookworm-slim AS builder
 WORKDIR /app
 
+# Install OpenSSL 3.x (required for Prisma binaryTargets = ["native", "debian-openssl-3.0.x"])
 RUN apt-get update && apt-get install -y --no-install-recommends openssl libssl3 ca-certificates \
  && rm -rf /var/lib/apt/lists/*
+
+# Skip Prisma engine compatibility check during build for safer engine initialization
+ENV PRISMA_SKIP_ENGINE_CHECK=true
 
 COPY package*.json ./
 RUN npm ci
