@@ -97,24 +97,35 @@ docker build -t simrs-zen-api:latest ./backend
 docker compose -f docker-compose.prod.yml up -d
 ```
 
-### Opsi B: Gunakan image dari GitHub Container Registry (GHCR)
+### Opsi B: Gunakan image dari Docker Hub (tanpa login)
 
-Image GHCR harus berstatus **public** agar VPS dapat menariknya tanpa login.
-Workflow CI/CD (`docker-build.yml`) secara otomatis mengubah visibility paket ke public
-setelah setiap push ke `main`, asalkan secret **`GH_PAT`** tersedia di repository:
+Image di Docker Hub berstatus **public** dan dapat di-pull tanpa autentikasi.
+Workflow CI/CD (`docker-build.yml`) secara otomatis mendorong image ke Docker Hub
+setelah setiap push ke `main`, asalkan secrets **`DOCKERHUB_USERNAME`** dan **`DOCKERHUB_TOKEN`** tersedia:
 
-1. Buat Personal Access Token (classic) di GitHub → Settings → Developer settings → Tokens
-   dengan scope `write:packages`, `read:packages`, dan **`delete:packages`** (diperlukan untuk mengubah visibility).
-2. Tambahkan token tersebut sebagai secret `GH_PAT` di repository:
+1. Buat Access Token di Docker Hub → Account Settings → Security → New Access Token.
+2. Tambahkan sebagai secrets di repository:
+   - `DOCKERHUB_USERNAME` — username Docker Hub Anda
+   - `DOCKERHUB_TOKEN` — token yang dibuat di langkah 1
    Settings → Secrets and variables → Actions → New repository secret.
-3. Jalankan workflow sekali (push ke main) agar paket diubah ke public.
-
-Atau ubah secara manual:
-GitHub → Profile → Packages → pilih paket → Package Settings → Change visibility → Public.
 
 ```bash
-# Edit IMAGE_NAMESPACE dan IMAGE_TAG di .env sesuai registry
+# Jalankan langsung dari Docker Hub (tidak perlu login)
 docker compose -f docker-compose.prod.yml pull
+docker compose -f docker-compose.prod.yml up -d
+```
+
+### Opsi C: Gunakan image dari GitHub Container Registry (GHCR)
+
+Image GHCR harus berstatus **public** agar VPS dapat menariknya tanpa login.
+Workflow CI/CD juga mendorong image ke GHCR sebagai backup.
+Ubah visibility secara manual:
+GitHub → Profile → Packages → pilih paket → Package Settings → Change visibility → Public.
+Atau tambahkan secret **`GH_PAT`** (PAT dengan scope `write:packages`) agar workflow mengubahnya otomatis.
+
+```bash
+# Set REGISTRY ke GHCR dan sesuaikan IMAGE_NAMESPACE di .env
+REGISTRY=ghcr.io IMAGE_NAMESPACE=jejenzmi/sehat-jelita docker compose -f docker-compose.prod.yml pull
 docker compose -f docker-compose.prod.yml up -d
 ```
 
