@@ -24,6 +24,10 @@ RUN npm run build
 # ==========================================
 FROM nginx:stable-alpine AS production
 
+# Link this image to the source repository so that GITHUB_TOKEN can manage
+# the GHCR package visibility (private → public) without needing a PAT.
+LABEL org.opencontainers.image.source=https://github.com/Jejenzmi/sehat-jelita
+
 # Copy build output
 COPY --from=builder /app/dist /usr/share/nginx/html
 
