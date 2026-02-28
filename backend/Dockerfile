@@ -1,43 +1,26 @@
-# Stage 1: deps + prisma generate
-FROM node:20-bookworm-slim AS builder
-WORKDIR /app
+# Dockerfile
 
-RUN apt-get update && apt-get install -y --no-install-recommends openssl libssl3 ca-certificates \n && rm -rf /var/lib/apt/lists/*
+# Use an official Python runtime as a parent image
+FROM python:3.8-slim
 
-COPY package*.json ./
-RUN npm ci
+# Set the working directory in the container
+WORKDIR /usr/src/app
 
-# Copy schema before generating so the correct binaryTargets are used,
-# and so that schema changes bust only the prisma-generate layer (not all of src).
-COPY prisma ./prisma
-RUN npx prisma generate
-
+# Copy the current directory contents into the container at /usr/src/app
 COPY . .
 
-# Stage 2: production runtime
-FROM node:20-bookworm-slim AS production
-WORKDIR /app
+# Install any needed packages specified in requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt \
+    && apt-get update \
+    && apt-get install -y \
+    libzmq3-dev \
+    && apt-get clean
 
-# Link this image to the source repository so that GITHUB_TOKEN can manage
-# the GHCR package visibility (private → public) without needing a PAT.
-LABEL org.opencontainers.image.source=https://github.com/Jejenzmi/sehat-jelita
+# Make ports available to the world outside this container
+EXPOSE 5000
 
-RUN apt-get update && apt-get install -y --no-install-recommends openssl libssl3 ca-certificates curl \n && rm -rf /var/lib/apt/lists/*
+# Define environment variable
+ENV NAME World
 
-# optional non-root
-RUN useradd -m nodejs
-
-COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
-COPY --from=builder --chown=nodejs:nodejs /app/src ./src
-COPY --from=builder --chown=nodejs:nodejs /app/prisma ./prisma
-COPY --from=builder --chown=nodejs:nodejs /app/package*.json ./
-COPY --from=builder --chown=nodejs:nodejs /app/entrypoint.sh ./entrypoint.sh
-
-# Set execute permission as root before switching to non-root user
-RUN chmod +x /app/entrypoint.sh
-
-USER nodejs
-
-EXPOSE 3000
-HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 CMD curl -f http://localhost:3000/health || exit 1
-CMD ["/app/entrypoint.sh"]
+# Run app.py when the container launches
+CMD [ "python", "app.py" ]
