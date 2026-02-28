@@ -2,8 +2,7 @@
 FROM node:20-bookworm-slim AS builder
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates \
- && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends openssl libssl3 ca-certificates \n && rm -rf /var/lib/apt/lists/*
 
 COPY package*.json ./
 RUN npm ci
@@ -23,8 +22,7 @@ WORKDIR /app
 # the GHCR package visibility (private → public) without needing a PAT.
 LABEL org.opencontainers.image.source=https://github.com/Jejenzmi/sehat-jelita
 
-RUN apt-get update && apt-get install -y --no-install-recommends openssl libssl3 ca-certificates curl \
- && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends openssl libssl3 ca-certificates curl \n && rm -rf /var/lib/apt/lists/*
 
 # optional non-root
 RUN useradd -m nodejs
@@ -41,5 +39,5 @@ RUN chmod +x /app/entrypoint.sh
 USER nodejs
 
 EXPOSE 3000
-HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 CMD curl -f http://localhost:3000/health || exit 1
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 CMD curl -f http://localhost:3000/health || exit 1
 CMD ["/app/entrypoint.sh"]
