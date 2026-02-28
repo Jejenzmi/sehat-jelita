@@ -94,12 +94,24 @@ app.use('/api/', rateLimiter);
 // ============================================
 
 // Health check
-app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'ok', 
+app.get('/health', async (req, res) => {
+  const start = Date.now();
+  let dbStatus = { status: 'disconnected' };
+  try {
+    const { prisma } = await import('./config/database.js');
+    await prisma.$queryRaw`SELECT 1`;
+    dbStatus = { status: 'connected', latencyMs: Date.now() - start };
+  } catch {
+    dbStatus = { status: 'disconnected', latencyMs: Date.now() - start };
+    console.error('Health check: database connectivity failed:', err?.message ?? err);
+  }
+  const isHealthy = dbStatus.status === 'connected';
+  res.status(isHealthy ? 200 : 503).json({
+    status: isHealthy ? 'ok' : 'degraded',
     timestamp: new Date().toISOString(),
     version: '1.0.0',
-    service: 'SIMRS ZEN API'
+    service: 'SIMRS ZEN API',
+    database: dbStatus
   });
 });
 

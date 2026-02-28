@@ -852,7 +852,7 @@ model chat_messages {
   created_at   DateTime @default(now())
 
   chat_rooms chat_rooms @relation(fields: [room_id], references: [id], onDelete: Cascade)
-  profiles   profiles?  @relation(fields: [sender_id], references: [user_id], onDelete: SetNull)
+  profiles   profiles?  @relation(fields: [sender_id], references: [user_id], onDelete: Cascade)
 
   @@index([room_id])
   @@index([sender_id])
@@ -971,7 +971,8 @@ model blood_inventory {
   created_at               DateTime          @default(now())
   updated_at               DateTime          @updatedAt
 
-  crossmatch_tests crossmatch_tests[]
+  crossmatch_tests    crossmatch_tests[]
+  transfusion_records transfusion_records[]
 
   @@index([blood_type])
   @@index([status])
@@ -988,6 +989,7 @@ model transfusion_requests {
   product_type         BloodProductType
   units_requested      Int
   units_issued         Int       @default(0)
+  units_transfused     Int       @default(0)
   urgency              String    @default("routine")
   indication           String?
   status               String    @default("pending")
@@ -998,8 +1000,9 @@ model transfusion_requests {
   created_at           DateTime  @default(now())
   updated_at           DateTime  @updatedAt
 
-  patients         patients           @relation(fields: [patient_id], references: [id])
-  crossmatch_tests crossmatch_tests[]
+  patients            patients            @relation(fields: [patient_id], references: [id])
+  crossmatch_tests    crossmatch_tests[]
+  transfusion_records transfusion_records[]
 
   @@index([patient_id])
   @@index([status])
@@ -1027,6 +1030,27 @@ model crossmatch_tests {
   transfusion_requests transfusion_requests? @relation(fields: [request_id], references: [id])
 
   @@index([patient_id])
+  @@index([blood_bag_id])
+}
+
+model transfusion_records {
+  id               String    @id @default(uuid())
+  request_id       String?
+  blood_bag_id     String?
+  start_time       DateTime?
+  end_time         DateTime?
+  vitals_before    Json?
+  vitals_after     Json?
+  reactions        String?
+  administered_by  String?
+  notes            String?
+  created_at       DateTime  @default(now())
+  updated_at       DateTime  @updatedAt
+
+  transfusion_requests transfusion_requests? @relation(fields: [request_id], references: [id])
+  blood_inventory      blood_inventory?      @relation(fields: [blood_bag_id], references: [id])
+
+  @@index([request_id])
   @@index([blood_bag_id])
 }
 
@@ -1327,7 +1351,8 @@ model inventory_items {
   created_at       DateTime  @default(now())
   updated_at       DateTime  @updatedAt
 
-  inventory_batches inventory_batches[]
+  inventory_batches      inventory_batches[]
+  inventory_transactions inventory_transactions[]
 
   @@index([category])
 }
@@ -1344,10 +1369,31 @@ model inventory_batches {
   notes              String?
   created_at         DateTime  @default(now())
 
-  inventory_items inventory_items @relation(fields: [item_id], references: [id])
+  inventory_items        inventory_items         @relation(fields: [item_id], references: [id])
+  inventory_transactions inventory_transactions[]
 
   @@index([item_id])
   @@index([expiry_date])
+}
+
+model inventory_transactions {
+  id               String    @id @default(uuid())
+  item_id          String
+  batch_id         String?
+  transaction_type String
+  quantity         Int
+  reason           String?
+  reference_type   String?
+  reference_id     String?
+  performed_by     String?
+  created_at       DateTime  @default(now())
+
+  inventory_items  inventory_items  @relation(fields: [item_id], references: [id])
+  inventory_batches inventory_batches? @relation(fields: [batch_id], references: [id])
+
+  @@index([item_id])
+  @@index([batch_id])
+  @@index([transaction_type])
 }
 
 model purchase_requests {

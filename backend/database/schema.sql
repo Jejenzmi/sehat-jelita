@@ -540,6 +540,21 @@ CREATE TABLE crossmatch_tests (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+CREATE TABLE transfusion_records (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    request_id UUID REFERENCES transfusion_requests(id),
+    blood_bag_id UUID REFERENCES blood_inventory(id),
+    start_time TIMESTAMPTZ,
+    end_time TIMESTAMPTZ,
+    vitals_before JSONB,
+    vitals_after JSONB,
+    reactions TEXT,
+    administered_by UUID,
+    notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- ============================================
 -- SURGERY
 -- ============================================
@@ -1120,6 +1135,19 @@ CREATE TABLE inventory_batches (
     purchase_order_id UUID REFERENCES purchase_orders(id),
     received_date DATE DEFAULT CURRENT_DATE,
     notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE inventory_transactions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    item_id UUID REFERENCES inventory_items(id) NOT NULL,
+    batch_id UUID REFERENCES inventory_batches(id),
+    transaction_type VARCHAR(50) NOT NULL,
+    quantity INTEGER NOT NULL,
+    reason TEXT,
+    reference_type VARCHAR(50),
+    reference_id UUID,
+    performed_by UUID,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
