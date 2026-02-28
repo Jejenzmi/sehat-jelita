@@ -2,8 +2,14 @@
 FROM node:20-bookworm-slim AS builder
 WORKDIR /app
 
+# Install OpenSSL 3.0.x (default on Debian bookworm / Ubuntu 22.04+) to match
+# the binaryTargets = ["native", "debian-openssl-3.0.x"] in prisma/schema.prisma.
 RUN apt-get update && apt-get install -y --no-install-recommends openssl libssl3 ca-certificates \
  && rm -rf /var/lib/apt/lists/*
+
+# Skip the Prisma engine version check during generate so the build
+# succeeds even when the host OpenSSL differs from the target binary.
+ENV PRISMA_SKIP_ENGINE_CHECK=true
 
 COPY package*.json ./
 RUN npm ci
