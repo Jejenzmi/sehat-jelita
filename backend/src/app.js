@@ -24,7 +24,7 @@ import { requestLogger } from './middleware/logger.js';
 // Import centralized routes
 import apiRouter from './routes/index.js';
 
-import { checkDatabaseConnection } from './config/database.js';
+import { prisma, checkDatabaseConnection } from './config/database.js';
 
 // Import Socket handlers
 import { initializeSocketHandlers } from './socket/index.js';
@@ -94,12 +94,27 @@ app.use('/api/', rateLimiter);
 // ============================================
 
 // Health check
-app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'ok', 
+app.get('/health', async (req, res) => {
+  let dbStatus = 'disconnected';
+  let dbLatencyMs = null;
+  try {
+    const start = Date.now();
+    await prisma.$queryRaw`SELECT 1`;
+    dbLatencyMs = Date.now() - start;
+    dbStatus = 'connected';
+  } catch (err) {
+    dbStatus = 'disconnected';
+    console.error('Health check DB error:', err.message);
+  }
+  res.json({
+    status: dbStatus === 'connected' ? 'ok' : 'degraded',
     timestamp: new Date().toISOString(),
     version: '1.0.0',
-    service: 'SIMRS ZEN API'
+    service: 'SIMRS ZEN API',
+    database: {
+      status: dbStatus,
+      latencyMs: dbLatencyMs
+    }
   });
 });
 

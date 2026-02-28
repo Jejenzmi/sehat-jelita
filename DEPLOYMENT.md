@@ -97,23 +97,24 @@ docker build -t simrs-zen-api:latest ./backend
 docker compose -f docker-compose.prod.yml up -d
 ```
 
-### Opsi B: Gunakan image dari GitHub Container Registry (GHCR)
+### Opsi B: Gunakan image dari Docker Hub (public)
 
-Image GHCR harus berstatus **public** agar VPS dapat menariknya tanpa login.
-Workflow CI/CD (`docker-build.yml`) secara otomatis mengubah visibility paket ke public
-setelah setiap push ke `main`, asalkan secret **`GH_PAT`** tersedia di repository:
+```bash
+# Images di-push otomatis ke Docker Hub saat merge ke main.
+# Default registry sudah diset ke docker.io/jejenzmi — tidak perlu login.
+docker compose -f docker-compose.prod.yml pull
+docker compose -f docker-compose.prod.yml up -d
+```
 
-1. Buat Personal Access Token (classic) di GitHub → Settings → Developer settings → Tokens
-   dengan scope `write:packages`, `read:packages`, dan **`delete:packages`** (diperlukan untuk mengubah visibility).
-2. Tambahkan token tersebut sebagai secret `GH_PAT` di repository:
-   Settings → Secrets and variables → Actions → New repository secret.
-3. Jalankan workflow sekali (push ke main) agar paket diubah ke public.
+> **Catatan CI/CD:** Sebelum CI dapat push ke Docker Hub, tambahkan dua repository secrets di GitHub:
+> - `DOCKERHUB_USERNAME` — username Docker Hub kamu
+> - `DOCKERHUB_TOKEN`    — Docker Hub Access Token (buat di hub.docker.com → Account Settings → Security)
 
-Atau ubah secara manual:
-GitHub → Profile → Packages → pilih paket → Package Settings → Change visibility → Public.
+### Opsi C: Gunakan image dari GitHub Container Registry (GHCR)
 
 ```bash
 # Edit IMAGE_NAMESPACE dan IMAGE_TAG di .env sesuai registry
+# Contoh untuk GHCR: REGISTRY=ghcr.io IMAGE_NAMESPACE=jejenzmi/sehat-jelita
 docker compose -f docker-compose.prod.yml pull
 docker compose -f docker-compose.prod.yml up -d
 ```
