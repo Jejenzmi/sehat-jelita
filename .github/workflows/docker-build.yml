@@ -46,8 +46,8 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/simrs-zen-api:latest
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/simrs-zen-api:${{ github.sha }}
           labels: ${{ env.OCI_SOURCE_LABEL }}
-          cache-from: type=gha,scope=backend-prisma-${{ hashFiles('backend/prisma/schema.prisma') }}
-          cache-to: type=gha,scope=backend-prisma-${{ hashFiles('backend/prisma/schema.prisma') }},mode=max
+          cache-from: type=gha,scope=backend-${{ hashFiles('backend/Dockerfile', 'backend/prisma/schema.prisma') }}
+          cache-to: type=gha,scope=backend-${{ hashFiles('backend/Dockerfile', 'backend/prisma/schema.prisma') }},mode=max
 
       - name: Build frontend Docker image
         uses: docker/build-push-action@v5
