@@ -29,6 +29,9 @@ const paymentSchema = z.object({
   paid_by: z.string().optional()
 });
 
+// Valid BillingStatus enum values from Prisma schema
+const VALID_BILLING_STATUSES = ['pending', 'partial', 'paid', 'cancelled', 'refunded'];
+
 /**
  * GET /api/billing
  * Get all billings with filters
@@ -43,6 +46,10 @@ router.get('/', asyncHandler(async (req, res) => {
     date_to,
     search
   } = req.query;
+
+  if (status && !VALID_BILLING_STATUSES.includes(status)) {
+    throw new ApiError(400, `Invalid status. Must be one of: ${VALID_BILLING_STATUSES.join(', ')}`, 'INVALID_STATUS');
+  }
 
   const skip = (parseInt(page) - 1) * parseInt(limit);
   const take = parseInt(limit);

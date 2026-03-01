@@ -33,6 +33,7 @@ import dialysisRoutes from './dialysis.routes.js';
 import forensicRoutes from './forensic.routes.js';
 import educationRoutes from './education.routes.js';
 import eklaimIDRGRoutes from './eklaim-idrg.routes.js';
+import adminRoutes from './admin.routes.js';
 
 const router = Router();
 
@@ -76,6 +77,9 @@ router.use('/billing', billingRoutes);
 router.use('/hr', hrRoutes);
 router.use('/inventory', inventoryRoutes);
 router.use('/accounting', accountingRoutes);
+
+// Admin Module
+router.use('/admin', adminRoutes);
 
 // External Integration Modules
 router.use('/bpjs', bpjsRoutes);
