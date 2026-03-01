@@ -3,6 +3,8 @@
  * Structured logging for all HTTP requests
  */
 
+import { sanitizeObject } from './pii-sanitizer.js';
+
 /**
  * Request Logger - logs all incoming requests
  */
@@ -56,7 +58,7 @@ export const requestLogger = (req, res, next) => {
 };
 
 /**
- * Error Logger - detailed error logging
+ * Error Logger - detailed error logging with PII masking
  */
 export const errorLogger = (err, req, res, next) => {
   console.error('Error:', {
@@ -65,7 +67,8 @@ export const errorLogger = (err, req, res, next) => {
     requestId: req.requestId,
     method: req.method,
     path: req.path,
-    user: req.user?.id
+    user: req.user?.id,
+    body: sanitizeObject(req.body)
   });
 
   next(err);

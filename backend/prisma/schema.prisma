@@ -325,6 +325,7 @@ model visits {
   @@index([department_id])
   @@index([doctor_id])
   @@index([bed_id])
+  @@index([patient_id, visit_date, status])
 }
 
 model medical_records {
@@ -416,6 +417,7 @@ model prescriptions {
 
   @@index([patient_id])
   @@index([visit_id])
+  @@index([patient_id, status, prescription_date])
 }
 
 model prescription_items {
@@ -460,6 +462,7 @@ model lab_orders {
 
   @@index([patient_id])
   @@index([visit_id])
+  @@index([patient_id, status, order_date])
 }
 
 model lab_results {
@@ -514,6 +517,7 @@ model billings {
 
   @@index([patient_id])
   @@index([visit_id])
+  @@index([patient_id, status, created_at])
 }
 
 model billing_items {
@@ -785,6 +789,7 @@ model audit_logs {
 
   @@index([table_name, created_at])
   @@index([user_id, created_at])
+  @@index([user_id, action, created_at])
 }
 
 model system_settings {

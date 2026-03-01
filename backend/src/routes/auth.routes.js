@@ -14,15 +14,30 @@ import { asyncHandler, ApiError } from '../middleware/errorHandler.js';
 
 const router = Router();
 
+// In-memory store for failed login attempts: email -> { count, lockedUntil }
+// NOTE: This resets on server restart and does not work across multiple
+// instances in a load-balanced deployment. For production, replace with a
+// shared Redis-backed store (e.g. rate-limiter-flexible with Redis).
+const loginAttempts = new Map();
+const MAX_LOGIN_ATTEMPTS = 5;
+const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 minutes
+
 // Validation schemas
 const loginSchema = z.object({
   email: z.string().email('Email tidak valid'),
-  password: z.string().min(6, 'Password minimal 6 karakter')
+  password: z.string().trim().min(1, 'Password diperlukan')
 });
+
+const passwordStrengthSchema = z.string()
+  .min(12, 'Password minimal 12 karakter')
+  .regex(/[A-Z]/, 'Password harus mengandung huruf besar')
+  .regex(/[a-z]/, 'Password harus mengandung huruf kecil')
+  .regex(/[0-9]/, 'Password harus mengandung angka')
+  .regex(/[^A-Za-z0-9]/, 'Password harus mengandung karakter simbol');
 
 const registerSchema = z.object({
   email: z.string().email('Email tidak valid'),
-  password: z.string().min(8, 'Password minimal 8 karakter'),
+  password: passwordStrengthSchema,
   fullName: z.string().min(2, 'Nama minimal 2 karakter')
 });
 
@@ -32,6 +47,13 @@ const registerSchema = z.object({
  */
 router.post('/login', authRateLimiter, asyncHandler(async (req, res) => {
   const { email, password } = loginSchema.parse(req.body);
+
+  // Check account lockout
+  const attempt = loginAttempts.get(email);
+  if (attempt?.lockedUntil && attempt.lockedUntil > Date.now()) {
+    const waitMinutes = Math.ceil((attempt.lockedUntil - Date.now()) / 60000);
+    throw new ApiError(429, `Akun dikunci. Coba lagi dalam ${waitMinutes} menit.`, 'ACCOUNT_LOCKED');
+  }
 
   // Find user by email
   const profile = await prisma.profiles.findUnique({
@@ -48,8 +70,16 @@ router.post('/login', authRateLimiter, asyncHandler(async (req, res) => {
   const isValidPassword = await bcrypt.compare(password, profile.password_hash);
 
   if (!isValidPassword) {
+    // Track failed attempt
+    const prev = loginAttempts.get(email) || { count: 0 };
+    const count = prev.count + 1;
+    const lockedUntil = count >= MAX_LOGIN_ATTEMPTS ? Date.now() + LOCKOUT_DURATION_MS : null;
+    loginAttempts.set(email, { count, lockedUntil });
     throw new ApiError(401, 'Email atau password salah', 'INVALID_CREDENTIALS');
   }
+
+  // Reset failed attempts on successful login
+  loginAttempts.delete(email);
 
   // Generate tokens
   const tokens = generateTokens({
@@ -213,8 +243,9 @@ router.post('/change-password', authenticateToken, asyncHandler(async (req, res)
     throw new ApiError(400, 'Password lama dan baru diperlukan');
   }
 
-  if (newPassword.length < 8) {
-    throw new ApiError(400, 'Password baru minimal 8 karakter');
+  const strengthResult = passwordStrengthSchema.safeParse(newPassword);
+  if (!strengthResult.success) {
+    throw new ApiError(400, strengthResult.error.errors[0]?.message || 'Password tidak memenuhi syarat keamanan');
   }
 
   const profile = await prisma.profiles.findUnique({
@@ -286,8 +317,9 @@ router.post('/reset-password', authRateLimiter, asyncHandler(async (req, res) =>
     throw new ApiError(400, 'Token dan password baru diperlukan');
   }
 
-  if (newPassword.length < 8) {
-    throw new ApiError(400, 'Password baru minimal 8 karakter');
+  const strengthResult = passwordStrengthSchema.safeParse(newPassword);
+  if (!strengthResult.success) {
+    throw new ApiError(400, strengthResult.error.errors[0]?.message || 'Password tidak memenuhi syarat keamanan');
   }
 
   const profile = await prisma.profiles.findFirst({

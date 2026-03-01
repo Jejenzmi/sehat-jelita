@@ -208,7 +208,6 @@ router.post('/prescriptions', requireRole(['admin', 'dokter']), asyncHandler(asy
  */
 router.post('/prescriptions/:id/dispense', requireRole(['admin', 'farmasi']), asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const { dispensed_items } = req.body;
 
   const prescription = await prisma.prescriptions.findUnique({
     where: { id },
@@ -223,47 +222,50 @@ router.post('/prescriptions/:id/dispense', requireRole(['admin', 'farmasi']), as
     throw new ApiError(400, 'Resep sudah diserahkan', 'ALREADY_DISPENSED');
   }
 
-  // Deduct stock for each item
-  for (const item of prescription.prescription_items) {
-    if (item.medicine_id) {
-      // Find available batch with FEFO (First Expiry First Out)
-      const batches = await prisma.medicine_batches.findMany({
-        where: {
-          medicine_id: item.medicine_id,
-          status: 'available',
-          quantity: { gt: 0 },
-          expiry_date: { gt: new Date() }
-        },
-        orderBy: { expiry_date: 'asc' }
-      });
-
-      let remaining = item.quantity;
-      for (const batch of batches) {
-        if (remaining <= 0) break;
-        
-        const deduct = Math.min(batch.quantity, remaining);
-        await prisma.medicine_batches.update({
-          where: { id: batch.id },
-          data: { quantity: { decrement: deduct } }
+  // Wrap stock deduction and status update in a single transaction
+  const updated = await prisma.$transaction(async (tx) => {
+    // Deduct stock for each item
+    for (const item of prescription.prescription_items) {
+      if (item.medicine_id) {
+        // Find available batch with FEFO (First Expiry First Out)
+        const batches = await tx.medicine_batches.findMany({
+          where: {
+            medicine_id: item.medicine_id,
+            status: 'available',
+            quantity: { gt: 0 },
+            expiry_date: { gt: new Date() }
+          },
+          orderBy: { expiry_date: 'asc' }
         });
-        remaining -= deduct;
-      }
 
-      if (remaining > 0) {
-        console.warn(`Insufficient stock for medicine ${item.medicine_name}`);
+        let remaining = item.quantity;
+        for (const batch of batches) {
+          if (remaining <= 0) break;
+
+          const deduct = Math.min(batch.quantity, remaining);
+          await tx.medicine_batches.update({
+            where: { id: batch.id },
+            data: { quantity: { decrement: deduct } }
+          });
+          remaining -= deduct;
+        }
+
+        if (remaining > 0) {
+          console.warn(`Insufficient stock for medicine ${item.medicine_name} (id: ${item.medicine_id}): needed ${item.quantity}, short by ${remaining}`);
+        }
       }
     }
-  }
 
-  const updated = await prisma.prescriptions.update({
-    where: { id },
-    data: {
-      status: 'dispensed',
-      updated_at: new Date()
-    }
+    return tx.prescriptions.update({
+      where: { id },
+      data: {
+        status: 'dispensed',
+        updated_at: new Date()
+      }
+    });
   });
 
-  // Audit log
+  // Audit log (outside transaction – non-critical)
   await prisma.audit_logs.create({
     data: {
       table_name: 'prescriptions',
@@ -272,7 +274,7 @@ router.post('/prescriptions/:id/dispense', requireRole(['admin', 'farmasi']), as
       user_id: req.user.id,
       new_data: { dispensed_at: new Date() }
     }
-  });
+  }).catch(err => console.error('Audit log failed:', err));
 
   res.json({
     success: true,
