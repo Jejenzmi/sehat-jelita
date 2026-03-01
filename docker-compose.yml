@@ -40,7 +40,8 @@ services:
 
   # Node.js API Backend
   api:
-    image: ${REGISTRY:-ghcr.io}/${IMAGE_NAMESPACE:-jejenzmi/sehat-jelita}/simrs-zen-api:${IMAGE_TAG:-latest}
+    image: ${REGISTRY:-docker.io}/${IMAGE_NAMESPACE:-jejenzmi}/simrs-zen-api:${IMAGE_TAG:-latest}
+    pull_policy: always
     container_name: simrs-zen-api
     restart: unless-stopped
     environment:
@@ -77,7 +78,8 @@ services:
 
   # React Frontend
   frontend:
-    image: ${REGISTRY:-ghcr.io}/${IMAGE_NAMESPACE:-jejenzmi/sehat-jelita}/simrs-zen-frontend:${IMAGE_TAG:-latest}
+    image: ${REGISTRY:-docker.io}/${IMAGE_NAMESPACE:-jejenzmi}/simrs-zen-frontend:${IMAGE_TAG:-latest}
+    pull_policy: always
     container_name: simrs-zen-frontend
     restart: unless-stopped
     ports:

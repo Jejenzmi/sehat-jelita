@@ -94,13 +94,29 @@ app.use('/api/', rateLimiter);
 // ============================================
 
 // Health check
-app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'ok', 
-    timestamp: new Date().toISOString(),
-    version: '1.0.0',
-    service: 'SIMRS ZEN API'
-  });
+app.get('/health', async (req, res) => {
+  const start = Date.now();
+  try {
+    const { prisma } = await import('./config/database.js');
+    await prisma.$queryRaw`SELECT 1`;
+    const latencyMs = Date.now() - start;
+    res.json({
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      version: '1.0.0',
+      service: 'SIMRS ZEN API',
+      database: { status: 'connected', latencyMs }
+    });
+  } catch (error) {
+    console.error('Health check database error:', error);
+    res.status(503).json({
+      status: 'error',
+      timestamp: new Date().toISOString(),
+      version: '1.0.0',
+      service: 'SIMRS ZEN API',
+      database: { status: 'disconnected' }
+    });
+  }
 });
 
 // API Routes
