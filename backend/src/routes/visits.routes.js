@@ -267,18 +267,18 @@ router.post('/', requireRole(['admin', 'registrasi']), asyncHandler(async (req, 
   
   const visit_number = `${typePrefix}${datePrefix}${seq.toString().padStart(4, '0')}`;
 
-  // If inpatient, check bed availability
+  // If inpatient, atomically reserve the bed to prevent race conditions.
+  // updateMany with a status filter ensures we only succeed when the bed is
+  // still 'available', preventing two concurrent requests from double-booking.
   if (data.visit_type === 'inpatient' && data.bed_id) {
-    const bed = await prisma.beds.findUnique({ where: { id: data.bed_id } });
-    if (!bed || bed.status !== 'available') {
-      throw new ApiError(400, 'Tempat tidur tidak tersedia', 'BED_NOT_AVAILABLE');
-    }
-
-    // Reserve bed
-    await prisma.beds.update({
-      where: { id: data.bed_id },
+    const updated = await prisma.beds.updateMany({
+      where: { id: data.bed_id, status: 'available' },
       data: { status: 'occupied', current_patient_id: data.patient_id }
     });
+
+    if (updated.count === 0) {
+      throw new ApiError(400, 'Tempat tidur tidak tersedia', 'BED_NOT_AVAILABLE');
+    }
   }
 
   const visit = await prisma.visits.create({
@@ -418,36 +418,36 @@ router.post('/:id/transfer', requireRole(['admin', 'dokter', 'perawat']), asyncH
     throw new ApiError(404, 'Kunjungan tidak ditemukan', 'VISIT_NOT_FOUND');
   }
 
-  // Check new bed availability
-  if (new_bed_id) {
-    const newBed = await prisma.beds.findUnique({ where: { id: new_bed_id } });
-    if (!newBed || newBed.status !== 'available') {
-      throw new ApiError(400, 'Tempat tidur tujuan tidak tersedia', 'BED_NOT_AVAILABLE');
+  // Atomically release old bed and reserve new bed inside a single transaction
+  // to prevent race conditions where another request grabs the target bed
+  // between our availability check and our update.
+  const updatedVisit = await prisma.$transaction(async (tx) => {
+    // Atomically reserve the new bed if one is requested
+    if (new_bed_id) {
+      const reserved = await tx.beds.updateMany({
+        where: { id: new_bed_id, status: 'available' },
+        data: { status: 'occupied', current_patient_id: visit.patient_id }
+      });
+      if (reserved.count === 0) {
+        throw new ApiError(400, 'Tempat tidur tujuan tidak tersedia', 'BED_NOT_AVAILABLE');
+      }
     }
-  }
 
-  // Release old bed
-  if (visit.bed_id) {
-    await prisma.beds.update({
-      where: { id: visit.bed_id },
-      data: { status: 'available', current_patient_id: null }
-    });
-  }
-
-  // Occupy new bed
-  if (new_bed_id) {
-    await prisma.beds.update({
-      where: { id: new_bed_id },
-      data: { status: 'occupied', current_patient_id: visit.patient_id }
-    });
-  }
-
-  const updatedVisit = await prisma.visits.update({
-    where: { id },
-    data: {
-      department_id: new_department_id || visit.department_id,
-      bed_id: new_bed_id || visit.bed_id
+    // Release the old bed
+    if (visit.bed_id) {
+      await tx.beds.update({
+        where: { id: visit.bed_id },
+        data: { status: 'available', current_patient_id: null }
+      });
     }
+
+    return tx.visits.update({
+      where: { id },
+      data: {
+        department_id: new_department_id || visit.department_id,
+        bed_id: new_bed_id || visit.bed_id
+      }
+    });
   });
 
   // Log transfer

@@ -8,10 +8,9 @@ import { z } from 'zod';
 import { prisma } from '../config/database.js';
 import { requireRole, ROLES } from '../middleware/role.middleware.js';
 import { asyncHandler, ApiError } from '../middleware/errorHandler.js';
+import { paginate, paginatedResponse } from '../middleware/pagination.js';
 
 const router = Router();
-
-// Apply authentication to all routes
 
 // ============================================
 // MCU PACKAGES
@@ -139,30 +138,33 @@ router.post('/clients',
 
 /**
  * GET /api/mcu/registrations
- * List MCU registrations
+ * List MCU registrations with pagination
  */
-router.get('/registrations', asyncHandler(async (req, res) => {
+router.get('/registrations', paginate, asyncHandler(async (req, res) => {
   const { date, status, client_id } = req.query;
+  const { skip, take } = req.pagination;
 
   const where = {};
   if (date) where.registration_date = date;
   if (status) where.status = status;
   if (client_id) where.corporate_client_id = client_id;
 
-  const registrations = await prisma.mcu_registrations.findMany({
-    where,
-    include: {
-      patients: true,
-      mcu_packages: true,
-      corporate_clients: true
-    },
-    orderBy: { created_at: 'desc' }
-  });
+  const [registrations, total] = await Promise.all([
+    prisma.mcu_registrations.findMany({
+      where,
+      include: {
+        patients: true,
+        mcu_packages: true,
+        corporate_clients: true
+      },
+      orderBy: { created_at: 'desc' },
+      skip,
+      take
+    }),
+    prisma.mcu_registrations.count({ where })
+  ]);
 
-  res.json({
-    success: true,
-    data: registrations
-  });
+  res.json(paginatedResponse(registrations, total, req.pagination));
 }));
 
 /**
