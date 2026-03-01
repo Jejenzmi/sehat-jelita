@@ -8,10 +8,9 @@ import { z } from 'zod';
 import { prisma } from '../config/database.js';
 import { requireRole, ROLES } from '../middleware/role.middleware.js';
 import { asyncHandler, ApiError } from '../middleware/errorHandler.js';
+import { paginate, paginatedResponse } from '../middleware/pagination.js';
 
 const router = Router();
-
-
 // ============================================
 // BLOOD INVENTORY
 // ============================================
@@ -30,10 +29,11 @@ const bloodBagSchema = z.object({
 
 /**
  * GET /api/bloodbank/inventory
- * List blood inventory
+ * List blood inventory with pagination
  */
-router.get('/inventory', asyncHandler(async (req, res) => {
+router.get('/inventory', paginate, asyncHandler(async (req, res) => {
   const { blood_type, product_type, status, expiring_soon } = req.query;
+  const { skip, take } = req.pagination;
 
   const where = {};
   if (blood_type) where.blood_type = blood_type;
@@ -47,15 +47,17 @@ router.get('/inventory', asyncHandler(async (req, res) => {
     where.status = 'available';
   }
 
-  const inventory = await prisma.blood_inventory.findMany({
-    where,
-    orderBy: { expiry_date: 'asc' }
-  });
+  const [inventory, total] = await Promise.all([
+    prisma.blood_inventory.findMany({
+      where,
+      orderBy: { expiry_date: 'asc' },
+      skip,
+      take
+    }),
+    prisma.blood_inventory.count({ where })
+  ]);
 
-  res.json({
-    success: true,
-    data: inventory
-  });
+  res.json(paginatedResponse(inventory, total, req.pagination));
 }));
 
 /**
@@ -156,32 +158,54 @@ router.patch('/inventory/:id/screening',
 // ============================================
 
 /**
- * GET /api/bloodbank/requests
- * List transfusion requests
+ * Blood type compatibility map.
+ * Maps each blood type to the set of blood types it can safely receive for
+ * red-cell-containing products (whole_blood, packed_red_cells).
  */
-router.get('/requests', asyncHandler(async (req, res) => {
+const COMPATIBLE_DONORS = {
+  'A+':  new Set(['A+', 'A-', 'O+', 'O-']),
+  'A-':  new Set(['A-', 'O-']),
+  'B+':  new Set(['B+', 'B-', 'O+', 'O-']),
+  'B-':  new Set(['B-', 'O-']),
+  'AB+': new Set(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']),
+  'AB-': new Set(['A-', 'B-', 'AB-', 'O-']),
+  'O+':  new Set(['O+', 'O-']),
+  'O-':  new Set(['O-']),
+};
+
+/** Products that require ABO/Rh compatibility checks */
+const RED_CELL_PRODUCTS = new Set(['whole_blood', 'packed_red_cells']);
+
+/**
+ * GET /api/bloodbank/requests
+ * List transfusion requests with pagination
+ */
+router.get('/requests', paginate, asyncHandler(async (req, res) => {
   const { status, priority, patient_id } = req.query;
+  const { skip, take } = req.pagination;
 
   const where = {};
   if (status) where.status = status;
   if (priority) where.priority = priority;
   if (patient_id) where.patient_id = patient_id;
 
-  const requests = await prisma.transfusion_requests.findMany({
-    where,
-    include: {
-      patients: true
-    },
-    orderBy: [
-      { priority: 'desc' },
-      { created_at: 'desc' }
-    ]
-  });
+  const [requests, total] = await Promise.all([
+    prisma.transfusion_requests.findMany({
+      where,
+      include: {
+        patients: true
+      },
+      orderBy: [
+        { priority: 'desc' },
+        { created_at: 'desc' }
+      ],
+      skip,
+      take
+    }),
+    prisma.transfusion_requests.count({ where })
+  ]);
 
-  res.json({
-    success: true,
-    data: requests
-  });
+  res.json(paginatedResponse(requests, total, req.pagination));
 }));
 
 /**
@@ -192,6 +216,25 @@ router.post('/requests',
   requireRole([ROLES.DOKTER, ROLES.PERAWAT, ROLES.ICU, ROLES.BEDAH]),
   asyncHandler(async (req, res) => {
     const { patientId, bloodType, productType, unitsRequested, priority, indication, requestingDepartment, notes } = req.body;
+
+    // Blood type compatibility check for red-cell-containing products
+    if (RED_CELL_PRODUCTS.has(productType)) {
+      const patient = await prisma.patients.findUnique({
+        where: { id: patientId },
+        select: { blood_type: true, full_name: true }
+      });
+
+      if (patient?.blood_type) {
+        const compatible = COMPATIBLE_DONORS[patient.blood_type];
+        if (compatible && !compatible.has(bloodType)) {
+          throw new ApiError(
+            422,
+            `Golongan darah ${bloodType} tidak kompatibel dengan golongan darah pasien (${patient.blood_type})`,
+            'BLOOD_TYPE_INCOMPATIBLE'
+          );
+        }
+      }
+    }
 
     const request = await prisma.transfusion_requests.create({
       data: {
@@ -212,7 +255,7 @@ router.post('/requests',
     // Emit real-time notification for urgent requests
     if (priority === 'urgent' || priority === 'emergency') {
       const io = req.app.get('io');
-      io.to('bloodbank').emit('urgent_request', {
+      io?.to('bloodbank').emit('urgent_request', {
         type: 'URGENT_TRANSFUSION_REQUEST',
         data: request
       });
