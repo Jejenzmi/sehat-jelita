@@ -340,7 +340,6 @@ router.get('/beds',
             id: true,
             room_name: true,
             room_type: true,
-            room_class: true,
             daily_rate: true
           }
         },
