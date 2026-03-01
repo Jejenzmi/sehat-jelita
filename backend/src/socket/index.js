@@ -190,6 +190,13 @@ export function initializeSocketHandlers(io) {
     });
 
     socket.on('icu:vital-update', async (data) => {
+      // Only ICU staff, doctors, and admins may push vital-sign updates
+      const authorizedRoles = ['icu', 'dokter', 'admin'];
+      const hasRole = socket.user.roles.some(r => authorizedRoles.includes(r));
+      if (!hasRole) {
+        socket.emit('error', { message: 'Tidak memiliki izin untuk event ini', code: 'FORBIDDEN' });
+        return;
+      }
       const { bedId, vitalSigns } = data;
       
       // Broadcast to ICU monitoring room

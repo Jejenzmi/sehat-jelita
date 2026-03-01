@@ -267,36 +267,40 @@ router.post('/', requireRole(['admin', 'registrasi']), asyncHandler(async (req, 
   
   const visit_number = `${typePrefix}${datePrefix}${seq.toString().padStart(4, '0')}`;
 
-  // If inpatient, atomically reserve the bed to prevent race conditions.
-  // updateMany with a status filter ensures we only succeed when the bed is
-  // still 'available', preventing two concurrent requests from double-booking.
-  if (data.visit_type === 'inpatient' && data.bed_id) {
-    const updated = await prisma.beds.updateMany({
-      where: { id: data.bed_id, status: 'available' },
-      data: { status: 'occupied', current_patient_id: data.patient_id }
+  // Wrap bed reservation and visit creation in a transaction so a failure
+  // in either step doesn't leave the database in an inconsistent state.
+  const visit = await prisma.$transaction(async (tx) => {
+    // If inpatient, atomically reserve the bed to prevent race conditions.
+    // updateMany with a status filter ensures we only succeed when the bed is
+    // still 'available', preventing two concurrent requests from double-booking.
+    if (data.visit_type === 'inpatient' && data.bed_id) {
+      const updated = await tx.beds.updateMany({
+        where: { id: data.bed_id, status: 'available' },
+        data: { status: 'occupied', current_patient_id: data.patient_id }
+      });
+
+      if (updated.count === 0) {
+        throw new ApiError(400, 'Tempat tidur tidak tersedia', 'BED_NOT_AVAILABLE');
+      }
+    }
+
+    return tx.visits.create({
+      data: {
+        ...data,
+        visit_number,
+        visit_date: new Date(),
+        admission_date: data.visit_type === 'inpatient' ? new Date() : null,
+        status: 'active',
+        created_by: req.user.id
+      },
+      include: {
+        patients: { select: { full_name: true, medical_record_number: true } },
+        departments: { select: { department_name: true } }
+      }
     });
-
-    if (updated.count === 0) {
-      throw new ApiError(400, 'Tempat tidur tidak tersedia', 'BED_NOT_AVAILABLE');
-    }
-  }
-
-  const visit = await prisma.visits.create({
-    data: {
-      ...data,
-      visit_number,
-      visit_date: new Date(),
-      admission_date: data.visit_type === 'inpatient' ? new Date() : null,
-      status: 'active',
-      created_by: req.user.id
-    },
-    include: {
-      patients: { select: { full_name: true, medical_record_number: true } },
-      departments: { select: { department_name: true } }
-    }
   });
 
-  // Audit log
+  // Audit log (outside transaction – non-critical)
   await prisma.audit_logs.create({
     data: {
       table_name: 'visits',
@@ -305,7 +309,7 @@ router.post('/', requireRole(['admin', 'registrasi']), asyncHandler(async (req, 
       user_id: req.user.id,
       new_data: visit
     }
-  });
+  }).catch(err => console.error('Audit log failed:', err));
 
   // Emit socket event for queue update
   const io = req.app.get('io');
