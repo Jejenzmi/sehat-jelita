@@ -17,6 +17,47 @@ router.use(externalApiLimiter);
 const satusehatService = new SatuSehatService();
 
 // ============================================
+// CONFIGURATION
+// ============================================
+
+/**
+ * POST /api/satusehat/config
+ * Save/Update SATU SEHAT configuration
+ */
+router.post('/config', requireRole(['admin']), asyncHandler(async (req, res) => {
+  const { org_id, environment, client_id, client_secret } = req.body;
+
+  const validEnvironments = ['sandbox', 'staging', 'production'];
+  if (environment !== undefined && !validEnvironments.includes(environment)) {
+    throw new ApiError(400, `Environment tidak valid. Pilihan: ${validEnvironments.join(', ')}`, 'INVALID_ENVIRONMENT');
+  }
+
+  if (!org_id && !environment && !client_id && !client_secret) {
+    throw new ApiError(400, 'Minimal satu field harus diisi', 'MISSING_FIELDS');
+  }
+
+  satusehatService.saveConfiguration({ org_id, environment, client_id, client_secret });
+
+  res.json({
+    success: true,
+    message: 'Konfigurasi SATU SEHAT berhasil disimpan'
+  });
+}));
+
+/**
+ * GET /api/satusehat/config
+ * Get current SATU SEHAT configuration
+ */
+router.get('/config', requireRole(['admin']), asyncHandler(async (req, res) => {
+  const config = satusehatService.getConfiguration();
+
+  res.json({
+    success: true,
+    data: config
+  });
+}));
+
+// ============================================
 // AUTHENTICATION
 // ============================================
 
