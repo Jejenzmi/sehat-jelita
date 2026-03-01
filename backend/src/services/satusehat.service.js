@@ -39,6 +39,38 @@ class SatuSehatService {
     return this.authUrls[this.env] || this.authUrls.sandbox;
   }
 
+  // ==========================================
+  // CONFIGURATION MANAGEMENT
+  // ==========================================
+
+  /**
+   * Save SATU SEHAT Configuration
+   */
+  saveConfiguration(config) {
+    const validEnvironments = ['sandbox', 'staging', 'production'];
+    if (config.environment !== undefined && !validEnvironments.includes(config.environment)) {
+      throw new Error(`Invalid environment: ${config.environment}`);
+    }
+    if (config.org_id !== undefined) this.orgId = config.org_id;
+    if (config.environment !== undefined) this.env = config.environment;
+    if (config.client_id !== undefined) this.clientId = config.client_id;
+    if (config.client_secret !== undefined) this.clientSecret = config.client_secret;
+    // Reset token cache when config changes
+    this.accessToken = null;
+    this.tokenExpiry = null;
+  }
+
+  /**
+   * Get SATU SEHAT Configuration (without sensitive credentials)
+   */
+  getConfiguration() {
+    return {
+      org_id: this.orgId,
+      environment: this.env,
+      client_id: this.clientId,
+    };
+  }
+
   /**
    * Get OAuth2 Access Token
    */
