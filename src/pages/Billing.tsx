@@ -13,7 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { PaymentGateway } from "@/components/billing/PaymentGateway";
 
-type BillingStatus = "pending" | "lunas" | "batal" | "partial";
+type BillingStatus = "pending" | "partial" | "paid" | "cancelled" | "refunded";
 type PaymentType = "umum" | "bpjs" | "asuransi";
 
 interface Billing {
@@ -49,17 +49,19 @@ interface BillingItem {
 }
 
 const statusColors: Record<string, string> = {
-  lunas: "bg-success/10 text-success border-success/20",
+  paid: "bg-success/10 text-success border-success/20",
   pending: "bg-warning/10 text-warning border-warning/20",
-  batal: "bg-destructive/10 text-destructive border-destructive/20",
+  cancelled: "bg-destructive/10 text-destructive border-destructive/20",
   partial: "bg-info/10 text-info border-info/20",
+  refunded: "bg-muted/10 text-muted-foreground border-muted/20",
 };
 
 const statusLabels: Record<string, string> = {
-  lunas: "Lunas",
+  paid: "Lunas",
   pending: "Pending",
-  batal: "Batal",
+  cancelled: "Batal",
   partial: "Sebagian",
+  refunded: "Dikembalikan",
 };
 
 const typeColors: Record<string, string> = {
@@ -91,12 +93,12 @@ export default function Billing() {
         `)
         .order("billing_date", { ascending: false });
 
-      if (statusFilter !== "all" && statusFilter !== "pending" && statusFilter !== "lunas") {
+      if (statusFilter !== "all" && statusFilter !== "pending" && statusFilter !== "paid") {
         // Skip filter for special tabs
       } else if (statusFilter === "pending") {
         query = query.eq("status", "pending");
-      } else if (statusFilter === "lunas") {
-        query = query.eq("status", "lunas");
+      } else if (statusFilter === "paid") {
+        query = query.eq("status", "paid");
       }
 
       const { data, error } = await query;
@@ -111,16 +113,16 @@ export default function Billing() {
     return billingDate.toDateString() === new Date().toDateString();
   });
   const todayRevenue = todayBillings.reduce((sum, b) => sum + (b.paid_amount || 0), 0);
-  const completedToday = todayBillings.filter(b => b.status === "lunas").length;
+  const completedToday = todayBillings.filter(b => b.status === "paid").length;
   const pendingBillings = billings.filter(b => b.status === "pending");
   const pendingTotal = pendingBillings.reduce((sum, b) => sum + b.total, 0);
 
   // Revenue by payment type
-  const bpjsRevenue = billings.filter(b => b.payment_type === "bpjs" && b.status === "lunas")
+  const bpjsRevenue = billings.filter(b => b.payment_type === "bpjs" && b.status === "paid")
     .reduce((sum, b) => sum + b.total, 0);
-  const umumRevenue = billings.filter(b => b.payment_type === "umum" && b.status === "lunas")
+  const umumRevenue = billings.filter(b => b.payment_type === "umum" && b.status === "paid")
     .reduce((sum, b) => sum + b.total, 0);
-  const asuransiRevenue = billings.filter(b => b.payment_type === "asuransi" && b.status === "lunas")
+  const asuransiRevenue = billings.filter(b => b.payment_type === "asuransi" && b.status === "paid")
     .reduce((sum, b) => sum + b.total, 0);
   const totalRevenue = bpjsRevenue + umumRevenue + asuransiRevenue;
 
@@ -131,7 +133,7 @@ export default function Billing() {
       if (!billing) throw new Error("Billing not found");
 
       const newPaidAmount = (billing.paid_amount || 0) + amount;
-      const newStatus = newPaidAmount >= billing.total ? "lunas" : "pending";
+      const newStatus = newPaidAmount >= billing.total ? "paid" : "partial";
 
       const { error } = await db
         .from("billings")
@@ -311,7 +313,7 @@ export default function Billing() {
             <TabsList>
               <TabsTrigger value="all">Semua</TabsTrigger>
               <TabsTrigger value="pending">Pending</TabsTrigger>
-              <TabsTrigger value="lunas">Lunas</TabsTrigger>
+              <TabsTrigger value="paid">Lunas</TabsTrigger>
             </TabsList>
             <div className="flex items-center gap-2">
               <div className="relative">
@@ -397,7 +399,7 @@ export default function Billing() {
                                 Bayar
                               </Button>
                             )}
-                            {bill.status === "lunas" && (
+                            {bill.status === "paid" && (
                               <Button size="sm" variant="outline">
                                 <Printer className="h-4 w-4 mr-1" />
                                 Cetak
@@ -458,7 +460,7 @@ export default function Billing() {
             </div>
           </TabsContent>
 
-          <TabsContent value="lunas" className="mt-0">
+          <TabsContent value="paid" className="mt-0">
             <div className="overflow-x-auto">
               <table className="data-table">
                 <thead>
@@ -472,7 +474,7 @@ export default function Billing() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredBillings.filter(b => b.status === "lunas").map((bill) => (
+                  {filteredBillings.filter(b => b.status === "paid").map((bill) => (
                     <tr key={bill.id}>
                       <td className="font-mono text-sm font-medium">{bill.invoice_number}</td>
                       <td>{bill.patients?.full_name}</td>

@@ -12658,7 +12658,7 @@ export type Database = {
         | "ASA_VI"
       asset_status: "active" | "inactive" | "maintenance" | "disposed" | "lost"
       bed_status: "tersedia" | "terisi" | "maintenance" | "reserved"
-      billing_status: "pending" | "lunas" | "batal"
+      billing_status: "pending" | "partial" | "paid" | "cancelled" | "refunded"
       blood_product_type:
         | "whole_blood"
         | "prc"
@@ -12936,7 +12936,7 @@ export const Constants = {
       ],
       asset_status: ["active", "inactive", "maintenance", "disposed", "lost"],
       bed_status: ["tersedia", "terisi", "maintenance", "reserved"],
-      billing_status: ["pending", "lunas", "batal"],
+      billing_status: ["pending", "partial", "paid", "cancelled", "refunded"],
       blood_product_type: [
         "whole_blood",
         "prc",
