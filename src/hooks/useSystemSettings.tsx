@@ -83,7 +83,7 @@ export function useSystemSettings() {
     mutationFn: async ({ key, value }: { key: string; value: any }) => {
       const { error } = await db
         .from("system_settings")
-        .update({ setting_value: value, updated_at: new Date().toISOString() })
+        .update({ setting_key: key, setting_value: value, updated_at: new Date().toISOString() })
         .eq("setting_key", key);
 
       if (error) throw error;

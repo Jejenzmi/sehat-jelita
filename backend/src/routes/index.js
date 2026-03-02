@@ -157,6 +157,24 @@ router.put('/admin/system-settings/:key', requireRole(['admin']), asyncHandler(a
   res.json({ success: true, data: setting });
 }));
 
+// Fallback: accept PUT /admin/system-settings with setting_key in the request body.
+router.put('/admin/system-settings', requireRole(['admin']), asyncHandler(async (req, res) => {
+  const { prisma } = await import('../config/database.js');
+  const { setting_key, value, setting_value } = req.body;
+  if (!setting_key) {
+    return res.status(400).json({ success: false, error: 'setting_key diperlukan' });
+  }
+  const settingValue = value !== undefined ? value : setting_value;
+
+  const setting = await prisma.system_settings.upsert({
+    where: { setting_key },
+    update: { setting_value: settingValue },
+    create: { setting_key, setting_value: settingValue }
+  });
+
+  res.json({ success: true, data: setting });
+}));
+
 // Check whether initial hospital setup has been completed
 router.get('/admin/setup-status', asyncHandler(async (req, res) => {
   const { prisma } = await import('../config/database.js');
