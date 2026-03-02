@@ -88,6 +88,7 @@ export function useDashboardStats() {
         pendingBillings: pendingBillings || 0,
       };
     },
+    staleTime: 30000,
     refetchInterval: 30000, // Refresh every 30 seconds
   });
 }
@@ -135,6 +136,7 @@ export function useBedOccupancy() {
           color: data.color,
         }));
     },
+    staleTime: 60000,
     refetchInterval: 60000,
   });
 }
@@ -177,6 +179,7 @@ export function useWeeklyVisits() {
 
       return result;
     },
+    staleTime: 60000,
     refetchInterval: 60000,
   });
 }
@@ -206,6 +209,7 @@ export function useRecentPatients() {
 
       return data || [];
     },
+    staleTime: 30000,
     refetchInterval: 30000,
   });
 }

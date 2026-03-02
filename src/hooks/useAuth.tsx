@@ -1,8 +1,6 @@
 import { createContext, useContext, useEffect, useRef, useState, ReactNode } from "react";
 import { api } from "@/lib/api-client";
 
-const MIN_LOADING_DURATION_MS = 2000;
-
 type AppRole = "admin" | "dokter" | "perawat" | "kasir" | "farmasi" | "laboratorium" | "radiologi" | "pendaftaran" | "keuangan" | "gizi" | "icu" | "bedah" | "rehabilitasi" | "mcu" | "forensik" | "cssd" | "manajemen" | "bank_darah";
 
 interface AppUser {
@@ -34,12 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
     const initialize = async () => {
       try {
-        const startTime = Date.now();
         const response = await api.auth.getCurrentUser() as { success: boolean; data: { id: string; email: string; fullName: string; roles: string[] } };
-        const elapsed = Date.now() - startTime;
-        if (elapsed < MIN_LOADING_DURATION_MS) {
-          await new Promise(resolve => setTimeout(resolve, MIN_LOADING_DURATION_MS - elapsed));
-        }
         if (!cancelled && response?.success && response.data) {
           setUser({ id: response.data.id, email: response.data.email, fullName: response.data.fullName });
           setRoles((response.data.roles ?? []) as AppRole[]);
