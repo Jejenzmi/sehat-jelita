@@ -71,6 +71,7 @@ export function useMenuAccess() {
       return (data || []) as MenuAccess[];
     },
     enabled: !!user?.id,
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
   const canViewPath = (path: string): boolean => {
