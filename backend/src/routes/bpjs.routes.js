@@ -394,4 +394,84 @@ router.get('/icare/rencana-kontrol/:noSep', asyncHandler(async (req, res) => {
   });
 }));
 
+// ============================================
+// CLAIMS
+// ============================================
+
+/**
+ * GET /api/bpjs/claims
+ * List BPJS claims
+ */
+router.get('/claims', asyncHandler(async (req, res) => {
+  const { prisma } = await import('../config/database.js');
+  const { status, patient_id, page = 1, limit = 50 } = req.query;
+
+  const where = {};
+  if (status) where.status = status;
+  if (patient_id) where.patient_id = patient_id;
+
+  const [total, claims] = await Promise.all([
+    prisma.bpjs_claims.count({ where }),
+    prisma.bpjs_claims.findMany({
+      where,
+      orderBy: { claim_date: 'desc' },
+      skip: (parseInt(page) - 1) * parseInt(limit),
+      take: parseInt(limit),
+    }),
+  ]);
+
+  res.json({
+    success: true,
+    data: claims,
+    pagination: { page: parseInt(page), limit: parseInt(limit), total },
+  });
+}));
+
+/**
+ * POST /api/bpjs/claims
+ * Create a BPJS claim
+ */
+router.post('/claims', requireRole(['admin', 'keuangan']), asyncHandler(async (req, res) => {
+  const { prisma } = await import('../config/database.js');
+  const claim = await prisma.bpjs_claims.create({
+    data: { ...req.body, created_by: req.user.id },
+  });
+  res.status(201).json({ success: true, data: claim });
+}));
+
+/**
+ * PUT /api/bpjs/claims/:id
+ * Update a BPJS claim
+ */
+router.put('/claims/:id', requireRole(['admin', 'keuangan']), asyncHandler(async (req, res) => {
+  const { prisma } = await import('../config/database.js');
+  const { id } = req.params;
+  const claim = await prisma.bpjs_claims.update({ where: { id }, data: req.body });
+  res.json({ success: true, data: claim });
+}));
+
+// ============================================
+// VCLAIM PROXY
+// ============================================
+
+/**
+ * POST /api/bpjs/vclaim
+ * Proxy for BPJS VClaim service calls
+ */
+router.post('/vclaim', externalApiLimiter, asyncHandler(async (req, res) => {
+  const { action, ...params } = req.body;
+  try {
+    const service = new BPJSVClaimService();
+    let result;
+    if (action && typeof service[action] === 'function') {
+      result = await service[action](...Object.values(params));
+    } else {
+      result = await service.request(action, 'POST', params);
+    }
+    res.json({ success: true, data: result });
+  } catch (error) {
+    res.status(502).json({ success: false, error: error.message });
+  }
+}));
+
 export default router;

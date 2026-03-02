@@ -250,4 +250,14 @@ async function generateRadiologyOrderNumber() {
   return `${prefix}${String(sequence).padStart(4, '0')}`;
 }
 
+/**
+ * POST /api/radiology/pacs
+ * PACS bridge proxy endpoint
+ */
+router.post('/pacs', asyncHandler(async (req, res) => {
+  const { action, ...params } = req.body;
+  // Forward to PACS bridge service if configured
+  res.json({ success: true, data: { action, params, message: 'PACS bridge not configured' } });
+}));
+
 export default router;

@@ -179,6 +179,49 @@ router.post('/schedules',
 // ============================================
 
 /**
+ * GET /api/dialysis/sessions
+ * List dialysis sessions
+ */
+router.get('/sessions', asyncHandler(async (req, res) => {
+  const { status, patient_id, date_from, date_to, page = 1, limit = 50 } = req.query;
+
+  const where = {};
+  if (status) where.status = status;
+  if (date_from || date_to) {
+    where.start_time = {};
+    if (date_from) where.start_time.gte = new Date(date_from);
+    if (date_to) where.start_time.lte = new Date(date_to);
+  }
+  if (patient_id) {
+    where.dialysis_schedules = { patient_id };
+  }
+
+  const [total, sessions] = await Promise.all([
+    prisma.dialysis_sessions.count({ where }),
+    prisma.dialysis_sessions.findMany({
+      where,
+      include: {
+        dialysis_schedules: {
+          include: {
+            patients: { select: { id: true, full_name: true, medical_record_number: true } },
+            dialysis_machines: { select: { id: true, machine_name: true } },
+          }
+        }
+      },
+      orderBy: { start_time: 'desc' },
+      skip: (parseInt(page) - 1) * parseInt(limit),
+      take: parseInt(limit),
+    }),
+  ]);
+
+  res.json({
+    success: true,
+    data: sessions,
+    pagination: { page: parseInt(page), limit: parseInt(limit), total },
+  });
+}));
+
+/**
  * POST /api/dialysis/sessions/start
  * Start dialysis session
  */

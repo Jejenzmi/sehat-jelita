@@ -155,6 +155,8 @@ model departments {
   rooms        rooms[]
   visits       visits[]
   appointments appointments[]
+  doctor_schedules doctor_schedules[]
+  work_shifts      work_shifts[]
 }
 
 model rooms {
@@ -215,6 +217,7 @@ model doctors {
   prescriptions   prescriptions[]
   medical_records medical_records[]
   lab_orders      lab_orders[]
+  doctor_schedules doctor_schedules[]
 
   @@index([department_id])
 }
@@ -280,6 +283,7 @@ model patients {
   rehabilitation_cases  rehabilitation_cases[]
   mortuary_cases        mortuary_cases[]
   visum_reports         visum_reports[]
+  home_care_visits      home_care_visits[]
 }
 
 // ============================================
@@ -717,6 +721,46 @@ model payroll {
 }
 
 // ============================================
+// DOCTOR SCHEDULES & WORK SHIFTS (HR)
+// ============================================
+
+model doctor_schedules {
+  id            String    @id @default(uuid())
+  doctor_id     String
+  department_id String?
+  day_of_week   Int
+  start_time    String
+  end_time      String
+  quota         Int       @default(20)
+  is_active     Boolean   @default(true)
+  notes         String?
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+  doctor        doctors      @relation(fields: [doctor_id], references: [id], onDelete: Cascade)
+  department    departments? @relation(fields: [department_id], references: [id])
+
+  @@index([doctor_id])
+  @@index([department_id])
+}
+
+model work_shifts {
+  id            String    @id @default(uuid())
+  shift_code    String    @unique
+  shift_name    String
+  start_time    String
+  end_time      String
+  is_overnight  Boolean   @default(false)
+  department_id String?
+  is_active     Boolean   @default(true)
+  notes         String?
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+  department    departments? @relation(fields: [department_id], references: [id])
+
+  @@index([department_id])
+}
+
+// ============================================
 // APPOINTMENTS
 // ============================================
 
@@ -939,10 +983,45 @@ model surgeries {
   patients patients @relation(fields: [patient_id], references: [id])
   anesthesia_records anesthesia_records?
   operating_rooms    operating_rooms?    @relation(fields: [operating_room_id], references: [id])
+  surgery_teams              surgery_teams[]
+  surgical_safety_checklists surgical_safety_checklists?
 
   @@index([patient_id])
   @@index([visit_id])
   @@index([scheduled_date])
+}
+
+model surgery_teams {
+  id          String    @id @default(uuid())
+  surgery_id  String
+  staff_id    String?
+  staff_name  String
+  role        String
+  is_primary  Boolean   @default(false)
+  notes       String?
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+  surgery     surgeries @relation(fields: [surgery_id], references: [id], onDelete: Cascade)
+
+  @@index([surgery_id])
+}
+
+model surgical_safety_checklists {
+  id                  String    @id @default(uuid())
+  surgery_id          String    @unique
+  sign_in_completed   Boolean   @default(false)
+  sign_in_time        DateTime?
+  sign_in_by          String?
+  time_out_completed  Boolean   @default(false)
+  time_out_time       DateTime?
+  time_out_by         String?
+  sign_out_completed  Boolean   @default(false)
+  sign_out_time       DateTime?
+  sign_out_by         String?
+  notes               String?
+  created_at          DateTime  @default(now())
+  updated_at          DateTime  @updatedAt
+  surgery             surgeries @relation(fields: [surgery_id], references: [id], onDelete: Cascade)
 }
 
 // ============================================
@@ -1999,6 +2078,82 @@ model research_projects {
   notes                   String?
   created_at              DateTime  @default(now())
   updated_at              DateTime  @updatedAt
+}
+
+// ============================================
+// AMBULANCE
+// ============================================
+
+model ambulance_fleet {
+  id                  String    @id @default(uuid())
+  ambulance_code      String    @unique
+  plate_number        String    @unique
+  ambulance_type      String    @default("basic")
+  status              String    @default("available")
+  driver_name         String?
+  crew_names          String?
+  equipment_status    String?
+  last_service_date   DateTime?
+  next_service_date   DateTime?
+  notes               String?
+  created_at          DateTime  @default(now())
+  updated_at          DateTime  @updatedAt
+  dispatches          ambulance_dispatches[]
+}
+
+model ambulance_dispatches {
+  id                  String    @id @default(uuid())
+  dispatch_number     String    @unique
+  ambulance_id        String?
+  patient_info        String
+  pickup_location     String
+  destination         String
+  priority            String    @default("normal")
+  status              String    @default("pending")
+  caller_name         String?
+  caller_phone        String?
+  request_time        DateTime  @default(now())
+  dispatch_time       DateTime?
+  arrival_time        DateTime?
+  completion_time     DateTime?
+  notes               String?
+  created_at          DateTime  @default(now())
+  updated_at          DateTime  @updatedAt
+  ambulance           ambulance_fleet? @relation(fields: [ambulance_id], references: [id])
+
+  @@index([ambulance_id])
+  @@index([status])
+}
+
+// ============================================
+// HOME CARE
+// ============================================
+
+model home_care_visits {
+  id                  String    @id @default(uuid())
+  visit_number        String    @unique
+  patient_id          String?
+  patient_name        String
+  patient_phone       String?
+  address             String
+  nurse_id            String?
+  nurse_name          String
+  doctor_id           String?
+  doctor_name         String?
+  visit_date          DateTime
+  visit_time          String
+  service_type        String
+  status              String    @default("scheduled")
+  notes               String?
+  completion_notes    String?
+  completed_at        DateTime?
+  created_at          DateTime  @default(now())
+  updated_at          DateTime  @updatedAt
+  patient             patients? @relation(fields: [patient_id], references: [id])
+
+  @@index([patient_id])
+  @@index([visit_date])
+  @@index([status])
 }
 
 // ============================================

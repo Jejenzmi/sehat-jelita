@@ -525,4 +525,27 @@ router.get('/sync/status', asyncHandler(async (req, res) => {
   });
 }));
 
+/**
+ * POST /api/satusehat/invoke
+ * Generic Satu Sehat FHIR resource invocation endpoint
+ */
+router.post('/invoke', externalApiLimiter, asyncHandler(async (req, res) => {
+  const { resourceType, action, data } = req.body;
+  try {
+    let result;
+    if (resourceType === 'Patient') {
+      result = await satusehatService.upsertPatient(data);
+    } else if (resourceType === 'Encounter' && action === 'create') {
+      result = await satusehatService.createEncounter(data);
+    } else if (resourceType === 'Encounter' && action === 'update' && data?.id) {
+      result = await satusehatService.updateEncounter(data.id, data);
+    } else {
+      result = await satusehatService.request(`/${resourceType}`, 'POST', data);
+    }
+    res.json({ success: true, data: result });
+  } catch (error) {
+    res.status(502).json({ success: false, error: error.message });
+  }
+}));
+
 export default router;

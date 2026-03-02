@@ -324,4 +324,43 @@ router.put('/system-settings/:key', asyncHandler(async (req, res) => {
   res.json({ success: true, data: setting });
 }));
 
+// ============================================
+// USER ROLES
+// ============================================
+
+/**
+ * GET /api/admin/user-roles
+ */
+router.get('/user-roles', asyncHandler(async (req, res) => {
+  const { user_id } = req.query;
+
+  const where = {};
+  if (user_id) where.user_id = user_id;
+
+  const userRoles = await prisma.user_roles.findMany({
+    where,
+    orderBy: { created_at: 'desc' },
+  });
+
+  res.json({ success: true, data: userRoles });
+}));
+
+/**
+ * POST /api/admin/user-roles
+ */
+router.post('/user-roles', asyncHandler(async (req, res) => {
+  const { user_id, role } = req.body;
+  const userRole = await prisma.user_roles.create({ data: { user_id, role } });
+  res.status(201).json({ success: true, data: userRole });
+}));
+
+/**
+ * DELETE /api/admin/user-roles/:id
+ */
+router.delete('/user-roles/:id', asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  await prisma.user_roles.delete({ where: { id } });
+  res.json({ success: true, message: 'User role removed' });
+}));
+
 export default router;

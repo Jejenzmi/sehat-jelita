@@ -443,4 +443,31 @@ router.get('/census',
   })
 );
 
+/**
+ * GET /api/inpatient/rooms
+ * Get all inpatient rooms with bed availability
+ */
+router.get('/rooms',
+  requireRole([ROLES.PERAWAT, ROLES.PENDAFTARAN, ROLES.MANAJEMEN]),
+  asyncHandler(async (req, res) => {
+    const { department_id, room_type, is_active } = req.query;
+
+    const where = {};
+    if (department_id) where.department_id = department_id;
+    if (room_type) where.room_type = room_type;
+    if (is_active !== undefined) where.is_active = is_active === 'true';
+
+    const rooms = await prisma.rooms.findMany({
+      where,
+      include: {
+        departments: { select: { id: true, department_name: true } },
+        beds: { select: { id: true, bed_number: true, status: true, current_patient_id: true } },
+      },
+      orderBy: [{ room_number: 'asc' }],
+    });
+
+    res.json({ success: true, data: rooms });
+  })
+);
+
 export default router;
