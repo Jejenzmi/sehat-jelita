@@ -115,6 +115,9 @@ class QueryBuilder implements PromiseLike<any> {
   eq(col: string, val: unknown): this {
     this._filters.push({ type: 'eq', col, val });
     if (col === 'id') this._idFromEq = String(val);
+    // Fallback: when no 'id' eq filter is set, use the first eq filter value as the
+    // path ID for PUT/DELETE requests (e.g. eq("setting_key", key) → PUT /endpoint/{key}).
+    else if (this._idFromEq === null) this._idFromEq = String(val);
     return this;
   }
   neq(col: string, val: unknown): this { this._filters.push({ type: 'neq', col, val }); return this; }
