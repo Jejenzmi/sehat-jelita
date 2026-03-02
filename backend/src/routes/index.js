@@ -34,6 +34,8 @@ import forensicRoutes from './forensic.routes.js';
 import educationRoutes from './education.routes.js';
 import eklaimIDRGRoutes from './eklaim-idrg.routes.js';
 import adminRoutes from './admin.routes.js';
+import ambulanceRoutes from './ambulance.routes.js';
+import homeCareRoutes from './home-care.routes.js';
 
 const router = Router();
 
@@ -88,6 +90,10 @@ router.use('/eklaim', eklaimIDRGRoutes);
 
 // Education Module (Teaching Hospital)
 router.use('/education', educationRoutes);
+
+// Ambulance & Home Care Modules
+router.use('/ambulance', ambulanceRoutes);
+router.use('/home-care', homeCareRoutes);
 
 // ============================================
 // ADMIN ONLY ROUTES
@@ -317,6 +323,45 @@ router.get('/reports/visits', asyncHandler(async (req, res) => {
   res.json({
     success: true,
     data: { byType, byDepartment, byStatus }
+  });
+}));
+
+router.post('/reports/rl6-indicators', asyncHandler(async (req, res) => {
+  const { prisma } = await import('../config/database.js');
+  const { month, year } = req.body;
+
+  const startDate = new Date(year, month - 1, 1);
+  const endDate = new Date(year, month, 0, 23, 59, 59);
+
+  const [
+    totalInpatient,
+    totalDischarges,
+    occupiedBeds,
+    totalBeds
+  ] = await Promise.all([
+    prisma.inpatient_admissions.count({
+      where: { admission_date: { gte: startDate, lte: endDate } }
+    }),
+    prisma.inpatient_admissions.count({
+      where: { discharge_date: { gte: startDate, lte: endDate } }
+    }),
+    prisma.beds.count({ where: { status: 'occupied' } }),
+    prisma.beds.count()
+  ]);
+
+  const bor = totalBeds > 0 ? ((occupiedBeds / totalBeds) * 100).toFixed(2) : 0;
+
+  res.json({
+    success: true,
+    data: {
+      month,
+      year,
+      totalInpatient,
+      totalDischarges,
+      occupiedBeds,
+      totalBeds,
+      bor: parseFloat(bor)
+    }
   });
 }));
 

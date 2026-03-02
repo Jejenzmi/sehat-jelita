@@ -14,7 +14,7 @@ const TABLE_ENDPOINTS: Record<string, string> = {
   visits: '/visits',
   billings: '/billing',
   prescriptions: '/pharmacy/prescriptions',
-  medicines: '/pharmacy/stock',
+  medicines: '/pharmacy/medicines',
   inpatient_admissions: '/inpatient/admissions',
   beds: '/inpatient/beds',
   rooms: '/inpatient/rooms',
@@ -57,6 +57,9 @@ const TABLE_ENDPOINTS: Record<string, string> = {
   notifications: '/admin/notifications',
   user_roles: '/admin/user-roles',
   profiles: '/admin/profiles',
+  ambulance_fleet: '/ambulance/fleet',
+  ambulance_dispatches: '/ambulance/dispatches',
+  home_care_visits: '/home-care/visits',
 };
 
 // Edge function → backend endpoint mapping

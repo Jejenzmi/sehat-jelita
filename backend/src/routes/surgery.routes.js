@@ -359,4 +359,75 @@ router.get('/stats',
   })
 );
 
+// ============================================
+// SURGERY TEAMS
+// ============================================
+
+/**
+ * GET /api/surgery/teams
+ */
+router.get('/teams', asyncHandler(async (req, res) => {
+  const { surgery_id } = req.query;
+  const where = {};
+  if (surgery_id) where.surgery_id = surgery_id;
+
+  const teams = await prisma.surgery_teams.findMany({
+    where,
+    orderBy: { created_at: 'asc' },
+  });
+  res.json({ success: true, data: teams });
+}));
+
+/**
+ * POST /api/surgery/teams
+ */
+router.post('/teams', requireRole([ROLES.BEDAH, ROLES.DOKTER]), asyncHandler(async (req, res) => {
+  const { surgery_id, staff_id, staff_name, role, is_primary, notes } = req.body;
+  const member = await prisma.surgery_teams.create({
+    data: { surgery_id, staff_id, staff_name, role, is_primary: is_primary ?? false, notes },
+  });
+  res.status(201).json({ success: true, data: member });
+}));
+
+/**
+ * DELETE /api/surgery/teams/:id
+ */
+router.delete('/teams/:id', requireRole([ROLES.BEDAH, ROLES.DOKTER]), asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  await prisma.surgery_teams.delete({ where: { id } });
+  res.json({ success: true, message: 'Team member removed' });
+}));
+
+// ============================================
+// SURGICAL SAFETY CHECKLISTS
+// ============================================
+
+/**
+ * GET /api/surgery/safety-checklists
+ */
+router.get('/safety-checklists', asyncHandler(async (req, res) => {
+  const { surgery_id } = req.query;
+  const where = {};
+  if (surgery_id) where.surgery_id = surgery_id;
+
+  const checklists = await prisma.surgical_safety_checklists.findMany({
+    where,
+    orderBy: { created_at: 'desc' },
+  });
+  res.json({ success: true, data: checklists });
+}));
+
+/**
+ * POST /api/surgery/safety-checklists
+ */
+router.post('/safety-checklists', requireRole([ROLES.BEDAH, ROLES.DOKTER, ROLES.PERAWAT]), asyncHandler(async (req, res) => {
+  const data = req.body;
+  const checklist = await prisma.surgical_safety_checklists.upsert({
+    where: { surgery_id: data.surgery_id },
+    update: data,
+    create: data,
+  });
+  res.status(201).json({ success: true, data: checklist });
+}));
+
 export default router;

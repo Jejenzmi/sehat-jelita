@@ -390,4 +390,103 @@ router.get('/next-pr-number', asyncHandler(async (req, res) => {
   res.json({ success: true, data: `${prefix}${String(seq).padStart(4, '0')}` });
 }));
 
+// ============================================
+// PURCHASE REQUESTS
+// ============================================
+
+/**
+ * GET /api/inventory/purchase-requests
+ */
+router.get('/purchase-requests',
+  requireRole([ROLES.PROCUREMENT]),
+  asyncHandler(async (req, res) => {
+    const { status, department_id, page = 1, limit = 50 } = req.query;
+
+    const where = {};
+    if (status) where.status = status;
+    if (department_id) where.department_id = department_id;
+
+    const [total, requests] = await Promise.all([
+      prisma.purchase_requests.count({ where }),
+      prisma.purchase_requests.findMany({
+        where,
+        orderBy: { request_date: 'desc' },
+        skip: (parseInt(page) - 1) * parseInt(limit),
+        take: parseInt(limit),
+      }),
+    ]);
+
+    res.json({
+      success: true,
+      data: requests,
+      pagination: { page: parseInt(page), limit: parseInt(limit), total },
+    });
+  })
+);
+
+/**
+ * POST /api/inventory/purchase-requests
+ */
+router.post('/purchase-requests',
+  requireRole([ROLES.PROCUREMENT]),
+  asyncHandler(async (req, res) => {
+    const today = new Date();
+    const prefix = `PR${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, '0')}`;
+    const last = await prisma.purchase_requests.findFirst({
+      where: { pr_number: { startsWith: prefix } },
+      orderBy: { pr_number: 'desc' },
+    });
+    const seq = last ? parseInt(last.pr_number.slice(-4), 10) + 1 : 1;
+    const pr_number = `${prefix}${String(seq).padStart(4, '0')}`;
+
+    const request = await prisma.purchase_requests.create({
+      data: { ...req.body, pr_number, requested_by: req.user.id },
+    });
+    res.status(201).json({ success: true, data: request });
+  })
+);
+
+/**
+ * PUT /api/inventory/purchase-requests/:id
+ */
+router.put('/purchase-requests/:id',
+  requireRole([ROLES.PROCUREMENT]),
+  asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const request = await prisma.purchase_requests.update({ where: { id }, data: req.body });
+    res.json({ success: true, data: request });
+  })
+);
+
+// ============================================
+// VENDORS (alias to suppliers)
+// ============================================
+
+/**
+ * GET /api/inventory/vendors
+ */
+router.get('/vendors',
+  requireRole([ROLES.PROCUREMENT]),
+  asyncHandler(async (req, res) => {
+    const vendors = await prisma.suppliers.findMany({
+      where: { is_active: true },
+      orderBy: { supplier_name: 'asc' },
+    });
+    res.json({ success: true, data: vendors });
+  })
+);
+
+/**
+ * POST /api/inventory/vendors
+ */
+router.post('/vendors',
+  requireRole([ROLES.PROCUREMENT]),
+  asyncHandler(async (req, res) => {
+    const vendor = await prisma.suppliers.create({
+      data: { ...req.body, created_by: req.user.id },
+    });
+    res.status(201).json({ success: true, data: vendor });
+  })
+);
+
 export default router;

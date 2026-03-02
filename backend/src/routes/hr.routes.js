@@ -361,4 +361,100 @@ router.post('/trainings',
   })
 );
 
+// ============================================
+// DOCTOR SCHEDULES
+// ============================================
+
+/**
+ * GET /api/hr/schedules
+ */
+router.get('/schedules', asyncHandler(async (req, res) => {
+  const { doctor_id, department_id, day_of_week, is_active } = req.query;
+
+  const where = {};
+  if (doctor_id) where.doctor_id = doctor_id;
+  if (department_id) where.department_id = department_id;
+  if (day_of_week !== undefined) where.day_of_week = parseInt(day_of_week);
+  if (is_active !== undefined) where.is_active = is_active === 'true';
+
+  const schedules = await prisma.doctor_schedules.findMany({
+    where,
+    include: {
+      doctor: { select: { id: true, full_name: true, specialization: true } },
+      department: { select: { id: true, department_name: true } },
+    },
+    orderBy: [{ day_of_week: 'asc' }, { start_time: 'asc' }],
+  });
+
+  res.json({ success: true, data: schedules });
+}));
+
+/**
+ * POST /api/hr/schedules
+ */
+router.post('/schedules', requireRole([ROLES.HRD, ROLES.ADMIN]), asyncHandler(async (req, res) => {
+  const schedule = await prisma.doctor_schedules.create({ data: req.body });
+  res.status(201).json({ success: true, data: schedule });
+}));
+
+/**
+ * PUT /api/hr/schedules/:id
+ */
+router.put('/schedules/:id', requireRole([ROLES.HRD, ROLES.ADMIN]), asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const schedule = await prisma.doctor_schedules.update({ where: { id }, data: req.body });
+  res.json({ success: true, data: schedule });
+}));
+
+/**
+ * DELETE /api/hr/schedules/:id
+ */
+router.delete('/schedules/:id', requireRole([ROLES.HRD, ROLES.ADMIN]), asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  await prisma.doctor_schedules.delete({ where: { id } });
+  res.json({ success: true, message: 'Schedule deleted' });
+}));
+
+// ============================================
+// WORK SHIFTS
+// ============================================
+
+/**
+ * GET /api/hr/shifts
+ */
+router.get('/shifts', asyncHandler(async (req, res) => {
+  const { department_id, is_active } = req.query;
+
+  const where = {};
+  if (department_id) where.department_id = department_id;
+  if (is_active !== undefined) where.is_active = is_active === 'true';
+
+  const shifts = await prisma.work_shifts.findMany({
+    where,
+    include: {
+      department: { select: { id: true, department_name: true } },
+    },
+    orderBy: { shift_code: 'asc' },
+  });
+
+  res.json({ success: true, data: shifts });
+}));
+
+/**
+ * POST /api/hr/shifts
+ */
+router.post('/shifts', requireRole([ROLES.HRD, ROLES.ADMIN]), asyncHandler(async (req, res) => {
+  const shift = await prisma.work_shifts.create({ data: req.body });
+  res.status(201).json({ success: true, data: shift });
+}));
+
+/**
+ * PUT /api/hr/shifts/:id
+ */
+router.put('/shifts/:id', requireRole([ROLES.HRD, ROLES.ADMIN]), asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const shift = await prisma.work_shifts.update({ where: { id }, data: req.body });
+  res.json({ success: true, data: shift });
+}));
+
 export default router;

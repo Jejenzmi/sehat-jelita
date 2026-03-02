@@ -376,4 +376,95 @@ router.post('/death-certificates',
   })
 );
 
+// ============================================
+// ALIASES (for db.ts TABLE_ENDPOINTS compatibility)
+// ============================================
+
+/**
+ * GET /api/forensic/autopsy
+ * Alias for /autopsies
+ */
+router.get('/autopsy',
+  requireRole([ROLES.FORENSIK, ROLES.DOKTER]),
+  asyncHandler(async (req, res) => {
+    const { status, case_id } = req.query;
+
+    const where = {};
+    if (status) where.status = status;
+    if (case_id) where.case_id = case_id;
+
+    const autopsies = await prisma.autopsy_records.findMany({
+      where,
+      include: {
+        mortuary_cases: { include: { patients: true } }
+      },
+      orderBy: { created_at: 'desc' }
+    });
+
+    res.json({ success: true, data: autopsies });
+  })
+);
+
+/**
+ * POST /api/forensic/autopsy
+ */
+router.post('/autopsy',
+  requireRole([ROLES.FORENSIK]),
+  asyncHandler(async (req, res) => {
+    const year = new Date().getFullYear();
+    const count = await prisma.autopsy_records.count({
+      where: { autopsy_number: { startsWith: `AUT-${year}` } }
+    });
+    const autopsy_number = `AUT-${year}-${String(count + 1).padStart(4, '0')}`;
+    const autopsy = await prisma.autopsy_records.create({
+      data: { ...req.body, autopsy_number, status: req.body.status || 'requested' }
+    });
+    res.status(201).json({ success: true, data: autopsy });
+  })
+);
+
+/**
+ * GET /api/forensic/mortuary
+ * Alias for /cases
+ */
+router.get('/mortuary',
+  requireRole([ROLES.FORENSIK, ROLES.DOKTER, ROLES.ADMIN]),
+  asyncHandler(async (req, res) => {
+    const { status, case_type, date_from, date_to } = req.query;
+
+    const where = {};
+    if (status) where.status = status;
+    if (case_type) where.case_type = case_type;
+    if (date_from && date_to) {
+      where.admission_date = { gte: new Date(date_from), lte: new Date(date_to) };
+    }
+
+    const cases = await prisma.mortuary_cases.findMany({
+      where,
+      include: { patients: true },
+      orderBy: { admission_date: 'desc' }
+    });
+
+    res.json({ success: true, data: cases });
+  })
+);
+
+/**
+ * POST /api/forensic/mortuary
+ */
+router.post('/mortuary',
+  requireRole([ROLES.FORENSIK, ROLES.DOKTER]),
+  asyncHandler(async (req, res) => {
+    const year = new Date().getFullYear();
+    const count = await prisma.mortuary_cases.count({
+      where: { case_number: { startsWith: `MRT-${year}` } }
+    });
+    const case_number = `MRT-${year}-${String(count + 1).padStart(4, '0')}`;
+    const mortuaryCase = await prisma.mortuary_cases.create({
+      data: { ...req.body, case_number, status: req.body.status || 'received' }
+    });
+    res.status(201).json({ success: true, data: mortuaryCase });
+  })
+);
+
 export default router;

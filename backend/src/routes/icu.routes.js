@@ -440,6 +440,35 @@ router.get('/beds',
   })
 );
 
+/**
+ * GET /api/icu/monitoring
+ * Get recent vital signs across all ICU patients
+ */
+router.get('/monitoring',
+  requireRole([ROLES.ICU, ROLES.DOKTER, ROLES.PERAWAT, ROLES.MANAJEMEN]),
+  asyncHandler(async (req, res) => {
+    const { admission_id, limit = 50 } = req.query;
+
+    const where = {};
+    if (admission_id) where.admission_id = admission_id;
+
+    const vitals = await prisma.icu_vital_signs.findMany({
+      where,
+      include: {
+        icu_admissions: {
+          include: {
+            patients: { select: { id: true, full_name: true, medical_record_number: true } }
+          }
+        }
+      },
+      orderBy: { recorded_at: 'desc' },
+      take: parseInt(limit),
+    });
+
+    res.json({ success: true, data: vitals });
+  })
+);
+
 // Helper function to check critical vital signs
 function checkCriticalVitals(vitals, admissionId, io) {
   const alerts = [];

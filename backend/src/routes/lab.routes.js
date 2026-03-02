@@ -370,6 +370,41 @@ router.post('/orders/:id/verify', requireRole(['admin', 'laboratorium']), asyncH
 }));
 
 /**
+ * GET /api/lab/results
+ * Get lab results with optional filters
+ */
+router.get('/results', asyncHandler(async (req, res) => {
+  const { order_id, status, page = 1, limit = 50 } = req.query;
+
+  const where = {};
+  if (order_id) where.order_id = order_id;
+  if (status) where.status = status;
+
+  const [total, results] = await Promise.all([
+    prisma.lab_results.count({ where }),
+    prisma.lab_results.findMany({
+      where,
+      include: {
+        lab_orders: {
+          include: {
+            patients: { select: { id: true, full_name: true, medical_record_number: true } }
+          }
+        }
+      },
+      orderBy: { created_at: 'desc' },
+      skip: (parseInt(page) - 1) * parseInt(limit),
+      take: parseInt(limit)
+    })
+  ]);
+
+  res.json({
+    success: true,
+    data: results,
+    pagination: { page: parseInt(page), limit: parseInt(limit), total }
+  });
+}));
+
+/**
  * GET /api/lab/results/patient/:patientId
  * Get all lab results for a patient
  */
