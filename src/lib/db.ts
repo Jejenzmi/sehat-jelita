@@ -67,7 +67,7 @@ const FUNCTION_ENDPOINTS: Record<string, string> = {
   'bpjs-vclaim': '/bpjs/vclaim',
   'satusehat': '/satusehat/invoke',
   'bpjs-eclaim': '/bpjs/eclaim',
-  'eklaim-idrg': '/bpjs/eklaim-idrg',
+  'eklaim-idrg': '/eklaim/invoke',
   'bpjs-icare': '/bpjs/icare',
   'bpjs-antrean': '/bpjs/antrean',
   'pacs-bridge': '/radiology/pacs',

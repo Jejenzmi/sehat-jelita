@@ -143,7 +143,7 @@ router.get('/admin/system-settings', requireRole(['admin']), asyncHandler(async 
 router.put('/admin/system-settings/:key', requireRole(['admin']), asyncHandler(async (req, res) => {
   const { prisma } = await import('../config/database.js');
   const { key } = req.params;
-  // Accept both 'value' (standard API format) and 'setting_value' (Supabase-style column format).
+  // Accept both 'value' (standard API format) and 'setting_value' (column format).
   // 'value' takes precedence when both are present.
   const { value, setting_value } = req.body;
   const settingValue = value !== undefined ? value : setting_value;
