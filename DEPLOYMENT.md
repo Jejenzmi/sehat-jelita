@@ -219,3 +219,75 @@ docker compose -f docker-compose.prod.yml exec api sh
 | Database tidak terhubung | Pastikan postgres service sudah healthy: `docker compose ps` |
 | Frontend tidak bisa akses API | Pastikan nginx.conf proxy ke `api:3000` dan API container berjalan |
 | SSL error | Pastikan file `ssl/cert.pem` dan `ssl/key.pem` ada dan readable |
+
+---
+
+## 10. Automatic Deployment via GitHub Actions
+
+Workflow `deploy-to-vps.yml` secara otomatis men-deploy aplikasi ke VPS setiap kali ada push ke branch `main`.
+
+### Konfigurasi GitHub Secrets
+
+Tambahkan secrets berikut di **Settings → Secrets and variables → Actions → Secrets**:
+
+| Secret | Nilai |
+|---|---|
+| `VPS_SSH_PRIVATE_KEY` | Isi private key SSH (seluruh konten file `~/.ssh/id_rsa`) |
+| `VPS_HOST` | IP atau hostname VPS (cth: `srv1438415.hstgr.cloud`) |
+| `VPS_USER` | SSH username (cth: `root`) |
+| `VPS_PORT` | `22` (opsional, default 22) |
+
+Tambahkan variable berikut di **Settings → Secrets and variables → Actions → Variables**:
+
+| Variable | Nilai |
+|---|---|
+| `VPS_APP_DIR` | `/opt/sehat-jelita` (path direktori aplikasi di VPS) |
+
+### Persiapan SSH Key di VPS
+
+```bash
+# Di mesin lokal: buat SSH key pair
+ssh-keygen -t ed25519 -C "github-actions-deploy" -f ~/.ssh/github_deploy_key
+
+# Salin public key ke VPS
+ssh-copy-id -i ~/.ssh/github_deploy_key.pub root@YOUR_VPS_IP
+
+# Salin isi private key ke GitHub Secret VPS_SSH_PRIVATE_KEY
+cat ~/.ssh/github_deploy_key
+```
+
+### Persiapan VPS (pertama kali)
+
+```bash
+# SSH ke VPS
+ssh root@YOUR_VPS_IP
+
+# Install Docker
+curl -fsSL https://get.docker.com | sh
+
+# Clone repository
+git clone https://github.com/Jejenzmi/sehat-jelita.git /opt/sehat-jelita
+cd /opt/sehat-jelita
+
+# Buat dan konfigurasi .env
+cp .env.production.example .env
+nano .env   # isi semua variabel wajib
+
+# Deploy pertama kali
+bash scripts/deploy.sh
+```
+
+### Alur Deployment Otomatis
+
+1. Developer push ke branch `main`
+2. GitHub Actions trigger workflow `deploy-to-vps.yml`
+3. Workflow SSH ke VPS dan menjalankan `scripts/deploy.sh`
+4. Script melakukan:
+   - `git pull` kode terbaru
+   - Validasi environment variables
+   - Backup database
+   - Pull Docker images terbaru dari GHCR
+   - Jalankan migrasi database
+   - Rolling update API → Frontend
+   - Verifikasi health check
+   - Rollback otomatis jika ada error
