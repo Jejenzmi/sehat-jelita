@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { isNodeMode } from "@/lib/api-client";
 import { Loader2 } from "lucide-react";
 
 interface ProtectedRouteProps {
@@ -23,8 +24,11 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     );
   }
 
-  // Redirect to auth if no user or session
-  if (!user || !session) {
+  // In Node.js mode session is always null; only user is set after login
+  const isAuthenticated = isNodeMode() ? !!user : !!(user && session);
+
+  // Redirect to auth if not authenticated
+  if (!isAuthenticated) {
     // Use element directly without wrapping in fragment to avoid ref warning
     return <Navigate to="/auth" state={{ from: location }} replace />;
   }
