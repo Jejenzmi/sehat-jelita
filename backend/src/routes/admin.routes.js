@@ -300,11 +300,39 @@ router.put('/doctors/:id', asyncHandler(async (req, res) => {
 // SYSTEM SETTINGS
 // ============================================
 
+const SYSTEM_SETTINGS_COLUMNS = new Set([
+  'id', 'setting_key', 'setting_value', 'setting_type', 'description', 'is_public', 'created_at', 'updated_at'
+]);
+const MAX_SETTING_KEYS = 50;
+
 /**
  * GET /api/admin/system-settings
+ * Supports query params: setting_key (eq), setting_key_in (comma-separated IN), select (comma-separated fields)
  */
 router.get('/system-settings', asyncHandler(async (req, res) => {
-  const settings = await prisma.system_settings.findMany();
+  const { setting_key, setting_key_in, select } = req.query;
+
+  const where = {};
+  if (setting_key) {
+    where.setting_key = setting_key;
+  } else if (setting_key_in) {
+    const keys = setting_key_in.split(',').map(k => k.trim()).filter(Boolean).slice(0, MAX_SETTING_KEYS);
+    if (keys.length > 0) where.setting_key = { in: keys };
+  }
+
+  let selectFields;
+  if (select && select !== '*') {
+    const fields = select.split(',').map(f => f.trim()).filter(f => SYSTEM_SETTINGS_COLUMNS.has(f));
+    if (fields.length > 0) {
+      selectFields = {};
+      fields.forEach(f => { selectFields[f] = true; });
+    }
+  }
+
+  const settings = await prisma.system_settings.findMany({
+    where,
+    ...(selectFields ? { select: selectFields } : {})
+  });
   res.json({ success: true, data: settings });
 }));
 
