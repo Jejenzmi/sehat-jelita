@@ -474,4 +474,46 @@ router.post('/vclaim', externalApiLimiter, asyncHandler(async (req, res) => {
   }
 }));
 
+// ============================================
+// ECLAIM GENERIC PROXY
+// ============================================
+
+/**
+ * POST /api/bpjs/eclaim
+ * Generic proxy for BPJS EClaim service calls
+ */
+router.post('/eclaim', externalApiLimiter, asyncHandler(async (req, res) => {
+  const { action, ...params } = req.body;
+  // EClaim service is not yet configured; return a placeholder response
+  res.json({ success: true, data: { action, params, message: 'EClaim service not configured' } });
+}));
+
+// ============================================
+// ICARE GENERIC PROXY
+// ============================================
+
+/**
+ * POST /api/bpjs/icare
+ * Generic proxy for BPJS iCare service calls
+ */
+router.post('/icare', externalApiLimiter, asyncHandler(async (req, res) => {
+  const { action, ...params } = req.body;
+  // iCare service is not yet configured; return a placeholder response
+  res.json({ success: true, data: { action, params, message: 'iCare service not configured' } });
+}));
+
+// ============================================
+// ANTREAN GENERIC PROXY
+// ============================================
+
+/**
+ * POST /api/bpjs/antrean
+ * Generic proxy for BPJS Antrean service calls
+ */
+router.post('/antrean', externalApiLimiter, asyncHandler(async (req, res) => {
+  const { action, ...params } = req.body;
+  // Antrean service is not yet configured; return a placeholder response
+  res.json({ success: true, data: { action, params, message: 'Antrean service not configured' } });
+}));
+
 export default router;

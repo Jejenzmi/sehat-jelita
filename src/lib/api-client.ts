@@ -267,7 +267,7 @@ export const api = {
     },
 
     async processPayment(id: string, paymentData: Record<string, unknown>) {
-      return nodeRequest('POST', `/billing/${id}/payment`, { body: paymentData });
+      return nodeRequest('POST', `/billing/${id}/pay`, { body: paymentData });
     },
   },
 
@@ -315,7 +315,7 @@ export const api = {
 
   bpjs: {
     async checkPeserta(noBpjs: string) {
-      return nodeRequest('GET', `/bpjs/peserta/${noBpjs}`);
+      return nodeRequest('GET', `/bpjs/peserta/noka/${noBpjs}`);
     },
 
     async createSEP(sepData: unknown) {

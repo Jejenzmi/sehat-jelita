@@ -222,10 +222,32 @@ router.post('/search/procedure-inacbg', asyncHandler(async (req, res) => {
 // ENCOUNTER RME
 // ============================================
 
+// SET ENCOUNTER RME
 /** POST /api/eklaim/encounter-rme - SET ENCOUNTER RME */
 router.post('/encounter-rme', requireRole(['admin', 'dokter', 'registrasi']), asyncHandler(async (req, res) => {
   const result = await eklaimService.send('set_encounter_rme', req.body);
   res.json({ success: true, data: result });
+}));
+
+// ============================================
+// GENERIC INVOKE ENDPOINT
+// ============================================
+
+/**
+ * POST /api/eklaim/invoke
+ * Generic dispatch: { action, data } → eklaimService.send(action, data)
+ */
+router.post('/invoke', requireRole(['admin', 'dokter', 'registrasi', 'koder', 'keuangan']), asyncHandler(async (req, res) => {
+  const { action, data = {} } = req.body;
+  if (!action) {
+    return res.status(400).json({ success: false, error: 'action is required' });
+  }
+  try {
+    const result = await eklaimService.send(action, data);
+    res.json({ success: true, data: result });
+  } catch (error) {
+    res.status(502).json({ success: false, error: error.message });
+  }
 }));
 
 export default router;

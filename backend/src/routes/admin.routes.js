@@ -313,7 +313,7 @@ router.get('/system-settings', asyncHandler(async (req, res) => {
  */
 router.put('/system-settings/:key', asyncHandler(async (req, res) => {
   const { key } = req.params;
-  // Accept both 'value' (standard API format) and 'setting_value' (Supabase-style column format).
+  // Accept both 'value' (standard API format) and 'setting_value' (column format).
   // 'value' takes precedence when both are present.
   const { value, setting_value } = req.body;
   const settingValue = value !== undefined ? value : setting_value;

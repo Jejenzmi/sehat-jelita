@@ -433,6 +433,71 @@ router.post('/diagnostic-report', requireRole(['admin', 'laboratorium', 'radiolo
 // ============================================
 
 /**
+ * POST /api/satusehat/sync/patient
+ * Sync a patient record to SATU SEHAT
+ */
+router.post('/sync/patient', requireRole(['admin']), asyncHandler(async (req, res) => {
+  const { patientId } = req.body;
+  if (!patientId) {
+    throw new ApiError(400, 'patientId diperlukan', 'VALIDATION_ERROR');
+  }
+
+  const { prisma } = await import('../config/database.js');
+  const patient = await prisma.patients.findUnique({ where: { id: patientId } });
+  if (!patient) {
+    throw new ApiError(404, 'Pasien tidak ditemukan', 'PATIENT_NOT_FOUND');
+  }
+
+  const result = await satusehatService.upsertPatient({
+    nik: patient.nik,
+    name: patient.full_name,
+    birthDate: patient.date_of_birth,
+    gender: patient.gender
+  });
+
+  res.json({
+    success: true,
+    message: 'Data pasien berhasil disinkronkan',
+    data: result
+  });
+}));
+
+/**
+ * POST /api/satusehat/sync/encounter
+ * Sync an encounter (visit) to SATU SEHAT
+ */
+router.post('/sync/encounter', requireRole(['admin']), asyncHandler(async (req, res) => {
+  const { visitId } = req.body;
+  if (!visitId) {
+    throw new ApiError(400, 'visitId diperlukan', 'VALIDATION_ERROR');
+  }
+
+  const { prisma } = await import('../config/database.js');
+  const visit = await prisma.visits.findUnique({
+    where: { id: visitId },
+    include: { patients: true, doctors: true }
+  });
+
+  if (!visit) {
+    throw new ApiError(404, 'Kunjungan tidak ditemukan', 'VISIT_NOT_FOUND');
+  }
+
+  const result = await satusehatService.createEncounter({
+    patient_ihs_id: visit.patients?.satusehat_id,
+    practitioner_ihs_id: visit.doctors?.satusehat_id,
+    organization_id: process.env.SATU_SEHAT_ORG_ID,
+    period_start: visit.visit_date,
+    period_end: visit.discharge_date
+  });
+
+  res.json({
+    success: true,
+    message: 'Encounter berhasil disinkronkan',
+    data: result
+  });
+}));
+
+/**
  * POST /api/satusehat/sync/visit/:visitId
  * Sync complete visit data to SATU SEHAT
  */
