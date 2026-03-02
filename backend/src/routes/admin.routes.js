@@ -327,6 +327,26 @@ router.put('/system-settings/:key', asyncHandler(async (req, res) => {
   res.json({ success: true, data: setting });
 }));
 
+/**
+ * PUT /api/admin/system-settings
+ * Fallback route when the key is provided in the request body instead of the URL.
+ */
+router.put('/system-settings', asyncHandler(async (req, res) => {
+  const { setting_key, value, setting_value } = req.body;
+  if (!setting_key) {
+    return res.status(400).json({ success: false, error: 'setting_key diperlukan' });
+  }
+  const settingValue = value !== undefined ? value : setting_value;
+
+  const setting = await prisma.system_settings.upsert({
+    where: { setting_key },
+    update: { setting_value: settingValue },
+    create: { setting_key, setting_value: settingValue }
+  });
+
+  res.json({ success: true, data: setting });
+}));
+
 // ============================================
 // USER ROLES
 // ============================================
