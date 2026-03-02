@@ -313,12 +313,15 @@ router.get('/system-settings', asyncHandler(async (req, res) => {
  */
 router.put('/system-settings/:key', asyncHandler(async (req, res) => {
   const { key } = req.params;
-  const { value } = req.body;
+  // Accept both 'value' (standard API format) and 'setting_value' (Supabase-style column format).
+  // 'value' takes precedence when both are present.
+  const { value, setting_value } = req.body;
+  const settingValue = value !== undefined ? value : setting_value;
 
   const setting = await prisma.system_settings.upsert({
     where: { setting_key: key },
-    update: { setting_value: value },
-    create: { setting_key: key, setting_value: value }
+    update: { setting_value: settingValue },
+    create: { setting_key: key, setting_value: settingValue }
   });
 
   res.json({ success: true, data: setting });
