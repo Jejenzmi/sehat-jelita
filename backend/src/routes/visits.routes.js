@@ -31,9 +31,10 @@ const visitSchema = z.object({
  * Get all visits with filters
  */
 router.get('/', checkMenuAccess('rawat_jalan'), asyncHandler(async (req, res) => {
-  const { 
-    page = 1, 
-    limit = 20, 
+  const {
+    page = 1,
+    limit = 20,
+    cursor,          // cursor-based: last seen visit ID
     visit_type,
     status = 'active',
     date_from,
@@ -43,20 +44,26 @@ router.get('/', checkMenuAccess('rawat_jalan'), asyncHandler(async (req, res) =>
     search
   } = req.query;
 
-  const skip = (parseInt(page) - 1) * parseInt(limit);
-  const take = parseInt(limit);
+  const limitInt = Math.min(parseInt(limit) || 20, 100);
+  const useCursor = !!cursor;
+
+  const include = {
+    patients: {
+      select: { id: true, medical_record_number: true, full_name: true, birth_date: true, gender: true }
+    },
+    doctors: { select: { id: true, full_name: true, specialization: true } },
+    departments: { select: { id: true, department_name: true } },
+    beds: {
+      select: { id: true, bed_number: true, rooms: { select: { room_number: true, room_name: true } } }
+    }
+  };
 
   const where = {
     ...(visit_type && { visit_type }),
     ...(status && { status }),
     ...(department_id && { department_id }),
     ...(doctor_id && { doctor_id }),
-    ...(date_from && date_to && {
-      visit_date: {
-        gte: new Date(date_from),
-        lte: new Date(date_to)
-      }
-    }),
+    ...(date_from && date_to && { visit_date: { gte: new Date(date_from), lte: new Date(date_to) } }),
     ...(search && {
       OR: [
         { visit_number: { contains: search, mode: 'insensitive' } },
@@ -66,45 +73,30 @@ router.get('/', checkMenuAccess('rawat_jalan'), asyncHandler(async (req, res) =>
     })
   };
 
+  if (useCursor) {
+    const visits = await prisma.visits.findMany({
+      where, take: limitInt + 1, cursor: { id: cursor }, skip: 1,
+      orderBy: { visit_date: 'desc' }, include
+    });
+    const hasMore = visits.length > limitInt;
+    const items = hasMore ? visits.slice(0, limitInt) : visits;
+    return res.json({
+      success: true, data: items,
+      pagination: { limit: limitInt, nextCursor: hasMore ? items[items.length - 1].id : null, hasMore }
+    });
+  }
+
+  const pageInt = parseInt(page);
+  const skip = (pageInt - 1) * limitInt;
   const [visits, total] = await Promise.all([
-    prisma.visits.findMany({
-      where,
-      skip,
-      take,
-      orderBy: { visit_date: 'desc' },
-      include: {
-        patients: {
-          select: {
-            id: true,
-            medical_record_number: true,
-            full_name: true,
-            birth_date: true,
-            gender: true
-          }
-        },
-        doctors: { select: { id: true } },
-        departments: { select: { id: true, department_name: true } },
-        beds: { 
-          select: { 
-            id: true, 
-            bed_number: true,
-            rooms: { select: { room_number: true, room_name: true } }
-          } 
-        }
-      }
-    }),
+    prisma.visits.findMany({ where, skip, take: limitInt, orderBy: { visit_date: 'desc' }, include }),
     prisma.visits.count({ where })
   ]);
 
   res.json({
     success: true,
     data: visits,
-    pagination: {
-      page: parseInt(page),
-      limit: parseInt(limit),
-      total,
-      total_pages: Math.ceil(total / take)
-    }
+    pagination: { page: pageInt, limit: limitInt, total, total_pages: Math.ceil(total / limitInt) }
   });
 }));
 
@@ -140,7 +132,7 @@ router.get('/today', asyncHandler(async (req, res) => {
           gender: true
         }
       },
-      doctors: { select: { id: true } },
+      doctors: { select: { id: true, full_name: true, specialization: true } },
       departments: { select: { id: true, department_name: true } }
     }
   });
@@ -177,7 +169,7 @@ router.get('/inpatient', checkMenuAccess('rawat_inap'), asyncHandler(async (req,
           blood_type: true
         }
       },
-      doctors: { select: { id: true } },
+      doctors: { select: { id: true, full_name: true, specialization: true } },
       departments: { select: { id: true, department_name: true } },
       beds: {
         select: {
@@ -206,10 +198,13 @@ router.get('/:id', asyncHandler(async (req, res) => {
     where: { id },
     include: {
       patients: true,
-      doctors: { select: { id: true } },
+      doctors: { select: { id: true, full_name: true, specialization: true } },
       departments: true,
       beds: {
-        include: { rooms: true }
+        select: {
+          id: true, bed_number: true, bed_class: true,
+          rooms: { select: { id: true, room_number: true, room_name: true } }
+        }
       },
       medical_records: {
         orderBy: { record_date: 'desc' }
@@ -525,6 +520,70 @@ router.get('/stats/summary', asyncHandler(async (req, res) => {
       current_inpatients: currentInpatients
     }
   });
+}));
+
+/**
+ * GET /api/visits/queue/today
+ * Today's outpatient queue with full patient and doctor info
+ */
+router.get('/queue/today', asyncHandler(async (req, res) => {
+  const { department_id } = req.query;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  const visits = await prisma.visits.findMany({
+    where: {
+      visit_type: 'outpatient',
+      visit_date: { gte: today, lt: tomorrow },
+      ...(department_id && { department_id })
+    },
+    orderBy: { queue_number: 'asc' },
+    include: {
+      patients: {
+        select: { id: true, medical_record_number: true, nik: true, full_name: true, gender: true, birth_date: true, phone: true, bpjs_number: true }
+      },
+      departments: { select: { id: true, department_name: true } },
+      doctors: { select: { id: true, full_name: true } }
+    }
+  });
+
+  res.json({ success: true, data: visits });
+}));
+
+/**
+ * GET /api/visits/queue/stats
+ * Today's queue statistics
+ */
+router.get('/queue/stats', asyncHandler(async (req, res) => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+
+  const [total, served, waiting, newPatients] = await Promise.all([
+    prisma.visits.count({ where: { visit_type: 'outpatient', visit_date: { gte: today, lt: tomorrow } } }),
+    prisma.visits.count({ where: { visit_type: 'outpatient', visit_date: { gte: today, lt: tomorrow }, status: { in: ['completed', 'serving'] } } }),
+    prisma.visits.count({ where: { visit_type: 'outpatient', visit_date: { gte: today, lt: tomorrow }, status: { in: ['waiting', 'called'] } } }),
+    prisma.patients.count({ where: { created_at: { gte: startOfMonth } } }),
+  ]);
+
+  res.json({ success: true, data: { total, served, waiting, newPatients } });
+}));
+
+/**
+ * PATCH /api/visits/:id/status
+ * Update visit status (for queue management)
+ */
+router.patch('/:id/status', asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+  if (!status) return res.status(400).json({ success: false, error: 'status diperlukan' });
+
+  const visit = await prisma.visits.update({ where: { id }, data: { status } });
+  res.json({ success: true, data: visit });
 }));
 
 export default router;

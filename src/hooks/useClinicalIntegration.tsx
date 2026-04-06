@@ -1,11 +1,27 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { db } from "@/lib/db";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 
-/**
- * Clinical Integration Hook
- * Integrates workflows across clinical modules
- */
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
+
+const FETCH_OPTS: RequestInit = { credentials: 'include', headers: { 'Content-Type': 'application/json' } };
+
+async function apiPost<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    ...FETCH_OPTS, method: 'POST', body: JSON.stringify(body),
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error || res.statusText);
+  return (json.data ?? json) as T;
+}
+
+async function apiPatch<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    ...FETCH_OPTS, method: 'PATCH', body: JSON.stringify(body),
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error || res.statusText);
+  return (json.data ?? json) as T;
+}
 
 // ==================== IGD INTEGRATION ====================
 
@@ -14,15 +30,7 @@ export function useIGDToAdmission() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({
-      emergencyVisitId,
-      visitId,
-      patientId,
-      disposition,
-      roomId,
-      bedId,
-      doctorId,
-    }: {
+    mutationFn: (params: {
       emergencyVisitId: string;
       visitId: string;
       patientId: string;
@@ -30,44 +38,14 @@ export function useIGDToAdmission() {
       roomId?: string;
       bedId?: string;
       doctorId?: string;
-    }) => {
-      // Update emergency visit disposition
-      await db
-        .from("emergency_visits")
-        .update({
-          disposition,
-          disposition_time: new Date().toISOString(),
-        })
-        .eq("id", emergencyVisitId);
-
-      // If rawat inap, create inpatient admission
-      if (disposition === "rawat_inap" && roomId) {
-        await db.from("inpatient_admissions").insert({
-          patient_id: patientId,
-          visit_id: visitId,
-          room_id: roomId,
-          bed_id: bedId || null,
-          attending_doctor_id: doctorId || null,
-          status: "active",
-        });
-
-        if (bedId) {
-          await db.from("beds").update({ status: "terisi", current_patient_id: patientId }).eq("id", bedId);
-        }
-      }
-
-      // Update visit status
-      await db.from("visits").update({ status: "selesai" }).eq("id", visitId);
-
-      return { disposition };
-    },
+    }) => apiPost('/emergency/disposition', params),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["emergency-visits"] });
       queryClient.invalidateQueries({ queryKey: ["inpatient-admissions"] });
       queryClient.invalidateQueries({ queryKey: ["rooms"] });
       toast({ title: "Disposisi berhasil" });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({ variant: "destructive", title: "Gagal", description: error.message });
     },
   });
@@ -80,69 +58,32 @@ export function useInpatientWorkflow() {
   const queryClient = useQueryClient();
 
   const transferBed = useMutation({
-    mutationFn: async ({
-      admissionId,
-      currentBedId,
-      newRoomId,
-      newBedId,
-    }: {
+    mutationFn: (params: {
       admissionId: string;
       currentBedId: string | null;
       newRoomId: string;
       newBedId: string;
-    }) => {
-      if (currentBedId) {
-        await db.from("beds").update({ status: "tersedia", current_patient_id: null }).eq("id", currentBedId);
-      }
-
-      const { data: admission } = await db.from("inpatient_admissions").select("patient_id").eq("id", admissionId).single();
-      
-      await db.from("beds").update({ status: "terisi", current_patient_id: admission?.patient_id }).eq("id", newBedId);
-      await db.from("inpatient_admissions").update({ room_id: newRoomId, bed_id: newBedId }).eq("id", admissionId);
-    },
+    }) => apiPatch(`/inpatient/admissions/${params.admissionId}/transfer`, params),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["inpatient-admissions"] });
       queryClient.invalidateQueries({ queryKey: ["rooms"] });
       toast({ title: "Transfer berhasil" });
     },
+    onError: (e: Error) => toast({ variant: "destructive", title: "Gagal", description: e.message }),
   });
 
   const createDischargeBilling = useMutation({
-    mutationFn: async ({
-      visitId,
-      patientId,
-      paymentType,
-      amount,
-    }: {
+    mutationFn: (params: {
       visitId: string;
       patientId: string;
       paymentType: "umum" | "bpjs" | "asuransi";
       amount: number;
-    }) => {
-      const { data: invoiceNumber } = await db.rpc("generate_invoice_number");
-
-      const { data: billing, error } = await db
-        .from("billings")
-        .insert({
-          invoice_number: invoiceNumber,
-          visit_id: visitId,
-          patient_id: patientId,
-          payment_type: paymentType,
-          subtotal: amount,
-          tax: 0,
-          total: amount,
-          status: "pending",
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-      return billing;
-    },
+    }) => apiPost('/billing', params),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["billings"] });
       toast({ title: "Tagihan rawat inap dibuat" });
     },
+    onError: (e: Error) => toast({ variant: "destructive", title: "Gagal", description: e.message }),
   });
 
   return { transferBed, createDischargeBilling };
@@ -155,80 +96,31 @@ export function useLabIntegration() {
   const queryClient = useQueryClient();
 
   const createLabOrderFromVisit = useMutation({
-    mutationFn: async ({
-      visitId,
-      patientId,
-      doctorId,
-      templateIds,
-      notes,
-    }: {
+    mutationFn: (params: {
       visitId: string;
       patientId: string;
       doctorId: string;
       templateIds: string[];
       notes?: string;
-    }) => {
-      const results = await Promise.all(
-        templateIds.map(async (templateId) => {
-          const labNumber = `LAB-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 5).toUpperCase()}`;
-
-          const { data, error } = await db
-            .from("lab_results")
-            .insert({
-              lab_number: labNumber,
-              patient_id: patientId,
-              template_id: templateId,
-              visit_id: visitId,
-              requested_by: doctorId,
-              notes: notes || null,
-              status: "pending",
-              results: {},
-            })
-            .select()
-            .single();
-
-          if (error) throw error;
-          return data;
-        })
-      );
-
-      return results;
-    },
+    }) => apiPost('/lab/orders/bulk', params),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["lab-results"] });
       toast({ title: "Permintaan lab berhasil dibuat" });
     },
+    onError: (e: Error) => toast({ variant: "destructive", title: "Gagal", description: e.message }),
   });
 
   const completeLabResult = useMutation({
-    mutationFn: async ({
-      labResultId,
-      results,
-      notes,
-    }: {
+    mutationFn: ({ labResultId, ...data }: {
       labResultId: string;
       results: Record<string, string>;
       notes?: string;
-    }) => {
-      const { data, error } = await db
-        .from("lab_results")
-        .update({
-          results,
-          notes: notes || null,
-          status: "completed",
-          result_date: new Date().toISOString(),
-        })
-        .eq("id", labResultId)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
+    }) => apiPatch(`/lab/results/${labResultId}/complete`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["lab-results"] });
       toast({ title: "Hasil lab berhasil disimpan" });
     },
+    onError: (e: Error) => toast({ variant: "destructive", title: "Gagal", description: e.message }),
   });
 
   return { createLabOrderFromVisit, completeLabResult };
@@ -241,90 +133,34 @@ export function useSurgeryIntegration() {
   const queryClient = useQueryClient();
 
   const completeSurgery = useMutation({
-    mutationFn: async ({
-      surgeryId,
-      operatingRoomId,
-      postoperativeDiagnosis,
-      operativeNotes,
-    }: {
+    mutationFn: ({ surgeryId, ...data }: {
       surgeryId: string;
       operatingRoomId: string;
       postoperativeDiagnosis?: string;
       operativeNotes?: string;
-    }) => {
-      const { data, error } = await db
-        .from("surgeries")
-        .update({
-          status: "completed",
-          actual_end_time: new Date().toISOString(),
-          postoperative_diagnosis: postoperativeDiagnosis || null,
-          operative_notes: operativeNotes || null,
-        })
-        .eq("id", surgeryId)
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      await db.from("operating_rooms").update({ is_available: true }).eq("id", operatingRoomId);
-
-      return data;
-    },
+    }) => apiPatch(`/surgery/${surgeryId}/complete`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["surgeries"] });
       queryClient.invalidateQueries({ queryKey: ["operating-rooms"] });
       toast({ title: "Operasi selesai" });
     },
+    onError: (e: Error) => toast({ variant: "destructive", title: "Gagal", description: e.message }),
   });
 
   const createSurgeryBilling = useMutation({
-    mutationFn: async ({
-      visitId,
-      patientId,
-      paymentType,
-      surgeonFee,
-      anesthesiaFee,
-      roomFee,
-    }: {
+    mutationFn: (params: {
       visitId: string;
       patientId: string;
       paymentType: "umum" | "bpjs" | "asuransi";
       surgeonFee: number;
       anesthesiaFee: number;
       roomFee: number;
-    }) => {
-      const total = surgeonFee + anesthesiaFee + roomFee;
-      const { data: invoiceNumber } = await db.rpc("generate_invoice_number");
-
-      const { data: billing, error } = await db
-        .from("billings")
-        .insert({
-          invoice_number: invoiceNumber,
-          visit_id: visitId,
-          patient_id: patientId,
-          payment_type: paymentType,
-          subtotal: total,
-          tax: 0,
-          total: total,
-          status: "pending",
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      await db.from("billing_items").insert([
-        { billing_id: billing.id, item_type: "surgery", item_name: "Jasa Dokter Bedah", quantity: 1, unit_price: surgeonFee, total_price: surgeonFee },
-        { billing_id: billing.id, item_type: "anesthesia", item_name: "Jasa Anestesi", quantity: 1, unit_price: anesthesiaFee, total_price: anesthesiaFee },
-        { billing_id: billing.id, item_type: "room", item_name: "Penggunaan Ruang OK", quantity: 1, unit_price: roomFee, total_price: roomFee },
-      ]);
-
-      return billing;
-    },
+    }) => apiPost('/billing/surgery', params),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["billings"] });
       toast({ title: "Tagihan operasi dibuat" });
     },
+    onError: (e: Error) => toast({ variant: "destructive", title: "Gagal", description: e.message }),
   });
 
   return { completeSurgery, createSurgeryBilling };
@@ -337,229 +173,35 @@ export function useICUIntegration() {
   const queryClient = useQueryClient();
 
   const admitToICU = useMutation({
-    mutationFn: async ({
-      visitId,
-      patientId,
-      icuBedId,
-      icuType,
-      admissionReason,
-      doctorId,
-    }: {
+    mutationFn: (params: {
       visitId: string;
       patientId: string;
       icuBedId: string;
       icuType: "icu" | "iccu" | "nicu" | "picu" | "hcu";
       admissionReason: string;
       doctorId?: string;
-    }) => {
-      const admissionNumber = `ICU-${Date.now().toString(36).toUpperCase()}`;
-
-      const { data, error } = await db
-        .from("icu_admissions")
-        .insert({
-          admission_number: admissionNumber,
-          patient_id: patientId,
-          visit_id: visitId,
-          icu_bed_id: icuBedId,
-          icu_type: icuType,
-          admission_reason: admissionReason,
-          attending_doctor_id: doctorId || null,
-          status: "active",
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      await db.from("icu_beds").update({ is_available: false }).eq("id", icuBedId);
-
-      return data;
-    },
+    }) => apiPost('/icu/admissions', params),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["icu-admissions"] });
       queryClient.invalidateQueries({ queryKey: ["icu-beds"] });
       toast({ title: "Pasien masuk ICU" });
     },
+    onError: (e: Error) => toast({ variant: "destructive", title: "Gagal", description: e.message }),
   });
 
   const dischargeFromICU = useMutation({
-    mutationFn: async ({
-      admissionId,
-      icuBedId,
-      dischargeReason,
-      totalDays,
-    }: {
+    mutationFn: ({ admissionId, ...data }: {
       admissionId: string;
-      icuBedId: string;
       dischargeReason: string;
-      totalDays: number;
-    }) => {
-      const { data, error } = await db
-        .from("icu_admissions")
-        .update({
-          status: "discharged",
-          discharge_date: new Date().toISOString(),
-          discharge_reason: dischargeReason,
-          total_icu_days: totalDays,
-        })
-        .eq("id", admissionId)
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      await db.from("icu_beds").update({ is_available: true }).eq("id", icuBedId);
-
-      return data;
-    },
+      outcome: string;
+    }) => apiPatch(`/icu/admissions/${admissionId}/discharge`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["icu-admissions"] });
       queryClient.invalidateQueries({ queryKey: ["icu-beds"] });
       toast({ title: "Pasien keluar ICU" });
     },
+    onError: (e: Error) => toast({ variant: "destructive", title: "Gagal", description: e.message }),
   });
 
   return { admitToICU, dischargeFromICU };
-}
-
-// ==================== DIALYSIS INTEGRATION ====================
-
-export function useDialysisIntegration() {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-
-  const completeDialysisSession = useMutation({
-    mutationFn: async ({
-      sessionId,
-      machineId,
-      postWeight,
-      actualUf,
-      ktV,
-    }: {
-      sessionId: string;
-      machineId: string;
-      postWeight?: number;
-      actualUf?: number;
-      ktV?: number;
-    }) => {
-      const { data, error } = await db
-        .from("dialysis_sessions")
-        .update({
-          status: "completed",
-          actual_end_time: new Date().toISOString(),
-          post_weight: postWeight || null,
-          actual_uf: actualUf || null,
-          kt_v: ktV || null,
-        })
-        .eq("id", sessionId)
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      await db.from("dialysis_machines").update({ is_available: true }).eq("id", machineId);
-
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["dialysis-sessions"] });
-      queryClient.invalidateQueries({ queryKey: ["dialysis-machines"] });
-      toast({ title: "Sesi hemodialisa selesai" });
-    },
-  });
-
-  return { completeDialysisSession };
-}
-
-// ==================== BLOOD BANK INTEGRATION ====================
-
-export function useBloodBankIntegration() {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-
-  const performCrossmatch = useMutation({
-    mutationFn: async ({
-      requestId,
-      patientId,
-      bloodBagId,
-      majorResult,
-      isCompatible,
-    }: {
-      requestId: string;
-      patientId: string;
-      bloodBagId: string;
-      majorResult: "compatible" | "incompatible" | "pending";
-      isCompatible: boolean;
-    }) => {
-      const validUntil = new Date();
-      validUntil.setHours(validUntil.getHours() + 72);
-
-      const { data, error } = await db
-        .from("crossmatch_tests")
-        .insert({
-          request_id: requestId,
-          patient_id: patientId,
-          blood_bag_id: bloodBagId,
-          major_crossmatch: majorResult,
-          is_compatible: isCompatible,
-          valid_until: validUntil.toISOString(),
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      if (isCompatible) {
-        await db.from("blood_inventory").update({ status: "reserved", reserved_for_patient_id: patientId }).eq("id", bloodBagId);
-      }
-
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["crossmatch-tests"] });
-      queryClient.invalidateQueries({ queryKey: ["blood-inventory"] });
-      toast({ title: "Hasil crossmatch dicatat" });
-    },
-  });
-
-  return { performCrossmatch };
-}
-
-// ==================== COMBINED QUERIES ====================
-
-export function useClinicalDashboardStats() {
-  return useQuery({
-    queryKey: ["clinical-dashboard-stats"],
-    queryFn: async () => {
-      const today = new Date().toISOString().split("T")[0];
-
-      const [
-        { count: igdActive },
-        { count: inpatientActive },
-        { count: icuActive },
-        { count: surgeriesToday },
-        { count: dialysisToday },
-        { count: labPending },
-        { count: transfusionPending },
-      ] = await Promise.all([
-        db.from("emergency_visits").select("*", { count: "exact", head: true }).is("disposition_time", null),
-        db.from("inpatient_admissions").select("*", { count: "exact", head: true }).eq("status", "active"),
-        db.from("icu_admissions").select("*", { count: "exact", head: true }).eq("status", "active"),
-        db.from("surgeries").select("*", { count: "exact", head: true }).eq("scheduled_date", today),
-        db.from("dialysis_sessions").select("*", { count: "exact", head: true }).eq("session_date", today),
-        db.from("lab_results").select("*", { count: "exact", head: true }).eq("status", "pending"),
-        db.from("transfusion_requests").select("*", { count: "exact", head: true }).eq("status", "pending"),
-      ]);
-
-      return {
-        igdActive: igdActive || 0,
-        inpatientActive: inpatientActive || 0,
-        icuActive: icuActive || 0,
-        surgeriesToday: surgeriesToday || 0,
-        dialysisToday: dialysisToday || 0,
-        labPending: labPending || 0,
-        transfusionPending: transfusionPending || 0,
-      };
-    },
-  });
 }

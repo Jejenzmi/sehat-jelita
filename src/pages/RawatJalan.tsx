@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Search, Filter, Stethoscope, Clock, CheckCircle, Users, FileText, RefreshCw } from "lucide-react";
+import { Search, Stethoscope, Clock, CheckCircle, Users, FileText, RefreshCw, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { ICD11SearchInput, type ICD11Entity } from "@/components/icd11/ICD11SearchInput";
 
 interface PoliStats {
   department_id: string;
@@ -73,6 +74,17 @@ export default function RawatJalan() {
     height: "",
   });
   const [savingRecord, setSavingRecord] = useState(false);
+  const [diagnoses, setDiagnoses] = useState<ICD11Entity[]>([]);
+
+  const handleAddDiagnosis = (entity: ICD11Entity) => {
+    if (!diagnoses.find(d => d.entity_id === entity.entity_id)) {
+      setDiagnoses(prev => [...prev, entity]);
+    }
+  };
+
+  const handleRemoveDiagnosis = (entityId: string | null) => {
+    setDiagnoses(prev => prev.filter(d => d.entity_id !== entityId));
+  };
 
   useEffect(() => {
     fetchData();
@@ -271,66 +283,59 @@ export default function RawatJalan() {
 
   const handleSaveMedicalRecord = async () => {
     if (!selectedVisit) return;
-
     setSavingRecord(true);
     try {
-      // Get doctor info (use first doctor for now)
-      const { data: doctorData } = await db
-        .from("doctors")
-        .select("id")
-        .limit(1)
-        .single();
+      const apiBase = import.meta.env.VITE_API_URL || '/api';
+      const fetchOpts: RequestInit = { credentials: 'include', headers: { 'Content-Type': 'application/json' } };
 
-      if (!doctorData) {
-        toast.error("Data dokter tidak ditemukan");
-        return;
-      }
-
-      // Create medical record
-      const { error: mrError } = await db
-        .from("medical_records")
-        .insert({
-          visit_id: selectedVisit.visit_id,
+      const res = await fetch(`${apiBase}/icd11/medical-records`, {
+        ...fetchOpts,
+        method: 'POST',
+        body: JSON.stringify({
           patient_id: selectedVisit.id,
-          doctor_id: doctorData.id,
+          visit_id: selectedVisit.visit_id,
           subjective: medicalForm.subjective,
           objective: medicalForm.objective,
           assessment: medicalForm.assessment,
           plan: medicalForm.plan,
-          blood_pressure_systolic: medicalForm.blood_pressure_systolic ? parseInt(medicalForm.blood_pressure_systolic) : null,
-          blood_pressure_diastolic: medicalForm.blood_pressure_diastolic ? parseInt(medicalForm.blood_pressure_diastolic) : null,
-          heart_rate: medicalForm.heart_rate ? parseInt(medicalForm.heart_rate) : null,
-          temperature: medicalForm.temperature ? parseFloat(medicalForm.temperature) : null,
-          respiratory_rate: medicalForm.respiratory_rate ? parseInt(medicalForm.respiratory_rate) : null,
-          weight: medicalForm.weight ? parseFloat(medicalForm.weight) : null,
-          height: medicalForm.height ? parseFloat(medicalForm.height) : null,
-        });
+          vital_signs: {
+            blood_pressure_systolic:  medicalForm.blood_pressure_systolic  ? parseInt(medicalForm.blood_pressure_systolic)  : null,
+            blood_pressure_diastolic: medicalForm.blood_pressure_diastolic ? parseInt(medicalForm.blood_pressure_diastolic) : null,
+            heart_rate:        medicalForm.heart_rate        ? parseInt(medicalForm.heart_rate)        : null,
+            temperature:       medicalForm.temperature       ? parseFloat(medicalForm.temperature)     : null,
+            respiratory_rate:  medicalForm.respiratory_rate  ? parseInt(medicalForm.respiratory_rate)  : null,
+            weight:            medicalForm.weight            ? parseFloat(medicalForm.weight)           : null,
+            height:            medicalForm.height            ? parseFloat(medicalForm.height)           : null,
+          },
+          diagnoses: diagnoses.map(d => ({
+            icd11_code:       d.icd11_code,
+            icd11_entity_id:  d.entity_id,
+            icd11_title_en:   d.title,
+            icd11_title_id:   d.title,
+            icd10_code:       d.icd10_code,
+            diagnosis_type:   'primer',
+          })),
+        }),
+      });
 
-      if (mrError) throw mrError;
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error || res.statusText);
 
-      // Update visit status to selesai
-      const { error: visitError } = await db
-        .from("visits")
-        .update({ status: "selesai" as const })
-        .eq("id", selectedVisit.visit_id);
-
-      if (visitError) throw visitError;
+      // Update visit status
+      await fetch(`${apiBase}/visits/${selectedVisit.visit_id}`, {
+        ...fetchOpts,
+        method: 'PUT',
+        body: JSON.stringify({ status: 'selesai' }),
+      });
 
       toast.success("Rekam medis berhasil disimpan");
       setMedicalRecordOpen(false);
       setSelectedVisit(null);
+      setDiagnoses([]);
       setMedicalForm({
-        subjective: "",
-        objective: "",
-        assessment: "",
-        plan: "",
-        blood_pressure_systolic: "",
-        blood_pressure_diastolic: "",
-        heart_rate: "",
-        temperature: "",
-        respiratory_rate: "",
-        weight: "",
-        height: "",
+        subjective: "", objective: "", assessment: "", plan: "",
+        blood_pressure_systolic: "", blood_pressure_diastolic: "",
+        heart_rate: "", temperature: "", respiratory_rate: "", weight: "", height: "",
       });
       fetchData();
     } catch (error) {
@@ -749,11 +754,28 @@ export default function RawatJalan() {
                     onChange={(e) => setMedicalForm({ ...medicalForm, objective: e.target.value })}
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label>Assessment (Diagnosis)</Label>
+                <div className="space-y-2 md:col-span-2">
+                  <Label>Assessment (Diagnosis ICD-11)</Label>
+                  <ICD11SearchInput
+                    onSelect={handleAddDiagnosis}
+                    placeholder="Cari diagnosis ICD-11..."
+                  />
+                  {diagnoses.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {diagnoses.map((d) => (
+                        <div key={d.entity_id} className="flex items-center gap-1 bg-primary/10 text-primary rounded-md px-2 py-1 text-xs">
+                          {d.icd11_code && <span className="font-mono font-bold">{d.icd11_code}</span>}
+                          <span>{d.title}</span>
+                          <button type="button" onClick={() => handleRemoveDiagnosis(d.entity_id)} className="ml-1 hover:text-destructive">
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                   <Textarea
-                    rows={4}
-                    placeholder="Diagnosis kerja..."
+                    rows={2}
+                    placeholder="Catatan tambahan diagnosis..."
                     value={medicalForm.assessment}
                     onChange={(e) => setMedicalForm({ ...medicalForm, assessment: e.target.value })}
                   />

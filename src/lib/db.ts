@@ -10,6 +10,8 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
 
 // Table → backend endpoint mapping
 const TABLE_ENDPOINTS: Record<string, string> = {
+  hospital_profile: '/admin/hospital-profile',
+  hospitals: '/admin/hospitals',
   patients: '/patients',
   visits: '/visits',
   billings: '/billing',
@@ -60,10 +62,13 @@ const TABLE_ENDPOINTS: Record<string, string> = {
   ambulance_fleet: '/ambulance/fleet',
   ambulance_dispatches: '/ambulance/dispatches',
   home_care_visits: '/home-care/visits',
+  medical_records: '/icd11/medical-records',
+  diagnoses: '/icd11/diagnoses',
 };
 
 // Edge function → backend endpoint mapping
 const FUNCTION_ENDPOINTS: Record<string, string> = {
+  'icd11-search': '/icd11/search',
   'bpjs-vclaim': '/bpjs/vclaim',
   'satusehat': '/satusehat/invoke',
   'bpjs-eclaim': '/bpjs/eclaim',
@@ -73,12 +78,21 @@ const FUNCTION_ENDPOINTS: Record<string, string> = {
   'pacs-bridge': '/radiology/pacs',
 };
 
-function getAuthHeaders(): HeadersInit {
-  const token = localStorage.getItem('zen_access_token');
-  const headers: HeadersInit = { 'Content-Type': 'application/json' };
-  if (token) headers['Authorization'] = `Bearer ${token}`;
-  return headers;
+/**
+ * Build fetch init with cookie auth + optional legacy Bearer fallback.
+ * `credentials: 'include'` sends httpOnly cookies on every request.
+ * The localStorage token is read-only (never written) — it allows existing
+ * pre-cookie sessions to keep working until they naturally expire.
+ */
+function buildInit(method: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'GET', body?: unknown): RequestInit {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  const legacy = localStorage.getItem('zen_access_token');
+  if (legacy) headers['Authorization'] = `Bearer ${legacy}`;
+  const init: RequestInit = { credentials: 'include', method, headers };
+  if (body !== undefined) init.body = JSON.stringify(body);
+  return init;
 }
+
 
 // ---- Query Builder ----
 
@@ -206,19 +220,40 @@ class QueryBuilder implements PromiseLike<any> {
       return isSingle ? { data: null, error: null } : { data: [], error: null };
     }
 
-    // Count/head queries
+    // Count/head queries — call the backend stats endpoint if available
     if (this._isCountHead) {
+      // Try to get real count from backend
+      const statsEndpoints: Record<string, string> = {
+        '/patients': '/patients/stats',
+      };
+      const statsPath = this._endpoint ? statsEndpoints[this._endpoint] : null;
+      if (statsPath) {
+        try {
+          const res = await fetch(`${API_BASE_URL}${statsPath}`, buildInit('GET'));
+          if (res.ok) {
+            const json = await res.json();
+            // Return a Supabase-compatible count response based on filter context
+            const data = json?.data;
+            // Determine which count to return based on active filters
+            const hasBpjsNotNull = this._filters.some(f => f.col === 'bpjs_number' && f.type === 'not');
+            const hasBpjsNull = this._filters.some(f => f.col === 'bpjs_number' && f.type === 'is');
+            const hasCreatedAtGte = this._filters.some(f => f.col === 'created_at' && f.type === 'gte');
+            let count = data?.total ?? 0;
+            if (hasBpjsNotNull) count = data?.bpjs ?? 0;
+            else if (hasBpjsNull) count = data?.umum ?? 0;
+            else if (hasCreatedAtGte) count = data?.newThisMonth ?? 0;
+            return { data: null, count, error: null };
+          }
+        } catch { /* fall through to 0 */ }
+      }
       return { data: null, count: 0, error: null };
     }
 
     const url = this._buildUrl();
-    const headers = getAuthHeaders();
 
     try {
-      const init: RequestInit = { method: this._method, headers };
-      if (this._body && this._method !== 'GET') {
-        init.body = JSON.stringify(this._body);
-      }
+      const body = this._body && this._method !== 'GET' ? this._body : undefined;
+      const init = buildInit(this._method, body);
 
       const res = await fetch(url, init);
       if (!res.ok) {
@@ -309,11 +344,7 @@ const functionsShim = {
     const endpoint = FUNCTION_ENDPOINTS[name];
     if (!endpoint) return { data: null, error: { message: `Unknown function: ${name}` } };
     try {
-      const res = await fetch(`${API_BASE_URL}${endpoint}`, {
-        method: 'POST',
-        headers: getAuthHeaders(),
-        body: JSON.stringify(options?.body ?? {}),
-      });
+      const res = await fetch(`${API_BASE_URL}${endpoint}`, buildInit('POST', options?.body ?? {}));
       const json = await res.json().catch(() => ({}));
       if (!res.ok) return { data: null, error: { message: json.error || res.statusText } };
       return { data: json?.data ?? json, error: null };
@@ -341,6 +372,7 @@ function noopChannel(): RealtimeChannel {
 
 // ---- RPC function → backend endpoint mapping ----
 const RPC_ENDPOINTS: Record<string, { path: string; method: 'GET' | 'POST' }> = {
+  generate_medical_record_number: { path: '/patients/next-mrn', method: 'GET'  },
   is_setup_completed:              { path: '/admin/setup-status',              method: 'GET'  },
   get_available_modules:           { path: '/admin/modules',                   method: 'GET'  },
   reset_system_to_initial:         { path: '/admin/reset-system',              method: 'POST' },
@@ -354,6 +386,8 @@ const RPC_ENDPOINTS: Record<string, { path: string; method: 'GET' | 'POST' }> = 
   calculate_rl6_indicators:        { path: '/reports/rl6-indicators',          method: 'POST' },
   preview_hospital_type_migration: { path: '/admin/hospital-migration/preview',method: 'POST' },
   migrate_hospital_type:           { path: '/admin/hospital-migration/execute',method: 'POST' },
+  update_enabled_modules:          { path: '/admin/enabled-modules',           method: 'POST' },
+  toggle_module:                   { path: '/admin/enabled-modules/toggle',    method: 'POST' },
 };
 
 // ---- Main export ----
@@ -378,9 +412,8 @@ export const db = {
       if (qsStr) url += `?${qsStr}`;
     }
     try {
-      const init: RequestInit = { method, headers: getAuthHeaders() };
-      if (method === 'POST' && hasParams) init.body = JSON.stringify(params);
-      const res = await fetch(url, init);
+      const rpcBody = method === 'POST' && hasParams ? params : undefined;
+      const res = await fetch(url, buildInit(method, rpcBody));
       const json = await res.json().catch(() => ({}));
       if (!res.ok) return { data: null, error: { message: json.error || res.statusText } };
       const data = json?.data !== undefined ? json.data : json;

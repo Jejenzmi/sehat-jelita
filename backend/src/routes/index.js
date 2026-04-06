@@ -33,9 +33,40 @@ import dialysisRoutes from './dialysis.routes.js';
 import forensicRoutes from './forensic.routes.js';
 import educationRoutes from './education.routes.js';
 import eklaimIDRGRoutes from './eklaim-idrg.routes.js';
+import icd11Routes from './icd11.routes.js';
 import adminRoutes from './admin.routes.js';
+import hospitalProfileRoutes from './hospital-profile.routes.js';
+import hospitalsRoutes from './hospitals.routes.js';
 import ambulanceRoutes from './ambulance.routes.js';
 import homeCareRoutes from './home-care.routes.js';
+import reportsRoutes from './reports.routes.js';
+import cssdRoutes from './cssd.routes.js';
+import linenRoutes from './linen.routes.js';
+import wasteRoutes from './waste.routes.js';
+import maintenanceRoutes from './maintenance.routes.js';
+import vendorRoutes from './vendor.routes.js';
+import telemedicineRoutes from './telemedicine.routes.js';
+import smartDisplayRoutes from './smart-display.routes.js';
+import executiveDashboardRoutes from './executive-dashboard.routes.js';
+import formTemplatesRoutes from './form-templates.routes.js';
+import reportTemplatesRoutes from './report-templates.routes.js';
+import queueRoutes from './queue.routes.js';
+import analyticsRoutes from './analytics.routes.js';
+import jobsRoutes from './jobs.routes.js';
+import pacsRoutes from './pacs.routes.js';
+import aspakRoutes from './aspak.routes.js';
+import incidentsRoutes from './incidents.routes.js';
+import consentRoutes from './consent.routes.js';
+import vitalSignsRoutes from './vital-signs.routes.js';
+import { notificationRouter } from '../services/notification.service.js';
+import patientPortalRoutes from './patient-portal.routes.js';
+import cdsRoutes from './cds.routes.js';
+import exportRoutes from './export.routes.js';
+import lisRoutes from './lis.routes.js';
+import uploadRoutes from './upload.routes.js';
+import sisruteRoutes from './sisrute.routes.js';
+import staffCertificationsRoutes from './staff-certifications.routes.js';
+import drugInteractionsRoutes from './drug-interactions.routes.js';
 
 const router = Router();
 
@@ -45,6 +76,20 @@ const router = Router();
 
 // Auth routes (login, register, password reset)
 router.use('/auth', authRoutes);
+
+// Setup status check — must be public so frontend can call before auth is ready
+router.get('/setup-status', asyncHandler(async (_req, res) => {
+  const { prisma } = await import('../config/database.js');
+  const setting = await prisma.system_settings.findUnique({
+    where: { setting_key: 'setup_completed' }
+  });
+  res.json({ success: true, data: setting?.setting_value === 'true' });
+}));
+
+// Hospital profile & setup — accessible during first-time setup (no auth required)
+// These ALSO handle authenticated requests (auth header is optional here)
+router.use('/admin/hospital-profile', hospitalProfileRoutes);
+router.use('/admin/hospitals', hospitalsRoutes);
 
 // ============================================
 // PROTECTED ROUTES (Require Authentication)
@@ -82,11 +127,14 @@ router.use('/accounting', accountingRoutes);
 
 // Admin Module
 router.use('/admin', adminRoutes);
+// Note: /admin/hospital-profile and /admin/hospitals are in the PUBLIC block above
+//       so they also work for authenticated requests (Express matches first)
 
 // External Integration Modules
 router.use('/bpjs', bpjsRoutes);
 router.use('/satusehat', satusehatRoutes);
 router.use('/eklaim', eklaimIDRGRoutes);
+router.use('/icd11', icd11Routes);
 
 // Education Module (Teaching Hospital)
 router.use('/education', educationRoutes);
@@ -94,6 +142,44 @@ router.use('/education', educationRoutes);
 // Ambulance & Home Care Modules
 router.use('/ambulance', ambulanceRoutes);
 router.use('/home-care', homeCareRoutes);
+
+// RL Reports (Kemenkes)
+router.use('/reports', reportsRoutes);
+
+// Support Service Modules
+router.use('/cssd', cssdRoutes);
+router.use('/linen', linenRoutes);
+router.use('/waste', wasteRoutes);
+router.use('/maintenance', maintenanceRoutes);
+router.use('/vendors', vendorRoutes);
+router.use('/telemedicine', telemedicineRoutes);
+router.use('/smart-display', smartDisplayRoutes);
+router.use('/executive-dashboard', executiveDashboardRoutes);
+router.use('/form-templates', formTemplatesRoutes);
+router.use('/report-templates', reportTemplatesRoutes);
+router.use('/queue', queueRoutes);
+
+// Phase 3 — Scalability modules
+router.use('/analytics',   analyticsRoutes);
+router.use('/jobs',        jobsRoutes);
+router.use('/pacs',        pacsRoutes);
+
+// Phase 4 — Clinical & Compliance modules
+router.use('/aspak',       aspakRoutes);
+router.use('/incidents',   incidentsRoutes);
+router.use('/consents',    consentRoutes);
+router.use('/vital-signs', vitalSignsRoutes);
+
+// Phase 5 — New modules
+router.use('/cds',           cdsRoutes);          // Clinical Decision Support
+router.use('/export',        exportRoutes);       // Excel/PDF export
+router.use('/lis',           lisRoutes);          // Lab Analyzer Interface
+router.use('/notifications',    notificationRouter);   // WhatsApp/SMS notifications
+router.use('/patient-portal',  patientPortalRoutes); // Patient self-service portal
+router.use('/upload',              uploadRoutes);              // File uploads (photos, documents)
+router.use('/sisrute',             sisruteRoutes);             // SISRUTE referral management
+router.use('/staff-certifications', staffCertificationsRoutes); // Staff certs & trainings
+router.use('/drug-interactions',   drugInteractionsRoutes);    // Drug interaction DB + CDS admin
 
 // ============================================
 // ADMIN ONLY ROUTES
@@ -134,27 +220,40 @@ router.get('/admin/audit-logs', requireRole(['admin']), asyncHandler(async (req,
   });
 }));
 
-router.get('/admin/system-settings', requireRole(['admin']), asyncHandler(async (req, res) => {
+// Helper: serialize any value to string for storage
+function serializeSettingValue(val) {
+  if (val === null || val === undefined) return '';
+  if (typeof val === 'object') return JSON.stringify(val);
+  return String(val);
+}
+
+// Helper: deserialize string from storage back to original type
+function deserializeSettingValue(str) {
+  if (str === null || str === undefined || str === '') return str;
+  try { return JSON.parse(str); } catch { return str; }
+}
+
+router.get('/admin/system-settings', requireRole(['admin']), asyncHandler(async (_req, res) => {
   const { prisma } = await import('../config/database.js');
   const settings = await prisma.system_settings.findMany();
-  res.json({ success: true, data: settings });
+  const parsed = settings.map(s => ({ ...s, setting_value: deserializeSettingValue(s.setting_value) }));
+  res.json({ success: true, data: parsed });
 }));
 
 router.put('/admin/system-settings/:key', requireRole(['admin']), asyncHandler(async (req, res) => {
   const { prisma } = await import('../config/database.js');
   const { key } = req.params;
-  // Accept both 'value' (standard API format) and 'setting_value' (column format).
-  // 'value' takes precedence when both are present.
   const { value, setting_value } = req.body;
-  const settingValue = value !== undefined ? value : setting_value;
-  
+  const raw = value !== undefined ? value : setting_value;
+  const settingValue = serializeSettingValue(raw);
+
   const setting = await prisma.system_settings.upsert({
     where: { setting_key: key },
     update: { setting_value: settingValue },
     create: { setting_key: key, setting_value: settingValue }
   });
-  
-  res.json({ success: true, data: setting });
+
+  res.json({ success: true, data: { ...setting, setting_value: deserializeSettingValue(setting.setting_value) } });
 }));
 
 // Fallback: accept PUT /admin/system-settings with setting_key in the request body.
@@ -164,7 +263,8 @@ router.put('/admin/system-settings', requireRole(['admin']), asyncHandler(async 
   if (!setting_key) {
     return res.status(400).json({ success: false, error: 'setting_key diperlukan' });
   }
-  const settingValue = value !== undefined ? value : setting_value;
+  const raw = value !== undefined ? value : setting_value;
+  const settingValue = serializeSettingValue(raw);
 
   const setting = await prisma.system_settings.upsert({
     where: { setting_key },
@@ -172,11 +272,11 @@ router.put('/admin/system-settings', requireRole(['admin']), asyncHandler(async 
     create: { setting_key, setting_value: settingValue }
   });
 
-  res.json({ success: true, data: setting });
+  res.json({ success: true, data: { ...setting, setting_value: deserializeSettingValue(setting.setting_value) } });
 }));
 
 // Check whether initial hospital setup has been completed
-router.get('/admin/setup-status', asyncHandler(async (req, res) => {
+router.get('/admin/setup-status', asyncHandler(async (_req, res) => {
   const { prisma } = await import('../config/database.js');
   const setting = await prisma.system_settings.findUnique({
     where: { setting_key: 'setup_completed' }
@@ -197,6 +297,44 @@ router.get('/admin/modules', asyncHandler(async (req, res) => {
   res.json({ success: true, data: filtered });
 }));
 
+// Save the full list of enabled module codes (replaces previous list)
+router.post('/admin/enabled-modules', requireRole(['admin']), asyncHandler(async (req, res) => {
+  const { prisma } = await import('../config/database.js');
+  const { p_module_codes } = req.body;
+  if (!Array.isArray(p_module_codes)) {
+    return res.status(400).json({ success: false, error: 'p_module_codes harus berupa array' });
+  }
+  await prisma.system_settings.upsert({
+    where: { setting_key: 'enabled_modules' },
+    update: { setting_value: JSON.stringify(p_module_codes) },
+    create: { setting_key: 'enabled_modules', setting_value: JSON.stringify(p_module_codes) }
+  });
+  res.json({ success: true, data: p_module_codes });
+}));
+
+// Toggle a single module on or off
+router.post('/admin/enabled-modules/toggle', requireRole(['admin']), asyncHandler(async (req, res) => {
+  const { prisma } = await import('../config/database.js');
+  const { p_module_code, p_enabled } = req.body;
+  if (!p_module_code) {
+    return res.status(400).json({ success: false, error: 'p_module_code diperlukan' });
+  }
+  const setting = await prisma.system_settings.findUnique({ where: { setting_key: 'enabled_modules' } });
+  let current = [];
+  try { current = JSON.parse(setting?.setting_value || '[]'); } catch { current = []; }
+
+  const updated = p_enabled
+    ? [...new Set([...current, p_module_code])]
+    : current.filter((c) => c !== p_module_code);
+
+  await prisma.system_settings.upsert({
+    where: { setting_key: 'enabled_modules' },
+    update: { setting_value: JSON.stringify(updated) },
+    create: { setting_key: 'enabled_modules', setting_value: JSON.stringify(updated) }
+  });
+  res.json({ success: true, data: updated });
+}));
+
 // Get menu access for the current user's roles
 router.get('/admin/menu-access', asyncHandler(async (req, res) => {
   const { prisma } = await import('../config/database.js');
@@ -208,7 +346,7 @@ router.get('/admin/menu-access', asyncHandler(async (req, res) => {
 }));
 
 // Reset system to initial state (admin only)
-router.post('/admin/reset-system', requireRole(['admin']), asyncHandler(async (req, res) => {
+router.post('/admin/reset-system', requireRole(['admin']), asyncHandler(async (_req, res) => {
   const { prisma } = await import('../config/database.js');
   await prisma.system_settings.upsert({
     where: { setting_key: 'setup_completed' },
@@ -240,7 +378,7 @@ router.post('/admin/hospital-migration/execute', requireRole(['admin']), asyncHa
 // REPORTS ROUTES
 // ============================================
 
-router.get('/reports/dashboard', asyncHandler(async (req, res) => {
+router.get('/reports/dashboard', asyncHandler(async (_req, res) => {
   const { prisma } = await import('../config/database.js');
   
   const today = new Date();
@@ -275,7 +413,7 @@ router.get('/reports/dashboard', asyncHandler(async (req, res) => {
 
 router.get('/reports/revenue', requireRole(['admin', 'keuangan', 'direktur']), asyncHandler(async (req, res) => {
   const { prisma } = await import('../config/database.js');
-  const { date_from, date_to, group_by = 'day' } = req.query;
+  const { date_from, date_to } = req.query;
   
   const where = { status: 'paid' };
   if (date_from || date_to) {

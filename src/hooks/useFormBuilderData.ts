@@ -1,7 +1,25 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { db } from "@/lib/db";
-import { useAuth } from "./useAuth";
 import { toast } from "sonner";
+
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
+
+const FETCH_OPTS: RequestInit = { credentials: 'include', headers: { 'Content-Type': 'application/json' } };
+
+async function apiFetch<T>(path: string): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, FETCH_OPTS);
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error || res.statusText);
+  return (json.data ?? json) as T;
+}
+
+async function apiPost<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    ...FETCH_OPTS, method: 'POST', body: JSON.stringify(body),
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error || res.statusText);
+  return (json.data ?? json) as T;
+}
 
 export interface FormField {
   id: string;
@@ -27,41 +45,16 @@ export interface FormTemplate {
 }
 
 export function useFormBuilderData() {
-  const { user } = useAuth();
   const queryClient = useQueryClient();
 
   const { data: templates = [], isLoading } = useQuery({
     queryKey: ["custom-form-templates"],
-    queryFn: async () => {
-      const { data, error } = await db
-        .from("custom_form_templates")
-        .select("*")
-        .eq("is_active", true)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return (data || []).map((t: any) => ({
-        ...t,
-        fields: (t.fields as any) || [],
-      })) as FormTemplate[];
-    },
+    queryFn: () => apiFetch<FormTemplate[]>('/form-templates'),
   });
 
   const saveTemplate = useMutation({
-    mutationFn: async (template: { name: string; description: string; category: string; fields: FormField[] }) => {
-      const { data, error } = await db
-        .from("custom_form_templates")
-        .insert({
-          name: template.name,
-          description: template.description,
-          category: template.category,
-          fields: template.fields as any,
-          created_by: user?.id,
-        })
-        .select()
-        .single();
-      if (error) throw error;
-      return data;
-    },
+    mutationFn: (template: { name: string; description: string; category: string; fields: FormField[] }) =>
+      apiPost<FormTemplate>('/form-templates', template),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["custom-form-templates"] });
       toast.success("Template berhasil disimpan ke database!");
@@ -70,10 +63,9 @@ export function useFormBuilderData() {
   });
 
   const deleteTemplate = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await db.from("custom_form_templates").delete().eq("id", id);
-      if (error) throw error;
-    },
+    mutationFn: (id: string) =>
+      fetch(`${API_BASE}/form-templates/${id}`, { ...FETCH_OPTS, method: 'DELETE' })
+        .then(r => r.json()),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["custom-form-templates"] });
       toast.success("Template dihapus");

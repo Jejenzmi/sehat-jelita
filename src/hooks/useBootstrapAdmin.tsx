@@ -1,12 +1,8 @@
 import { useState } from "react";
-import { db } from "@/lib/db";
 import { useAuth } from "./useAuth";
 
-/**
- * Hook to bootstrap the first admin user.
- * The RLS policy "Bootstrap first admin" allows any authenticated user to
- * insert themselves as admin ONLY when no roles exist in user_roles yet.
- */
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
+
 export function useBootstrapAdmin() {
   const { user, roles } = useAuth();
   const [loading, setLoading] = useState(false);
@@ -22,29 +18,29 @@ export function useBootstrapAdmin() {
     setError(null);
 
     try {
-      const { error: insertErr } = await db.from("user_roles").insert({
-        user_id: user.id,
-        role: "admin",
+      const res = await fetch(`${API_BASE}/admin/bootstrap`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: user.id }),
       });
 
-      if (insertErr) {
-        // Likely roles already exist (policy blocks insertion)
-        setError(insertErr.message);
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(json.error || res.statusText);
         return false;
       }
 
-      // Reload page to refresh auth roles
       window.location.reload();
       return true;
-    } catch (e: any) {
-      setError(e.message || "Unknown error");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Unknown error");
       return false;
     } finally {
       setLoading(false);
     }
   };
 
-  // User needs bootstrap if logged in but has no roles
   const needsBootstrap = !!user && roles.length === 0;
 
   return { bootstrapAdmin, loading, error, needsBootstrap };

@@ -89,6 +89,44 @@ const presetTemplates: Omit<FormTemplateLocal, "id" | "createdAt">[] = [
   },
 ];
 
+function exportFormToPDF(formName: string, fields: FormField[]) {
+  const fieldTypeLabel: Record<string, string> = {
+    text: "Teks", textarea: "Area Teks", number: "Angka", date: "Tanggal",
+    select: "Pilihan", checkbox: "Centang", radio: "Pilihan Ganda",
+    heading: "Judul Seksi", divider: "Pemisah",
+  };
+
+  const fieldsHTML = fields.map(f => {
+    if (f.type === "heading") return `<h3 style="font-size:14px;font-weight:bold;margin:16px 0 6px;border-bottom:1px solid #ccc;padding-bottom:4px">${f.label}</h3>`;
+    if (f.type === "divider") return `<hr style="margin:12px 0"/>`;
+    const req = f.required ? '<span style="color:red">*</span>' : "";
+    const hint = f.type === "select" || f.type === "checkbox" || f.type === "radio"
+      ? `<div style="color:#888;font-size:10px;margin-top:2px">Opsi: ${(f.options || []).join(" / ")}</div>` : "";
+    const box = f.type === "textarea"
+      ? `<div style="border:1px solid #ccc;height:60px;width:100%;margin-top:4px;border-radius:4px"></div>`
+      : `<div style="border:1px solid #ccc;height:28px;width:100%;margin-top:4px;border-radius:4px"></div>`;
+    return `<div style="margin-bottom:12px;width:${f.width === "half" ? "48%" : "100%"};display:inline-block;vertical-align:top;padding-right:${f.width === "half" ? "8px" : "0"}">
+      <label style="font-size:11px;font-weight:600">${f.label} ${req}</label>${hint}${box}
+    </div>`;
+  }).join("");
+
+  const win = window.open("", "_blank", "width=794,height=1123");
+  if (!win) { alert("Izinkan popup untuk mencetak formulir"); return; }
+  win.document.write(`<!DOCTYPE html><html><head><title>${formName}</title>
+    <style>@page{size:A4;margin:20mm} body{font-family:Arial,sans-serif;font-size:12px;color:#333;}</style>
+    </head><body>
+    <h2 style="text-align:center;margin-bottom:4px">${formName}</h2>
+    <p style="text-align:center;color:#666;font-size:10px;margin-bottom:20px">SIMRS ZEN • ${new Date().toLocaleDateString("id-ID",{day:"2-digit",month:"long",year:"numeric"})}</p>
+    <div>${fieldsHTML}</div>
+    <div style="margin-top:40px;display:flex;justify-content:space-between">
+      <div style="text-align:center;width:30%"><div style="border-top:1px solid #333;padding-top:4px;font-size:10px">Tanda Tangan Pasien</div></div>
+      <div style="text-align:center;width:30%"><div style="border-top:1px solid #333;padding-top:4px;font-size:10px">Tanda Tangan Petugas</div></div>
+    </div>
+    <script>window.onload=()=>{window.print();window.close();}</script>
+  </body></html>`);
+  win.document.close();
+}
+
 export default function FormBuilder() {
   const { templates: dbTemplates, isLoading: loadingTemplates, saveTemplate: saveToDb, deleteTemplate } = useFormBuilderData();
   const [activeTab, setActiveTab] = useState("builder");
@@ -196,7 +234,7 @@ export default function FormBuilder() {
           <Button variant="outline" size="sm" onClick={() => setActiveTab("preview")}>
             <Eye className="h-4 w-4 mr-1" /> Preview
           </Button>
-          <Button variant="outline" size="sm" onClick={() => toast.success("Formulir diekspor sebagai PDF")}>
+          <Button variant="outline" size="sm" onClick={() => exportFormToPDF(formName, fields)}>
             <FileDown className="h-4 w-4 mr-1" /> Export PDF
           </Button>
           <Button size="sm" onClick={saveTemplate}>

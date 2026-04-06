@@ -12,6 +12,7 @@ import { db } from "@/lib/db";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { PaymentGateway } from "@/components/billing/PaymentGateway";
+import { ThermalReceipt } from "@/components/billing/ThermalReceipt";
 
 type BillingStatus = "pending" | "partial" | "paid" | "cancelled" | "refunded";
 type PaymentType = "umum" | "bpjs" | "asuransi";
@@ -147,16 +148,23 @@ export default function Billing() {
 
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["billings"] });
+      const billing = billings.find(b => b.id === variables.billingId);
+      const newPaid = (billing?.paid_amount || 0) + variables.amount;
+      const isFullyPaid = billing && newPaid >= billing.total;
       setIsPaymentOpen(false);
-      setSelectedBilling(null);
       setPaymentMethod("");
       setPayAmount("");
       toast({
         title: "Pembayaran Berhasil",
         description: "Status tagihan telah diperbarui",
       });
+      // Auto-open receipt print dialog after full payment
+      if (isFullyPaid && variables.billingId) {
+        setReceiptBillingId(variables.billingId);
+      }
+      setSelectedBilling(null);
     },
     onError: (error) => {
       toast({
@@ -192,6 +200,7 @@ export default function Billing() {
   };
 
   const [mainTab, setMainTab] = useState("billing");
+  const [receiptBillingId, setReceiptBillingId] = useState<string | null>(null);
 
   return (
     <div className="space-y-6">
@@ -400,7 +409,7 @@ export default function Billing() {
                               </Button>
                             )}
                             {bill.status === "paid" && (
-                              <Button size="sm" variant="outline">
+                              <Button size="sm" variant="outline" onClick={() => setReceiptBillingId(bill.id)}>
                                 <Printer className="h-4 w-4 mr-1" />
                                 Cetak
                               </Button>
@@ -486,7 +495,7 @@ export default function Billing() {
                       <td className="font-medium">{formatCurrency(bill.total)}</td>
                       <td>{bill.payment_date ? new Date(bill.payment_date).toLocaleDateString("id-ID") : "-"}</td>
                       <td>
-                        <Button size="sm" variant="outline">
+                        <Button size="sm" variant="outline" onClick={() => setReceiptBillingId(bill.id)}>
                           <Printer className="h-4 w-4 mr-1" />
                           Cetak
                         </Button>
@@ -621,6 +630,13 @@ export default function Billing() {
       </Dialog>
       </>
       )}
+
+      {/* Thermal receipt print dialog */}
+      <ThermalReceipt
+        billingId={receiptBillingId}
+        open={!!receiptBillingId}
+        onClose={() => setReceiptBillingId(null)}
+      />
     </div>
   );
 }

@@ -1,13 +1,28 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { db } from "@/lib/db";
 import { useToast } from "@/hooks/use-toast";
-import type { Database } from "@/types/database";
 
-type DialysisType = Database['public']['Enums']['dialysis_type'];
-type SessionStatus = Database['public']['Enums']['session_status'];
-type VascularAccessType = Database['public']['Enums']['vascular_access_type'];
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
-// Types
+const FETCH_OPTS: RequestInit = { credentials: 'include', headers: { 'Content-Type': 'application/json' } };
+
+async function apiFetch<T>(path: string): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, FETCH_OPTS);
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error || res.statusText);
+  return (json.data ?? json) as T;
+}
+
+async function apiPost<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    ...FETCH_OPTS, method: 'POST', body: JSON.stringify(body),
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error || res.statusText);
+  return (json.data ?? json) as T;
+}
+
+// ==================== TYPES ====================
+
 export interface DialysisMachine {
   id: string;
   machine_number: string;
@@ -22,7 +37,7 @@ export interface DialysisMachine {
 export interface VascularAccess {
   id: string;
   patient_id: string;
-  access_type: VascularAccessType;
+  access_type: string;
   location: string | null;
   creation_date: string | null;
   is_active: boolean | null;
@@ -34,35 +49,27 @@ export interface DialysisSession {
   patient_id: string;
   machine_id: string | null;
   vascular_access_id: string | null;
-  dialysis_type: DialysisType | null;
+  dialysis_type: string | null;
   session_date: string;
   scheduled_time: string | null;
   actual_start_time: string | null;
   actual_end_time: string | null;
   duration_planned: number | null;
   duration_actual: number | null;
-  status: SessionStatus | null;
+  status: string | null;
   attending_doctor_id: string | null;
-  
-  // Pre-dialysis
   pre_weight: number | null;
   dry_weight: number | null;
   target_uf: number | null;
   pre_bp_systolic: number | null;
   pre_bp_diastolic: number | null;
-  
-  // Dialysis Parameters
   blood_flow_rate: number | null;
   dialyzer_type: string | null;
-  
-  // Post-dialysis
   post_weight: number | null;
   actual_uf: number | null;
   kt_v: number | null;
   urr: number | null;
-  
   notes: string | null;
-  
   patients?: { full_name: string; medical_record_number: string } | null;
   dialysis_machines?: { machine_number: string; brand: string | null; model: string | null } | null;
   doctors?: { full_name: string } | null;
@@ -81,215 +88,77 @@ export interface DialysisMonitoring {
   symptoms: string | null;
 }
 
-// Dialysis Machines
+// ==================== HOOKS ====================
+
 export function useDialysisMachines() {
   return useQuery({
     queryKey: ["dialysis-machines"],
-    queryFn: async () => {
-      const { data, error } = await db
-        .from("dialysis_machines")
-        .select("*")
-        .order("machine_number");
-
-      if (error) throw error;
-      return data as DialysisMachine[];
-    },
+    queryFn: () => apiFetch<DialysisMachine[]>('/dialysis/machines'),
   });
 }
 
-// Dialysis Sessions
-export function useDialysisSessions(date?: string, status?: SessionStatus) {
+export function useDialysisSessions(date?: string, status?: string) {
   return useQuery({
     queryKey: ["dialysis-sessions", date, status],
-    queryFn: async () => {
-      let query = db
-        .from("dialysis_sessions")
-        .select(`
-          *,
-          patients(full_name, medical_record_number),
-          dialysis_machines(machine_number, brand, model),
-          doctors(full_name)
-        `)
-        .order("session_date", { ascending: false })
-        .order("scheduled_time", { ascending: true });
-
-      if (date) {
-        query = query.eq("session_date", date);
-      }
-
-      if (status) {
-        query = query.eq("status", status);
-      }
-
-      const { data, error } = await query.limit(100);
-      if (error) throw error;
-      return data as unknown as DialysisSession[];
+    queryFn: () => {
+      const p = new URLSearchParams();
+      if (date)   p.set('date', date);
+      if (status) p.set('status', status);
+      return apiFetch<DialysisSession[]>(`/dialysis/sessions?${p}`);
     },
   });
 }
 
-// Today's Sessions
 export function useTodayDialysisSessions() {
   const today = new Date().toISOString().split('T')[0];
   return useDialysisSessions(today);
 }
 
-// Dialysis Monitoring
 export function useDialysisMonitoring(sessionId: string) {
   return useQuery({
     queryKey: ["dialysis-monitoring", sessionId],
-    queryFn: async () => {
-      const { data, error } = await db
-        .from("dialysis_monitoring")
-        .select("*")
-        .eq("session_id", sessionId)
-        .order("recorded_at", { ascending: true });
-
-      if (error) throw error;
-      return data as DialysisMonitoring[];
-    },
+    queryFn: () => apiFetch<DialysisMonitoring[]>(`/dialysis/sessions/${sessionId}/monitoring`),
     enabled: !!sessionId,
+    refetchInterval: 30_000,
   });
 }
 
-// Dialysis Statistics
 export function useDialysisStatistics() {
   return useQuery({
     queryKey: ["dialysis-statistics"],
-    queryFn: async () => {
-      const today = new Date().toISOString().split('T')[0];
-      
-      // Get machines
-      const { data: machines } = await db.from("dialysis_machines").select("*");
-      
-      // Get today's sessions
-      const { data: todaySessions } = await db
-        .from("dialysis_sessions")
-        .select("status")
-        .eq("session_date", today);
-
-      // Get this month's completed sessions
-      const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
-      const { data: monthSessions, count } = await db
-        .from("dialysis_sessions")
-        .select("*", { count: 'exact' })
-        .gte("session_date", monthStart)
-        .eq("status", "completed");
-
-      const totalMachines = machines?.length || 0;
-      const availableMachines = machines?.filter(m => m.is_available).length || 0;
-      const inUseMachines = totalMachines - availableMachines;
-
-      const todayScheduled = todaySessions?.filter(s => s.status === 'scheduled').length || 0;
-      const todayCompleted = todaySessions?.filter(s => s.status === 'completed').length || 0;
-      const todayInProgress = todaySessions?.filter(s => s.status === 'in_progress').length || 0;
-
-      // Calculate average Kt/V from completed sessions
-      const sessionsWithKtV = monthSessions?.filter(s => s.kt_v) || [];
-      const avgKtV = sessionsWithKtV.length 
-        ? sessionsWithKtV.reduce((sum, s) => sum + (s.kt_v || 0), 0) / sessionsWithKtV.length
-        : 0;
-
-      return {
-        totalMachines,
-        availableMachines,
-        inUseMachines,
-        todayScheduled,
-        todayCompleted,
-        todayInProgress,
-        monthlyTotal: count || 0,
-        avgKtV: avgKtV.toFixed(2),
-      };
-    },
+    queryFn: () => apiFetch('/dialysis/statistics'),
+    refetchInterval: 60_000,
   });
 }
 
-// Weekly dialysis sessions data for charts
 export function useWeeklyDialysisSessions() {
   return useQuery({
     queryKey: ["dialysis-weekly-sessions"],
-    queryFn: async () => {
-      const today = new Date();
-      const weekStart = new Date(today);
-      weekStart.setDate(today.getDate() - today.getDay() + 1); // Monday
-      
-      const weekDays = [];
-      for (let i = 0; i < 6; i++) { // Mon-Sat
-        const date = new Date(weekStart);
-        date.setDate(weekStart.getDate() + i);
-        weekDays.push(date.toISOString().split('T')[0]);
-      }
-      
-      const { data, error } = await db
-        .from("dialysis_sessions")
-        .select("session_date")
-        .in("session_date", weekDays);
-      
-      if (error) throw error;
-      
-      const dayLabels = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
-      const sessionCounts: Record<string, number> = {};
-      weekDays.forEach(d => sessionCounts[d] = 0);
-      
-      data?.forEach(s => {
-        if (sessionCounts[s.session_date] !== undefined) {
-          sessionCounts[s.session_date]++;
-        }
-      });
-      
-      return weekDays.map((date, idx) => ({
-        day: dayLabels[idx],
-        sessions: sessionCounts[date] || 0,
-      }));
-    },
+    queryFn: () => apiFetch('/dialysis/weekly-summary'),
   });
 }
 
-// Adequacy data (Kt/V distribution)
 export function useDialysisAdequacy() {
   return useQuery({
     queryKey: ["dialysis-adequacy"],
-    queryFn: async () => {
-      const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
-      
-      const { data, error } = await db
-        .from("dialysis_sessions")
-        .select("kt_v")
-        .gte("session_date", monthStart)
-        .eq("status", "completed")
-        .not("kt_v", "is", null);
-      
-      if (error) throw error;
-      
-      const total = data?.length || 0;
-      const adequate = data?.filter(s => (s.kt_v || 0) >= 1.2).length || 0;
-      const inadequate = total - adequate;
-      
-      return [
-        { name: "Kt/V ≥ 1.2", value: total > 0 ? Math.round((adequate / total) * 100) : 0, color: "hsl(var(--primary))" },
-        { name: "Kt/V < 1.2", value: total > 0 ? Math.round((inadequate / total) * 100) : 0, color: "hsl(var(--muted))" },
-      ];
-    },
+    queryFn: () => apiFetch('/dialysis/adequacy'),
   });
 }
 
-// Mutations
 export function useUpdateDialysisSession() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async ({ id, ...data }: { id: string } & Database['public']['Tables']['dialysis_sessions']['Update']) => {
-      const { error } = await db.from("dialysis_sessions").update(data).eq("id", id);
-      if (error) throw error;
-    },
+    mutationFn: ({ id, ...data }: { id: string } & Partial<DialysisSession>) =>
+      apiPost(`/dialysis/sessions/${id}/complete`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["dialysis-sessions"] });
       queryClient.invalidateQueries({ queryKey: ["dialysis-statistics"] });
-      toast({ title: "Session updated successfully" });
+      toast({ title: "Sesi diperbarui" });
     },
-    onError: (error) => {
-      toast({ title: "Error updating session", description: error.message, variant: "destructive" });
+    onError: (error: Error) => {
+      toast({ title: "Gagal", description: error.message, variant: "destructive" });
     },
   });
 }
@@ -299,13 +168,44 @@ export function useAddDialysisMonitoring() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (data: Database['public']['Tables']['dialysis_monitoring']['Insert']) => {
-      const { error } = await db.from("dialysis_monitoring").insert(data);
-      if (error) throw error;
-    },
+    mutationFn: ({ sessionId, ...data }: { sessionId: string } & Partial<DialysisMonitoring>) =>
+      apiPost(`/dialysis/sessions/${sessionId}/vitals`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["dialysis-monitoring"] });
-      toast({ title: "Monitoring data recorded" });
+      toast({ title: "Data monitoring dicatat" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Gagal", description: error.message, variant: "destructive" });
+    },
+  });
+}
+
+export function useStartDialysisSession() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: (data: {
+      patient_id: string;
+      machine_id: string;
+      dialysis_type: string;
+      session_date: string;
+      scheduled_time: string;
+      duration_planned: number;
+      attending_doctor_id?: string;
+      pre_weight?: number;
+      dry_weight?: number;
+      target_uf?: number;
+      pre_bp_systolic?: number;
+      pre_bp_diastolic?: number;
+    }) => apiPost('/dialysis/sessions/start', data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["dialysis-sessions"] });
+      queryClient.invalidateQueries({ queryKey: ["dialysis-machines"] });
+      toast({ title: "Sesi hemodialisa dimulai" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Gagal", description: error.message, variant: "destructive" });
     },
   });
 }

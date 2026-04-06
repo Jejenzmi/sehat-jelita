@@ -8,8 +8,28 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Search, Settings, RefreshCw, AlertTriangle, Zap } from "lucide-react";
-import { db } from "@/lib/db";
 import { toast } from "sonner";
+
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
+const FETCH_OPTS: RequestInit = { credentials: 'include', headers: { 'Content-Type': 'application/json' } };
+async function apiFetch<T>(path: string): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, FETCH_OPTS);
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error || res.statusText);
+  return (json.data ?? json) as T;
+}
+async function apiPost<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, { ...FETCH_OPTS, method: 'POST', body: JSON.stringify(body) });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error || res.statusText);
+  return (json.data ?? json) as T;
+}
+async function apiPut<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, { ...FETCH_OPTS, method: 'PUT', body: JSON.stringify(body) });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error || res.statusText);
+  return (json.data ?? json) as T;
+}
 
 interface Medicine {
   id: string;
@@ -31,7 +51,7 @@ interface Medicine {
 
 export default function AutoReorderSettings() {
   const [medicines, setMedicines] = useState<Medicine[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [_loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [selectedMedicine, setSelectedMedicine] = useState<Medicine | null>(null);
@@ -51,28 +71,14 @@ export default function AutoReorderSettings() {
 
   const fetchMedicines = async () => {
     try {
-      const { data: medicinesData, error: medicinesError } = await db
-        .from("medicines")
-        .select("id, name, code, stock, min_stock, unit")
-        .eq("is_active", true)
-        .order("name");
-
-      if (medicinesError) throw medicinesError;
-
-      const { data: settingsData, error: settingsError } = await db
-        .from("inventory_settings")
-        .select("*");
-
-      if (settingsError) throw settingsError;
-
-      const medicinesWithSettings = (medicinesData || []).map(med => ({
-        ...med,
-        settings: settingsData?.find(s => s.medicine_id === med.id) || null,
-      }));
-
-      setMedicines(medicinesWithSettings);
+      // Fetch medicines with their reorder settings from the stock endpoint
+      // TODO: The /inventory/stock endpoint should return medicines with reorder settings
+      const stockData = await apiFetch<Medicine[]>('/inventory/stock');
+      setMedicines(Array.isArray(stockData) ? stockData : []);
     } catch (error) {
       console.error("Error fetching medicines:", error);
+      // Fallback to empty array to avoid breaking UI
+      setMedicines([]);
     } finally {
       setLoading(false);
     }
@@ -118,20 +124,9 @@ export default function AutoReorderSettings() {
       };
 
       if (selectedMedicine.settings) {
-        // Update existing
-        const { error } = await db
-          .from("inventory_settings")
-          .update(settingsData)
-          .eq("id", selectedMedicine.settings.id);
-
-        if (error) throw error;
+        await apiPut(`/inventory/settings/${selectedMedicine.settings.id}`, settingsData);
       } else {
-        // Insert new
-        const { error } = await db
-          .from("inventory_settings")
-          .insert(settingsData);
-
-        if (error) throw error;
+        await apiPost('/inventory/settings', { ...settingsData, medicine_id: selectedMedicine.id });
       }
 
       toast.success("Pengaturan berhasil disimpan");
@@ -166,46 +161,18 @@ export default function AutoReorderSettings() {
       }, {} as Record<string, Medicine[]>);
 
       for (const [supplier, meds] of Object.entries(supplierGroups)) {
-        const { data: poNumber } = await db.rpc("generate_po_number");
-
-        const total = meds.reduce((sum, med) => {
-          return sum + (med.settings?.reorder_quantity || 100) * 10000;
-        }, 0);
-
-        const { data: po, error: poError } = await db
-          .from("purchase_orders")
-          .insert({
-            order_number: poNumber,
-            supplier_name: supplier,
-            status: "draft",
-            subtotal: total,
-            total: total,
-            auto_generated: true,
-          })
-          .select()
-          .single();
-
-        if (poError) throw poError;
-
         const items = meds.map(med => ({
-          purchase_order_id: po.id,
-          medicine_id: med.id,
+          itemId: med.id,
           quantity: med.settings?.reorder_quantity || 100,
-          unit_price: 10000,
-          total_price: (med.settings?.reorder_quantity || 100) * 10000,
+          unitPrice: 10000,
         }));
 
-        await db.from("purchase_order_items").insert(items);
-
-        // Update last auto order date
-        for (const med of meds) {
-          if (med.settings) {
-            await db
-              .from("inventory_settings")
-              .update({ last_auto_order_date: new Date().toISOString() })
-              .eq("id", med.settings.id);
-          }
-        }
+        await apiPost('/inventory/purchase-orders', {
+          supplierId: null,
+          supplierName: supplier,
+          items,
+          notes: `Auto-reorder - ${new Date().toLocaleDateString('id-ID')}`,
+        });
       }
 
       toast.success(`${needsReorder.length} obat membutuhkan reorder. PO telah dibuat.`);

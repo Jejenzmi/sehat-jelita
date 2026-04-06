@@ -269,8 +269,12 @@ export const requestPasswordReset = async (req, res, next) => {
         }
       });
 
-      // TODO: Send email with reset link
-      // await emailService.sendPasswordResetEmail(email, resetToken);
+      const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+      const { sendEmail, emailTemplates } = await import('../services/email.service.js');
+      const template = emailTemplates.passwordReset(resetUrl, profile.full_name || email);
+      await sendEmail({ to: email, ...template }).catch(err => {
+        console.error('Failed to send password reset email:', err);
+      });
     }
 
     // Always return success to prevent email enumeration

@@ -1,73 +1,87 @@
 import { useQuery } from "@tanstack/react-query";
-import { db } from "@/lib/db";
 import { useMemo } from "react";
+import { HospitalType, getPathsForType, MODULE_DEFINITIONS } from "@/lib/modules";
 
-interface ModuleConfig {
-  module_code: string;
-  module_name: string;
-  module_category: string;
-  module_path: string;
-  is_core_module: boolean;
-}
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
+
+const FETCH_OPTS: RequestInit = { credentials: 'include', headers: { 'Content-Type': 'application/json' } };
 
 export function useModuleVisibility() {
-  // Get hospital profile to know the type
+  // 1. Read hospital profile (facility_level + setup_completed) from backend
   const { data: hospitalProfile, isLoading: loadingProfile } = useQuery({
     queryKey: ["hospital-profile-for-modules"],
     queryFn: async () => {
-      const { data, error } = await db
-        .from("hospital_profile")
-        .select("facility_level, setup_completed")
-        .limit(1)
-        .maybeSingle();
-      if (error) throw error;
-      return data;
-    },
-    staleTime: 1000 * 60 * 5, // 5 minutes
-  });
-
-  // Get available modules for this hospital type
-  const { data: availableModules, isLoading: loadingModules } = useQuery({
-    queryKey: ["available-modules-for-sidebar", hospitalProfile?.facility_level],
-    queryFn: async () => {
-      if (!hospitalProfile?.facility_level) {
-        // If no hospital type set, return all modules (setup not done)
-        const { data, error } = await db
-          .from("module_configurations")
-          .select("module_code, module_name, module_category, module_path, is_core_module")
-          .eq("is_active", true);
-        if (error) throw error;
-        return data as ModuleConfig[];
+      try {
+        const res = await fetch(`${API_BASE}/admin/hospital-profile`, FETCH_OPTS);
+        if (!res.ok) return null;
+        const json = await res.json();
+        return json.data as { facility_level?: string; setup_completed?: boolean } | null;
+      } catch {
+        return null;
       }
-
-      const { data, error } = await db.rpc("get_available_modules", {
-        p_hospital_type: hospitalProfile.facility_level,
-      });
-      if (error) throw error;
-      return data as ModuleConfig[];
     },
-    enabled: !loadingProfile,
+    staleTime: 1000 * 60 * 5,
   });
 
-  const availablePaths = useMemo(() => {
-    if (!availableModules) return new Set<string>();
-    return new Set(availableModules.map((m) => m.module_path));
-  }, [availableModules]);
+  // 2. Read enabled_modules list saved by admin in settings
+  const { data: enabledModulesRaw, isLoading: loadingEnabled } = useQuery({
+    queryKey: ["enabled-modules"],
+    queryFn: async () => {
+      try {
+        const res = await fetch(`${API_BASE}/admin/system-settings`, FETCH_OPTS);
+        if (!res.ok) return null;
+        const json = await res.json();
+        const settings: { setting_key: string; setting_value: unknown }[] = json.data || [];
+        const row = settings.find(s => s.setting_key === 'enabled_modules');
+        if (!row) return null;
+        const val = row.setting_value;
+        return Array.isArray(val) ? (val as string[]) : null;
+      } catch {
+        return null;
+      }
+    },
+    staleTime: 1000 * 60 * 2,
+  });
+
+  const facilityLevel = hospitalProfile?.facility_level as HospitalType | undefined;
+  const setupCompleted = hospitalProfile?.setup_completed ?? false;
+
+  // Paths allowed by hospital type
+  const typePaths = useMemo(() => {
+    if (!facilityLevel) return null;
+    return getPathsForType(facilityLevel);
+  }, [facilityLevel]);
+
+  // Paths of enabled modules (if admin has customized the list)
+  const enabledPaths = useMemo(() => {
+    if (!enabledModulesRaw) return null;
+    const pathMap = new Map(MODULE_DEFINITIONS.map(m => [m.module_code, m.module_path]));
+    return new Set(enabledModulesRaw.map(code => pathMap.get(code)).filter(Boolean) as string[]);
+  }, [enabledModulesRaw]);
 
   const isModuleAvailable = (path: string): boolean => {
-    // If setup not completed, show all modules
-    if (!hospitalProfile?.setup_completed) return true;
-    // Always allow these paths
-    if (path === "/" || path === "/dashboard") return true;
-    // Check if module is available for this hospital type
-    return availablePaths.has(path);
+    // Always show dashboard
+    if (path === '/' || path === '/dashboard') return true;
+    // If setup not done yet, show everything
+    if (!setupCompleted) return true;
+    // If hospital type not set, show everything
+    if (!typePaths) return true;
+    // Must be applicable for this hospital type
+    if (!typePaths.has(path)) return false;
+    // If admin has a custom enabled list, also check that
+    if (enabledPaths && !enabledPaths.has(path)) {
+      // Core modules are always visible even if not explicitly in enabled list
+      const mod = MODULE_DEFINITIONS.find(m => m.module_path === path);
+      if (mod?.is_core_module) return true;
+      return false;
+    }
+    return true;
   };
 
   return {
     isModuleAvailable,
-    availableModules,
-    hospitalType: hospitalProfile?.facility_level,
-    setupCompleted: hospitalProfile?.setup_completed,
-    isLoading: loadingProfile || loadingModules,
+    facilityLevel,
+    setupCompleted,
+    isLoading: loadingProfile || loadingEnabled,
   };
 }

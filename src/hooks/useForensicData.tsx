@@ -1,229 +1,145 @@
+/**
+ * Forensic data hook — uses real backend API via fetch with credentials:include
+ */
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { db } from "@/lib/db";
-import { Database } from "@/types/database";
 import { toast } from "sonner";
 
-type MortuaryCase = Database["public"]["Tables"]["mortuary_cases"]["Row"];
-type AutopsyRecord = Database["public"]["Tables"]["autopsy_records"]["Row"];
-type VisumReport = Database["public"]["Tables"]["visum_reports"]["Row"];
-type DeathCertificate = Database["public"]["Tables"]["death_certificates"]["Row"];
+const API_BASE = import.meta.env.VITE_API_URL || "/api";
+
+function authFetch(url: string, init: RequestInit = {}) {
+  return fetch(url, {
+    ...init,
+    credentials: "include",
+    headers: { "Content-Type": "application/json", ...(init.headers || {}) },
+  }).then(async (res) => {
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error || "Request gagal");
+    return json.data;
+  });
+}
+
+// ── Query keys ─────────────────────────────────────────────────────────────────
+const QK = {
+  cases:        ["forensic-cases"],
+  activeCases:  ["forensic-active-cases"],
+  autopsies:    ["autopsy-records"],
+  visums:       ["visum-reports"],
+  certificates: ["death-certificates"],
+};
 
 export function useForensicData() {
   const queryClient = useQueryClient();
 
-  // Fetch mortuary cases
+  // ── Mortuary Cases ───────────────────────────────────────────────────────────
   const { data: mortuaryCases, isLoading: loadingCases } = useQuery({
-    queryKey: ["mortuary-cases"],
-    queryFn: async () => {
-      const { data, error } = await db
-        .from("mortuary_cases")
-        .select(`
-          *,
-          patients:deceased_id (medical_record_number)
-        `)
-        .order("admission_date", { ascending: false })
-        .limit(100);
-      if (error) throw error;
-      return data;
-    },
+    queryKey: QK.cases,
+    queryFn: () => authFetch(`${API_BASE}/forensic/cases`),
+    staleTime: 30_000,
   });
 
-  // Fetch active mortuary cases (not released)
   const { data: activeCases, isLoading: loadingActiveCases } = useQuery({
-    queryKey: ["active-mortuary-cases"],
-    queryFn: async () => {
-      const { data, error } = await db
-        .from("mortuary_cases")
-        .select("*")
-        .neq("status", "released")
-        .order("admission_date", { ascending: false });
-      if (error) throw error;
-      return data as MortuaryCase[];
-    },
+    queryKey: QK.activeCases,
+    queryFn: () => authFetch(`${API_BASE}/forensic/cases?status=active`),
+    staleTime: 30_000,
   });
 
-  // Fetch autopsy records
+  // ── Autopsy Records ──────────────────────────────────────────────────────────
   const { data: autopsyRecords, isLoading: loadingAutopsies } = useQuery({
-    queryKey: ["autopsy-records"],
-    queryFn: async () => {
-      const { data, error } = await db
-        .from("autopsy_records")
-        .select(`
-          *,
-          mortuary_cases:case_id (case_number, deceased_name),
-          doctors:pathologist_id (full_name)
-        `)
-        .order("created_at", { ascending: false })
-        .limit(50);
-      if (error) throw error;
-      return data;
-    },
+    queryKey: QK.autopsies,
+    queryFn: () => authFetch(`${API_BASE}/forensic/autopsies`),
+    staleTime: 60_000,
   });
 
-  // Fetch visum reports
+  // ── Visum Reports ────────────────────────────────────────────────────────────
   const { data: visumReports, isLoading: loadingVisums } = useQuery({
-    queryKey: ["visum-reports"],
-    queryFn: async () => {
-      const { data, error } = await db
-        .from("visum_reports")
-        .select(`
-          *,
-          patients:patient_id (full_name, medical_record_number),
-          doctors:examiner_id (full_name)
-        `)
-        .order("created_at", { ascending: false })
-        .limit(50);
-      if (error) throw error;
-      return data;
-    },
+    queryKey: QK.visums,
+    queryFn: () => authFetch(`${API_BASE}/forensic/visums`),
+    staleTime: 60_000,
   });
 
-  // Fetch death certificates
+  // ── Death Certificates ───────────────────────────────────────────────────────
   const { data: deathCertificates, isLoading: loadingCertificates } = useQuery({
-    queryKey: ["death-certificates"],
-    queryFn: async () => {
-      const { data, error } = await db
-        .from("death_certificates")
-        .select(`
-          *,
-          doctors:certifying_doctor_id (full_name)
-        `)
-        .order("certification_date", { ascending: false })
-        .limit(50);
-      if (error) throw error;
-      return data;
-    },
+    queryKey: QK.certificates,
+    queryFn: () => authFetch(`${API_BASE}/forensic/death-certificates`),
+    staleTime: 60_000,
   });
 
-  // Create mortuary case
+  // ── Mutations ────────────────────────────────────────────────────────────────
+
   const createMortuaryCase = useMutation({
-    mutationFn: async (caseData: Database["public"]["Tables"]["mortuary_cases"]["Insert"]) => {
-      const { data, error } = await db
-        .from("mortuary_cases")
-        .insert(caseData)
-        .select()
-        .single();
-      if (error) throw error;
-      return data;
-    },
+    mutationFn: (data: Record<string, unknown>) =>
+      authFetch(`${API_BASE}/forensic/cases`, {
+        method: "POST", body: JSON.stringify(data),
+      }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["mortuary-cases"] });
-      queryClient.invalidateQueries({ queryKey: ["active-mortuary-cases"] });
+      queryClient.invalidateQueries({ queryKey: QK.cases });
+      queryClient.invalidateQueries({ queryKey: QK.activeCases });
       toast.success("Kasus kamar jenazah berhasil dicatat");
     },
-    onError: (error) => {
-      toast.error("Gagal mencatat kasus: " + error.message);
-    },
+    onError: (err: Error) => toast.error("Gagal mencatat kasus: " + err.message),
   });
 
-  // Update mortuary case
   const updateMortuaryCase = useMutation({
-    mutationFn: async ({ id, ...updates }: { id: string } & Partial<MortuaryCase>) => {
-      const { data, error } = await db
-        .from("mortuary_cases")
-        .update(updates)
-        .eq("id", id)
-        .select()
-        .single();
-      if (error) throw error;
-      return data;
-    },
+    mutationFn: ({ id, ...updates }: { id: string } & Record<string, unknown>) =>
+      authFetch(`${API_BASE}/forensic/cases/${id}`, {
+        method: "PUT", body: JSON.stringify(updates),
+      }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["mortuary-cases"] });
-      queryClient.invalidateQueries({ queryKey: ["active-mortuary-cases"] });
+      queryClient.invalidateQueries({ queryKey: QK.cases });
+      queryClient.invalidateQueries({ queryKey: QK.activeCases });
       toast.success("Kasus berhasil diperbarui");
     },
-    onError: (error) => {
-      toast.error("Gagal memperbarui kasus: " + error.message);
-    },
+    onError: (err: Error) => toast.error("Gagal memperbarui kasus: " + err.message),
   });
 
-  // Create autopsy record
   const createAutopsyRecord = useMutation({
-    mutationFn: async (record: Database["public"]["Tables"]["autopsy_records"]["Insert"]) => {
-      const { data, error } = await db
-        .from("autopsy_records")
-        .insert(record)
-        .select()
-        .single();
-      if (error) throw error;
-      return data;
-    },
+    mutationFn: (data: Record<string, unknown>) =>
+      authFetch(`${API_BASE}/forensic/autopsies`, {
+        method: "POST", body: JSON.stringify(data),
+      }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["autopsy-records"] });
+      queryClient.invalidateQueries({ queryKey: QK.autopsies });
       toast.success("Catatan otopsi berhasil dibuat");
     },
-    onError: (error) => {
-      toast.error("Gagal membuat catatan otopsi: " + error.message);
-    },
+    onError: (err: Error) => toast.error("Gagal membuat catatan otopsi: " + err.message),
   });
 
-  // Create visum report
   const createVisumReport = useMutation({
-    mutationFn: async (report: Database["public"]["Tables"]["visum_reports"]["Insert"]) => {
-      const { data, error } = await db
-        .from("visum_reports")
-        .insert(report)
-        .select()
-        .single();
-      if (error) throw error;
-      return data;
-    },
+    mutationFn: (data: Record<string, unknown>) =>
+      authFetch(`${API_BASE}/forensic/visums`, {
+        method: "POST", body: JSON.stringify(data),
+      }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["visum-reports"] });
+      queryClient.invalidateQueries({ queryKey: QK.visums });
       toast.success("Visum et Repertum berhasil dibuat");
     },
-    onError: (error) => {
-      toast.error("Gagal membuat visum: " + error.message);
-    },
+    onError: (err: Error) => toast.error("Gagal membuat visum: " + err.message),
   });
 
-  // Create death certificate
   const createDeathCertificate = useMutation({
-    mutationFn: async (cert: Database["public"]["Tables"]["death_certificates"]["Insert"]) => {
-      const { data, error } = await db
-        .from("death_certificates")
-        .insert(cert)
-        .select()
-        .single();
-      if (error) throw error;
-      return data;
-    },
+    mutationFn: (data: Record<string, unknown>) =>
+      authFetch(`${API_BASE}/forensic/death-certificates`, {
+        method: "POST", body: JSON.stringify(data),
+      }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["death-certificates"] });
+      queryClient.invalidateQueries({ queryKey: QK.certificates });
       toast.success("Sertifikat kematian berhasil dibuat");
     },
-    onError: (error) => {
-      toast.error("Gagal membuat sertifikat: " + error.message);
-    },
+    onError: (err: Error) => toast.error("Gagal membuat sertifikat: " + err.message),
   });
 
-  // Release body
   const releaseBody = useMutation({
-    mutationFn: async ({ id, releasedTo, releasedBy }: { id: string; releasedTo: string; releasedBy: string }) => {
-      const { data, error } = await db
-        .from("mortuary_cases")
-        .update({
-          status: "released",
-          release_authorized: true,
-          release_date: new Date().toISOString(),
-          released_to: releasedTo,
-          released_by: releasedBy,
-        })
-        .eq("id", id)
-        .select()
-        .single();
-      if (error) throw error;
-      return data;
-    },
+    mutationFn: ({ id, releasedTo, releasedBy }: { id: string; releasedTo: string; releasedBy: string }) =>
+      authFetch(`${API_BASE}/forensic/cases/${id}/release`, {
+        method: "POST",
+        body: JSON.stringify({ released_to: releasedTo, released_by: releasedBy }),
+      }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["mortuary-cases"] });
-      queryClient.invalidateQueries({ queryKey: ["active-mortuary-cases"] });
+      queryClient.invalidateQueries({ queryKey: QK.cases });
+      queryClient.invalidateQueries({ queryKey: QK.activeCases });
       toast.success("Jenazah berhasil diserahkan");
     },
-    onError: (error) => {
-      toast.error("Gagal menyerahkan jenazah: " + error.message);
-    },
+    onError: (err: Error) => toast.error("Gagal menyerahkan jenazah: " + err.message),
   });
 
   return {

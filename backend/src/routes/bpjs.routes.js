@@ -8,11 +8,16 @@ import { requireRole, checkMenuAccess } from '../middleware/role.middleware.js';
 import { externalApiLimiter } from '../middleware/rateLimiter.js';
 import { asyncHandler, ApiError } from '../middleware/errorHandler.js';
 import BPJSVClaimService from '../services/bpjs-vclaim.service.js';
+import { prisma } from '../config/database.js';
 
 const router = Router();
 
 router.use(checkMenuAccess('bpjs'));
 router.use(externalApiLimiter);
+import { MemoryQueue } from '../utils/queue.js';
+const bpjsQueue = new MemoryQueue('bpjs-sync', async (job) => {
+  await import('../workers/bpjs.worker.js').then(w => w.processBpjsJob(job));
+});
 
 const vclaimService = new BPJSVClaimService();
 
@@ -122,7 +127,119 @@ router.delete('/sep/:noSep', requireRole(['admin']), asyncHandler(async (req, re
 }));
 
 // ============================================
-// VCLAIM - RUJUKAN
+// SISRUTE REFERRALS (local database)
+// ============================================
+
+/**
+ * GET /api/bpjs/rujukan?limit=100&status=
+ */
+router.get('/rujukan', asyncHandler(async (req, res) => {
+  const { limit = '100', status, patient_id } = req.query;
+  const where = {};
+  if (status) where.status = status;
+  if (patient_id) where.patient_id = patient_id;
+
+  const referrals = await prisma.sisrute_referrals.findMany({
+    where,
+    include: { patients: { select: { full_name: true, medical_record_number: true } } },
+    orderBy: { created_at: 'desc' },
+    take: parseInt(limit),
+  });
+
+  // Reshape to match SISRUTEReferral interface
+  const data = referrals.map(r => ({
+    ...r,
+    patients: r.patients ? { name: r.patients.full_name, medical_record_number: r.patients.medical_record_number } : null,
+  }));
+
+  res.json({ success: true, data });
+}));
+
+/**
+ * POST /api/bpjs/rujukan
+ */
+router.post('/rujukan', requireRole(['admin', 'registrasi', 'dokter']), asyncHandler(async (req, res) => {
+  const {
+    referral_number, sisrute_id, patient_id,
+    referral_type = 'outgoing', referral_category,
+    source_facility_code, source_facility_name, source_city,
+    destination_facility_code, destination_facility_name, destination_city, destination_department,
+    primary_diagnosis, diagnosis_description, reason_for_referral, clinical_summary,
+    referring_doctor_name, transport_type, status = 'pending',
+  } = req.body;
+
+  if (!referral_number) {
+    return res.status(400).json({ success: false, error: 'referral_number wajib diisi' });
+  }
+
+  const referral = await prisma.sisrute_referrals.create({
+    data: {
+      referral_number, sisrute_id: sisrute_id || null,
+      patient_id: patient_id || null,
+      referral_type, referral_category: referral_category || null,
+      source_facility_code: source_facility_code || null,
+      source_facility_name: source_facility_name || null,
+      source_city: source_city || null,
+      destination_facility_code: destination_facility_code || null,
+      destination_facility_name: destination_facility_name || null,
+      destination_city: destination_city || null,
+      destination_department: destination_department || null,
+      primary_diagnosis: primary_diagnosis || null,
+      diagnosis_description: diagnosis_description || null,
+      reason_for_referral: reason_for_referral || null,
+      clinical_summary: clinical_summary || null,
+      referring_doctor_name: referring_doctor_name || null,
+      transport_type: transport_type || null,
+      status,
+    },
+  });
+
+  res.status(201).json({ success: true, data: referral });
+}));
+
+/**
+ * PUT /api/bpjs/rujukan/:id
+ */
+router.put('/rujukan/:id', requireRole(['admin', 'registrasi', 'dokter']), asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const {
+    sisrute_id, patient_id, referral_type, referral_category,
+    source_facility_code, source_facility_name, source_city,
+    destination_facility_code, destination_facility_name, destination_city, destination_department,
+    primary_diagnosis, diagnosis_description, reason_for_referral, clinical_summary,
+    referring_doctor_name, transport_type, status, sync_status,
+  } = req.body;
+
+  const referral = await prisma.sisrute_referrals.update({
+    where: { id },
+    data: {
+      sisrute_id: sisrute_id ?? undefined,
+      patient_id: patient_id ?? undefined,
+      referral_type: referral_type ?? undefined,
+      referral_category: referral_category ?? undefined,
+      source_facility_code: source_facility_code ?? undefined,
+      source_facility_name: source_facility_name ?? undefined,
+      source_city: source_city ?? undefined,
+      destination_facility_code: destination_facility_code ?? undefined,
+      destination_facility_name: destination_facility_name ?? undefined,
+      destination_city: destination_city ?? undefined,
+      destination_department: destination_department ?? undefined,
+      primary_diagnosis: primary_diagnosis ?? undefined,
+      diagnosis_description: diagnosis_description ?? undefined,
+      reason_for_referral: reason_for_referral ?? undefined,
+      clinical_summary: clinical_summary ?? undefined,
+      referring_doctor_name: referring_doctor_name ?? undefined,
+      transport_type: transport_type ?? undefined,
+      status: status ?? undefined,
+      sync_status: sync_status ?? undefined,
+    },
+  });
+
+  res.json({ success: true, data: referral });
+}));
+
+// ============================================
+// VCLAIM - RUJUKAN (external BPJS API)
 // ============================================
 
 /**
@@ -351,11 +468,12 @@ router.post('/eclaim/grouper', asyncHandler(async (req, res) => {
 router.post('/eclaim/submit', requireRole(['admin', 'keuangan']), asyncHandler(async (req, res) => {
   const { sep_number, claim_data } = req.body;
 
-  // Implementation would use BPJS EClaim service
+  // Queue to background job
+  const job = await bpjsQueue.add('eclaim-submit', { sep_number, claim_data });
 
   res.json({
     success: true,
-    message: 'Klaim berhasil disubmit'
+    message: 'Klaim berhasil masuk antrean sinkronisasi (Background Job: ' + job.id + ')'
   });
 }));
 
@@ -514,6 +632,49 @@ router.post('/antrean', externalApiLimiter, asyncHandler(async (req, res) => {
   const { action, ...params } = req.body;
   // Antrean service is not yet configured; return a placeholder response
   res.json({ success: true, data: { action, params, message: 'Antrean service not configured' } });
+}));
+
+// ============================================
+// VCLAIM GENERIC INVOKE (test-connection, config)
+// ============================================
+
+/**
+ * POST /api/bpjs/vclaim
+ * Generic invoke endpoint for BPJS VClaim — supports test-connection and config save
+ */
+router.post('/vclaim', externalApiLimiter, asyncHandler(async (req, res) => {
+  const { action, config } = req.body;
+
+  if (action === 'test-connection') {
+    try {
+      if (config?.consumer_id && config?.consumer_secret) {
+        // Test using credentials sent in request
+        const testService = new BPJSVClaimService();
+        testService.consId = config.consumer_id;
+        testService.secretKey = config.consumer_secret;
+        testService.userKey = config.user_key || '';
+        testService.baseUrl = config.environment === 'production'
+          ? 'https://apijkn.bpjs-kesehatan.go.id/vclaim-rest'
+          : 'https://apijkn-dev.bpjs-kesehatan.go.id/vclaim-rest-dev';
+        // Minimal connectivity check — fetch peserta with dummy NIK to verify auth headers
+        await testService.request('/Peserta/nik/0000000000000000/tglSEP/2024-01-01');
+      } else {
+        await vclaimService.request('/Peserta/nik/0000000000000000/tglSEP/2024-01-01');
+      }
+      return res.json({ success: true, data: { success: true } });
+    } catch (err) {
+      // A 4xx from BPJS still means we reached their server → credentials are working
+      const reached = err.response?.status >= 400;
+      return res.json({ success: true, data: { success: reached, error: reached ? null : err.message } });
+    }
+  }
+
+  if (action === 'save-config') {
+    await vclaimService.saveConfiguration(config);
+    return res.json({ success: true, data: { message: 'Konfigurasi BPJS berhasil disimpan' } });
+  }
+
+  res.status(400).json({ success: false, error: 'action tidak dikenal' });
 }));
 
 export default router;

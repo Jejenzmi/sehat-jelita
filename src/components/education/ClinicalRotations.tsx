@@ -10,9 +10,30 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Edit, RotateCw, CheckCircle, Clock, Calendar } from "lucide-react";
-import { db } from "@/lib/db";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
+const FETCH_OPTS: RequestInit = { credentials: 'include', headers: { 'Content-Type': 'application/json' } };
+
+async function apiFetch<T>(path: string): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, FETCH_OPTS);
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error || res.statusText);
+  return (json.data ?? json) as T;
+}
+async function apiPost<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, { ...FETCH_OPTS, method: 'POST', body: JSON.stringify(body) });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error || res.statusText);
+  return (json.data ?? json) as T;
+}
+async function apiPut<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, { ...FETCH_OPTS, method: 'PUT', body: JSON.stringify(body) });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error || res.statusText);
+  return (json.data ?? json) as T;
+}
 
 interface Rotation {
   id: string;
@@ -52,17 +73,18 @@ export default function ClinicalRotations() {
   }, []);
 
   const fetchData = async () => {
-    const [rotationsRes, traineesRes, deptsRes] = await Promise.all([
-      db.from("clinical_rotations")
-        .select("*, medical_trainees(full_name, trainee_code), departments(name)")
-        .order("start_date", { ascending: false }),
-      db.from("medical_trainees").select("id, full_name, trainee_code").eq("status", "active"),
-      db.from("departments").select("id, name").eq("is_active", true)
-    ]);
-    
-    if (rotationsRes.data) setRotations(rotationsRes.data);
-    if (traineesRes.data) setTrainees(traineesRes.data);
-    if (deptsRes.data) setDepartments(deptsRes.data);
+    try {
+      const [rotationsData, traineesData] = await Promise.all([
+        apiFetch<Rotation[]>('/education/rotations'),
+        apiFetch<any[]>('/education/trainees'),
+      ]);
+      setRotations(Array.isArray(rotationsData) ? rotationsData : []);
+      setTrainees(Array.isArray(traineesData) ? traineesData : []);
+      // Departments fetched from trainees or defaulted to empty
+      setDepartments([]);
+    } catch (error: any) {
+      console.error("Error fetching rotations data:", error);
+    }
   };
 
   const handleSubmit = async () => {
@@ -74,12 +96,10 @@ export default function ClinicalRotations() {
       };
 
       if (editingRotation) {
-        const { error } = await db.from("clinical_rotations").update(payload).eq("id", editingRotation.id);
-        if (error) throw error;
+        await apiPut(`/education/rotations/${editingRotation.id}`, payload);
         toast({ title: "Berhasil", description: "Rotasi berhasil diperbarui" });
       } else {
-        const { error } = await db.from("clinical_rotations").insert(payload);
-        if (error) throw error;
+        await apiPost('/education/rotations', payload);
         toast({ title: "Berhasil", description: "Rotasi berhasil ditambahkan" });
       }
 

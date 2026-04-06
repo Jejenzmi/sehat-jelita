@@ -10,8 +10,22 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Calculator, Search, Plus, X, TrendingUp, TrendingDown, Minus } from "lucide-react";
-import { db } from "@/lib/db";
 import { useToast } from "@/hooks/use-toast";
+
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
+const FETCH_OPTS: RequestInit = { credentials: 'include', headers: { 'Content-Type': 'application/json' } };
+async function apiFetch<T>(path: string): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, FETCH_OPTS);
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error || res.statusText);
+  return (json.data ?? json) as T;
+}
+async function apiPost<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, { ...FETCH_OPTS, method: 'POST', body: JSON.stringify(body) });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error || res.statusText);
+  return (json.data ?? json) as T;
+}
 import { format } from "date-fns";
 
 interface ICD10Code {
@@ -83,15 +97,14 @@ export default function INACBGGrouper() {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [icdRes, drgRes, historyRes] = await Promise.all([
-        db.from("icd10_codes").select("id, code, description_id").order("code").limit(100),
-        db.from("inadrg_codes").select("id, drg_code, drg_name, severity_level, national_tariff").order("drg_code").limit(100),
-        db.from("inacbg_calculations").select("*").order("calculated_at", { ascending: false }).limit(20)
+      const [icdCodes, drgCodes, history] = await Promise.all([
+        apiFetch<ICD10Code[]>('/icd11/codes?limit=100').catch(() => [] as ICD10Code[]),
+        apiFetch<DRGCode[]>('/eklaim/drg-codes?limit=100').catch(() => [] as DRGCode[]),
+        apiFetch<CalculationResult[]>('/eklaim/inacbg-calculations?limit=20').catch(() => [] as CalculationResult[]),
       ]);
-
-      if (icdRes.data) setIcd10Codes(icdRes.data);
-      if (drgRes.data) setDrgCodes(drgRes.data);
-      if (historyRes.data) setCalculationHistory(historyRes.data);
+      setIcd10Codes(icdCodes);
+      setDrgCodes(drgCodes);
+      setCalculationHistory(history);
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
@@ -101,18 +114,9 @@ export default function INACBGGrouper() {
 
   const handleSearch = async (query: string) => {
     setSearchQuery(query);
-    if (query.length < 2) {
-      setSearchResults([]);
-      return;
-    }
-
-    const { data } = await db
-      .from("icd10_codes")
-      .select("id, code, description_id")
-      .or(`code.ilike.%${query}%,description_id.ilike.%${query}%`)
-      .limit(10);
-
-    setSearchResults(data || []);
+    if (query.length < 2) { setSearchResults([]); return; }
+    const results = await apiFetch<ICD10Code[]>(`/icd11/codes?search=${encodeURIComponent(query)}&limit=10`).catch(() => []);
+    setSearchResults(results);
   };
 
   const selectDiagnosis = (code: ICD10Code) => {
@@ -148,46 +152,19 @@ export default function INACBGGrouper() {
 
     setIsCalculating(true);
     try {
-      // Find matching DRG based on primary diagnosis
-      const { data: mappingData } = await db
-        .from("diagnosis_drg_mapping")
-        .select("*, inadrg_codes(*)")
-        .eq("icd10_code", primaryDiagnosis)
-        .single();
+      // Find matching DRG based on primary diagnosis via eklaim grouper
+      const groupResult = await apiFetch<{ drg: DRGCode | null; tariff: number }>(
+        `/eklaim/group?icd=${encodeURIComponent(primaryDiagnosis)}&hospital_class=${hospitalClass}&regional=${regionalCode}`
+      ).catch(() => ({ drg: null, tariff: 5000000 }));
 
-      let drg: DRGCode | null = null;
-      
-      if (mappingData?.inadrg_codes) {
-        drg = mappingData.inadrg_codes as unknown as DRGCode;
-      } else {
-        // Fallback: get a sample DRG if no mapping exists
-        const { data: fallbackDrg } = await db
-          .from("inadrg_codes")
-          .select("*")
-          .limit(1)
-          .single();
-        drg = fallbackDrg;
-      }
-
-      if (!drg) {
-        // Use default values if no DRG found
-        drg = { id: "", drg_code: "UNKNOWN", drg_name: "Tidak ditemukan", severity_level: 1, national_tariff: 5000000 };
+      let drg: DRGCode = groupResult.drg || {
+        id: "", drg_code: "UNKNOWN", drg_name: "Tidak ditemukan", severity_level: 1, national_tariff: 5000000
+      };
+      if (!groupResult.drg) {
         toast({ title: "Info", description: "Menggunakan tarif default", variant: "default" });
       }
 
-      // Get tariff for hospital class and regional
-      let baseTariff = drg.national_tariff || 5000000;
-      if (drg.id) {
-        const { data: tariffData } = await db
-          .from("inacbg_tariffs")
-          .select("tariff_amount")
-          .eq("drg_id", drg.id)
-          .eq("hospital_class", hospitalClass)
-          .eq("regional_code", regionalCode)
-          .eq("is_active", true)
-          .single();
-        if (tariffData) baseTariff = tariffData.tariff_amount;
-      }
+      let baseTariff = groupResult.tariff || drg.national_tariff || 5000000;
       
       // Calculate severity adjustment
       let adjustmentFactor = 1.0;
@@ -213,7 +190,7 @@ export default function INACBGGrouper() {
       setShowResultDialog(true);
 
       // Save calculation to history
-      await db.from("inacbg_calculations").insert({
+      await apiPost('/eklaim/inacbg-calculations', {
         drg_code: drg.drg_code,
         drg_description: drg.drg_name,
         severity_level: drg.severity_level || 1,
@@ -221,13 +198,13 @@ export default function INACBGGrouper() {
         los_grouper: 3,
         primary_diagnosis: primaryDiagnosis,
         secondary_diagnoses: secondaryDiagnoses,
-        procedures: procedures,
+        procedures,
         base_tariff: baseTariff,
         adjustment_factor: adjustmentFactor,
         final_tariff: finalTariff,
         hospital_cost: costNum || null,
-        variance: variance
-      });
+        variance,
+      }).catch(() => null);
 
       fetchData();
       toast({ title: "Berhasil", description: "Kalkulasi INA-CBG selesai" });

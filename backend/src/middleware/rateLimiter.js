@@ -82,3 +82,50 @@ export const reportRateLimiter = rateLimit({
     code: 'REPORT_RATE_LIMIT'
   }
 });
+
+/**
+ * Rate Limiter for Search/Query endpoints
+ * Patient search, medicine search, etc.
+ * 60 req/min per user
+ */
+export const searchRateLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 60,
+  message: {
+    success: false,
+    error: 'Terlalu banyak request pencarian. Tunggu sebentar.',
+    code: 'SEARCH_RATE_LIMIT'
+  },
+  keyGenerator: (req) => req.user?.id || req.ip,
+});
+
+/**
+ * Rate Limiter for Analytics / KPI endpoints
+ * Heavy aggregate queries — 10 req/min per user
+ */
+export const analyticsRateLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  message: {
+    success: false,
+    error: 'Terlalu banyak request analytics. Tunggu sebentar.',
+    code: 'ANALYTICS_RATE_LIMIT'
+  },
+  keyGenerator: (req) => req.user?.id || req.ip,
+});
+
+/**
+ * Rate Limiter for Mutation endpoints (POST/PUT/DELETE)
+ * General write operations — 30 req/min
+ */
+export const writeLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  message: {
+    success: false,
+    error: 'Terlalu banyak operasi write. Tunggu sebentar.',
+    code: 'WRITE_RATE_LIMIT'
+  },
+  keyGenerator: (req) => req.user?.id || req.ip,
+  skip: (req) => req.method === 'GET' || req.method === 'HEAD',
+});

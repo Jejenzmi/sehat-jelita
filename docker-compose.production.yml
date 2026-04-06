@@ -8,6 +8,8 @@ services:
     image: postgres:15-alpine
     container_name: simrs-zen-db
     restart: always
+    env_file:
+      - .env.production
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
@@ -27,6 +29,8 @@ services:
     image: redis:7-alpine
     container_name: simrs-zen-redis
     restart: always
+    env_file:
+      - .env.production
     command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
     volumes:
       - redis_data:/data
@@ -40,8 +44,10 @@ services:
 
   # Node.js API Backend
   api:
-    image: ${REGISTRY:-docker.io}/${IMAGE_NAMESPACE:-jejenzmi}/simrs-zen-api:${IMAGE_TAG:-latest}
-    pull_policy: always
+    build: ./backend
+    image: simrs-zen-api:local
+    env_file:
+      - .env.production
     container_name: simrs-zen-api
     restart: always
     environment:
@@ -81,8 +87,10 @@ services:
 
   # React Frontend + nginx reverse proxy
   frontend:
-    image: ${REGISTRY:-docker.io}/${IMAGE_NAMESPACE:-jejenzmi}/simrs-zen-frontend:${IMAGE_TAG:-latest}
-    pull_policy: always
+    build: .
+    image: simrs-zen-frontend:local
+    env_file:
+      - .env.production
     container_name: simrs-zen-frontend
     restart: always
     ports:

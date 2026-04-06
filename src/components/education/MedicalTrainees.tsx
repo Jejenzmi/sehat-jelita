@@ -10,9 +10,30 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Plus, Edit, Users, UserCheck, UserX, Clock } from "lucide-react";
-import { db } from "@/lib/db";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
+const FETCH_OPTS: RequestInit = { credentials: 'include', headers: { 'Content-Type': 'application/json' } };
+
+async function apiFetch<T>(path: string): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, FETCH_OPTS);
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error || res.statusText);
+  return (json.data ?? json) as T;
+}
+async function apiPost<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, { ...FETCH_OPTS, method: 'POST', body: JSON.stringify(body) });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error || res.statusText);
+  return (json.data ?? json) as T;
+}
+async function apiPut<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, { ...FETCH_OPTS, method: 'PUT', body: JSON.stringify(body) });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error || res.statusText);
+  return (json.data ?? json) as T;
+}
 
 interface Trainee {
   id: string;
@@ -63,15 +84,16 @@ export default function MedicalTrainees() {
 
   const fetchData = async () => {
     setIsLoading(true);
-    const [traineesRes, programsRes] = await Promise.all([
-      db.from("medical_trainees")
-        .select("*, education_programs(program_name, program_type)")
-        .order("full_name"),
-      db.from("education_programs").select("id, program_name, program_type").eq("is_active", true)
-    ]);
-    
-    if (traineesRes.data) setTrainees(traineesRes.data);
-    if (programsRes.data) setPrograms(programsRes.data);
+    try {
+      const [traineesData, programsData] = await Promise.all([
+        apiFetch<Trainee[]>('/education/trainees'),
+        apiFetch<Program[]>('/education/programs'),
+      ]);
+      setTrainees(Array.isArray(traineesData) ? traineesData : []);
+      setPrograms(Array.isArray(programsData) ? programsData : []);
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
     setIsLoading(false);
   };
 
@@ -84,12 +106,10 @@ export default function MedicalTrainees() {
       };
 
       if (editingTrainee) {
-        const { error } = await db.from("medical_trainees").update(payload).eq("id", editingTrainee.id);
-        if (error) throw error;
+        await apiPut(`/education/trainees/${editingTrainee.id}`, payload);
         toast({ title: "Berhasil", description: "Data residen berhasil diperbarui" });
       } else {
-        const { error } = await db.from("medical_trainees").insert(payload);
-        if (error) throw error;
+        await apiPost('/education/trainees', payload);
         toast({ title: "Berhasil", description: "Residen berhasil ditambahkan" });
       }
 

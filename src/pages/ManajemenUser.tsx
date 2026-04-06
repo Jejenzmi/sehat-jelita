@@ -1,6 +1,26 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { db } from "@/lib/db";
+
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
+const FETCH_OPTS: RequestInit = { credentials: 'include', headers: { 'Content-Type': 'application/json' } };
+async function apiFetch<T>(path: string): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, FETCH_OPTS);
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error || res.statusText);
+  return (json.data ?? json) as T;
+}
+async function apiPost<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, { ...FETCH_OPTS, method: 'POST', body: JSON.stringify(body) });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error || res.statusText);
+  return (json.data ?? json) as T;
+}
+async function apiPut<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, { ...FETCH_OPTS, method: 'PUT', body: JSON.stringify(body) });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error || res.statusText);
+  return (json.data ?? json) as T;
+}
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,10 +31,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
-import { 
-  Users, Search, Shield, UserPlus, 
-  KeyRound, Check, X, Loader2, Eye, EyeOff
+import {
+  Users, Search, Shield, UserPlus,
+  KeyRound, Check, X, Loader2, Eye, EyeOff,
+  Lock, Save, LayoutGrid
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { format } from "date-fns";
@@ -29,6 +52,41 @@ import {
 import { ConfirmationDialog } from "@/components/shared/ConfirmationDialog";
 
 type AppRole = "admin" | "dokter" | "perawat" | "kasir" | "farmasi" | "laboratorium" | "radiologi" | "pendaftaran" | "keuangan" | "gizi" | "icu" | "bedah" | "rehabilitasi" | "mcu" | "forensik" | "cssd" | "manajemen" | "bank_darah";
+
+const MENU_PATHS: { key: string; label: string; category: string }[] = [
+  { key: 'dashboard',     label: 'Dashboard',         category: 'Umum' },
+  { key: 'pendaftaran',   label: 'Pendaftaran',        category: 'Rawat Jalan' },
+  { key: 'pasien',        label: 'Data Pasien',        category: 'Rawat Jalan' },
+  { key: 'antrian',       label: 'Antrian',            category: 'Rawat Jalan' },
+  { key: 'rawat_jalan',   label: 'Rawat Jalan',        category: 'Rawat Jalan' },
+  { key: 'igd',           label: 'IGD',                category: 'Rawat Darurat' },
+  { key: 'rekam_medis',   label: 'Rekam Medis',        category: 'Medis' },
+  { key: 'laboratorium',  label: 'Laboratorium',       category: 'Penunjang' },
+  { key: 'radiologi',     label: 'Radiologi',          category: 'Penunjang' },
+  { key: 'farmasi',       label: 'Farmasi',            category: 'Penunjang' },
+  { key: 'kasir',         label: 'Kasir',              category: 'Keuangan' },
+  { key: 'bpjs',          label: 'BPJS',               category: 'Keuangan' },
+  { key: 'akuntansi',     label: 'Akuntansi',          category: 'Keuangan' },
+  { key: 'rawat_inap',    label: 'Rawat Inap',         category: 'Rawat Inap' },
+  { key: 'kamar_operasi', label: 'Kamar Operasi',      category: 'Rawat Inap' },
+  { key: 'icu',           label: 'ICU',                category: 'Rawat Inap' },
+  { key: 'hemodialisa',   label: 'Hemodialisa',        category: 'Rawat Inap' },
+  { key: 'bank_darah',    label: 'Bank Darah',         category: 'Rawat Inap' },
+  { key: 'gizi',          label: 'Gizi',               category: 'Layanan' },
+  { key: 'rehabilitasi',  label: 'Rehabilitasi',       category: 'Layanan' },
+  { key: 'mcu',           label: 'MCU',                category: 'Layanan' },
+  { key: 'inventory',     label: 'Inventory',          category: 'Operasional' },
+  { key: 'sdm',           label: 'SDM / HR',           category: 'Operasional' },
+  { key: 'laporan',       label: 'Laporan',            category: 'Manajemen' },
+  { key: 'mutu',          label: 'Mutu',               category: 'Manajemen' },
+  { key: 'telemedicine',  label: 'Telemedicine',       category: 'Digital' },
+  { key: 'smart_display', label: 'Smart Display',      category: 'Digital' },
+  { key: 'pengaturan',    label: 'Pengaturan',         category: 'Admin' },
+  { key: 'manajemen_user',label: 'Manajemen User',     category: 'Admin' },
+];
+
+type PermCell = { can_view: boolean; can_create: boolean; can_edit: boolean; can_delete: boolean };
+type MenuAccessMatrix = Record<string, Record<string, PermCell>>;
 
 interface UserProfile {
   id: string;
@@ -50,18 +108,181 @@ interface UserRole {
   created_at: string;
 }
 
+// ── RolePermissionsTab ────────────────────────────────────────────────────────
+const PERM_KEYS: { key: keyof PermCell; label: string; short: string }[] = [
+  { key: 'can_view',   label: 'Lihat',   short: 'V' },
+  { key: 'can_create', label: 'Tambah',  short: 'C' },
+  { key: 'can_edit',   label: 'Edit',    short: 'E' },
+  { key: 'can_delete', label: 'Hapus',   short: 'D' },
+];
+
+const ROLE_LIST = [
+  'admin','dokter','perawat','farmasi','laboratorium','radiologi',
+  'pendaftaran','kasir','keuangan','manajemen','hrd','rekam_medis',
+  'bedah','icu','hemodialisa','gizi','rehabilitasi','forensik',
+  'procurement','it','guest'
+];
+
+function RolePermissionsTab() {
+  const queryClient = useQueryClient();
+  const [selectedRole, setSelectedRole] = useState('dokter');
+  const [localPerms, setLocalPerms] = useState<Record<string, PermCell>>({});
+  const [dirty, setDirty] = useState(false);
+
+  const { data: matrix, isLoading } = useQuery<MenuAccessMatrix>({
+    queryKey: ['admin-menu-access'],
+    queryFn: () => apiFetch('/admin/menu-access'),
+  });
+
+  // When role changes or matrix loads, populate localPerms
+  const rolePerms = useMemo(() => {
+    if (!matrix) return {};
+    return matrix[selectedRole] || {};
+  }, [matrix, selectedRole]);
+
+  // Reset localPerms when role changes
+  const handleRoleChange = (role: string) => {
+    setSelectedRole(role);
+    setLocalPerms({});
+    setDirty(false);
+  };
+
+  const getCell = (menu: string): PermCell => {
+    if (localPerms[menu] !== undefined) return localPerms[menu];
+    return rolePerms[menu] || { can_view: false, can_create: false, can_edit: false, can_delete: false };
+  };
+
+  const togglePerm = (menu: string, perm: keyof PermCell) => {
+    const current = getCell(menu);
+    const updated = { ...current, [perm]: !current[perm] };
+    // If view is turned off, also turn off others
+    if (perm === 'can_view' && !updated.can_view) {
+      updated.can_create = false;
+      updated.can_edit = false;
+      updated.can_delete = false;
+    }
+    // If any other perm is turned on, also turn on view
+    if (perm !== 'can_view' && updated[perm]) {
+      updated.can_view = true;
+    }
+    setLocalPerms(prev => ({ ...prev, [menu]: updated }));
+    setDirty(true);
+  };
+
+  const saveMutation = useMutation({
+    mutationFn: () => {
+      const permissions = MENU_PATHS.map(m => ({
+        role: selectedRole,
+        menu_path: m.key,
+        ...getCell(m.key),
+      }));
+      return apiPut('/admin/menu-access', { permissions });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-menu-access'] });
+      setLocalPerms({});
+      setDirty(false);
+      toast({ title: 'Hak Akses Disimpan', description: `Permissions untuk role "${selectedRole}" berhasil diperbarui.` });
+    },
+    onError: (err: Error) => {
+      toast({ variant: 'destructive', title: 'Gagal Menyimpan', description: err.message });
+    },
+  });
+
+  const categories = [...new Set(MENU_PATHS.map(m => m.category))];
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+        <div className="flex items-center gap-3">
+          <Lock className="h-5 w-5 text-muted-foreground" />
+          <div>
+            <p className="font-medium">Kelola Hak Akses Menu</p>
+            <p className="text-sm text-muted-foreground">Atur permission per role untuk setiap modul</p>
+          </div>
+        </div>
+        <div className="sm:ml-auto flex items-center gap-3">
+          <Select value={selectedRole} onValueChange={handleRoleChange}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Pilih Role" />
+            </SelectTrigger>
+            <SelectContent>
+              {ROLE_LIST.map(r => (
+                <SelectItem key={r} value={r}>{r}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button
+            onClick={() => saveMutation.mutate()}
+            disabled={!dirty || saveMutation.isPending}
+            className="gradient-primary"
+          >
+            {saveMutation.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+            Simpan
+          </Button>
+        </div>
+      </div>
+
+      {isLoading ? (
+        <div className="space-y-2">{[...Array(8)].map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}</div>
+      ) : (
+        <ScrollArea className="h-[600px]">
+          <div className="space-y-4 pr-2">
+            {categories.map(cat => (
+              <div key={cat}>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-1">{cat}</p>
+                <div className="rounded-md border overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-muted/50">
+                        <TableHead className="w-[200px]">Menu</TableHead>
+                        {PERM_KEYS.map(p => (
+                          <TableHead key={p.key} className="w-[80px] text-center">{p.label}</TableHead>
+                        ))}
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {MENU_PATHS.filter(m => m.category === cat).map(menu => {
+                        const cell = getCell(menu.key);
+                        return (
+                          <TableRow key={menu.key}>
+                            <TableCell className="font-medium text-sm">{menu.label}</TableCell>
+                            {PERM_KEYS.map(p => (
+                              <TableCell key={p.key} className="text-center">
+                                <Checkbox
+                                  checked={cell[p.key]}
+                                  onCheckedChange={() => togglePerm(menu.key, p.key)}
+                                  disabled={selectedRole === 'admin'}
+                                />
+                              </TableCell>
+                            ))}
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            ))}
+          </div>
+        </ScrollArea>
+      )}
+      {selectedRole === 'admin' && (
+        <p className="text-xs text-muted-foreground text-center">
+          Role admin memiliki akses penuh ke semua menu dan tidak dapat diubah.
+        </p>
+      )}
+    </div>
+  );
+}
+
+// ── User Profile hooks ────────────────────────────────────────────────────────
+
 // Hook for fetching all user profiles
 function useUserProfiles() {
   return useQuery({
     queryKey: ["admin-user-profiles"],
-    queryFn: async () => {
-      const { data, error } = await db
-        .from("profiles")
-        .select("*")
-        .order("full_name");
-      if (error) throw error;
-      return data as UserProfile[];
-    },
+    queryFn: () => apiFetch<UserProfile[]>('/admin/profiles?limit=200'),
   });
 }
 
@@ -69,13 +290,7 @@ function useUserProfiles() {
 function useAllUserRoles() {
   return useQuery({
     queryKey: ["admin-all-user-roles"],
-    queryFn: async () => {
-      const { data, error } = await db
-        .from("user_roles")
-        .select("*");
-      if (error) throw error;
-      return data as UserRole[];
-    },
+    queryFn: () => apiFetch<UserRole[]>('/admin/user-roles'),
   });
 }
 
@@ -109,29 +324,8 @@ export default function ManajemenUser() {
 
   // Update user roles mutation
   const updateRolesMutation = useMutation({
-    mutationFn: async ({ userId, roles }: { userId: string; roles: AppRole[] }) => {
-      // First, delete all existing roles for this user
-      const { error: deleteError } = await db
-        .from("user_roles")
-        .delete()
-        .eq("user_id", userId);
-      
-      if (deleteError) throw deleteError;
-
-      // Then insert new roles
-      if (roles.length > 0) {
-        const rolesToInsert = roles.map(role => ({
-          user_id: userId,
-          role,
-        }));
-
-        const { error: insertError } = await db
-          .from("user_roles")
-          .insert(rolesToInsert);
-
-        if (insertError) throw insertError;
-      }
-    },
+    mutationFn: ({ userId, roles }: { userId: string; roles: AppRole[] }) =>
+      apiPut(`/admin/user-roles/user/${userId}`, { roles }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-all-user-roles"] });
       toast({
@@ -212,34 +406,16 @@ export default function ManajemenUser() {
     setIsCreatingUser(true);
 
     try {
-      // Create user via Auth API
-      // Use signUp which will create the user and they can login
-      const { data: authData, error: authError } = await db.auth.signUp({
+      // Create user via auth register endpoint
+      const authData = await apiPost<{ user: { id: string } }>('/auth/register', {
         email: newUserEmail,
         password: newUserPassword,
-        options: {
-          data: {
-            full_name: newUserFullName,
-          },
-        },
+        full_name: newUserFullName,
       });
-
-      if (authError) throw authError;
 
       if (authData.user) {
         // Assign roles to the new user
-        const rolesToInsert = newUserRoles.map(role => ({
-          user_id: authData.user!.id,
-          role,
-        }));
-
-        const { error: rolesError } = await db
-          .from("user_roles")
-          .insert(rolesToInsert);
-
-        if (rolesError) {
-          console.error("Failed to assign roles:", rolesError);
-        }
+        await apiPut(`/admin/user-roles/user/${authData.user.id}`, { roles: newUserRoles });
       }
 
       toast({
@@ -291,6 +467,28 @@ export default function ManajemenUser() {
           Tambah User Baru
         </Button>
       </div>
+
+      <Tabs defaultValue="users">
+        <TabsList>
+          <TabsTrigger value="users" className="flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            Daftar User
+          </TabsTrigger>
+          <TabsTrigger value="permissions" className="flex items-center gap-2">
+            <LayoutGrid className="h-4 w-4" />
+            Hak Akses Menu
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="permissions" className="mt-4">
+          <Card>
+            <CardContent className="pt-6">
+              <RolePermissionsTab />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="users" className="mt-4">
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -452,6 +650,9 @@ export default function ManajemenUser() {
           )}
         </CardContent>
       </Card>
+
+        </TabsContent>
+      </Tabs>
 
       {/* Role Assignment Dialog */}
       <Dialog open={isRoleDialogOpen} onOpenChange={setIsRoleDialogOpen}>

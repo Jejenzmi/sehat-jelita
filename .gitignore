@@ -27,3 +27,11 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+build_log.txt
+
+# SSL Certificates (never commit private keys)
+ssl/
+*.pem
+*.key
+*.p12
+*.pfx

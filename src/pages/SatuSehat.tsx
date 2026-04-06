@@ -30,6 +30,8 @@ interface Config {
   organization_id: string;
   environment: string;
   auto_sync_enabled: boolean;
+  client_id: string;
+  client_secret: string;
 }
 
 export default function SatuSehat() {
@@ -45,6 +47,8 @@ export default function SatuSehat() {
     organization_id: '',
     environment: 'staging',
     auto_sync_enabled: false,
+    client_id: '',
+    client_secret: '',
   });
   const [lastSync, setLastSync] = useState<string | null>(null);
 
@@ -109,6 +113,8 @@ export default function SatuSehat() {
           organization_id: data.config.organization_id || '',
           environment: data.config.environment || 'staging',
           auto_sync_enabled: data.config.auto_sync_enabled || false,
+          client_id: data.config.client_id || '',
+          client_secret: data.config.client_secret || '',
         });
       }
     } catch (error) {
@@ -149,6 +155,8 @@ export default function SatuSehat() {
             organizationId: config.organization_id,
             environment: config.environment,
             autoSyncEnabled: config.auto_sync_enabled,
+            clientId: config.client_id,
+            clientSecret: config.client_secret,
           },
         },
       });
@@ -518,6 +526,33 @@ export default function SatuSehat() {
                 />
                 <p className="text-xs text-muted-foreground">
                   ID organisasi yang terdaftar di platform SATU SEHAT
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="client-id">Client ID</Label>
+                <Input
+                  id="client-id"
+                  placeholder="Masukkan Client ID dari SATU SEHAT"
+                  value={config.client_id}
+                  onChange={(e) => setConfig({ ...config, client_id: e.target.value })}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Client ID (Kunci Akses)
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="client-secret">Client Secret</Label>
+                <Input
+                  id="client-secret"
+                  type="password"
+                  placeholder="Masukkan Client Secret dari SATU SEHAT"
+                  value={config.client_secret}
+                  onChange={(e) => setConfig({ ...config, client_secret: e.target.value })}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Client Secret (Kunci Akses Rahasia)
                 </p>
               </div>
 

@@ -61,14 +61,46 @@ const SmartDisplay = lazy(() => import("./pages/SmartDisplay"));
 const DICOMIntegration = lazy(() => import("./pages/DICOMIntegration"));
 const HomeCare = lazy(() => import("./pages/HomeCare"));
 const AmbulanceCenter = lazy(() => import("./pages/AmbulanceCenter"));
+const Analytics = lazy(() => import("./pages/Analytics"));
+const ASPAK = lazy(() => import("./pages/ASPAK"));
+const InsidenKeselamatan = lazy(() => import("./pages/InsidenKeselamatan"));
+const TandaVital = lazy(() => import("./pages/TandaVital"));
+const AuditLogs = lazy(() => import("./pages/AuditLogs"));
+const BedManagement = lazy(() => import("./pages/BedManagement"));
+const ShiftCalendar = lazy(() => import("./pages/ShiftCalendar"));
+const Sisrute = lazy(() => import("./pages/Sisrute"));
+const StaffCertifications = lazy(() => import("./pages/StaffCertifications"));
+const INACBGHistory = lazy(() => import("./pages/INACBGHistory"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // Don't refetch on every mount — reduces DB load significantly
+      staleTime: 30 * 1000,       // Data fresh for 30 seconds
+      gcTime:    5 * 60 * 1000,   // Keep in cache 5 minutes (was cacheTime)
+      retry: (failureCount, error) => {
+        // Don't retry on 4xx errors (auth/validation), only on network/5xx
+        const status = (error as { status?: number })?.status;
+        if (status && status >= 400 && status < 500) return false;
+        return failureCount < 2;
+      },
+      refetchOnWindowFocus: false, // Don't spam server on tab focus
+    },
+    mutations: {
+      retry: 0, // Never retry mutations automatically
+    },
+  },
+});
 
-// Wrapper component for protected pages with layout
+// Wrapper component for protected pages with layout + per-page error boundary
 const ProtectedPageWithLayout = ({ children }: { children: React.ReactNode }) => (
   <ProtectedRoute>
-    <AppLayout>{children}</AppLayout>
+    <AppLayout>
+      <ErrorBoundary>
+        {children}
+      </ErrorBoundary>
+    </AppLayout>
   </ProtectedRoute>
 );
 
@@ -93,7 +125,7 @@ const App = () => (
             <Route
               path="/setup"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute skipSetupCheck={true}>
                   <Setup />
                 </ProtectedRoute>
               }
@@ -451,6 +483,86 @@ const App = () => (
               element={
                 <ProtectedPageWithLayout>
                   <AmbulanceCenter />
+                </ProtectedPageWithLayout>
+              }
+            />
+            <Route
+              path="/analytics"
+              element={
+                <ProtectedPageWithLayout>
+                  <Analytics />
+                </ProtectedPageWithLayout>
+              }
+            />
+            <Route
+              path="/aspak"
+              element={
+                <ProtectedPageWithLayout>
+                  <ASPAK />
+                </ProtectedPageWithLayout>
+              }
+            />
+            <Route
+              path="/insiden-keselamatan"
+              element={
+                <ProtectedPageWithLayout>
+                  <InsidenKeselamatan />
+                </ProtectedPageWithLayout>
+              }
+            />
+            <Route
+              path="/tanda-vital"
+              element={
+                <ProtectedPageWithLayout>
+                  <TandaVital />
+                </ProtectedPageWithLayout>
+              }
+            />
+            <Route
+              path="/audit-logs"
+              element={
+                <ProtectedPageWithLayout>
+                  <AuditLogs />
+                </ProtectedPageWithLayout>
+              }
+            />
+            <Route
+              path="/bed-management"
+              element={
+                <ProtectedPageWithLayout>
+                  <BedManagement />
+                </ProtectedPageWithLayout>
+              }
+            />
+            <Route
+              path="/shift-calendar"
+              element={
+                <ProtectedPageWithLayout>
+                  <ShiftCalendar />
+                </ProtectedPageWithLayout>
+              }
+            />
+            <Route
+              path="/sisrute"
+              element={
+                <ProtectedPageWithLayout>
+                  <Sisrute />
+                </ProtectedPageWithLayout>
+              }
+            />
+            <Route
+              path="/staff-certifications"
+              element={
+                <ProtectedPageWithLayout>
+                  <StaffCertifications />
+                </ProtectedPageWithLayout>
+              }
+            />
+            <Route
+              path="/inacbg-history"
+              element={
+                <ProtectedPageWithLayout>
+                  <INACBGHistory />
                 </ProtectedPageWithLayout>
               }
             />

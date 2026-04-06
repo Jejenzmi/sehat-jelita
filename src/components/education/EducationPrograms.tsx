@@ -9,8 +9,29 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Plus, Edit, GraduationCap, Users, Clock } from "lucide-react";
-import { db } from "@/lib/db";
 import { useToast } from "@/hooks/use-toast";
+
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
+const FETCH_OPTS: RequestInit = { credentials: 'include', headers: { 'Content-Type': 'application/json' } };
+
+async function apiFetch<T>(path: string): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, FETCH_OPTS);
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error || res.statusText);
+  return (json.data ?? json) as T;
+}
+async function apiPost<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, { ...FETCH_OPTS, method: 'POST', body: JSON.stringify(body) });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error || res.statusText);
+  return (json.data ?? json) as T;
+}
+async function apiPut<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, { ...FETCH_OPTS, method: 'PUT', body: JSON.stringify(body) });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error || res.statusText);
+  return (json.data ?? json) as T;
+}
 
 interface EducationProgram {
   id: string;
@@ -47,15 +68,11 @@ export default function EducationPrograms() {
 
   const fetchPrograms = async () => {
     setIsLoading(true);
-    const { data, error } = await db
-      .from("education_programs")
-      .select("*")
-      .order("program_name");
-    
-    if (error) {
+    try {
+      const data = await apiFetch<EducationProgram[]>('/education/programs');
+      setPrograms(Array.isArray(data) ? data : []);
+    } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
-    } else {
-      setPrograms(data || []);
     }
     setIsLoading(false);
   };
@@ -69,15 +86,10 @@ export default function EducationPrograms() {
       };
 
       if (editingProgram) {
-        const { error } = await db
-          .from("education_programs")
-          .update(payload)
-          .eq("id", editingProgram.id);
-        if (error) throw error;
+        await apiPut(`/education/programs/${editingProgram.id}`, payload);
         toast({ title: "Berhasil", description: "Program berhasil diperbarui" });
       } else {
-        const { error } = await db.from("education_programs").insert(payload);
-        if (error) throw error;
+        await apiPost('/education/programs', payload);
         toast({ title: "Berhasil", description: "Program berhasil ditambahkan" });
       }
 

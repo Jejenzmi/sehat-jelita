@@ -16,8 +16,8 @@ async function main() {
   // ============================================
   // Admin User
   // ============================================
-  const adminEmail = 'multimediazen@gmail.com';
-  const adminPassword = 'admin123';
+  const adminEmail = process.env.ADMIN_EMAIL || 'admin@simrszen.local';
+  const adminPassword = process.env.ADMIN_PASSWORD || 'Admin@123!';
 
   const existing = await prisma.profiles.findUnique({
     where: { email: adminEmail }

@@ -5,8 +5,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -14,7 +12,6 @@ import { toast } from "sonner";
 import {
   Monitor,
   Server,
-  Plug,
   Activity,
   Settings2,
   RefreshCw,
@@ -25,18 +22,14 @@ import {
   FileImage,
   Database,
   ArrowRightLeft,
-  Shield,
-  Wifi,
   Eye,
-  Download,
-  Upload,
-  Clock,
   Zap,
   Loader2,
   Navigation,
   Radar,
   Plus,
   Trash2,
+  Maximize2,
 } from "lucide-react";
 import {
   usePACSStudies,
@@ -44,8 +37,6 @@ import {
   useTestPACSConnection,
   usePACSStatistics,
   useGetViewerUrl,
-  useGetSeries,
-  useGetInstances,
   useDiscoverModalities,
   useAddModality,
   useRemoveModality,
@@ -79,18 +70,17 @@ interface StudyData {
 export default function DICOMIntegration() {
   const [activeTab, setActiveTab] = useState("overview");
   const [selectedStudy, setSelectedStudy] = useState<string | null>(null);
+  const [embeddedViewerUrl, setEmbeddedViewerUrl] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [deleteModalityName, setDeleteModalityName] = useState<string | null>(null);
   const [newModality, setNewModality] = useState({ name: "", ae_title: "", host: "", port: 104 });
 
   // PACS Hooks
   const testConnection = useTestPACSConnection();
-  const { data: statistics, isLoading: statsLoading } = usePACSStatistics();
+  const { data: statistics } = usePACSStatistics();
   const { data: studiesData, isLoading: studiesLoading, refetch: refetchStudies } = usePACSStudies({ limit: 50 });
   const queryStudies = useQueryStudies();
   const getViewerUrl = useGetViewerUrl();
-  const getSeries = useGetSeries();
-  const getInstances = useGetInstances();
   const discoverModalities = useDiscoverModalities();
   const addModality = useAddModality();
   const removeModality = useRemoveModality();
@@ -128,12 +118,16 @@ export default function DICOMIntegration() {
     });
   };
 
-  // Handle open viewer
+  // Handle open viewer — embed inline, fallback to new tab
   const handleOpenViewer = async (studyId: string) => {
+    setSelectedStudy(studyId);
+    setActiveTab("viewer");
     getViewerUrl.mutate(studyId, {
       onSuccess: (data) => {
         if (data.ohif_viewer) {
-          window.open(data.ohif_viewer, "_blank");
+          setEmbeddedViewerUrl(data.ohif_viewer);
+        } else {
+          toast.error("URL viewer tidak tersedia");
         }
       },
       onError: (err: any) => {
@@ -722,36 +716,57 @@ export default function DICOMIntegration() {
         {/* Viewer Tab */}
         <TabsContent value="viewer">
           <Card>
-            <CardHeader>
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Monitor className="h-4 w-4" /> DICOM Viewer
-              </CardTitle>
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Monitor className="h-4 w-4" /> OHIF DICOM Viewer
+                </CardTitle>
+                {embeddedViewerUrl && (
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.open(embeddedViewerUrl, "_blank")}
+                    >
+                      <Maximize2 className="h-3.5 w-3.5 mr-1" /> Fullscreen
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => { setEmbeddedViewerUrl(null); setSelectedStudy(null); }}
+                    >
+                      Tutup
+                    </Button>
+                  </div>
+                )}
+              </div>
             </CardHeader>
-            <CardContent>
-              {selectedStudy ? (
-                <div className="flex flex-col items-center justify-center h-[500px] bg-black rounded-lg text-white">
-                  <FileImage className="h-20 w-20 opacity-30 mb-4" />
-                  <h3 className="text-lg font-semibold">DICOM Viewer</h3>
-                  <p className="text-sm text-white/60 mt-2">Study: {selectedStudy}</p>
-                  <p className="text-xs text-white/40 mt-1">Terintegrasi dengan OHIF Viewer</p>
-                  <Button 
-                    className="mt-6" 
-                    onClick={() => handleOpenViewer(selectedStudy)}
-                    disabled={getViewerUrl.isPending}
-                  >
-                    {getViewerUrl.isPending ? (
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    ) : (
-                      <Navigation className="h-4 w-4 mr-2" />
-                    )}
-                    Buka Viewer
+            <CardContent className="p-0 overflow-hidden rounded-b-lg">
+              {getViewerUrl.isPending ? (
+                <div className="flex flex-col items-center justify-center h-[600px] bg-black text-white gap-3">
+                  <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                  <p className="text-sm">Memuat DICOM viewer…</p>
+                </div>
+              ) : embeddedViewerUrl ? (
+                <iframe
+                  src={embeddedViewerUrl}
+                  className="w-full border-0"
+                  style={{ height: "calc(100vh - 240px)", minHeight: 600 }}
+                  allow="fullscreen"
+                  title="OHIF DICOM Viewer"
+                />
+              ) : selectedStudy ? (
+                <div className="flex flex-col items-center justify-center h-[600px] bg-black text-white gap-3">
+                  <Navigation className="h-10 w-10 opacity-40" />
+                  <p className="text-sm text-white/60">Studi dipilih — klik Muat Viewer</p>
+                  <Button onClick={() => handleOpenViewer(selectedStudy)} disabled={getViewerUrl.isPending}>
+                    <Navigation className="h-4 w-4 mr-2" /> Muat Viewer
                   </Button>
                 </div>
               ) : (
-                <div className="flex flex-col items-center justify-center h-[500px] bg-muted rounded-lg text-muted-foreground">
-                  <FileImage className="h-20 w-20 opacity-30 mb-4" />
-                  <h3 className="text-lg font-semibold">DICOM Viewer</h3>
-                  <p className="text-sm mt-2">Pilih studi dari daftar untuk memulai viewing</p>
+                <div className="flex flex-col items-center justify-center h-[600px] bg-muted text-muted-foreground gap-3">
+                  <FileImage className="h-16 w-16 opacity-30" />
+                  <p className="text-sm">Pilih studi dari tab Overview atau Pencarian Studi</p>
                 </div>
               )}
             </CardContent>

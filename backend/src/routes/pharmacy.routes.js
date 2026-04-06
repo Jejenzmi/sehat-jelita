@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { prisma } from '../config/database.js';
 import { requireRole, checkMenuAccess } from '../middleware/role.middleware.js';
 import { asyncHandler, ApiError } from '../middleware/errorHandler.js';
+import * as cache from '../services/cache.service.js';
 
 const router = Router();
 
@@ -39,13 +40,13 @@ router.get('/prescriptions', asyncHandler(async (req, res) => {
   const { 
     page = 1, 
     limit = 20, 
+    cursor,
     status,
     date_from,
     date_to,
     search
   } = req.query;
 
-  const skip = (parseInt(page) - 1) * parseInt(limit);
   const take = parseInt(limit);
 
   const where = {
@@ -65,23 +66,47 @@ router.get('/prescriptions', asyncHandler(async (req, res) => {
     })
   };
 
+  const include = {
+    patients: {
+      select: { id: true, medical_record_number: true, full_name: true }
+    },
+    doctors: { select: { id: true } },
+    prescription_items: true
+  };
+
+  // Cursor-based pagination
+  if (cursor) {
+    const prescriptions = await prisma.prescriptions.findMany({
+      where: { ...where, id: { gt: cursor } },
+      take: take + 1,
+      orderBy: { id: 'asc' },
+      include,
+    });
+
+    const hasMore = prescriptions.length > take;
+    if (hasMore) prescriptions.pop();
+
+    return res.json({
+      success: true,
+      data: prescriptions,
+      meta: {
+        next_cursor: hasMore ? prescriptions[prescriptions.length - 1]?.id : null,
+        has_more: hasMore,
+        limit: take,
+      },
+    });
+  }
+
+  // Offset-based pagination (backward compatible)
+  const skip = (parseInt(page) - 1) * take;
+
   const [prescriptions, total] = await Promise.all([
     prisma.prescriptions.findMany({
       where,
       skip,
       take,
       orderBy: { prescription_date: 'desc' },
-      include: {
-        patients: {
-          select: {
-            id: true,
-            medical_record_number: true,
-            full_name: true
-          }
-        },
-        doctors: { select: { id: true } },
-        prescription_items: true
-      }
+      include,
     }),
     prisma.prescriptions.count({ where })
   ]);
@@ -202,133 +227,388 @@ router.post('/prescriptions', requireRole(['admin', 'dokter']), asyncHandler(asy
   });
 }));
 
+// ============================================================
+// DISPENSING WORKFLOW STATE MACHINE
+// States: pending → verified → preparing → ready → dispensed
+//         pending → rejected (any time before dispensed)
+//         dispensed → returned (partial or full)
+// ============================================================
+
+/** Valid state transitions */
+const VALID_TRANSITIONS = {
+  pending:    ['verified', 'rejected'],
+  verified:   ['preparing', 'rejected'],
+  preparing:  ['ready', 'rejected'],
+  ready:      ['dispensed'],
+  dispensed:  ['returned'],
+  rejected:   [],
+  returned:   [],
+};
+
+function assertTransition(current, next) {
+  if (!VALID_TRANSITIONS[current]?.includes(next)) {
+    throw new ApiError(400,
+      `Tidak bisa mengubah status dari "${current}" ke "${next}"`,
+      'INVALID_TRANSITION'
+    );
+  }
+}
+
+/**
+ * POST /api/pharmacy/prescriptions/:id/verify
+ * Farmasis verifikasi resep: cek alergi, stok, interaksi obat
+ */
+router.post('/prescriptions/:id/verify', requireRole(['admin', 'farmasi']), asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { notes } = req.body;
+
+  const prescription = await prisma.prescriptions.findUnique({
+    where: { id },
+    include: {
+      prescription_items: true,
+      patients: { select: { id: true, full_name: true, allergy_notes: true } }
+    }
+  });
+  if (!prescription) throw new ApiError(404, 'Resep tidak ditemukan');
+  assertTransition(prescription.status, 'verified');
+
+  // — Allergy Check —
+  const allergyWarnings = [];
+  const allergyNotes = (prescription.patients?.allergy_notes || '').toLowerCase();
+  if (allergyNotes) {
+    for (const item of prescription.prescription_items) {
+      const nameLower = item.medicine_name.toLowerCase();
+      // Simple keyword match against patient allergy notes
+      const words = allergyNotes.split(/[\s,;]+/).filter(w => w.length > 3);
+      for (const word of words) {
+        if (nameLower.includes(word)) {
+          allergyWarnings.push({
+            medicine: item.medicine_name,
+            allergy: word,
+            severity: 'warning',
+          });
+        }
+      }
+    }
+  }
+
+  // — Drug Interaction Check —
+  const interactionWarnings = [];
+  const medicineIds = prescription.prescription_items
+    .map(i => i.medicine_id)
+    .filter(Boolean);
+
+  if (medicineIds.length > 1) {
+    const interactions = await prisma.drug_interactions.findMany({
+      where: {
+        is_active: true,
+        OR: [
+          { medicine_id_a: { in: medicineIds }, medicine_id_b: { in: medicineIds } },
+        ],
+      },
+      include: {
+        medicine_a: { select: { name: true } },
+        medicine_b: { select: { name: true } },
+      },
+    });
+
+    for (const ix of interactions) {
+      if (medicineIds.includes(ix.medicine_id_a) && medicineIds.includes(ix.medicine_id_b)) {
+        interactionWarnings.push({
+          medicine_a: ix.medicine_a.name,
+          medicine_b: ix.medicine_b.name,
+          severity: ix.severity,
+          description: ix.description,
+          clinical_effect: ix.clinical_effect,
+          management: ix.management,
+        });
+      }
+    }
+  }
+
+  // — Stock Check —
+  const stockWarnings = [];
+  for (const item of prescription.prescription_items) {
+    if (!item.medicine_id || !item.quantity) continue;
+    const stock = await prisma.medicine_batches.aggregate({
+      where: {
+        medicine_id: item.medicine_id,
+        status: 'available',
+        quantity: { gt: 0 },
+        expiry_date: { gt: new Date() }
+      },
+      _sum: { quantity: true }
+    });
+    const available = stock._sum.quantity || 0;
+    if (available < item.quantity) {
+      stockWarnings.push({
+        medicine: item.medicine_name,
+        requested: item.quantity,
+        available,
+      });
+    }
+  }
+
+  const updated = await prisma.prescriptions.update({
+    where: { id },
+    data: {
+      status: 'verified',
+      verified_by: req.user.id,
+      verified_at: new Date(),
+      allergy_checked: true,
+      allergy_warnings: allergyWarnings,
+      notes: notes ?? prescription.notes,
+    }
+  });
+
+  await prisma.audit_logs.create({
+    data: { table_name: 'prescriptions', record_id: id, action: 'VERIFY', user_id: req.user.id, new_data: { allergyWarnings, stockWarnings } }
+  }).catch(() => {});
+
+  res.json({
+    success: true,
+    message: 'Resep berhasil diverifikasi',
+    data: updated,
+    warnings: { allergies: allergyWarnings, interactions: interactionWarnings, stock: stockWarnings }
+  });
+}));
+
+/**
+ * POST /api/pharmacy/prescriptions/:id/prepare
+ * Mulai siapkan/racik obat
+ */
+router.post('/prescriptions/:id/prepare', requireRole(['admin', 'farmasi']), asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const prescription = await prisma.prescriptions.findUnique({ where: { id } });
+  if (!prescription) throw new ApiError(404, 'Resep tidak ditemukan');
+  assertTransition(prescription.status, 'preparing');
+
+  const updated = await prisma.prescriptions.update({
+    where: { id },
+    data: { status: 'preparing', prepared_by: req.user.id, prepared_at: new Date() }
+  });
+
+  // Notify pharmacy room via socket
+  req.app.get('io')?.to('pharmacy').emit('prescription:preparing', { id, prescription_number: prescription.prescription_number });
+
+  res.json({ success: true, message: 'Obat sedang disiapkan', data: updated });
+}));
+
+/**
+ * POST /api/pharmacy/prescriptions/:id/ready
+ * Obat siap diambil/diserahkan
+ */
+router.post('/prescriptions/:id/ready', requireRole(['admin', 'farmasi']), asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const prescription = await prisma.prescriptions.findUnique({ where: { id } });
+  if (!prescription) throw new ApiError(404, 'Resep tidak ditemukan');
+  assertTransition(prescription.status, 'ready');
+
+  const updated = await prisma.prescriptions.update({
+    where: { id },
+    data: { status: 'ready' }
+  });
+
+  // Notify patient waiting area
+  req.app.get('io')?.to('pharmacy').emit('prescription:ready', {
+    id,
+    prescription_number: prescription.prescription_number,
+    patient_id: prescription.patient_id
+  });
+
+  res.json({ success: true, message: 'Obat siap diserahkan', data: updated });
+}));
+
 /**
  * POST /api/pharmacy/prescriptions/:id/dispense
- * Dispense prescription (mark as completed)
+ * Serahkan obat ke pasien — deduct stock FEFO
  */
 router.post('/prescriptions/:id/dispense', requireRole(['admin', 'farmasi']), asyncHandler(async (req, res) => {
   const { id } = req.params;
+  const { dispensed_items } = req.body; // optional: [{ item_id, dispensed_quantity }]
 
   const prescription = await prisma.prescriptions.findUnique({
     where: { id },
     include: { prescription_items: true }
   });
+  if (!prescription) throw new ApiError(404, 'Resep tidak ditemukan');
+  assertTransition(prescription.status, 'dispensed');
 
-  if (!prescription) {
-    throw new ApiError(404, 'Resep tidak ditemukan', 'PRESCRIPTION_NOT_FOUND');
+  // Build dispensed quantity map (use requested qty if not overridden)
+  const qtyMap = {};
+  if (Array.isArray(dispensed_items)) {
+    dispensed_items.forEach(d => { qtyMap[d.item_id] = d.dispensed_quantity; });
   }
 
-  if (prescription.status === 'dispensed') {
-    throw new ApiError(400, 'Resep sudah diserahkan', 'ALREADY_DISPENSED');
-  }
-
-  // Wrap stock deduction and status update in a single transaction
   const updated = await prisma.$transaction(async (tx) => {
-    // Deduct stock for each item
+    // Deduct stock FEFO per item
     for (const item of prescription.prescription_items) {
-      if (item.medicine_id) {
-        // Find available batch with FEFO (First Expiry First Out)
-        const batches = await tx.medicine_batches.findMany({
-          where: {
-            medicine_id: item.medicine_id,
-            status: 'available',
-            quantity: { gt: 0 },
-            expiry_date: { gt: new Date() }
-          },
-          orderBy: { expiry_date: 'asc' }
-        });
+      if (!item.medicine_id) continue;
+      const dispQty = qtyMap[item.id] ?? item.quantity ?? 0;
+      if (dispQty <= 0) continue;
 
-        let remaining = item.quantity;
-        for (const batch of batches) {
-          if (remaining <= 0) break;
+      const batches = await tx.medicine_batches.findMany({
+        where: { medicine_id: item.medicine_id, status: 'available', quantity: { gt: 0 }, expiry_date: { gt: new Date() } },
+        orderBy: { expiry_date: 'asc' }
+      });
 
-          const deduct = Math.min(batch.quantity, remaining);
-          await tx.medicine_batches.update({
-            where: { id: batch.id },
-            data: { quantity: { decrement: deduct } }
-          });
-          remaining -= deduct;
-        }
-
-        if (remaining > 0) {
-          console.warn(`Insufficient stock for medicine ${item.medicine_name} (id: ${item.medicine_id}): needed ${item.quantity}, short by ${remaining}`);
-        }
+      let remaining = dispQty;
+      const batchLog = [];
+      for (const batch of batches) {
+        if (remaining <= 0) break;
+        const deduct = Math.min(batch.quantity, remaining);
+        await tx.medicine_batches.update({ where: { id: batch.id }, data: { quantity: { decrement: deduct } } });
+        batchLog.push({ batch_id: batch.id, batch_number: batch.batch_number, deducted: deduct });
+        remaining -= deduct;
       }
+
+      if (remaining > 0) {
+        console.warn(`Stock shortage: ${item.medicine_name}, short by ${remaining}`);
+      }
+
+      // Update item with dispensed tracking
+      await tx.prescription_items.update({
+        where: { id: item.id },
+        data: { dispensed_quantity: dispQty, dispensed_from_batches: batchLog }
+      });
     }
 
     return tx.prescriptions.update({
       where: { id },
-      data: {
-        status: 'dispensed',
-        updated_at: new Date()
-      }
+      data: { status: 'dispensed', dispensed_by: req.user.id, dispensed_at: new Date() }
     });
   });
 
-  // Audit log (outside transaction – non-critical)
-  await prisma.audit_logs.create({
-    data: {
-      table_name: 'prescriptions',
-      record_id: id,
-      action: 'DISPENSE',
-      user_id: req.user.id,
-      new_data: { dispensed_at: new Date() }
-    }
-  }).catch(err => console.error('Audit log failed:', err));
+  // Invalidate medicines cache (stock changed)
+  await cache.delByPattern('pharmacy:medicines:*');
 
-  res.json({
-    success: true,
-    message: 'Obat berhasil diserahkan',
-    data: updated
+  await prisma.audit_logs.create({
+    data: { table_name: 'prescriptions', record_id: id, action: 'DISPENSE', user_id: req.user.id, new_data: { dispensed_at: new Date() } }
+  }).catch(() => {});
+
+  res.json({ success: true, message: 'Obat berhasil diserahkan kepada pasien', data: updated });
+}));
+
+/**
+ * POST /api/pharmacy/prescriptions/:id/reject
+ * Tolak resep (alergi, OOS, kedaluwarsa, dll)
+ */
+router.post('/prescriptions/:id/reject', requireRole(['admin', 'farmasi']), asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { reason } = req.body;
+
+  if (!reason) throw new ApiError(400, 'Alasan penolakan wajib diisi');
+
+  const prescription = await prisma.prescriptions.findUnique({ where: { id } });
+  if (!prescription) throw new ApiError(404, 'Resep tidak ditemukan');
+  assertTransition(prescription.status, 'rejected');
+
+  const updated = await prisma.prescriptions.update({
+    where: { id },
+    data: { status: 'rejected', rejection_reason: reason }
   });
+
+  req.app.get('io')?.to('pharmacy').emit('prescription:rejected', { id, reason });
+
+  res.json({ success: true, message: 'Resep ditolak', data: updated });
+}));
+
+/**
+ * POST /api/pharmacy/prescriptions/:id/return
+ * Kembalikan obat (partial atau seluruhnya)
+ */
+router.post('/prescriptions/:id/return', requireRole(['admin', 'farmasi']), asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { return_items, reason } = req.body;
+  // return_items: [{ item_id, return_quantity, batch_id }]
+
+  const prescription = await prisma.prescriptions.findUnique({
+    where: { id },
+    include: { prescription_items: true }
+  });
+  if (!prescription) throw new ApiError(404, 'Resep tidak ditemukan');
+  assertTransition(prescription.status, 'returned');
+
+  if (Array.isArray(return_items) && return_items.length > 0) {
+    await prisma.$transaction(async (tx) => {
+      for (const ret of return_items) {
+        if (!ret.return_quantity || ret.return_quantity <= 0) continue;
+        // Add stock back to batch (or create adjustment)
+        if (ret.batch_id) {
+          await tx.medicine_batches.update({
+            where: { id: ret.batch_id },
+            data: { quantity: { increment: ret.return_quantity } }
+          });
+        }
+      }
+    });
+    await cache.delByPattern('pharmacy:medicines:*');
+  }
+
+  const updated = await prisma.prescriptions.update({
+    where: { id },
+    data: {
+      status: 'returned',
+      returned_by: req.user.id,
+      returned_at: new Date(),
+      notes: prescription.notes
+        ? `${prescription.notes}\nReturn: ${reason || 'tidak ada keterangan'}`
+        : `Return: ${reason || 'tidak ada keterangan'}`
+    }
+  });
+
+  await prisma.audit_logs.create({
+    data: { table_name: 'prescriptions', record_id: id, action: 'RETURN', user_id: req.user.id, new_data: { reason, return_items } }
+  }).catch(() => {});
+
+  res.json({ success: true, message: 'Pengembalian obat berhasil dicatat', data: updated });
 }));
 
 /**
  * GET /api/pharmacy/medicines
- * Get all medicines
+ * Get all medicines — cached 15 min (changes infrequently)
  */
 router.get('/medicines', asyncHandler(async (req, res) => {
-  const { 
-    page = 1, 
-    limit = 50, 
-    search,
-    category
-  } = req.query;
+  const { page = 1, limit = 50, search, category } = req.query;
+  const pageInt = parseInt(page);
+  const limitInt = parseInt(limit);
+  const cacheKey = search
+    ? null
+    : `pharmacy:medicines:${category || 'all'}:${pageInt}:${limitInt}`;
 
-  const skip = (parseInt(page) - 1) * parseInt(limit);
-  const take = parseInt(limit);
-
-  const where = {
-    is_active: true,
-    ...(category && { category }),
-    ...(search && {
-      OR: [
-        { medicine_name: { contains: search, mode: 'insensitive' } },
-        { generic_name: { contains: search, mode: 'insensitive' } },
-        { medicine_code: { contains: search, mode: 'insensitive' } }
-      ]
-    })
+  const fetch = async () => {
+    const where = {
+      is_active: true,
+      ...(category && { category }),
+      ...(search && {
+        OR: [
+          { medicine_name: { contains: search, mode: 'insensitive' } },
+          { generic_name: { contains: search, mode: 'insensitive' } },
+          { medicine_code: { contains: search, mode: 'insensitive' } }
+        ]
+      })
+    };
+    const [medicines, total] = await Promise.all([
+      prisma.medicines.findMany({ where, skip: (pageInt - 1) * limitInt, take: limitInt, orderBy: { medicine_name: 'asc' } }),
+      prisma.medicines.count({ where })
+    ]);
+    return { medicines, total };
   };
 
-  const [medicines, total] = await Promise.all([
-    prisma.medicines.findMany({
-      where,
-      skip,
-      take,
-      orderBy: { medicine_name: 'asc' }
-    }),
-    prisma.medicines.count({ where })
-  ]);
+  let result;
+  if (cacheKey) {
+    const { data } = await cache.cacheAside(cacheKey, fetch, 900); // 15 min
+    result = data;
+  } else {
+    result = await fetch();
+  }
 
   res.json({
     success: true,
-    data: medicines,
-    pagination: {
-      page: parseInt(page),
-      limit: parseInt(limit),
-      total,
-      total_pages: Math.ceil(total / take)
-    }
+    data: result.medicines,
+    pagination: { page: pageInt, limit: limitInt, total: result.total, total_pages: Math.ceil(result.total / limitInt) }
   });
 }));
 
@@ -481,6 +761,58 @@ router.get('/print/:id', asyncHandler(async (req, res) => {
       hospital,
       prescription
     }
+  });
+}));
+
+/**
+ * POST /api/pharmacy/check-interactions
+ * Check drug interactions for a list of medicine IDs
+ */
+router.post('/check-interactions', asyncHandler(async (req, res) => {
+  const { medicine_ids, patient_id } = req.body;
+
+  if (!Array.isArray(medicine_ids) || medicine_ids.length < 2) {
+    return res.json({ success: true, data: { interactions: [], allergies: [] } });
+  }
+
+  const [interactions, patientAllergies] = await Promise.all([
+    prisma.drug_interactions.findMany({
+      where: {
+        is_active: true,
+        medicine_id_a: { in: medicine_ids },
+        medicine_id_b: { in: medicine_ids },
+      },
+      include: {
+        medicine_a: { select: { name: true } },
+        medicine_b: { select: { name: true } },
+      },
+    }),
+    patient_id
+      ? prisma.patient_drug_allergies.findMany({
+          where: { patient_id, is_active: true, medicine_id: { in: medicine_ids } },
+          include: { medicines: { select: { name: true } } },
+        })
+      : Promise.resolve([]),
+  ]);
+
+  res.json({
+    success: true,
+    data: {
+      interactions: interactions.map(ix => ({
+        medicine_a: ix.medicine_a.name,
+        medicine_b: ix.medicine_b.name,
+        severity: ix.severity,
+        description: ix.description,
+        clinical_effect: ix.clinical_effect,
+        management: ix.management,
+      })),
+      allergies: patientAllergies.map(a => ({
+        medicine: a.medicines?.name || a.allergen_name,
+        reaction_type: a.reaction_type,
+        severity: a.severity,
+        notes: a.notes,
+      })),
+    },
   });
 }));
 

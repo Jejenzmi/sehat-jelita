@@ -10,10 +10,31 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Edit, Calendar, Users, Award, Clock } from "lucide-react";
-import { db } from "@/lib/db";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
+
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
+const FETCH_OPTS: RequestInit = { credentials: 'include', headers: { 'Content-Type': 'application/json' } };
+
+async function apiFetch<T>(path: string): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, FETCH_OPTS);
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error || res.statusText);
+  return (json.data ?? json) as T;
+}
+async function apiPost<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, { ...FETCH_OPTS, method: 'POST', body: JSON.stringify(body) });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error || res.statusText);
+  return (json.data ?? json) as T;
+}
+async function apiPut<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, { ...FETCH_OPTS, method: 'PUT', body: JSON.stringify(body) });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error || res.statusText);
+  return (json.data ?? json) as T;
+}
 
 interface AcademicActivity {
   id: string;
@@ -60,15 +81,14 @@ export default function AcademicActivities() {
   }, []);
 
   const fetchData = async () => {
-    const [activitiesRes, deptsRes] = await Promise.all([
-      db.from("academic_activities")
-        .select("*, departments(name)")
-        .order("activity_date", { ascending: false }),
-      db.from("departments").select("id, name").eq("is_active", true)
-    ]);
-    
-    if (activitiesRes.data) setActivities(activitiesRes.data);
-    if (deptsRes.data) setDepartments(deptsRes.data);
+    try {
+      const activitiesData = await apiFetch<AcademicActivity[]>('/education/activities');
+      setActivities(Array.isArray(activitiesData) ? activitiesData : []);
+      // Departments not available from this endpoint; default to empty
+      setDepartments([]);
+    } catch (error: any) {
+      console.error("Error fetching academic activities:", error);
+    }
   };
 
   const handleSubmit = async () => {
@@ -83,12 +103,10 @@ export default function AcademicActivities() {
       };
 
       if (editingActivity) {
-        const { error } = await db.from("academic_activities").update(payload).eq("id", editingActivity.id);
-        if (error) throw error;
+        await apiPut(`/education/activities/${editingActivity.id}`, payload);
         toast({ title: "Berhasil", description: "Kegiatan berhasil diperbarui" });
       } else {
-        const { error } = await db.from("academic_activities").insert(payload);
-        if (error) throw error;
+        await apiPost('/education/activities', payload);
         toast({ title: "Berhasil", description: "Kegiatan berhasil ditambahkan" });
       }
 

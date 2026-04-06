@@ -15,7 +15,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./backend/database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
     ports:
-      - "127.0.0.1:5432:5432"
+      - "127.0.0.1:5433:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-simrs}"]
       interval: 10s
@@ -31,7 +31,7 @@ services:
     volumes:
       - redis_data:/data
     ports:
-      - "127.0.0.1:6379:6379"
+      - "127.0.0.1:6380:6379" # <--- SUDAH DIPERBAIKI: 6380 di kiri, 6379 di kanan
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -41,27 +41,31 @@ services:
   # Node.js API Backend
   api:
     image: ${REGISTRY:-docker.io}/${IMAGE_NAMESPACE:-jejenzmi}/simrs-zen-api:${IMAGE_TAG:-latest}
-    pull_policy: always
+    build: ./backend # <-- DITAMBAHKAN: Memberi tahu Docker letak folder API
+    # pull_policy: always # <-- DIMATIKAN: Agar tidak memaksa download dari internet
     container_name: simrs-zen-api
     restart: unless-stopped
     environment:
       NODE_ENV: ${NODE_ENV:-development}
       PORT: 3000
-      DATABASE_URL: postgresql://${DB_USER:-simrs}:${DB_PASSWORD:-simrs2024}@postgres:5432/${DB_NAME:-simrs_zen}
+      # DB credentials — no defaults: MUST be set in .env or CI secrets
+      DATABASE_URL: postgresql://${DB_USER:?DB_USER must be set}:${DB_PASSWORD:?DB_PASSWORD must be set}@postgres:5432/${DB_NAME:?DB_NAME must be set}?connection_limit=20&pool_timeout=30
+      DIRECT_URL: postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}
       REDIS_URL: redis://redis:6379
-      JWT_SECRET: ${JWT_SECRET:-change-this-secret-in-production}
-      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      # Security — no defaults: MUST be set
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set (min 32 chars)}
+      ENCRYPTION_SECRET: ${ENCRYPTION_SECRET:?ENCRYPTION_SECRET must be set}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-15m}
       JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-30d}
-      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
+      FRONTEND_URL: ${FRONTEND_URL:?FRONTEND_URL must be set}
+      # Optional integrations
       BPJS_CONS_ID: ${BPJS_CONS_ID:-}
       BPJS_SECRET_KEY: ${BPJS_SECRET_KEY:-}
       BPJS_USER_KEY: ${BPJS_USER_KEY:-}
       SATUSEHAT_CLIENT_ID: ${SATUSEHAT_CLIENT_ID:-}
       SATUSEHAT_CLIENT_SECRET: ${SATUSEHAT_CLIENT_SECRET:-}
       SATUSEHAT_ORGANIZATION_ID: ${SATUSEHAT_ORGANIZATION_ID:-}
-      SATU_SEHAT_CLIENT_ID: ${SATUSEHAT_CLIENT_ID:-}
-      SATU_SEHAT_CLIENT_SECRET: ${SATUSEHAT_CLIENT_SECRET:-}
-      SATU_SEHAT_ORG_ID: ${SATUSEHAT_ORGANIZATION_ID:-}
+      SENTRY_DSN: ${SENTRY_DSN:-}
     ports:
       - "127.0.0.1:3000:3000"
     depends_on:
@@ -79,11 +83,17 @@ services:
   # React Frontend
   frontend:
     image: ${REGISTRY:-docker.io}/${IMAGE_NAMESPACE:-jejenzmi}/simrs-zen-frontend:${IMAGE_TAG:-latest}
-    pull_policy: always
+    build: 
+      context: .
+      dockerfile: Dockerfile.frontend # <-- DISESUAIKAN: Path ke file UI yang benar
+    # pull_policy: always # <-- DIMATIKAN: Agar tidak memaksa download dari internet
     container_name: simrs-zen-frontend
     restart: unless-stopped
     ports:
       - "80:80"
+      - "443:443" # <-- DITAMBAHKAN: Membuka port HTTPS untuk akses lokal
+    volumes:
+      - ./ssl:/etc/nginx/ssl:ro # <-- DITAMBAHKAN: Menyambungkan file SSL yang baru saja Anda buat
     depends_on:
       api:
         condition: service_healthy

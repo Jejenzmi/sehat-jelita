@@ -3,55 +3,22 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { User, Phone, Mail, MapPin, Calendar, CreditCard, Heart, AlertTriangle } from "lucide-react";
-import { db } from "@/lib/db";
-import { useAuth } from "@/hooks/useAuth";
+import { getProfile, type PatientProfile as PatientData } from "@/lib/patient-portal-api";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 
-interface PatientData {
-  id: string;
-  full_name: string;
-  medical_record_number: string;
-  nik: string;
-  birth_date: string;
-  birth_place: string | null;
-  gender: string;
-  blood_type: string | null;
-  phone: string | null;
-  email: string | null;
-  address: string | null;
-  city: string | null;
-  province: string | null;
-  bpjs_number: string | null;
-  allergy_notes: string | null;
-  emergency_contact_name: string | null;
-  emergency_contact_phone: string | null;
-  emergency_contact_relation: string | null;
-}
-
 export default function PatientProfile() {
-  const { user } = useAuth();
   const [patient, setPatient] = useState<PatientData | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (user) {
-      fetchPatientData();
-    }
-  }, [user]);
+  useEffect(() => { fetchPatientData(); }, []);
 
   const fetchPatientData = async () => {
     try {
-      const { data, error } = await db
-        .from("patients")
-        .select("*")
-        .eq("user_id", user?.id)
-        .single();
-
-      if (error) throw error;
+      const data = await getProfile();
       setPatient(data);
-    } catch (error) {
-      console.error("Error fetching patient data:", error);
+    } catch {
+      // user not linked to a patient record
     } finally {
       setLoading(false);
     }
@@ -122,8 +89,7 @@ export default function PatientProfile() {
                   <div>
                     <p className="text-sm text-muted-foreground">Tanggal Lahir</p>
                     <p className="font-medium">
-                      {patient.birth_place && `${patient.birth_place}, `}
-                      {format(new Date(patient.birth_date), "d MMMM yyyy", { locale: id })}
+                      {patient.birth_date ? format(new Date(patient.birth_date), "d MMMM yyyy", { locale: id }) : "-"}
                     </p>
                   </div>
                 </div>
@@ -155,28 +121,10 @@ export default function PatientProfile() {
               <div className="flex items-start gap-3">
                 <MapPin className="h-4 w-4 text-muted-foreground mt-1" />
                 <div>
-                  <p className="font-medium">
-                    {patient.address || "-"}
-                    {patient.city && `, ${patient.city}`}
-                    {patient.province && `, ${patient.province}`}
-                  </p>
+                  <p className="font-medium">{patient.address || "-"}</p>
                 </div>
               </div>
 
-              {patient.bpjs_number && (
-                <>
-                  <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider mt-6">
-                    Asuransi
-                  </h4>
-                  <div className="flex items-center gap-3">
-                    <Heart className="h-4 w-4 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm text-muted-foreground">No. BPJS</p>
-                      <p className="font-medium">{patient.bpjs_number}</p>
-                    </div>
-                  </div>
-                </>
-              )}
             </div>
           </div>
         </CardContent>
@@ -198,7 +146,7 @@ export default function PatientProfile() {
       )}
 
       {/* Emergency Contact */}
-      {patient.emergency_contact_name && (
+      {patient.emergency_contact && (
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base">Kontak Darurat</CardTitle>
@@ -206,10 +154,7 @@ export default function PatientProfile() {
           <CardContent>
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-medium">{patient.emergency_contact_name}</p>
-                <p className="text-sm text-muted-foreground">
-                  {patient.emergency_contact_relation}
-                </p>
+                <p className="font-medium">{patient.emergency_contact}</p>
               </div>
               {patient.emergency_contact_phone && (
                 <Badge variant="outline" className="font-mono">

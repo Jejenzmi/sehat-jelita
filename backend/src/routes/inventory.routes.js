@@ -22,7 +22,8 @@ const router = Router();
 router.get('/stock',
   requireRole([ROLES.FARMASI, ROLES.PROCUREMENT, ROLES.MANAJEMEN]),
   asyncHandler(async (req, res) => {
-    const { category, lowStock, expiring, search, page = 1, limit = 50 } = req.query;
+    const { category, lowStock, search, cursor, page = 1, limit = 50 } = req.query;
+    const take = Math.min(parseInt(limit), 200);
 
     const where = {};
     if (category) where.category = category;
@@ -33,26 +34,56 @@ router.get('/stock',
       ];
     }
     if (lowStock === 'true') {
-      where.current_stock = { lte: prisma.raw('minimum_stock') };
+      where.AND = [{ current_stock: { not: null } }]; // filter handled post-query below
     }
 
+    const include = {
+      inventory_batches: {
+        where: { remaining_quantity: { gt: 0 } },
+        orderBy: { expiry_date: 'asc' }
+      },
+      inventory_reorder_settings: { take: 1 },
+    };
+
+    const mapItem = item => ({
+      ...item,
+      name: item.item_name,
+      code: item.item_code,
+      stock: item.current_stock,
+      min_stock: item.minimum_stock,
+      settings: item.inventory_reorder_settings?.[0] || null,
+    });
+
+    // Cursor-based pagination
+    if (cursor) {
+      const items = await prisma.inventory_items.findMany({
+        where: { ...where, id: { gt: cursor } },
+        take: take + 1,
+        orderBy: { id: 'asc' },
+        include,
+      });
+      const hasMore = items.length > take;
+      if (hasMore) items.pop();
+      return res.json({
+        success: true,
+        data: items.map(mapItem),
+        meta: { next_cursor: hasMore ? items[items.length - 1]?.id : null, has_more: hasMore, limit: take },
+      });
+    }
+
+    // Offset pagination
+    const skip = (parseInt(page) - 1) * take;
     const [items, total] = await Promise.all([
-      prisma.inventory_items.findMany({
-        where,
-        include: {
-          inventory_batches: {
-            where: { remaining_quantity: { gt: 0 } },
-            orderBy: { expiry_date: 'asc' }
-          }
-        },
-        orderBy: { item_name: 'asc' },
-        skip: (page - 1) * limit,
-        take: parseInt(limit)
-      }),
+      prisma.inventory_items.findMany({ where, include, orderBy: { item_name: 'asc' }, skip, take }),
       prisma.inventory_items.count({ where })
     ]);
 
-    res.json({ success: true, data: items, pagination: { page: parseInt(page), limit: parseInt(limit), total } });
+    let data = items.map(mapItem);
+    if (lowStock === 'true') {
+      data = data.filter(i => i.current_stock !== null && i.min_stock !== null && i.current_stock <= i.min_stock);
+    }
+
+    res.json({ success: true, data, pagination: { page: parseInt(page), limit: take, total } });
   })
 );
 
@@ -486,6 +517,107 @@ router.post('/vendors',
       data: { ...req.body, created_by: req.user.id },
     });
     res.status(201).json({ success: true, data: vendor });
+  })
+);
+
+// ============================================
+// INVENTORY REORDER SETTINGS
+// ============================================
+
+/**
+ * GET /api/inventory/settings/:id
+ * id = inventory_reorder_settings.id OR medicine_id OR inventory_item_id
+ */
+router.get('/settings/:id',
+  requireRole([ROLES.FARMASI, ROLES.PROCUREMENT, ROLES.MANAJEMEN]),
+  asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const setting = await prisma.inventory_reorder_settings.findFirst({
+      where: { OR: [{ id }, { medicine_id: id }, { inventory_item_id: id }] },
+    });
+    if (!setting) return res.status(404).json({ success: false, error: 'Settings tidak ditemukan' });
+    res.json({ success: true, data: setting });
+  })
+);
+
+/**
+ * POST /api/inventory/settings
+ */
+router.post('/settings',
+  requireRole([ROLES.FARMASI, ROLES.PROCUREMENT]),
+  asyncHandler(async (req, res) => {
+    const {
+      medicine_id, inventory_item_id,
+      auto_reorder_enabled = true,
+      reorder_point = 10,
+      reorder_quantity = 100,
+      max_stock, preferred_supplier, lead_time_days = 7,
+    } = req.body;
+
+    // Upsert by medicine_id or inventory_item_id
+    const existingWhere = medicine_id
+      ? { medicine_id }
+      : inventory_item_id
+        ? { inventory_item_id }
+        : null;
+
+    if (existingWhere) {
+      const existing = await prisma.inventory_reorder_settings.findFirst({ where: existingWhere });
+      if (existing) {
+        const updated = await prisma.inventory_reorder_settings.update({
+          where: { id: existing.id },
+          data: { auto_reorder_enabled, reorder_point, reorder_quantity, max_stock: max_stock ?? null, preferred_supplier: preferred_supplier ?? null, lead_time_days },
+        });
+        return res.json({ success: true, data: updated });
+      }
+    }
+
+    const setting = await prisma.inventory_reorder_settings.create({
+      data: {
+        medicine_id: medicine_id || null,
+        inventory_item_id: inventory_item_id || null,
+        auto_reorder_enabled,
+        reorder_point,
+        reorder_quantity,
+        max_stock: max_stock ?? null,
+        preferred_supplier: preferred_supplier ?? null,
+        lead_time_days,
+      },
+    });
+    res.status(201).json({ success: true, data: setting });
+  })
+);
+
+/**
+ * PUT /api/inventory/settings/:id
+ */
+router.put('/settings/:id',
+  requireRole([ROLES.FARMASI, ROLES.PROCUREMENT]),
+  asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const {
+      auto_reorder_enabled, reorder_point, reorder_quantity,
+      max_stock, preferred_supplier, lead_time_days,
+    } = req.body;
+
+    // Allow lookup by medicine_id or inventory_item_id as well
+    const existing = await prisma.inventory_reorder_settings.findFirst({
+      where: { OR: [{ id }, { medicine_id: id }, { inventory_item_id: id }] },
+    });
+    if (!existing) return res.status(404).json({ success: false, error: 'Settings tidak ditemukan' });
+
+    const updated = await prisma.inventory_reorder_settings.update({
+      where: { id: existing.id },
+      data: {
+        auto_reorder_enabled: auto_reorder_enabled ?? existing.auto_reorder_enabled,
+        reorder_point: reorder_point ?? existing.reorder_point,
+        reorder_quantity: reorder_quantity ?? existing.reorder_quantity,
+        max_stock: max_stock !== undefined ? (max_stock ?? null) : existing.max_stock,
+        preferred_supplier: preferred_supplier !== undefined ? (preferred_supplier ?? null) : existing.preferred_supplier,
+        lead_time_days: lead_time_days ?? existing.lead_time_days,
+      },
+    });
+    res.json({ success: true, data: updated });
   })
 );
 

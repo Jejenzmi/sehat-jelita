@@ -7,6 +7,7 @@
  */
 
 import axios from 'axios';
+import { satusehatBreaker } from '../utils/circuit-breaker.js';
 
 class SatuSehatService {
   constructor() {
@@ -48,6 +49,21 @@ class SatuSehatService {
       return this.accessToken;
     }
 
+    // Lazy-load credentials from DB if not set from env vars
+    if (!this.clientId || !this.clientSecret) {
+      const config = await this.getConfiguration();
+      if (config) {
+        this.clientId = config.client_id;
+        this.clientSecret = config.client_secret;
+        this.orgId = config.org_id;
+        this.env = config.environment || 'production';
+      }
+    }
+
+    if (!this.clientId || !this.clientSecret) {
+      throw new Error('Kredensial SATU SEHAT belum dikonfigurasi. Silakan isi di menu Pengaturan → Integrasi Eksternal.');
+    }
+
     try {
       const response = await axios.post(
         `${this.authUrl}?grant_type=client_credentials`,
@@ -83,12 +99,13 @@ class SatuSehatService {
     };
 
     try {
-      const response = await axios({
+      const response = await satusehatBreaker.fire(() => axios({
         method,
         url: `${this.baseUrl}${endpoint}`,
         headers,
-        data
-      });
+        data,
+        timeout: 15000,
+      }));
 
       return response.data;
     } catch (error) {
@@ -352,7 +369,7 @@ class SatuSehatService {
   // ==========================================
 
   /**
-   * Save SATU SEHAT Configuration
+   * Save SATU SEHAT Configuration to database AND update service instance
    */
   async saveConfiguration(config) {
     const { org_id, environment, client_id, client_secret } = config;
@@ -362,18 +379,21 @@ class SatuSehatService {
       throw new Error('environment tidak valid, harus salah satu dari: sandbox, staging, production');
     }
 
-    process.env.SATU_SEHAT_ORG_ID = org_id;
-    process.env.SATU_SEHAT_ENV = environment;
-    process.env.SATU_SEHAT_CLIENT_ID = client_id;
-    process.env.SATU_SEHAT_CLIENT_SECRET = client_secret;
+    // Persist to database so credentials survive restarts
+    const { prisma } = await import('../config/database.js');
+    await prisma.system_settings.upsert({
+      where: { setting_key: 'integration_satusehat' },
+      update: { setting_value: JSON.stringify({ enabled: true, org_id, environment, client_id, client_secret }) },
+      create: { setting_key: 'integration_satusehat', setting_value: JSON.stringify({ enabled: true, org_id, environment, client_id, client_secret }) }
+    });
 
-    // Update instance properties
+    // Update instance so current request uses new credentials immediately
     this.orgId = org_id;
     this.env = environment;
     this.clientId = client_id;
     this.clientSecret = client_secret;
 
-    // Invalidate cached token when credentials change
+    // Invalidate cached token so next call re-authenticates with new credentials
     this.accessToken = null;
     this.tokenExpiry = null;
 
@@ -381,22 +401,28 @@ class SatuSehatService {
   }
 
   /**
-   * Get SATU SEHAT Configuration (without sensitive credentials)
+   * Get SATU SEHAT Configuration — reads from DB first, falls back to env vars
    */
   async getConfiguration() {
+    try {
+      const { prisma } = await import('../config/database.js');
+      const setting = await prisma.system_settings.findUnique({
+        where: { setting_key: 'integration_satusehat' }
+      });
+      if (setting?.setting_value) {
+        const config = JSON.parse(setting.setting_value);
+        if (config.client_id && config.client_secret) return config;
+      }
+    } catch { /* fall through to env vars */ }
+
+    // Fallback: env vars
     const orgId = process.env.SATU_SEHAT_ORG_ID || null;
     const environment = process.env.SATU_SEHAT_ENV || null;
     const clientId = process.env.SATU_SEHAT_CLIENT_ID || null;
+    const clientSecret = process.env.SATU_SEHAT_CLIENT_SECRET || null;
 
-    if (!orgId || !environment || !clientId) {
-      return null;
-    }
-
-    return {
-      org_id: orgId,
-      environment: environment || 'sandbox',
-      client_id: clientId,
-    };
+    if (!clientId || !clientSecret) return null;
+    return { org_id: orgId, environment: environment || 'production', client_id: clientId, client_secret: clientSecret };
   }
 
   // ==========================================

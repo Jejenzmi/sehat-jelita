@@ -36,9 +36,10 @@ const VALID_BILLING_STATUSES = ['pending', 'partial', 'paid', 'cancelled', 'refu
  * Get all billings with filters
  */
 router.get('/', asyncHandler(async (req, res) => {
-  const { 
-    page = 1, 
-    limit = 20, 
+  const {
+    page = 1,
+    limit = 20,
+    cursor,         // cursor-based: last seen billing ID
     status,
     payment_type,
     date_from,
@@ -50,18 +51,19 @@ router.get('/', asyncHandler(async (req, res) => {
     throw new ApiError(400, `Invalid status. Must be one of: ${VALID_BILLING_STATUSES.join(', ')}`, 'INVALID_STATUS');
   }
 
-  const skip = (parseInt(page) - 1) * parseInt(limit);
-  const take = parseInt(limit);
+  const limitInt = Math.min(parseInt(limit) || 20, 100);
+  const useCursor = !!cursor;
+
+  const include = {
+    patients: { select: { id: true, medical_record_number: true, full_name: true } },
+    visits: { select: { id: true, visit_number: true, visit_type: true } },
+    billing_items: true
+  };
 
   const where = {
     ...(status && { status }),
     ...(payment_type && { payment_type }),
-    ...(date_from && date_to && {
-      billing_date: {
-        gte: new Date(date_from),
-        lte: new Date(date_to)
-      }
-    }),
+    ...(date_from && date_to && { billing_date: { gte: new Date(date_from), lte: new Date(date_to) } }),
     ...(search && {
       OR: [
         { invoice_number: { contains: search, mode: 'insensitive' } },
@@ -71,42 +73,30 @@ router.get('/', asyncHandler(async (req, res) => {
     })
   };
 
+  if (useCursor) {
+    const billings = await prisma.billings.findMany({
+      where, take: limitInt + 1, cursor: { id: cursor }, skip: 1,
+      orderBy: { billing_date: 'desc' }, include
+    });
+    const hasMore = billings.length > limitInt;
+    const items = hasMore ? billings.slice(0, limitInt) : billings;
+    return res.json({
+      success: true, data: items,
+      pagination: { limit: limitInt, nextCursor: hasMore ? items[items.length - 1].id : null, hasMore }
+    });
+  }
+
+  const pageInt = parseInt(page);
+  const skip = (pageInt - 1) * limitInt;
   const [billings, total] = await Promise.all([
-    prisma.billings.findMany({
-      where,
-      skip,
-      take,
-      orderBy: { billing_date: 'desc' },
-      include: {
-        patients: {
-          select: {
-            id: true,
-            medical_record_number: true,
-            full_name: true
-          }
-        },
-        visits: {
-          select: {
-            id: true,
-            visit_number: true,
-            visit_type: true
-          }
-        },
-        billing_items: true
-      }
-    }),
+    prisma.billings.findMany({ where, skip, take: limitInt, orderBy: { billing_date: 'desc' }, include }),
     prisma.billings.count({ where })
   ]);
 
   res.json({
     success: true,
     data: billings,
-    pagination: {
-      page: parseInt(page),
-      limit: parseInt(limit),
-      total,
-      total_pages: Math.ceil(total / take)
-    }
+    pagination: { page: pageInt, limit: limitInt, total, total_pages: Math.ceil(total / limitInt) }
   });
 }));
 
@@ -572,6 +562,252 @@ router.get('/next-invoice-number', asyncHandler(async (req, res) => {
     const seq = last ? parseInt(last.invoice_number.slice(-4), 10) + 1 : 1;
     res.json({ success: true, data: `${prefix}${String(seq).padStart(4, '0')}` });
   }
+}));
+
+// ── Billing Rule Engine ────────────────────────────────────────────────────────
+
+/**
+ * Apply active billing_rules to a set of raw items.
+ * Returns items with adjusted unit_price + a breakdown of applied rules.
+ *
+ * @param {object[]} items          - [{ item_type, item_name, quantity, unit_price }]
+ * @param {string}   payment_type   - bpjs | cash | insurance | corporate
+ * @param {string}   visit_type     - outpatient | inpatient | emergency
+ * @param {string|null} department_id
+ * @returns {{ adjustedItems, subtotal, discount, tax, total, rulesApplied }}
+ */
+async function applyBillingRules(items, payment_type, visit_type, department_id = null) {
+  const rules = await prisma.billing_rules.findMany({
+    where: {
+      is_active: true,
+      AND: [
+        { OR: [{ payment_type }, { payment_type: null }] },
+        { OR: [{ visit_type }, { visit_type: null }] },
+        { OR: [{ department_id }, { department_id: null }] },
+      ]
+    },
+    orderBy: { priority: 'desc' }
+  });
+
+  const tariffs   = rules.filter(r => r.rule_type === 'tariff');
+  const discounts = rules.filter(r => r.rule_type === 'discount');
+  const taxes     = rules.filter(r => r.rule_type === 'tax');
+
+  const rulesApplied = [];
+
+  // Step 1: Apply tariff overrides (replace unit_price if a tariff rule matches item_type)
+  const adjustedItems = items.map(item => {
+    const tariff = tariffs.find(r => !r.item_type || r.item_type === item.item_type);
+    if (tariff) {
+      const newPrice = tariff.amount_type === 'fixed'
+        ? Number(tariff.amount)
+        : item.unit_price * (1 - Number(tariff.amount) / 100);
+      rulesApplied.push({ rule: tariff.rule_name, type: 'tariff', item: item.item_type, original: item.unit_price, adjusted: newPrice });
+      return { ...item, unit_price: newPrice };
+    }
+    return item;
+  });
+
+  const subtotal = adjustedItems.reduce((sum, i) => sum + i.unit_price * i.quantity, 0);
+
+  // Step 2: Apply discounts (per matching item_type or all)
+  let totalDiscount = 0;
+  for (const disc of discounts) {
+    const applicableItems = adjustedItems.filter(i => !disc.item_type || disc.item_type === i.item_type);
+    const base = applicableItems.reduce((s, i) => s + i.unit_price * i.quantity, 0);
+    const amount = disc.amount_type === 'fixed' ? Number(disc.amount) : base * (Number(disc.amount) / 100);
+    totalDiscount += amount;
+    rulesApplied.push({ rule: disc.rule_name, type: 'discount', amount });
+  }
+
+  // Step 3: Apply taxes
+  let totalTax = 0;
+  for (const tax of taxes) {
+    const applicableItems = adjustedItems.filter(i => !tax.item_type || tax.item_type === i.item_type);
+    const base = applicableItems.reduce((s, i) => s + i.unit_price * i.quantity, 0);
+    const amount = tax.amount_type === 'fixed' ? Number(tax.amount) : base * (Number(tax.amount) / 100);
+    totalTax += amount;
+    rulesApplied.push({ rule: tax.rule_name, type: 'tax', amount });
+  }
+
+  const total = Math.max(0, subtotal - totalDiscount + totalTax);
+
+  return {
+    adjustedItems,
+    subtotal: Math.round(subtotal * 100) / 100,
+    discount: Math.round(totalDiscount * 100) / 100,
+    tax: Math.round(totalTax * 100) / 100,
+    total: Math.round(total * 100) / 100,
+    rulesApplied
+  };
+}
+
+/**
+ * GET /api/billing/rules/preview
+ * Preview billing rule application without creating a billing
+ */
+router.get('/rules/preview', requireRole(['admin', 'kasir', 'keuangan']), asyncHandler(async (req, res) => {
+  const { payment_type = 'cash', visit_type = 'outpatient', department_id } = req.query;
+  const items = req.body?.items || [];
+  const result = await applyBillingRules(items, payment_type, visit_type, department_id || null);
+  res.json({ success: true, data: result });
+}));
+
+/**
+ * POST /api/billing/generate/:visitId
+ * Auto-generate billing from visit services (prescriptions, lab, radiology)
+ * and apply billing rules based on payment_type + visit_type.
+ */
+router.post('/generate/:visitId', requireRole(['admin', 'kasir']), asyncHandler(async (req, res) => {
+  const { visitId } = req.params;
+
+  // Check existing billing
+  const existing = await prisma.billings.findFirst({ where: { visit_id: visitId } });
+  if (existing) {
+    throw new ApiError(409, 'Billing sudah ada untuk kunjungan ini. Gunakan endpoint edit untuk menambah item.', 'BILLING_EXISTS');
+  }
+
+  // Fetch visit with all related services
+  const visit = await prisma.visits.findUnique({
+    where: { id: visitId },
+    include: {
+      patients: true,
+      departments: true,
+      prescriptions: {
+        where: { status: { in: ['dispensed', 'ready'] } },
+        include: {
+          prescription_items: {
+            include: { medicines: { select: { name: true, price: true } } }
+          }
+        }
+      },
+      lab_orders: {
+        where: { status: { notIn: ['cancelled'] } },
+        include: {
+          lab_order_items: {
+            include: { lab_tests: { select: { test_name: true, price: true } } }
+          }
+        }
+      },
+      radiology_orders: {
+        where: { status: { notIn: ['cancelled'] } },
+        include: {
+          radiology_order_items: {
+            include: { radiology_procedures: { select: { procedure_name: true, price: true } } }
+          }
+        }
+      }
+    }
+  });
+
+  if (!visit) throw new ApiError(404, 'Kunjungan tidak ditemukan', 'VISIT_NOT_FOUND');
+
+  // Collect raw items
+  const rawItems = [];
+
+  // Consultation fee
+  rawItems.push({
+    item_type: 'konsultasi',
+    item_name: `Konsultasi - ${visit.departments?.name || 'Umum'}`,
+    quantity: 1,
+    unit_price: 0  // will be set by tariff rule
+  });
+
+  // Prescription / pharmacy items
+  for (const rx of visit.prescriptions || []) {
+    for (const item of rx.prescription_items || []) {
+      rawItems.push({
+        item_type: 'obat',
+        item_name: item.medicines?.name || item.medicine_name || 'Obat',
+        quantity: item.quantity || 1,
+        unit_price: Number(item.medicines?.price || item.unit_price || 0)
+      });
+    }
+  }
+
+  // Lab items
+  for (const order of visit.lab_orders || []) {
+    for (const item of order.lab_order_items || []) {
+      rawItems.push({
+        item_type: 'lab',
+        item_name: item.lab_tests?.test_name || item.test_name || 'Pemeriksaan Lab',
+        quantity: 1,
+        unit_price: Number(item.lab_tests?.price || 0)
+      });
+    }
+  }
+
+  // Radiology items
+  for (const order of visit.radiology_orders || []) {
+    for (const item of order.radiology_order_items || []) {
+      rawItems.push({
+        item_type: 'radiologi',
+        item_name: item.radiology_procedures?.procedure_name || 'Pemeriksaan Radiologi',
+        quantity: 1,
+        unit_price: Number(item.radiology_procedures?.price || 0)
+      });
+    }
+  }
+
+  const { adjustedItems, subtotal, discount, tax, total, rulesApplied } =
+    await applyBillingRules(rawItems, visit.payment_type || 'cash', visit.visit_type || 'outpatient', visit.department_id);
+
+  // Generate invoice number
+  let invoiceNumber;
+  try {
+    const result = await prisma.$queryRaw`SELECT generate_invoice_number() as inv`;
+    invoiceNumber = result[0].inv;
+  } catch {
+    const today = new Date();
+    const prefix = `INV${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, '0')}${String(today.getDate()).padStart(2, '0')}`;
+    const last = await prisma.billings.findFirst({
+      where: { invoice_number: { startsWith: prefix } },
+      orderBy: { invoice_number: 'desc' }
+    }).catch(() => null);
+    const seq = last ? parseInt(last.invoice_number.slice(-4), 10) + 1 : 1;
+    invoiceNumber = `${prefix}${String(seq).padStart(4, '0')}`;
+  }
+
+  const billing = await prisma.billings.create({
+    data: {
+      invoice_number: invoiceNumber,
+      patient_id: visit.patient_id,
+      visit_id: visitId,
+      payment_type: visit.payment_type || 'cash',
+      subtotal,
+      discount,
+      tax,
+      total,
+      notes: `Auto-generated. Rules applied: ${rulesApplied.map(r => r.rule).join(', ')}`,
+      created_by: req.user.id,
+      billing_items: {
+        create: adjustedItems.map(item => ({
+          item_type: item.item_type,
+          item_name: item.item_name,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          total_price: item.unit_price * item.quantity
+        }))
+      }
+    },
+    include: { billing_items: true }
+  });
+
+  await prisma.audit_logs.create({
+    data: {
+      table_name: 'billings',
+      record_id: billing.id,
+      action: 'AUTO_GENERATE',
+      user_id: req.user.id,
+      new_data: { visitId, rulesApplied, invoiceNumber }
+    }
+  }).catch(() => {});
+
+  res.status(201).json({
+    success: true,
+    message: 'Billing berhasil dibuat otomatis dari data kunjungan',
+    data: { billing, rulesApplied }
+  });
 }));
 
 export default router;

@@ -8,11 +8,35 @@ import bcrypt from 'bcryptjs';
 import { randomBytes } from 'node:crypto';
 import { z } from 'zod';
 import { prisma } from '../config/database.js';
-import { generateTokens, refreshAccessToken, authenticateToken } from '../middleware/auth.middleware.js';
+import { generateTokens, refreshAccessToken, authenticateToken, revokeTokens, revokeAllUserTokens } from '../middleware/auth.middleware.js';
 import { authRateLimiter } from '../middleware/rateLimiter.js';
 import { asyncHandler, ApiError } from '../middleware/errorHandler.js';
+import { sendEmail, emailTemplates } from '../services/email.service.js';
 
 const router = Router();
+
+const isProd = process.env.NODE_ENV === 'production';
+
+// Cookie options for httpOnly tokens (XSS-safe)
+const COOKIE_BASE = {
+  httpOnly: true,
+  secure: isProd,       // HTTPS only in production
+  sameSite: isProd ? 'strict' : 'lax',
+  path: '/',
+};
+
+const ACCESS_COOKIE_OPTS  = { ...COOKIE_BASE, maxAge: 15 * 60 * 1000 };         // 15 min
+const REFRESH_COOKIE_OPTS = { ...COOKIE_BASE, maxAge: 30 * 24 * 60 * 60 * 1000 }; // 30 days
+
+function setAuthCookies(res, tokens) {
+  res.cookie('accessToken',  tokens.accessToken,  ACCESS_COOKIE_OPTS);
+  res.cookie('refreshToken', tokens.refreshToken, REFRESH_COOKIE_OPTS);
+}
+
+function clearAuthCookies(res) {
+  res.clearCookie('accessToken',  { ...COOKIE_BASE });
+  res.clearCookie('refreshToken', { ...COOKIE_BASE });
+}
 
 // In-memory store for failed login attempts: email -> { count, lockedUntil }
 // NOTE: This resets on server restart and does not work across multiple
@@ -82,11 +106,13 @@ router.post('/login', authRateLimiter, asyncHandler(async (req, res) => {
   loginAttempts.delete(email);
 
   // Generate tokens
-  const tokens = generateTokens({
-    id: profile.user_id,
-    email: profile.email,
-    roles: profile.user_roles.map(r => r.role)
-  });
+  const tokens = await generateTokens(
+    { id: profile.user_id, email: profile.email, roles: profile.user_roles.map(r => r.role) },
+    { userAgent: req.headers['user-agent'], ipAddress: req.ip }
+  );
+
+  // Update last_login
+  await prisma.profiles.update({ where: { user_id: profile.user_id }, data: { last_login: new Date() } }).catch(() => {});
 
   // Log audit
   await prisma.audit_logs.create({
@@ -98,6 +124,11 @@ router.post('/login', authRateLimiter, asyncHandler(async (req, res) => {
     }
   });
 
+  // Set httpOnly cookies (XSS-safe)
+  setAuthCookies(res, tokens);
+
+  // Also include tokens in response body for SPA/mobile clients still using localStorage
+  // Frontend should prefer cookie-based flow; body tokens are for backward compatibility
   res.json({
     success: true,
     data: {
@@ -163,29 +194,38 @@ router.post('/register', authRateLimiter, asyncHandler(async (req, res) => {
 
 /**
  * POST /api/auth/refresh
- * Refresh access token using refresh token
+ * Rotate refresh token — reads from cookie or body
  */
 router.post('/refresh', asyncHandler(async (req, res) => {
-  const { refreshToken } = req.body;
+  // Accept refresh token from cookie (preferred) or request body (legacy)
+  const refreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
+  if (!refreshToken) throw new ApiError(400, 'Refresh token diperlukan', 'MISSING_TOKEN');
 
-  if (!refreshToken) {
-    throw new ApiError(400, 'Refresh token diperlukan', 'MISSING_TOKEN');
+  try {
+    const tokens = await refreshAccessToken(refreshToken, {
+      userAgent: req.headers['user-agent'],
+      ipAddress: req.ip
+    });
+    // Rotate cookies too
+    setAuthCookies(res, tokens);
+    res.json({ success: true, data: tokens });
+  } catch (err) {
+    clearAuthCookies(res);
+    throw new ApiError(401, err.message, 'INVALID_REFRESH_TOKEN');
   }
-
-  const tokens = await refreshAccessToken(refreshToken);
-
-  res.json({
-    success: true,
-    data: tokens
-  });
 }));
 
 /**
  * POST /api/auth/logout
- * User logout (invalidate token on client side)
+ * Blacklist access token + revoke refresh token
  */
 router.post('/logout', authenticateToken, asyncHandler(async (req, res) => {
-  // Log audit
+  // Accept refresh token from cookie or body
+  const refreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
+
+  // Blacklist access token + revoke refresh token in DB
+  await revokeTokens(req._rawToken, refreshToken || null);
+
   await prisma.audit_logs.create({
     data: {
       table_name: 'auth',
@@ -193,12 +233,23 @@ router.post('/logout', authenticateToken, asyncHandler(async (req, res) => {
       user_id: req.user.id,
       new_data: { logoutTime: new Date().toISOString() }
     }
-  });
+  }).catch(() => {});
 
-  res.json({
-    success: true,
-    message: 'Logout berhasil'
-  });
+  // Clear httpOnly cookies
+  clearAuthCookies(res);
+
+  res.json({ success: true, message: 'Logout berhasil' });
+}));
+
+/**
+ * POST /api/auth/logout-all
+ * Force logout from all devices (revoke all refresh tokens)
+ */
+router.post('/logout-all', authenticateToken, asyncHandler(async (req, res) => {
+  await revokeAllUserTokens(req.user.id);
+  await revokeTokens(req._rawToken, null);
+
+  res.json({ success: true, message: 'Logout dari semua perangkat berhasil' });
 }));
 
 /**
@@ -264,10 +315,10 @@ router.post('/change-password', authenticateToken, asyncHandler(async (req, res)
     data: { password_hash: newHash }
   });
 
-  res.json({
-    success: true,
-    message: 'Password berhasil diubah'
-  });
+  // Revoke all existing refresh tokens (force re-login everywhere)
+  await revokeAllUserTokens(req.user.id);
+
+  res.json({ success: true, message: 'Password berhasil diubah. Silakan login kembali.' });
 }));
 
 /**
@@ -295,8 +346,11 @@ router.post('/forgot-password', authRateLimiter, asyncHandler(async (req, res) =
       }
     });
 
-    // TODO: Send email with reset link
-    // await emailService.sendPasswordResetEmail(email, resetToken);
+    const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+    const template = emailTemplates.passwordReset(resetUrl, profile.full_name || email);
+    await sendEmail({ to: email, ...template }).catch(err => {
+      console.error('Failed to send password reset email:', err);
+    });
   }
 
   // Always return success to prevent email enumeration

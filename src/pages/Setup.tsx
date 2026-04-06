@@ -16,26 +16,42 @@ export default function Setup() {
       return;
     }
 
-    // If setup is already completed, go to dashboard
-    if (!isLoading && isSetupCompleted) {
+    // If setup is already completed, go directly to dashboard
+    if (!isLoading && isSetupCompleted === true) {
       navigate("/");
     }
   }, [user, authLoading, isSetupCompleted, isLoading, navigate]);
 
   const handleComplete = () => {
-    navigate("/");
+    // Setup selesai → langsung masuk dashboard
+    navigate("/", { replace: true });
   };
 
   if (authLoading || isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center space-y-3">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary mx-auto" />
+          <p className="text-sm text-muted-foreground">Memeriksa konfigurasi sistem...</p>
+        </div>
       </div>
     );
   }
 
   if (!user) {
     return null;
+  }
+
+  // Jika setup sudah selesai, tampilkan loading sementara navigate berlangsung
+  if (isSetupCompleted === true) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center space-y-3">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary mx-auto" />
+          <p className="text-sm text-muted-foreground">Masuk ke dashboard...</p>
+        </div>
+      </div>
+    );
   }
 
   return <SetupWizard onComplete={handleComplete} />;

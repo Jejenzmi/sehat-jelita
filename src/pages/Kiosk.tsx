@@ -21,8 +21,22 @@ import {
   Mail,
   MapPin,
 } from "lucide-react";
-import { db } from "@/lib/db";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
+const FETCH_OPTS: RequestInit = { credentials: 'include', headers: { 'Content-Type': 'application/json' } };
+async function apiFetch<T>(path: string): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, FETCH_OPTS);
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error || res.statusText);
+  return (json.data ?? json) as T;
+}
+async function apiPost<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, { ...FETCH_OPTS, method: 'POST', body: JSON.stringify(body) });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error || res.statusText);
+  return (json.data ?? json) as T;
+}
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import simrsZenLogo from "@/assets/simrs-zen-logo.png";
@@ -40,8 +54,8 @@ interface ServiceType {
 
 interface Department {
   id: string;
-  name: string;
-  code: string;
+  department_name: string;
+  department_code: string;
 }
 
 interface Patient {
@@ -58,7 +72,7 @@ interface Appointment {
   appointment_time: string;
   status: string;
   doctors: { full_name: string } | null;
-  departments: { name: string } | null;
+  departments: { department_name: string } | null;
 }
 
 const IDLE_TIMEOUT = 60000;
@@ -133,72 +147,35 @@ export default function Kiosk() {
   // Fetch departments
   const { data: departments = [] } = useQuery({
     queryKey: ["kiosk-departments"],
-    queryFn: async () => {
-      const { data, error } = await db.from("departments").select("id, name, code").eq("is_active", true).order("name");
-      if (error) throw error;
-      return data as Department[];
-    },
+    queryFn: () => apiFetch<Department[]>('/admin/departments?is_active=true'),
   });
 
   // Search patients
   const { data: patients = [], isLoading: searchingPatients } = useQuery({
     queryKey: ["kiosk-patient-search", searchQuery],
-    queryFn: async () => {
-      if (!searchQuery || searchQuery.length < 3) return [];
-      const { data, error } = await db
-        .from("patients")
-        .select("id, full_name, medical_record_number, nik, phone")
-        .or(`medical_record_number.ilike.%${searchQuery}%,nik.ilike.%${searchQuery}%,phone.ilike.%${searchQuery}%`)
-        .limit(10);
-      if (error) throw error;
-      return data as Patient[];
-    },
+    queryFn: () => apiFetch<Patient[]>(`/patients?search=${encodeURIComponent(searchQuery)}&limit=10`),
     enabled: searchQuery.length >= 3,
   });
 
   // Get today's appointments
   const { data: appointments = [] } = useQuery({
     queryKey: ["kiosk-appointments", selectedPatient?.id],
-    queryFn: async () => {
-      if (!selectedPatient) return [];
-      const today = new Date().toISOString().split("T")[0];
-      const { data, error } = await db
-        .from("appointments")
-        .select("id, appointment_date, appointment_time, status, doctors (full_name), departments (name)")
-        .eq("patient_id", selectedPatient.id)
-        .eq("appointment_date", today)
-        .in("status", ["confirmed", "scheduled"]);
-      if (error) throw error;
-      return data as Appointment[];
-    },
+    queryFn: () => apiFetch<Appointment[]>(`/queue/appointments?patient_id=${selectedPatient!.id}`),
     enabled: !!selectedPatient,
   });
 
   // Generate queue ticket
   const generateTicket = useMutation({
-    mutationFn: async () => {
+    mutationFn: () => {
       if (!selectedPatient || !selectedService) throw new Error("Data tidak lengkap");
-      const today = new Date().toISOString().split("T")[0];
-      const { data: existingTickets } = await db
-        .from("queue_tickets").select("ticket_number")
-        .eq("queue_date", today).eq("service_type", selectedService.id)
-        .order("created_at", { ascending: false }).limit(1);
-      let nextNumber = 1;
-      if (existingTickets && existingTickets.length > 0) {
-        const lastNum = parseInt(existingTickets[0].ticket_number.replace(/\D/g, "")) || 0;
-        nextNumber = lastNum + 1;
-      }
-      const ticketNumber = `${selectedService.code}${String(nextNumber).padStart(3, "0")}`;
-      const { error } = await db.from("queue_tickets").insert({
-        ticket_number: ticketNumber, patient_id: selectedPatient.id,
-        department_id: selectedDepartment?.id || null, service_type: selectedService.id,
-        queue_date: today, status: "waiting", priority: 0,
+      return apiPost<{ ticket_number: string }>('/queue', {
+        patient_id: selectedPatient.id,
+        department_id: selectedDepartment?.id || null,
+        service_type: selectedService.id,
       });
-      if (error) throw error;
-      return ticketNumber;
     },
-    onSuccess: (ticketNumber) => {
-      setGeneratedTicket(ticketNumber);
+    onSuccess: (data) => {
+      setGeneratedTicket(data.ticket_number);
       setStep("ticket");
       queryClient.invalidateQueries({ queryKey: ["queue-tickets"] });
     },
@@ -206,31 +183,10 @@ export default function Kiosk() {
 
   // Check-in appointment
   const checkInAppointment = useMutation({
-    mutationFn: async (appointmentId: string) => {
-      const appointment = appointments.find(a => a.id === appointmentId);
-      if (!appointment || !selectedPatient) throw new Error("Data tidak ditemukan");
-      const today = new Date().toISOString().split("T")[0];
-      const { data: existingTickets } = await db
-        .from("queue_tickets").select("ticket_number")
-        .eq("queue_date", today).eq("service_type", "rawat_jalan")
-        .order("created_at", { ascending: false }).limit(1);
-      let nextNumber = 1;
-      if (existingTickets && existingTickets.length > 0) {
-        const lastNum = parseInt(existingTickets[0].ticket_number.replace(/\D/g, "")) || 0;
-        nextNumber = lastNum + 1;
-      }
-      const ticketNumber = `RJ${String(nextNumber).padStart(3, "0")}`;
-      const { error: queueError } = await db.from("queue_tickets").insert({
-        ticket_number: ticketNumber, patient_id: selectedPatient.id,
-        service_type: "rawat_jalan", queue_date: today, status: "waiting",
-        priority: 1, notes: `Check-in dari booking - ${appointment.doctors?.full_name || ""}`,
-      });
-      if (queueError) throw queueError;
-      await db.from("appointments").update({ status: "checked_in" }).eq("id", appointmentId);
-      return ticketNumber;
-    },
-    onSuccess: (ticketNumber) => {
-      setGeneratedTicket(ticketNumber);
+    mutationFn: (appointmentId: string) =>
+      apiPost<{ ticket_number: string }>(`/queue/checkin/${appointmentId}`, {}),
+    onSuccess: (data) => {
+      setGeneratedTicket(data.ticket_number);
       setStep("ticket");
       queryClient.invalidateQueries({ queryKey: ["queue-tickets"] });
       queryClient.invalidateQueries({ queryKey: ["kiosk-appointments"] });
@@ -410,7 +366,7 @@ export default function Kiosk() {
                   <Card key={apt.id} className="cursor-pointer hover:shadow-lg hover:border-teal-400 transition-all rounded-2xl" onClick={() => checkInAppointment.mutate(apt.id)}>
                     <CardContent className="p-6 flex items-center justify-between">
                       <div>
-                        <p className="text-xl font-bold">{apt.departments?.name || "Poli"}</p>
+                        <p className="text-xl font-bold">{apt.departments?.department_name || "Poli"}</p>
                         <p className="text-muted-foreground">Dokter: {apt.doctors?.full_name || "-"} | Jam: {apt.appointment_time}</p>
                       </div>
                       <Button size="lg" className="rounded-xl bg-teal-500 hover:bg-teal-600">
@@ -429,8 +385,8 @@ export default function Kiosk() {
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 {departments.map(dept => (
                   <button key={dept.id} className="bg-white/10 backdrop-blur border border-white/20 rounded-2xl p-6 text-center text-white hover:bg-white/20 hover:scale-[1.03] transition-all cursor-pointer" onClick={() => handleDepartmentSelect(dept)}>
-                    <h3 className="text-lg font-bold">{dept.name}</h3>
-                    <Badge className="mt-2 bg-white/20 text-white border-white/30">{dept.code}</Badge>
+                    <h3 className="text-lg font-bold">{dept.department_name}</h3>
+                    <Badge className="mt-2 bg-white/20 text-white border-white/30">{dept.department_code}</Badge>
                   </button>
                 ))}
               </div>
@@ -452,7 +408,7 @@ export default function Kiosk() {
                     ["Nama Pasien", selectedPatient?.full_name],
                     ["No. RM", selectedPatient?.medical_record_number],
                     ["Layanan", selectedService?.name],
-                    ...(selectedDepartment ? [["Poli/Unit", selectedDepartment.name]] : []),
+                    ...(selectedDepartment ? [["Poli/Unit", selectedDepartment.department_name]] : []),
                     ["Tanggal", format(new Date(), "dd MMMM yyyy", { locale: id })],
                   ].map(([label, val]) => (
                     <div key={label as string} className="flex justify-between text-lg">
@@ -488,7 +444,7 @@ export default function Kiosk() {
                   <p><strong>Nama:</strong> {selectedPatient?.full_name}</p>
                   <p><strong>No. RM:</strong> {selectedPatient?.medical_record_number}</p>
                   <p><strong>Layanan:</strong> {selectedService?.name}</p>
-                  {selectedDepartment && <p><strong>Poli:</strong> {selectedDepartment.name}</p>}
+                  {selectedDepartment && <p><strong>Poli:</strong> {selectedDepartment.department_name}</p>}
                   <p><strong>Tanggal:</strong> {format(new Date(), "dd MMMM yyyy HH:mm", { locale: id })}</p>
                 </div>
                 <p className="text-muted-foreground mb-6 print:hidden">Silakan menunggu nomor antrian Anda dipanggil</p>

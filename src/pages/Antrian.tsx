@@ -1,18 +1,32 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Users, ChevronRight, Volume2, Pause, Play, SkipForward, RefreshCw, Monitor } from "lucide-react";
-import { db } from "@/lib/db";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
+const FETCH_OPTS: RequestInit = { credentials: 'include', headers: { 'Content-Type': 'application/json' } };
+async function apiFetch<T>(path: string): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, FETCH_OPTS);
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error || res.statusText);
+  return (json.data ?? json) as T;
+}
+async function apiPatch<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, { ...FETCH_OPTS, method: 'PATCH', body: JSON.stringify(body) });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error || res.statusText);
+  return (json.data ?? json) as T;
+}
+
 interface Department {
   id: string;
-  name: string;
-  code: string;
+  department_name: string;
+  department_code: string;
 }
 
 interface QueueTicket {
@@ -48,86 +62,34 @@ export default function Antrian() {
   // Fetch departments
   const { data: departments = [] } = useQuery({
     queryKey: ["departments"],
-    queryFn: async () => {
-      const { data, error } = await db
-        .from("departments")
-        .select("id, name, code")
-        .eq("is_active", true)
-        .order("name");
-      if (error) throw error;
-      return data as Department[];
-    },
+    queryFn: () => apiFetch<Department[]>('/admin/departments?is_active=true'),
   });
 
-  // Fetch queue tickets for today
+  // Fetch queue tickets for today (poll every 10s instead of realtime)
   const { data: queueTickets = [], isLoading } = useQuery({
     queryKey: ["queue-tickets", selectedServiceType, selectedDeptId],
-    queryFn: async () => {
-      const today = new Date().toISOString().split("T")[0];
-      let query = db
-        .from("queue_tickets")
-        .select(`
-          *,
-          patients (full_name, medical_record_number)
-        `)
-        .eq("queue_date", today)
-        .eq("service_type", selectedServiceType)
-        .order("priority", { ascending: false })
-        .order("created_at", { ascending: true });
-
-      if (selectedDeptId) {
-        query = query.eq("department_id", selectedDeptId);
-      }
-
-      const { data, error } = await query;
-      if (error) throw error;
-      return data as QueueTicket[];
+    queryFn: () => {
+      const p = new URLSearchParams({ visit_type: selectedServiceType });
+      if (selectedDeptId) p.set('department_id', selectedDeptId);
+      return apiFetch<QueueTicket[]>(`/queue/today?${p}`);
     },
+    refetchInterval: 10_000,
   });
-
-  // Real-time subscription for queue updates
-  useEffect(() => {
-    const channel = db
-      .channel("queue-realtime")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "queue_tickets",
-        },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ["queue-tickets"] });
-        }
-      )
-      .subscribe();
-
-    return () => {
-      db.removeChannel(channel);
-    };
-  }, [queryClient]);
 
   // Update queue status mutation
   const updateQueueStatus = useMutation({
-    mutationFn: async ({ ticketId, status, calledAt, servedAt, completedAt }: {
+    mutationFn: ({ ticketId, status, calledAt, servedAt, completedAt }: {
       ticketId: string;
       status: string;
       calledAt?: string;
       servedAt?: string;
       completedAt?: string;
-    }) => {
-      const updates: any = { status };
-      if (calledAt) updates.called_at = calledAt;
-      if (servedAt) updates.served_at = servedAt;
-      if (completedAt) updates.completed_at = completedAt;
-
-      const { error } = await db
-        .from("queue_tickets")
-        .update(updates)
-        .eq("id", ticketId);
-
-      if (error) throw error;
-    },
+    }) => apiPatch(`/queue/${ticketId}/status`, {
+      status,
+      called_at: calledAt,
+      served_at: servedAt,
+      completed_at: completedAt,
+    }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["queue-tickets"] });
     },

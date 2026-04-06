@@ -22,7 +22,8 @@ const router = Router();
 router.get('/employees',
   requireRole([ROLES.HRD, ROLES.MANAJEMEN]),
   asyncHandler(async (req, res) => {
-    const { departmentId, status, search, page = 1, limit = 50 } = req.query;
+    const { departmentId, status, search, cursor, page = 1, limit = 50 } = req.query;
+    const take = Math.min(parseInt(limit), 100);
 
     const where = {};
     if (departmentId) where.department_id = departmentId;
@@ -35,21 +36,36 @@ router.get('/employees',
       ];
     }
 
+    const include = {
+      departments: { select: { id: true, department_name: true } },
+      profiles: { select: { email: true, avatar_url: true } }
+    };
+
+    // Cursor-based pagination
+    if (cursor) {
+      const employees = await prisma.employees.findMany({
+        where: { ...where, id: { gt: cursor } },
+        take: take + 1,
+        orderBy: { id: 'asc' },
+        include,
+      });
+      const hasMore = employees.length > take;
+      if (hasMore) employees.pop();
+      return res.json({
+        success: true,
+        data: employees,
+        meta: { next_cursor: hasMore ? employees[employees.length - 1]?.id : null, has_more: hasMore, limit: take },
+      });
+    }
+
+    // Offset pagination (backward compatible)
+    const skip = (parseInt(page) - 1) * take;
     const [employees, total] = await Promise.all([
-      prisma.employees.findMany({
-        where,
-        include: {
-          departments: { select: { id: true, department_name: true } },
-          profiles: { select: { email: true, avatar_url: true } }
-        },
-        orderBy: { full_name: 'asc' },
-        skip: (page - 1) * limit,
-        take: parseInt(limit)
-      }),
+      prisma.employees.findMany({ where, include, orderBy: { full_name: 'asc' }, skip, take }),
       prisma.employees.count({ where })
     ]);
 
-    res.json({ success: true, data: employees, pagination: { page: parseInt(page), limit: parseInt(limit), total } });
+    res.json({ success: true, data: employees, pagination: { page: parseInt(page), limit: take, total } });
   })
 );
 

@@ -1,7 +1,26 @@
 import { useState } from "react";
 import { useWorkShifts } from "@/hooks/useHRData";
-import { db } from "@/lib/db";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
+
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
+const FETCH_OPTS: RequestInit = { credentials: 'include', headers: { 'Content-Type': 'application/json' } };
+async function apiPost<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, { ...FETCH_OPTS, method: 'POST', body: JSON.stringify(body) });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error || res.statusText);
+  return (json.data ?? json) as T;
+}
+async function apiPut<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, { ...FETCH_OPTS, method: 'PUT', body: JSON.stringify(body) });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error || res.statusText);
+  return (json.data ?? json) as T;
+}
+async function apiDelete(path: string): Promise<void> {
+  const res = await fetch(`${API_BASE}${path}`, { ...FETCH_OPTS, method: 'DELETE' });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error || res.statusText);
+}
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -46,8 +65,7 @@ export function ShiftManagementTab() {
 
   const addShift = useMutation({
     mutationFn: async (data: ShiftFormData) => {
-      const { error } = await db.from("work_shifts").insert(data);
-      if (error) throw error;
+      await apiPost('/hr/shifts', data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["work-shifts"] });
@@ -61,8 +79,7 @@ export function ShiftManagementTab() {
 
   const updateShift = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<ShiftFormData> }) => {
-      const { error } = await db.from("work_shifts").update(data).eq("id", id);
-      if (error) throw error;
+      await apiPut(`/hr/shifts/${id}`, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["work-shifts"] });
@@ -76,8 +93,7 @@ export function ShiftManagementTab() {
 
   const deleteShift = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await db.from("work_shifts").delete().eq("id", id);
-      if (error) throw error;
+      await apiDelete(`/hr/shifts/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["work-shifts"] });

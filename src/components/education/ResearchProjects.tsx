@@ -10,9 +10,30 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Edit, FlaskConical, FileCheck, Clock, CheckCircle } from "lucide-react";
-import { db } from "@/lib/db";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
+const FETCH_OPTS: RequestInit = { credentials: 'include', headers: { 'Content-Type': 'application/json' } };
+
+async function apiFetch<T>(path: string): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, FETCH_OPTS);
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error || res.statusText);
+  return (json.data ?? json) as T;
+}
+async function apiPost<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, { ...FETCH_OPTS, method: 'POST', body: JSON.stringify(body) });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error || res.statusText);
+  return (json.data ?? json) as T;
+}
+async function apiPut<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, { ...FETCH_OPTS, method: 'PUT', body: JSON.stringify(body) });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error || res.statusText);
+  return (json.data ?? json) as T;
+}
 
 interface ResearchProject {
   id: string;
@@ -62,17 +83,15 @@ export default function ResearchProjects() {
   }, []);
 
   const fetchData = async () => {
-    const [projectsRes, doctorsRes, deptsRes] = await Promise.all([
-      db.from("research_projects")
-        .select("*, doctors:principal_investigator_id(full_name), departments(name)")
-        .order("created_at", { ascending: false }),
-      db.from("doctors").select("id, full_name").eq("is_active", true),
-      db.from("departments").select("id, name").eq("is_active", true)
-    ]);
-    
-    if (projectsRes.data) setProjects(projectsRes.data as any);
-    if (doctorsRes.data) setDoctors(doctorsRes.data as any);
-    if (deptsRes.data) setDepartments(deptsRes.data);
+    try {
+      const projectsData = await apiFetch<ResearchProject[]>('/education/research');
+      setProjects(Array.isArray(projectsData) ? projectsData as any : []);
+      // Doctors and departments are not part of this endpoint; default to empty arrays
+      setDoctors([]);
+      setDepartments([]);
+    } catch (error: any) {
+      console.error("Error fetching research projects:", error);
+    }
   };
 
   const handleSubmit = async () => {
@@ -88,12 +107,10 @@ export default function ResearchProjects() {
       };
 
       if (editingProject) {
-        const { error } = await db.from("research_projects").update(payload).eq("id", editingProject.id);
-        if (error) throw error;
+        await apiPut(`/education/research/${editingProject.id}`, payload);
         toast({ title: "Berhasil", description: "Proyek penelitian berhasil diperbarui" });
       } else {
-        const { error } = await db.from("research_projects").insert(payload);
-        if (error) throw error;
+        await apiPost('/education/research', payload);
         toast({ title: "Berhasil", description: "Proyek penelitian berhasil ditambahkan" });
       }
 

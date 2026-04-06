@@ -10,9 +10,13 @@ import { requireRole, checkMenuAccess } from '../middleware/role.middleware.js';
 import { externalApiLimiter } from '../middleware/rateLimiter.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
 import EklaimIDRGService from '../services/eklaim-idrg.service.js';
+import { MemoryQueue } from '../utils/queue.js';
+import { prisma } from '../config/database.js';
+const bpjsQueue = new MemoryQueue('bpjs-sync', async (job) => {
+  await import('../workers/bpjs.worker.js').then(w => w.processBpjsJob(job));
+});
 
 const router = Router();
-
 router.use(checkMenuAccess('bpjs'));
 router.use(externalApiLimiter);
 
@@ -180,8 +184,10 @@ router.post('/claim/reedit', requireRole(['admin', 'koder']), asyncHandler(async
 
 /** POST /api/eklaim/claim/send - #20 CLAIM SEND */
 router.post('/claim/send', requireRole(['admin', 'koder', 'keuangan']), asyncHandler(async (req, res) => {
-  const result = await eklaimService.send('claim_send', req.body);
-  res.json({ success: true, data: result });
+  // Push the heavy claim send request into a background processing queue
+  const job = await bpjsQueue.add('claim-send-idrg', req.body);
+  
+  res.json({ success: true, message: 'Submission klaim masuk antrean latar belakang', jobId: job.id });
 }));
 
 /** POST /api/eklaim/claim/cetak - #26 CETAK KLAIM */
@@ -248,6 +254,118 @@ router.post('/invoke', requireRole(['admin', 'dokter', 'registrasi', 'koder', 'k
   } catch (error) {
     res.status(502).json({ success: false, error: error.message });
   }
+}));
+
+// ============================================
+// DRG CODES (local reference table)
+// ============================================
+
+/**
+ * GET /api/eklaim/drg-codes?limit=100&search=
+ */
+router.get('/drg-codes', asyncHandler(async (req, res) => {
+  const { search, limit = '100' } = req.query;
+  const where = search
+    ? { OR: [
+        { drg_code: { contains: search, mode: 'insensitive' } },
+        { drg_name: { contains: search, mode: 'insensitive' } },
+      ] }
+    : {};
+  const codes = await prisma.drg_codes.findMany({
+    where,
+    orderBy: [{ drg_code: 'asc' }, { severity_level: 'asc' }],
+    take: parseInt(limit),
+  });
+  res.json({ success: true, data: codes });
+}));
+
+/**
+ * GET /api/eklaim/group?icd=A09&hospital_class=A&regional=1
+ * Simple local grouper: find a DRG by partial ICD prefix match.
+ */
+router.get('/group', asyncHandler(async (req, res) => {
+  const { icd = '', hospital_class = 'A' } = req.query;
+
+  // Map ICD chapter letter to DRG code prefix (rough approximation)
+  const CHAPTER_MAP = {
+    A: 'A', B: 'A', C: 'C', D: 'C', E: 'E', G: 'I', H: 'I',
+    I: 'I', J: 'J', K: 'K', M: 'M', N: 'N', O: 'Z', P: 'Z',
+    Q: 'Q', R: 'R', S: 'S', T: 'S',
+  };
+  const chapter = String(icd).charAt(0).toUpperCase();
+  const prefix = CHAPTER_MAP[chapter] || chapter;
+
+  // Class multipliers
+  const classMultiplier = { A: 1.0, B: 0.85, C: 0.75, D: 0.65 }[hospital_class] ?? 1.0;
+
+  const drg = await prisma.drg_codes.findFirst({
+    where: { drg_code: { startsWith: prefix } },
+    orderBy: { severity_level: 'asc' },
+  });
+
+  const baseTariff = drg ? Number(drg.national_tariff) * classMultiplier : 5000000;
+
+  res.json({ success: true, data: { drg, tariff: Math.round(baseTariff) } });
+}));
+
+// ============================================
+// INACBG CALCULATION HISTORY
+// ============================================
+
+/**
+ * GET /api/eklaim/inacbg-calculations?limit=20
+ */
+router.get('/inacbg-calculations', asyncHandler(async (req, res) => {
+  const { limit = '20' } = req.query;
+  const rows = await prisma.inacbg_calculation_history.findMany({
+    orderBy: { calculated_at: 'desc' },
+    take: parseInt(limit),
+  });
+  // Map to CalculationHistory shape expected by INACBGGrouper
+  const data = rows.map(r => ({
+    id: r.id,
+    drg_code: r.drg_code || '',
+    drg_description: r.drg_description || '',
+    primary_diagnosis: r.primary_diagnosis || '',
+    final_tariff: r.final_tariff ? Number(r.final_tariff) : 0,
+    hospital_cost: r.hospital_cost ? Number(r.hospital_cost) : 0,
+    variance: r.variance ? Number(r.variance) : 0,
+    calculated_at: r.calculated_at,
+  }));
+  res.json({ success: true, data });
+}));
+
+/**
+ * POST /api/eklaim/inacbg-calculations
+ */
+router.post('/inacbg-calculations', asyncHandler(async (req, res) => {
+  const {
+    drg_code, drg_description, severity_level = 1,
+    los_actual, los_grouper,
+    primary_diagnosis, secondary_diagnoses = [], procedures = [],
+    base_tariff, adjustment_factor, final_tariff,
+    hospital_cost, variance,
+  } = req.body;
+
+  const record = await prisma.inacbg_calculation_history.create({
+    data: {
+      drg_code: drg_code || null,
+      drg_description: drg_description || null,
+      severity_level: parseInt(severity_level) || 1,
+      los_actual: los_actual ? parseInt(los_actual) : null,
+      los_grouper: los_grouper ? parseInt(los_grouper) : null,
+      primary_diagnosis: primary_diagnosis || null,
+      secondary_diagnoses: Array.isArray(secondary_diagnoses) ? secondary_diagnoses : [],
+      procedures: Array.isArray(procedures) ? procedures : [],
+      base_tariff: base_tariff ? parseFloat(base_tariff) : null,
+      adjustment_factor: adjustment_factor ? parseFloat(adjustment_factor) : null,
+      final_tariff: final_tariff ? parseFloat(final_tariff) : null,
+      hospital_cost: hospital_cost ? parseFloat(hospital_cost) : null,
+      variance: variance ? parseFloat(variance) : null,
+      calculated_by: req.user?.id || null,
+    },
+  });
+  res.status(201).json({ success: true, data: record });
 }));
 
 export default router;
