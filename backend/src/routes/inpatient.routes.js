@@ -40,7 +40,7 @@ router.get('/admissions',
     const { wardId, status, doctorId, page = 1, limit = 50 } = req.query;
 
     const where = { discharge_date: null };
-    if (wardId) where.rooms = { ward_id: wardId };
+    if (wardId) where.rooms = { department_id: wardId };
     if (status) where.status = status;
     if (doctorId) where.attending_doctor_id = doctorId;
 
@@ -53,7 +53,7 @@ router.get('/admissions',
               id: true,
               medical_record_number: true,
               full_name: true,
-              date_of_birth: true,
+              birth_date: true,
               gender: true,
               blood_type: true,
               allergies: true
@@ -61,7 +61,7 @@ router.get('/admissions',
           },
           beds: {
             include: {
-              rooms: { select: { room_name: true, room_type: true, ward_id: true } }
+              rooms: { select: { room_name: true, room_type: true, department_id: true } }
             }
           },
           doctors: { select: { id: true, full_name: true, specialization: true } }
@@ -327,7 +327,7 @@ router.get('/beds',
     const { wardId, roomType } = req.query;
 
     const where = {};
-    if (wardId) where.rooms = { ward_id: wardId };
+    if (wardId) where.rooms = { department_id: wardId };
     if (roomType) where.rooms = { ...where.rooms, room_type: roomType };
 
     const beds = await prisma.beds.findMany({

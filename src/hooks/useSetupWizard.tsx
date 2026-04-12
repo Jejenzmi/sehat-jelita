@@ -47,22 +47,38 @@ async function apiPost<T>(path: string, body: unknown): Promise<T> {
 // ----------------------------------------------------------------
 // Check whether setup has been completed (reads system_settings)
 // ----------------------------------------------------------------
+const SETUP_DONE_KEY = "simrs_setup_completed";
+
+/** Tandai setup selesai di sessionStorage agar tetap ada setelah full-page reload */
+export function markSetupCompleted() {
+  sessionStorage.setItem(SETUP_DONE_KEY, "true");
+}
+
 export function useIsSetupCompleted() {
   return useQuery({
     queryKey: ["setup-completed"],
     queryFn: async () => {
+      // Jika setup baru saja diselesaikan (flag dari sessionStorage), langsung return true
+      // tanpa perlu menunggu respons API. Ini mencegah redirect balik ke /setup setelah reload.
+      if (sessionStorage.getItem(SETUP_DONE_KEY) === "true") {
+        return true;
+      }
       try {
         // Try public endpoint first (works even before auth is fully ready)
         const res = await fetch(`${API_BASE}/setup-status`, FETCH_OPTS);
         if (res.ok) {
           const json = await res.json().catch(() => ({}));
-          return json.data === true;
+          const done = json.data === true;
+          if (done) sessionStorage.setItem(SETUP_DONE_KEY, "true");
+          return done;
         }
         // Fallback: try authenticated endpoint
         const res2 = await fetch(`${API_BASE}/admin/setup-status`, FETCH_OPTS);
         if (res2.ok) {
           const json2 = await res2.json().catch(() => ({}));
-          return json2.data === true;
+          const done2 = json2.data === true;
+          if (done2) sessionStorage.setItem(SETUP_DONE_KEY, "true");
+          return done2;
         }
         return false;
       } catch {
@@ -121,6 +137,9 @@ export function useCompleteSetup() {
       return result;
     },
     onSuccess: () => {
+      // Tandai di sessionStorage SEBELUM reload — flag ini tetap ada setelah full page reload
+      // sehingga ProtectedRoute tidak redirect balik ke /setup saat query API belum selesai.
+      markSetupCompleted();
       // Immediately set cache to true so ProtectedRoute doesn't bounce back to /setup
       queryClient.setQueryData(["setup-completed"], true);
       // Then invalidate to trigger a background refetch to confirm

@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import SetupWizard from "@/components/setup/SetupWizard";
 import { useIsSetupCompleted } from "@/hooks/useSetupWizard";
@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 
 export default function Setup() {
   const navigate = useNavigate();
+  const [isReloading, setIsReloading] = useState(false);
   const { user, loading: authLoading } = useAuth();
   const { data: isSetupCompleted, isLoading } = useIsSetupCompleted();
 
@@ -23,8 +24,13 @@ export default function Setup() {
   }, [user, authLoading, isSetupCompleted, isLoading, navigate]);
 
   const handleComplete = () => {
-    // Setup selesai → langsung masuk dashboard
-    navigate("/", { replace: true });
+    setIsReloading(true);
+    // Setup selesai → langsung masuk dashboard dengan full page reload.
+    // Hal ini bertujuan untuk mereset cache memory dari React Query (staleTime 30s)
+    // sehingga ProtectedRoute mendeteksi status setup yang baru (true) dari server.
+    setTimeout(() => {
+      window.location.replace("/");
+    }, 500);
   };
 
   if (authLoading || isLoading) {
@@ -42,8 +48,8 @@ export default function Setup() {
     return null;
   }
 
-  // Jika setup sudah selesai, tampilkan loading sementara navigate berlangsung
-  if (isSetupCompleted === true) {
+  // Jika setup sudah selesai atau sedang proses reload, tampilkan loading
+  if (isSetupCompleted === true || isReloading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center space-y-3">

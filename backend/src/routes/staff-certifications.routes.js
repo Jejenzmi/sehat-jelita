@@ -71,7 +71,7 @@ router.get('/certifications', asyncHandler(async (req, res) => {
     prisma.staff_certifications.findMany({
       where,
       include: {
-        employees: { select: { id: true, full_name: true, employee_number: true, job_title: true } },
+        employees: { select: { id: true, full_name: true, employee_code: true, position: true } },
       },
       orderBy: { expiry_date: 'asc' },
       take,
@@ -126,9 +126,9 @@ router.get('/certifications/stats', asyncHandler(async (_req, res) => {
 router.get('/certifications/:id', asyncHandler(async (req, res) => {
   const cert = await prisma.staff_certifications.findUnique({
     where: { id: req.params.id },
-    include: { employees: { select: { full_name: true, employee_number: true, job_title: true } } },
+    include: { employees: { select: { full_name: true, employee_code: true, position: true } } },
   });
-  if (!cert) throw new ApiError('Sertifikasi tidak ditemukan', 404);
+  if (!cert) throw new ApiError(404, 'Sertifikasi tidak ditemukan');
   res.json({ success: true, data: cert });
 }));
 
@@ -185,7 +185,7 @@ router.get('/trainings', asyncHandler(async (req, res) => {
     prisma.trainings.findMany({
       where,
       include: {
-        employees:   { select: { id: true, full_name: true, employee_number: true } },
+        employees:   { select: { id: true, full_name: true, employee_code: true } },
         departments: { select: { id: true, department_name: true } },
       },
       orderBy: { start_date: 'desc' },
@@ -226,11 +226,11 @@ router.get('/trainings/:id', asyncHandler(async (req, res) => {
   const training = await prisma.trainings.findUnique({
     where: { id: req.params.id },
     include: {
-      employees:   { select: { full_name: true, employee_number: true } },
+      employees:   { select: { full_name: true, employee_code: true } },
       departments: { select: { department_name: true } },
     },
   });
-  if (!training) throw new ApiError('Pelatihan tidak ditemukan', 404);
+  if (!training) throw new ApiError(404, 'Pelatihan tidak ditemukan');
   res.json({ success: true, data: training });
 }));
 

@@ -422,7 +422,7 @@ router.get('/stats', asyncHandler(async (req, res) => {
     const [totalStudies, byModality, byStatus, recentStudies, worklist] = await Promise.all([
       prisma.dicom_studies.count(),
       prisma.dicom_studies.groupBy({ by: ['modality'], _count: true, orderBy: { _count: { modality: 'desc' } } }),
-      prisma.dicom_studies.groupBy({ by: ['status'], _count: true }),
+      prisma.dicom_studies.groupBy({ by: ['worklist_status'], _count: true }),
       prisma.dicom_studies.count({ where: { study_date: { gte: new Date(Date.now() - 7 * 86400000) } } }),
       prisma.dicom_worklist.groupBy({ by: ['worklist_status'], _count: true }),
     ]);

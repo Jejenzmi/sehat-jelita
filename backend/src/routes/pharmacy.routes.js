@@ -790,7 +790,7 @@ router.post('/check-interactions', asyncHandler(async (req, res) => {
     patient_id
       ? prisma.patient_drug_allergies.findMany({
           where: { patient_id, is_active: true, medicine_id: { in: medicine_ids } },
-          include: { medicines: { select: { name: true } } },
+          include: { medicines: { select: { medicine_name: true } } },
         })
       : Promise.resolve([]),
   ]);

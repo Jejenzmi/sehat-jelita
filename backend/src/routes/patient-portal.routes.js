@@ -142,7 +142,7 @@ router.get('/prescriptions', asyncHandler(async (req, res) => {
       doctors: { select: { full_name: true, specialization: true } },
       prescription_items: {
         include: {
-          medicines: { select: { name: true, unit: true } },
+          medicines: { select: { medicine_name: true, unit: true } },
         },
       },
     },
@@ -170,7 +170,7 @@ router.get('/appointments', asyncHandler(async (req, res) => {
     orderBy: { appointment_date: 'desc' },
     include: {
       doctors: { select: { full_name: true, specialization: true } },
-      departments: { select: { name: true } },
+      departments: { select: { department_name: true } },
     },
   });
 
@@ -215,7 +215,7 @@ router.post('/appointments', asyncHandler(async (req, res) => {
     },
     include: {
       doctors: { select: { full_name: true, specialization: true } },
-      departments: { select: { name: true } },
+      departments: { select: { department_name: true } },
     },
   });
 
@@ -258,7 +258,7 @@ router.get('/doctors', asyncHandler(async (req, res) => {
       full_name: true,
       specialization: true,
       department_id: true,
-      departments: { select: { id: true, name: true } },
+      departments: { select: { id: true, department_name: true } },
     },
     orderBy: { full_name: 'asc' },
   });

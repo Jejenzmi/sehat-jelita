@@ -49,7 +49,7 @@ router.get('/', asyncHandler(async (req, res) => {
   const { patient_id, visit_id, from, to, limit = 50 } = req.query;
 
   if (!patient_id && !visit_id) {
-    throw new ApiError('patient_id atau visit_id diperlukan', 400);
+    throw new ApiError(400, 'patient_id atau visit_id diperlukan');
   }
 
   const where = {};

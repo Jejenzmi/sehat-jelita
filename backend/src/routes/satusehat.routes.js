@@ -459,7 +459,7 @@ router.post('/sync/patient', requireRole(['admin']), asyncHandler(async (req, re
   const result = await satusehatService.upsertPatient({
     nik: patient.nik,
     name: patient.full_name,
-    birthDate: patient.date_of_birth,
+    birthDate: patient.birth_date,
     gender: patient.gender
   });
 

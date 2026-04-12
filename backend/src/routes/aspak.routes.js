@@ -71,7 +71,7 @@ router.get('/assets', asyncHandler(async (req, res) => {
     prisma.aspak_assets.findMany({
       where, skip, take,
       orderBy: { asset_name: 'asc' },
-      include: { departments: { select: { name: true } } },
+      include: { departments: { select: { department_name: true } } },
     }),
     prisma.aspak_assets.count({ where }),
   ]);
@@ -82,9 +82,9 @@ router.get('/assets', asyncHandler(async (req, res) => {
 router.get('/assets/:id', asyncHandler(async (req, res) => {
   const asset = await prisma.aspak_assets.findUnique({
     where: { id: req.params.id },
-    include: { departments: { select: { name: true } } },
+    include: { departments: { select: { department_name: true } } },
   });
-  if (!asset) throw new ApiError('Aset tidak ditemukan', 404);
+  if (!asset) throw new ApiError(404, 'Aset tidak ditemukan');
   res.json({ success: true, data: asset });
 }));
 
@@ -165,7 +165,7 @@ router.post('/reports', requireRole(['admin', 'manajemen']), asyncHandler(async 
 
   const assets = await prisma.aspak_assets.findMany({
     where: { is_active: true },
-    include: { departments: { select: { name: true } } },
+    include: { departments: { select: { department_name: true } } },
   });
 
   const summary = { total: assets.length, by_category: {}, by_condition: {}, total_value: 0 };

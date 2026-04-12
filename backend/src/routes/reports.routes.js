@@ -35,7 +35,7 @@ router.get('/rl1', asyncHandler(async (_req, res) => {
     prisma.system_settings.findUnique({ where: { setting_key: 'hospital_info' } }),
     prisma.system_settings.findUnique({ where: { setting_key: 'hospital_profile' } }).catch(() => null),
     prisma.doctors.count({ where: { is_active: true } }),
-    prisma.employees.count({ where: { employment_status: 'active', job_title: { contains: 'perawat', mode: 'insensitive' } } }).catch(() => 0),
+    prisma.employees.count({ where: { employment_type: 'aktif', position: { contains: 'perawat', mode: 'insensitive' } } }).catch(() => 0),
     prisma.beds.count(),
     prisma.rooms.count({ where: { is_active: true } }),
   ]);
@@ -68,14 +68,14 @@ router.get('/rl1', asyncHandler(async (_req, res) => {
 router.get('/rl2', asyncHandler(async (_req, res) => {
   const [doctors, employees] = await Promise.all([
     prisma.doctors.groupBy({ by: ['specialization'], _count: { id: true }, where: { is_active: true } }),
-    prisma.employees.groupBy({ by: ['job_title'], _count: { id: true }, where: { employment_status: 'active' } }),
+    prisma.employees.groupBy({ by: ['position'], _count: { id: true }, where: { employment_type: 'aktif' } }),
   ]);
 
   res.json({
     success: true,
     data: {
       by_specialization: doctors.map(d => ({ specialization: d.specialization || 'Umum', count: d._count.id })),
-      by_job_title:      employees.map(e => ({ job_title: e.job_title || '-', count: e._count.id })),
+      by_position:      employees.map(e => ({ position: e.position || '-', count: e._count.id })),
       total_doctors:     doctors.reduce((s, d) => s + d._count.id, 0),
       total_employees:   employees.reduce((s, e) => s + e._count.id, 0),
     },
@@ -101,8 +101,8 @@ router.get('/rl3', asyncHandler(async (req, res) => {
     prisma.visits.count({ where: { ...visitWhere, visit_type: 'outpatient' } }),
     prisma.visits.count({ where: { ...visitWhere, visit_type: 'inpatient' } }),
     prisma.emergency_visits.count({ where: Object.keys(dateRange).length ? { arrival_time: dateRange } : {} }),
-    prisma.surgeries.count({ where: Object.keys(dateRange).length ? { surgery_date: dateRange } : {} }),
-    prisma.lab_orders.count({ where: Object.keys(dateRange).length ? { ordered_at: dateRange } : {} }),
+    prisma.surgeries.count({ where: Object.keys(dateRange).length ? { scheduled_date: dateRange } : {} }),
+    prisma.lab_orders.count({ where: Object.keys(dateRange).length ? { order_date: dateRange } : {} }),
     prisma.radiology_orders.count({ where: Object.keys(dateRange).length ? { created_at: dateRange } : {} }),
     prisma.visits.groupBy({
       by: ['department_id'],

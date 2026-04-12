@@ -27,11 +27,11 @@ router.get('/employees',
 
     const where = {};
     if (departmentId) where.department_id = departmentId;
-    if (status) where.employment_status = status;
+    if (status) where.employment_type = status;
     if (search) {
       where.OR = [
         { full_name: { contains: search, mode: 'insensitive' } },
-        { employee_number: { contains: search } },
+        { employee_code: { contains: search } },
         { nik: { contains: search } }
       ];
     }
@@ -107,7 +107,7 @@ router.get('/attendance',
 
     const attendance = await prisma.attendance.findMany({
       where,
-      include: { employees: { select: { full_name: true, employee_number: true } } },
+      include: { employees: { select: { full_name: true, employee_code: true } } },
       orderBy: { attendance_date: 'desc' }
     });
 
@@ -282,7 +282,7 @@ router.get('/payroll',
 
     const payroll = await prisma.payroll.findMany({
       where,
-      include: { employees: { select: { full_name: true, employee_number: true } } },
+      include: { employees: { select: { full_name: true, employee_code: true } } },
       orderBy: { employees: { full_name: 'asc' } }
     });
 
@@ -299,7 +299,7 @@ router.post('/payroll/generate',
     const { month, year, departmentId } = req.body;
 
     // Get all active employees
-    const where = { employment_status: 'ACTIVE' };
+    const where = { employment_type: 'aktif' };
     if (departmentId) where.department_id = departmentId;
 
     const employees = await prisma.employees.findMany({ where });

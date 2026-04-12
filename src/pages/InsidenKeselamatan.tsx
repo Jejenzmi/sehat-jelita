@@ -8,11 +8,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertTriangle, Plus, Search, Clock, CheckCircle, FileText } from "lucide-react";
-import axios from "axios";
 import { useToast } from "@/hooks/use-toast";
 
 const API = import.meta.env.VITE_API_URL || "/api";
-const authHeader = () => ({ Authorization: `Bearer ${localStorage.getItem("token")}` });
+const authHeader = () => ({ Authorization: `Bearer ${localStorage.getItem("zen_access_token")}`, "Content-Type": "application/json" });
+
+async function apiFetch(url: string, opts: RequestInit = {}) {
+  const res = await fetch(url, { headers: authHeader(), credentials: 'include', ...opts });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw { response: { data: json } };
+  return json;
+}
 
 const severityLabel: Record<string, { label: string; color: string }> = {
   "1": { label: "Minimal", color: "bg-gray-100 text-gray-800" },
@@ -59,11 +65,11 @@ export default function InsidenKeselamatan() {
       if (statusFilter !== "all") params.set("status", statusFilter);
 
       const [inc, dash] = await Promise.all([
-        axios.get(`${API}/incidents?${params}`, { headers: authHeader() }),
-        axios.get(`${API}/incidents/dashboard`, { headers: authHeader() }),
+        apiFetch(`${API}/incidents?${params}`),
+        apiFetch(`${API}/incidents/dashboard`),
       ]);
-      setIncidents(inc.data.data || []);
-      setDashboard(dash.data.data || null);
+      setIncidents(inc.data || []);
+      setDashboard(dash.data || null);
     } catch {
       toast({ title: "Gagal memuat data insiden", variant: "destructive" });
     } finally {
@@ -75,7 +81,7 @@ export default function InsidenKeselamatan() {
 
   const handleSubmit = async () => {
     try {
-      await axios.post(`${API}/incidents`, form, { headers: authHeader() });
+      await apiFetch(`${API}/incidents`, { method: "POST", body: JSON.stringify(form) });
       toast({ title: "Insiden berhasil dilaporkan" });
       setShowForm(false);
       fetchAll();
@@ -87,7 +93,7 @@ export default function InsidenKeselamatan() {
 
   const updateStatus = async (id: string, status: string) => {
     try {
-      await axios.patch(`${API}/incidents/${id}/status`, { status }, { headers: authHeader() });
+      await apiFetch(`${API}/incidents/${id}/status`, { method: "PATCH", body: JSON.stringify({ status }) });
       toast({ title: `Status diperbarui ke: ${status}` });
       fetchAll();
     } catch {

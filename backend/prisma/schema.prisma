@@ -172,7 +172,6 @@ model departments {
   analytics_snapshots     analytics_snapshots[]
   aspak_assets            aspak_assets[]
   patient_incidents       patient_incidents[]
-  analytics_snapshots analytics_snapshots[]
   doctor_schedules    doctor_schedules[]
   work_shifts      work_shifts[]
 }
@@ -284,6 +283,7 @@ model patients {
   is_active                  Boolean   @default(true)
   photo_url                  String?
   satusehat_id               String?
+  user_id                    String?   @unique  // link to profiles.user_id for patient portal access
   created_at                 DateTime  @default(now())
   updated_at                 DateTime  @updatedAt
 
@@ -319,6 +319,7 @@ model patients {
   patient_consents         patient_consents[]
   notification_channels    notification_channels[]
   vital_signs              vital_signs[]
+  patient_insurances       patient_insurances[]
 }
 
 // ============================================
@@ -3244,4 +3245,51 @@ model vital_signs {
 
   @@index([patient_id, recorded_at])
   @@index([visit_id, recorded_at])
+}
+
+// ============================================
+// MISSING MODELS — Added by audit
+// ============================================
+
+model custom_form_templates {
+  id          String   @id @default(uuid())
+  name        String
+  form_type   String?
+  schema      Json     @default("{}")
+  is_active   Boolean  @default(true)
+  created_by  String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  @@index([is_active])
+}
+
+model custom_report_templates {
+  id          String   @id @default(uuid())
+  name        String
+  report_type String?
+  config      Json     @default("{}")
+  is_active   Boolean  @default(true)
+  created_by  String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  @@index([is_active])
+}
+
+model patient_insurances {
+  id               String   @id @default(uuid())
+  patient_id       String
+  insurance_type   String
+  insurance_number String?
+  insurance_name   String?
+  valid_from       DateTime?
+  valid_until      DateTime?
+  is_active        Boolean  @default(true)
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+
+  patients patients @relation(fields: [patient_id], references: [id], onDelete: Cascade)
+
+  @@index([patient_id])
 }

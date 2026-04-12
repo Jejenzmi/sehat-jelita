@@ -126,7 +126,7 @@ router.get('/:id', asyncHandler(async (req, res) => {
       patients: { select: { id: true, full_name: true, medical_record_number: true, birth_date: true, gender: true, blood_type: true } },
     },
   });
-  if (!referral) throw new ApiError('Rujukan tidak ditemukan', 404);
+  if (!referral) throw new ApiError(404, 'Rujukan tidak ditemukan');
   res.json({ success: true, data: referral });
 }));
 

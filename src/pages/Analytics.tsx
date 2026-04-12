@@ -4,7 +4,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BarChart3, TrendingUp, Users, Bed, DollarSign, Activity, Calendar, AlertCircle } from "lucide-react";
-import axios from "axios";
 
 const API = import.meta.env.VITE_API_URL || "/api";
 
@@ -15,10 +14,11 @@ function useApi<T>(url: string, deps: unknown[] = []) {
 
   useEffect(() => {
     setLoading(true);
-    const token = localStorage.getItem("token");
-    axios.get(`${API}${url}`, { headers: { Authorization: `Bearer ${token}` } })
-      .then(r => { setData(r.data.data || r.data); setError(null); })
-      .catch(e => setError(e.response?.data?.error || e.message))
+    const token = localStorage.getItem("zen_access_token");
+    fetch(`${API}${url}`, { headers: { Authorization: `Bearer ${token}` }, credentials: 'include' })
+      .then(r => r.json())
+      .then(json => { setData(json.data || json); setError(null); })
+      .catch(e => setError(e.message))
       .finally(() => setLoading(false));
   }, deps);
 

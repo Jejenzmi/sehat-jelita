@@ -5,13 +5,15 @@
   "type": "module",
   "main": "src/app.js",
   "scripts": {
-    "dev": "node src/app.js",
+    "dev": "node --watch src/app.js",
     "start": "node src/app.js",
     "db:migrate": "npx prisma migrate deploy",
     "db:seed": "node src/scripts/seed.js",
     "db:studio": "npx prisma studio",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "migrate": "node node_modules/prisma/build/index.js migrate deploy",
+    "generate": "node node_modules/prisma/build/index.js generate"
   },
   "dependencies": {
     "@prisma/client": "^5.10.0",

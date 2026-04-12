@@ -677,7 +677,7 @@ router.post('/generate/:visitId', requireRole(['admin', 'kasir']), asyncHandler(
         where: { status: { in: ['dispensed', 'ready'] } },
         include: {
           prescription_items: {
-            include: { medicines: { select: { name: true, price: true } } }
+            include: { medicines: { select: { medicine_name: true, selling_price: true } } }
           }
         }
       },
@@ -718,9 +718,9 @@ router.post('/generate/:visitId', requireRole(['admin', 'kasir']), asyncHandler(
     for (const item of rx.prescription_items || []) {
       rawItems.push({
         item_type: 'obat',
-        item_name: item.medicines?.name || item.medicine_name || 'Obat',
+        item_name: item.medicines?.medicine_name || item.medicine_name || 'Obat',
         quantity: item.quantity || 1,
-        unit_price: Number(item.medicines?.price || item.unit_price || 0)
+        unit_price: Number(item.medicines?.selling_price || item.unit_price || 0)
       });
     }
   }

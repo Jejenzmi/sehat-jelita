@@ -78,6 +78,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await api.auth.logout();
     setUser(null);
     setRoles([]);
+    // Hapus flag setup agar user berikutnya tidak salah skip setup wizard
+    sessionStorage.removeItem("simrs_setup_completed");
   };
 
   return (

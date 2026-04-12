@@ -61,7 +61,7 @@ router.get('/:id', asyncHandler(async (req, res) => {
     where: { id: req.params.id },
     include: { patients: { select: { full_name: true, medical_record_number: true } } },
   });
-  if (!consent) throw new ApiError('Consent tidak ditemukan', 404);
+  if (!consent) throw new ApiError(404, 'Consent tidak ditemukan');
 
   // Mask signature_data — never expose raw signature over the API
   const { signature_data: _, ...safeConsent } = consent;
@@ -79,7 +79,7 @@ router.post('/', asyncHandler(async (req, res) => {
   } = req.body;
 
   if (!patient_id || !consent_type) {
-    throw new ApiError('patient_id dan consent_type wajib diisi', 400);
+    throw new ApiError(400, 'patient_id dan consent_type wajib diisi');
   }
 
   const valid_until = valid_days
@@ -110,12 +110,12 @@ router.post('/:id/sign', asyncHandler(async (req, res) => {
   const { signed_by_name, signed_by_relation, signature_data } = req.body;
 
   if (!signed_by_name || !signature_data) {
-    throw new ApiError('Nama penandatangan dan tanda tangan wajib diisi', 400);
+    throw new ApiError(400, 'Nama penandatangan dan tanda tangan wajib diisi');
   }
 
   // Verify consent is still pending
   const existing = await prisma.patient_consents.findUnique({ where: { id: req.params.id } });
-  if (!existing) throw new ApiError('Consent tidak ditemukan', 404);
+  if (!existing) throw new ApiError(404, 'Consent tidak ditemukan');
   if (existing.status !== 'pending') {
     throw new ApiError(`Consent sudah berstatus '${existing.status}', tidak dapat ditandatangani`, 409);
   }

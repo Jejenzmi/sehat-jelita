@@ -82,7 +82,7 @@ router.get('/', asyncHandler(async (req, res) => {
       orderBy: { incident_date: 'desc' },
       include: {
         patients:    { select: { full_name: true, medical_record_number: true } },
-        departments: { select: { name: true } },
+        departments: { select: { department_name: true } },
       },
     }),
     prisma.patient_incidents.count({ where }),
@@ -117,10 +117,10 @@ router.get('/:id', asyncHandler(async (req, res) => {
     include: {
       patients:    { select: { full_name: true, medical_record_number: true } },
       visits:      { select: { visit_number: true, visit_date: true } },
-      departments: { select: { name: true } },
+      departments: { select: { department_name: true } },
     },
   });
-  if (!incident) throw new ApiError('Insiden tidak ditemukan', 404);
+  if (!incident) throw new ApiError(404, 'Insiden tidak ditemukan');
   res.json({ success: true, data: incident });
 }));
 
@@ -140,7 +140,7 @@ router.post('/', asyncHandler(async (req, res) => {
     },
     include: {
       patients:    { select: { full_name: true } },
-      departments: { select: { name: true } },
+      departments: { select: { department_name: true } },
     },
   });
 

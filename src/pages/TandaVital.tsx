@@ -7,11 +7,17 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Activity, Heart, Thermometer, Wind, Plus, Search, AlertTriangle } from "lucide-react";
-import axios from "axios";
 import { useToast } from "@/hooks/use-toast";
 
 const API = import.meta.env.VITE_API_URL || "/api";
-const authHeader = () => ({ Authorization: `Bearer ${localStorage.getItem("token")}` });
+const authHeader = () => ({ Authorization: `Bearer ${localStorage.getItem("zen_access_token")}`, "Content-Type": "application/json" });
+
+async function apiFetch(url: string, opts: RequestInit = {}) {
+  const res = await fetch(url, { headers: authHeader(), credentials: 'include', ...opts });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw { response: { data: json } };
+  return json;
+}
 
 function isCritical(vital: Record<string, unknown>) {
   const warnings: string[] = [];
@@ -45,11 +51,11 @@ export default function TandaVital() {
     setLoading(true);
     try {
       const [v, l] = await Promise.all([
-        axios.get(`${API}/vital-signs?patient_id=${pid}&limit=20`, { headers: authHeader() }),
-        axios.get(`${API}/vital-signs/latest/${pid}`, { headers: authHeader() }),
+        apiFetch(`${API}/vital-signs?patient_id=${pid}&limit=20`),
+        apiFetch(`${API}/vital-signs/latest/${pid}`),
       ]);
-      setVitals(v.data.data || []);
-      setLatest(l.data.data || null);
+      setVitals(v.data || []);
+      setLatest(l.data || null);
     } catch {
       toast({ title: "Gagal memuat tanda vital", variant: "destructive" });
     } finally {
@@ -66,7 +72,7 @@ export default function TandaVital() {
 
   const handleSubmit = async () => {
     try {
-      await axios.post(`${API}/vital-signs`, { ...form, patient_id: patientId || form.patient_id }, { headers: authHeader() });
+      await apiFetch(`${API}/vital-signs`, { method: "POST", body: JSON.stringify({ ...form, patient_id: patientId || form.patient_id }) });
       toast({ title: "Tanda vital berhasil disimpan" });
       setShowForm(false);
       fetchVitals(patientId || form.patient_id);

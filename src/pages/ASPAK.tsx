@@ -8,11 +8,17 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Wrench, Package, AlertTriangle, Plus, Search, FileText, CheckCircle } from "lucide-react";
-import axios from "axios";
 import { useToast } from "@/hooks/use-toast";
 
 const API = import.meta.env.VITE_API_URL || "/api";
-const authHeader = () => ({ Authorization: `Bearer ${localStorage.getItem("token")}` });
+const authHeader = () => ({ Authorization: `Bearer ${localStorage.getItem("zen_access_token")}`, "Content-Type": "application/json" });
+
+async function apiFetch(url: string, opts: RequestInit = {}) {
+  const res = await fetch(url, { headers: authHeader(), credentials: 'include', ...opts });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw { response: { data: json } };
+  return json;
+}
 
 const conditionColors: Record<string, string> = {
   baik: "bg-green-100 text-green-800",
@@ -45,13 +51,13 @@ export default function ASPAK() {
       if (categoryFilter !== "all") params.set("category", categoryFilter);
 
       const [a, s, r] = await Promise.all([
-        axios.get(`${API}/aspak/assets?${params}`, { headers: authHeader() }),
-        axios.get(`${API}/aspak/summary`, { headers: authHeader() }),
-        axios.get(`${API}/aspak/reports`, { headers: authHeader() }),
+        apiFetch(`${API}/aspak/assets?${params}`),
+        apiFetch(`${API}/aspak/summary`),
+        apiFetch(`${API}/aspak/reports`),
       ]);
-      setAssets(a.data.data || []);
-      setSummary(s.data.data || null);
-      setReports(r.data.data || []);
+      setAssets(a.data || []);
+      setSummary(s.data || null);
+      setReports(r.data || []);
     } catch {
       toast({ title: "Gagal memuat data ASPAK", variant: "destructive" });
     } finally {
@@ -63,7 +69,7 @@ export default function ASPAK() {
 
   const handleSubmit = async () => {
     try {
-      await axios.post(`${API}/aspak/assets`, form, { headers: authHeader() });
+      await apiFetch(`${API}/aspak/assets`, { method: "POST", body: JSON.stringify(form) });
       toast({ title: "Aset berhasil disimpan" });
       setShowForm(false);
       setForm({ asset_code: "", asset_name: "", asset_category: "medis", brand: "", model: "", serial_number: "", year_of_purchase: "", current_condition: "baik", room_location: "", quantity: "1", kemenkes_code: "", notes: "" });
@@ -77,7 +83,7 @@ export default function ASPAK() {
   const handleGenerateReport = async () => {
     const period = new Date().toISOString().slice(0, 7);
     try {
-      await axios.post(`${API}/aspak/reports`, { report_period: period }, { headers: authHeader() });
+      await apiFetch(`${API}/aspak/reports`, { method: "POST", body: JSON.stringify({ report_period: period }) });
       toast({ title: `Laporan ${period} berhasil dibuat` });
       fetchAll();
     } catch {

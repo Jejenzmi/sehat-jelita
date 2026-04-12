@@ -28,7 +28,7 @@ router.get('/patients',
       where,
       include: {
         patients: {
-          select: { id: true, medical_record_number: true, full_name: true, date_of_birth: true }
+          select: { id: true, medical_record_number: true, full_name: true, birth_date: true }
         },
         doctors: { select: { full_name: true, specialization: true } }
       },
@@ -207,7 +207,7 @@ router.get('/therapy-types',
   asyncHandler(async (req, res) => {
     const types = await prisma.therapy_types.findMany({
       where: { is_active: true },
-      orderBy: { name: 'asc' }
+      orderBy: { type_name: 'asc' }
     });
 
     res.json({ success: true, data: types });

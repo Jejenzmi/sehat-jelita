@@ -157,7 +157,7 @@ router.get('/payment-distribution', asyncHandler(async (_req, res) => {
     _count: { id: true },
   }).catch(() => []);
 
-  const colors: Record<string, string> = {
+  const colors = {
     bpjs: '#4ade80', umum: '#60a5fa', asuransi: '#f59e0b', mandiri: '#a78bfa',
   };
 
@@ -174,25 +174,33 @@ router.get('/payment-distribution', asyncHandler(async (_req, res) => {
 // ─── Bed occupancy by class ────────────────────────────────────────────────────
 
 router.get('/bed-occupancy', asyncHandler(async (_req, res) => {
-  const byClass = await prisma.beds.groupBy({
-    by: ['room_class'],
-    _count: { id: true },
+  // beds does not have room_class; aggregate via rooms.room_type
+  const allBeds = await prisma.beds.findMany({
+    include: { rooms: { select: { room_type: true } } },
   }).catch(() => []);
 
-  const occupied = await prisma.beds.groupBy({
-    by: ['room_class'],
+  const occupiedBeds = await prisma.beds.findMany({
     where: { status: { in: ['occupied', 'terisi'] } },
-    _count: { id: true },
+    include: { rooms: { select: { room_type: true } } },
   }).catch(() => []);
 
-  const occMap = Object.fromEntries(occupied.map(o => [o.room_class, o._count.id]));
+  // Group by room_type
+  const totalMap = {};
+  for (const bed of allBeds) {
+    const t = bed.rooms?.room_type || 'Umum';
+    totalMap[t] = (totalMap[t] || 0) + 1;
+  }
+  const occMap = {};
+  for (const bed of occupiedBeds) {
+    const t = bed.rooms?.room_type || 'Umum';
+    occMap[t] = (occMap[t] || 0) + 1;
+  }
 
   res.json({
     success: true,
-    data: byClass.map(c => {
-      const total    = c._count.id;
-      const occ      = occMap[c.room_class] ?? 0;
-      return { class: c.room_class || 'Umum', occupied: occ, total, rate: total > 0 ? Math.round((occ / total) * 100) : 0 };
+    data: Object.entries(totalMap).map(([roomType, total]) => {
+      const occ = occMap[roomType] || 0;
+      return { class: roomType, occupied: occ, total, rate: total > 0 ? Math.round((occ / total) * 100) : 0 };
     }),
   });
 }));

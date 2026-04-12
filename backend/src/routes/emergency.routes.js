@@ -50,7 +50,7 @@ router.get('/patients',
             id: true,
             medical_record_number: true,
             full_name: true,
-            date_of_birth: true,
+            birth_date: true,
             gender: true,
             blood_type: true
           }
@@ -334,7 +334,7 @@ router.get('/board',
             medical_record_number: true,
             full_name: true,
             gender: true,
-            date_of_birth: true
+            birth_date: true
           }
         },
         doctors: {

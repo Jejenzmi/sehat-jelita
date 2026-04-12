@@ -82,7 +82,7 @@ router.post(
   '/photo',
   makeUpload('photos', ALLOWED_TYPES.image, MAX_SIZE.image).single('file'),
   asyncHandler(async (req, res) => {
-    if (!req.file) throw new ApiError('File tidak ditemukan', 400);
+    if (!req.file) throw new ApiError(400, 'File tidak ditemukan');
     res.status(201).json({ success: true, data: fileResponse(req, req.file, 'photos') });
   })
 );
@@ -95,7 +95,7 @@ router.post(
   '/document',
   makeUpload('documents', ALLOWED_TYPES.document, MAX_SIZE.document).single('file'),
   asyncHandler(async (req, res) => {
-    if (!req.file) throw new ApiError('File tidak ditemukan', 400);
+    if (!req.file) throw new ApiError(400, 'File tidak ditemukan');
     res.status(201).json({ success: true, data: fileResponse(req, req.file, 'documents') });
   })
 );
@@ -109,11 +109,11 @@ router.delete('/:subdir/:filename', asyncHandler(async (req, res) => {
 
   // Guard against path traversal
   if (!/^[a-z]+$/.test(subdir) || /[/\\]/.test(filename)) {
-    throw new ApiError('Path tidak valid', 400);
+    throw new ApiError(400, 'Path tidak valid');
   }
 
   const filePath = path.join(UPLOAD_DIR, subdir, filename);
-  if (!fs.existsSync(filePath)) throw new ApiError('File tidak ditemukan', 404);
+  if (!fs.existsSync(filePath)) throw new ApiError(404, 'File tidak ditemukan');
 
   fs.unlinkSync(filePath);
   res.json({ success: true, message: 'File dihapus' });

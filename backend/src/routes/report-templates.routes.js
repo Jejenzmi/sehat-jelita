@@ -77,11 +77,11 @@ router.get('/data/:source', requireRole(['admin', 'pelaporan']), asyncHandler(as
 
     case 'lab':
       data = await prisma.lab_orders.findMany({
-        take: 100, orderBy: { ordered_at: 'desc' },
+        take: 100, orderBy: { order_date: 'desc' },
         include: { patients: { select: { full_name: true } } },
       }).catch(() => []);
       data = data.map(l => ({
-        order_date: l.ordered_at, patient_name: l.patients?.full_name || '-', status: l.status || '-',
+        order_date: l.order_date, patient_name: l.patients?.full_name || '-', status: l.status || '-',
       }));
       break;
 
@@ -92,15 +92,15 @@ router.get('/data/:source', requireRole(['admin', 'pelaporan']), asyncHandler(as
       }).catch(() => []);
       data = data.map(e => ({
         employee_name: e.full_name, department: e.departments?.department_name || '-',
-        position: e.job_title || '-', status: e.employment_status || '-', join_date: e.hire_date || '-',
+        position: e.position || '-', status: e.employment_type || '-', join_date: e.join_date || '-',
       }));
       break;
 
     case 'inventory':
       data = await prisma.medicines.findMany({ take: 100, orderBy: { name: 'asc' } }).catch(() => []);
       data = data.map(m => ({
-        item_name: m.name, category: m.category || '-', stock: m.stock_quantity || 0,
-        unit: m.unit || '-', min_stock: m.minimum_stock || 0,
+        item_name: m.medicine_name, category: m.category || '-', stock: m.min_stock || 0,
+        unit: m.unit || '-', min_stock: m.min_stock || 0,
       }));
       break;
 

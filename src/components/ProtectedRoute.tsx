@@ -5,6 +5,8 @@ import { useIsSetupCompleted } from "@/hooks/useSetupWizard";
 import { isNodeMode } from "@/lib/api-client";
 import { Loader2 } from "lucide-react";
 
+const SETUP_DONE_KEY = "simrs_setup_completed";
+
 interface ProtectedRouteProps {
   children: ReactNode;
   /** Set to true for routes that should NOT redirect to /setup even if setup is incomplete */
@@ -40,9 +42,13 @@ export function ProtectedRoute({ children, skipSetupCheck = false }: ProtectedRo
 
   // If authenticated but setup not done, redirect to /setup
   // (except if we're already on /setup to avoid loops)
+  // Juga cek sessionStorage — jika baru saja setup selesai (flag dari reload),
+  // jangan redirect meski query API belum resolve.
+  const setupDoneInSession = sessionStorage.getItem(SETUP_DONE_KEY) === "true";
   if (
     !skipSetupCheck &&
     isSetupCompleted === false &&
+    !setupDoneInSession &&
     location.pathname !== "/setup"
   ) {
     return <Navigate to="/setup" replace />;

@@ -86,6 +86,16 @@ router.get('/setup-status', asyncHandler(async (_req, res) => {
   res.json({ success: true, data: setting?.setting_value === 'true' });
 }));
 
+// Check whether initial hospital setup has been completed (also accessible without auth)
+// Placed here (before authenticateToken) so it works during and after setup wizard.
+router.get('/admin/setup-status', asyncHandler(async (_req, res) => {
+  const { prisma } = await import('../config/database.js');
+  const setting = await prisma.system_settings.findUnique({
+    where: { setting_key: 'setup_completed' }
+  });
+  res.json({ success: true, data: setting?.setting_value === 'true' });
+}));
+
 // Hospital profile & setup — accessible during first-time setup (no auth required)
 // These ALSO handle authenticated requests (auth header is optional here)
 router.use('/admin/hospital-profile', hospitalProfileRoutes);
@@ -233,56 +243,8 @@ function deserializeSettingValue(str) {
   try { return JSON.parse(str); } catch { return str; }
 }
 
-router.get('/admin/system-settings', requireRole(['admin']), asyncHandler(async (_req, res) => {
-  const { prisma } = await import('../config/database.js');
-  const settings = await prisma.system_settings.findMany();
-  const parsed = settings.map(s => ({ ...s, setting_value: deserializeSettingValue(s.setting_value) }));
-  res.json({ success: true, data: parsed });
-}));
-
-router.put('/admin/system-settings/:key', requireRole(['admin']), asyncHandler(async (req, res) => {
-  const { prisma } = await import('../config/database.js');
-  const { key } = req.params;
-  const { value, setting_value } = req.body;
-  const raw = value !== undefined ? value : setting_value;
-  const settingValue = serializeSettingValue(raw);
-
-  const setting = await prisma.system_settings.upsert({
-    where: { setting_key: key },
-    update: { setting_value: settingValue },
-    create: { setting_key: key, setting_value: settingValue }
-  });
-
-  res.json({ success: true, data: { ...setting, setting_value: deserializeSettingValue(setting.setting_value) } });
-}));
-
-// Fallback: accept PUT /admin/system-settings with setting_key in the request body.
-router.put('/admin/system-settings', requireRole(['admin']), asyncHandler(async (req, res) => {
-  const { prisma } = await import('../config/database.js');
-  const { setting_key, value, setting_value } = req.body;
-  if (!setting_key) {
-    return res.status(400).json({ success: false, error: 'setting_key diperlukan' });
-  }
-  const raw = value !== undefined ? value : setting_value;
-  const settingValue = serializeSettingValue(raw);
-
-  const setting = await prisma.system_settings.upsert({
-    where: { setting_key },
-    update: { setting_value: settingValue },
-    create: { setting_key, setting_value: settingValue }
-  });
-
-  res.json({ success: true, data: { ...setting, setting_value: deserializeSettingValue(setting.setting_value) } });
-}));
-
-// Check whether initial hospital setup has been completed
-router.get('/admin/setup-status', asyncHandler(async (_req, res) => {
-  const { prisma } = await import('../config/database.js');
-  const setting = await prisma.system_settings.findUnique({
-    where: { setting_key: 'setup_completed' }
-  });
-  res.json({ success: true, data: setting?.setting_value === 'true' });
-}));
+// NOTE: /admin/setup-status is in the PUBLIC block above (before authenticateToken)
+// so it works before and after authentication.
 
 // Get available modules (optionally filtered by hospital type)
 router.get('/admin/modules', asyncHandler(async (req, res) => {

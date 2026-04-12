@@ -121,7 +121,7 @@ router.get('/:id', asyncHandler(async (req, res) => {
       medicines_drug_interactions_medicine_b_idTomedicines: { select: { id: true, name: true, generic_name: true } },
     },
   });
-  if (!interaction) throw new ApiError('Interaksi obat tidak ditemukan', 404);
+  if (!interaction) throw new ApiError(404, 'Interaksi obat tidak ditemukan');
   res.json({ success: true, data: interaction });
 }));
 
@@ -138,7 +138,7 @@ router.post('/', requireRole(['admin', 'apoteker', 'dokter']), asyncHandler(asyn
       is_active: true,
     },
   });
-  if (existing) throw new ApiError('Interaksi antara kedua obat ini sudah terdaftar', 409);
+  if (existing) throw new ApiError(409, 'Interaksi antara kedua obat ini sudah terdaftar');
 
   const interaction = await prisma.drug_interactions.create({ data });
   res.status(201).json({ success: true, data: interaction });
@@ -166,7 +166,7 @@ router.delete('/:id', requireRole(['admin']), asyncHandler(async (req, res) => {
 
 router.get('/allergies', asyncHandler(async (req, res) => {
   const { patient_id } = req.query;
-  if (!patient_id) throw new ApiError('patient_id wajib diisi', 400);
+  if (!patient_id) throw new ApiError(400, 'patient_id wajib diisi');
 
   const allergies = await prisma.patient_drug_allergies.findMany({
     where: { patient_id },
