@@ -68,13 +68,6 @@ router.get('/patients',
             allergies: true
           }
         },
-        beds: {
-          select: {
-            id: true,
-            bed_number: true,
-            rooms: { select: { room_name: true } }
-          }
-        },
         icu_vital_signs: {
           orderBy: { recorded_at: 'desc' },
           take: 1
@@ -83,9 +76,23 @@ router.get('/patients',
       orderBy: { admission_date: 'desc' }
     });
 
+    // Manually join beds data since there's no direct Prisma relation
+    const enrichedPatients = await Promise.all(
+      patients.map(async (p) => {
+        let bedInfo = null;
+        if (p.bed_id) {
+          bedInfo = await prisma.beds.findUnique({
+            where: { id: p.bed_id },
+            select: { id: true, bed_number: true, rooms: { select: { room_name: true } } }
+          }).catch(() => null);
+        }
+        return { ...p, beds: bedInfo };
+      })
+    );
+
     res.json({
       success: true,
-      data: patients
+      data: enrichedPatients
     });
   })
 );
