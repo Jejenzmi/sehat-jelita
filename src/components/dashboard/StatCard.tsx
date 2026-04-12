@@ -47,30 +47,30 @@ export function StatCard({
         className
       )}
     >
-      <div className="flex items-start justify-between">
-        <div className="space-y-1">
-          <p className="text-sm font-medium text-muted-foreground">{title}</p>
-          <p className="text-3xl font-bold tracking-tight">{value}</p>
-          {subtitle && (
-            <p className="text-sm text-muted-foreground">{subtitle}</p>
-          )}
-          {trend && (
-            <div className="flex items-center gap-1 mt-2">
-              <span
-                className={cn(
-                  "text-sm font-medium",
-                  trend.isPositive ? "text-success" : "text-destructive"
-                )}
-              >
-                {trend.isPositive ? "↑" : "↓"} {Math.abs(trend.value)}%
-              </span>
-              <span className="text-xs text-muted-foreground">vs bulan lalu</span>
-            </div>
-          )}
+      <div className="flex items-start justify-between mb-4">
+        <div className={cn("p-3.5 rounded-[16px]", iconVariantStyles[variant])}>
+          <Icon className="h-7 w-7" />
         </div>
-        <div className={cn("p-3 rounded-xl", iconVariantStyles[variant])}>
-          <Icon className="h-6 w-6" />
-        </div>
+        {trend ? (
+          <div className={cn(
+            "flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold",
+            trend.isPositive ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"
+          )}>
+            {trend.isPositive ? "↗" : "↘"} {Math.abs(trend.value)}%
+          </div>
+        ) : (
+          <div className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold bg-muted/50 text-muted-foreground">
+            ~ 0%
+          </div>
+        )}
+      </div>
+      
+      <div className="space-y-2 mt-6">
+        <p className="text-4xl lg:text-5xl font-extrabold tracking-tight text-foreground">{value}</p>
+        <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">{title}</p>
+        {subtitle && (
+          <p className="text-xs text-muted-foreground font-medium">{subtitle}</p>
+        )}
       </div>
     </div>
   );

@@ -19,7 +19,7 @@ import { useMenuAccess } from "@/hooks/useMenuAccess";
 export default function Dashboard() {
   const { data: stats, isLoading } = useDashboardStats();
   const { needsBootstrap, bootstrapAdmin, loading: bootstrapLoading, error: bootstrapError } = useBootstrapAdmin();
-  const { roles } = useAuth();
+  const { user, roles } = useAuth();
   const { canViewPath, menuAccess, isLoading: loadingAccess } = useMenuAccess();
 
   // Determine visibility based on menu access (not hardcoded roles)
@@ -90,12 +90,34 @@ export default function Dashboard() {
       {/* Role Info Card */}
       <RoleDashboardContent />
 
-      {/* Page Header */}
-      <div className="animate-fade-in">
-        <h1 className="text-2xl font-bold">Dashboard</h1>
-        <p className="text-muted-foreground">
-          Selamat datang di SIMRS ZEN
-        </p>
+      {/* Page Header / Welcome Banner LMS Style */}
+      <div className="animate-fade-in relative">
+        <div className="bg-[#1B4332] text-white rounded-[24px] p-8 md:p-12 flex justify-between items-center relative overflow-hidden shadow-lg border border-[#2D6A4F]/30">
+          {/* Background abstract shapes */}
+          <div className="absolute right-0 top-0 w-96 h-96 bg-white/10 rounded-full blur-[80px] -translate-y-1/3 translate-x-1/3 z-0 pointer-events-none"></div>
+          <div className="absolute left-10 bottom-0 w-64 h-64 bg-[#2D6A4F]/50 rounded-full blur-[60px] translate-y-1/2 -translate-x-1/4 z-0 pointer-events-none"></div>
+          
+          <div className="z-10 relative">
+            <h1 className="text-3xl md:text-4xl font-extrabold mb-4 tracking-tight">
+              Selamat datang kembali, {user?.fullName || roles[0]?.toUpperCase() || 'Admin'}! 👋
+            </h1>
+            <p className="text-white/80 max-w-xl text-base md:text-lg leading-relaxed font-medium">
+              Pantau laporan operasional hari ini. Mulai dari jumlah kunjungan, status rawat inap pasien, hingga statistik pendapatan secara real-time.
+            </p>
+          </div>
+          
+          <div className="hidden lg:flex items-center justify-center z-10 mr-4">
+            <div className="relative w-40 h-40 bg-white/5 rounded-[30px] flex items-center justify-center border border-white/20 backdrop-blur-md transform rotate-3 shadow-2xl">
+               <ShieldCheck className="w-20 h-20 text-white/90 transform -rotate-3" />
+               <div className="absolute -bottom-4 -left-4 w-12 h-12 bg-[#2D6A4F] rounded-2xl flex items-center justify-center border border-white/20 shadow-lg transform -rotate-6">
+                 <Users className="w-6 h-6 text-white" />
+               </div>
+               <div className="absolute -top-4 -right-4 w-12 h-12 bg-white/20 rounded-full flex items-center justify-center border border-white/20 backdrop-blur-md shadow-lg transform rotate-12">
+                 <Stethoscope className="w-6 h-6 text-white" />
+               </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Stats Overview - Show based on menu access */}

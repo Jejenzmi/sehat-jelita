@@ -16,13 +16,13 @@
     --popover: 0 0% 100%;
     --popover-foreground: 220 25% 10%;
 
-    /* Primary - Medical Teal */
-    --primary: 187 85% 35%;
+    /* Primary - Dark Green LMS */
+    --primary: 154 43% 18%; /* #1B4332 */
     --primary-foreground: 0 0% 100%;
 
     /* Secondary - Soft Blue Gray */
     --secondary: 210 20% 95%;
-    --secondary-foreground: 220 25% 20%;
+    --secondary-foreground: 154 43% 18%;
 
     --muted: 210 20% 96%;
     --muted-foreground: 220 10% 45%;
@@ -52,12 +52,12 @@
 
     --radius: 0.75rem;
 
-    /* Sidebar - lighter for logo visibility */
-    --sidebar-background: 210 25% 16%;
-    --sidebar-foreground: 210 20% 92%;
-    --sidebar-primary: 187 85% 50%;
+    /* Sidebar - LMS Dark Green */
+    --sidebar-background: 154 43% 18%; /* #1B4332 */
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 154 43% 25%; /* Slightly lighter green */
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 20% 22%;
+    --sidebar-accent: 154 43% 25%;
     --sidebar-accent-foreground: 210 20% 95%;
     --sidebar-border: 210 15% 25%;
     --sidebar-ring: 187 85% 50%;
@@ -71,13 +71,13 @@
     --medical-purple: 262 52% 47%;
 
     /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(187 85% 35%) 0%, hsl(187 70% 45%) 100%);
-    --gradient-sidebar: linear-gradient(180deg, hsl(210 25% 18%) 0%, hsl(210 30% 12%) 100%);
-    --gradient-card: linear-gradient(135deg, hsl(0 0% 100%) 0%, hsl(210 40% 98%) 100%);
-    --gradient-hero: linear-gradient(135deg, hsl(187 85% 35%) 0%, hsl(210 80% 50%) 100%);
+    --gradient-primary: linear-gradient(135deg, hsl(154 43% 18%) 0%, hsl(154 43% 25%) 100%);
+    --gradient-sidebar: none;
+    --gradient-card: linear-gradient(135deg, hsl(0 0% 100%) 0%, hsl(0 0% 99%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(154 43% 18%) 0%, hsl(154 43% 30%) 100%);
 
     /* Shadows */
-    --shadow-sm: 0 1px 2px 0 hsl(220 25% 10% / 0.05);
+    --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.03);
     --shadow-md: 0 4px 6px -1px hsl(220 25% 10% / 0.1), 0 2px 4px -2px hsl(220 25% 10% / 0.1);
     --shadow-lg: 0 10px 15px -3px hsl(220 25% 10% / 0.1), 0 4px 6px -4px hsl(220 25% 10% / 0.1);
     --shadow-xl: 0 20px 25px -5px hsl(220 25% 10% / 0.1), 0 8px 10px -6px hsl(220 25% 10% / 0.1);
@@ -139,8 +139,8 @@
   }
 
   body {
-    @apply bg-background text-foreground font-sans antialiased;
-    font-family: 'Plus Jakarta Sans', sans-serif;
+    @apply bg-[#F7F9FC] text-foreground font-sans antialiased;
+    font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -166,25 +166,19 @@
   }
 
   .stat-card {
-    @apply relative overflow-hidden rounded-xl p-6 transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
-  }
-
-  .stat-card::before {
-    content: '';
-    @apply absolute inset-0 opacity-10;
-    background: var(--gradient-primary);
+    @apply relative overflow-hidden rounded-[20px] p-6 transition-all duration-300 hover:shadow-md border border-border/40 shadow-sm bg-white;
   }
 
   .nav-item {
-    @apply flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent;
+    @apply flex items-center gap-3 px-6 py-4 rounded-xl transition-all duration-200 text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-primary/50;
   }
 
   .nav-item.active {
-    @apply bg-sidebar-primary text-sidebar-primary-foreground shadow-glow;
+    @apply bg-[#2D6A4F] text-white font-medium shadow-sm;
   }
 
   .module-card {
-    @apply bg-card rounded-xl border border-border p-6 transition-all duration-300 hover:shadow-lg hover:border-primary/30;
+    @apply bg-white rounded-[20px] border border-border/50 p-6 transition-all duration-300 hover:shadow-md hover:border-primary/30 shadow-sm;
   }
 
   .data-table {
