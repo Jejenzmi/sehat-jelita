@@ -439,6 +439,57 @@ docker compose ps
 
 ---
 
+## 🔐 OpenSSL & Prisma Configuration
+
+### Mengapa Kompatibilitas OpenSSL 3.x Penting
+
+Prisma Client menggunakan binary query engine yang dikompilasi terhadap versi OpenSSL tertentu. Ubuntu 22.04+ dan Debian 12 (bookworm) menggunakan **OpenSSL 3.x**, sehingga binary Prisma harus dikompilasi untuk target yang tepat. Tanpa konfigurasi ini, runtime akan melempar error:
+
+```
+Error: cannot find /app/node_modules/.prisma/client/libquery_engine-debian-openssl-1.1.x.so.node
+       (atau: error while loading shared libraries: libssl.so.1.1: cannot open shared object file)
+```
+
+### Konfigurasi `binaryTargets` di `prisma/schema.prisma`
+
+File `backend/prisma/schema.prisma` sudah dikonfigurasi dengan:
+
+```prisma
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+```
+
+- `native` – digunakan saat development di mesin lokal
+- `debian-openssl-3.0.x` – digunakan saat runtime di dalam container (Debian bookworm / Ubuntu 22.04+)
+
+### Base Image Requirements
+
+`backend/Dockerfile` menggunakan `node:20-bookworm-slim` (Debian 12) yang sudah menyertakan OpenSSL 3.x. Pastikan paket berikut terinstall di semua stage:
+
+```dockerfile
+RUN apt-get update && apt-get install -y --no-install-recommends openssl libssl3 ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
+```
+
+### Troubleshooting OpenSSL Version Mismatch
+
+| Gejala | Solusi |
+|--------|--------|
+| `Cannot find module: libssl.so.1.1` | Tambahkan `debian-openssl-3.0.x` ke `binaryTargets` |
+| `libssl.so.3: cannot open shared object file` | Pastikan `libssl3` terinstall di image |
+| `Prisma engine version mismatch` | Set `PRISMA_SKIP_ENGINE_CHECK=true` di builder stage |
+| Build gagal di CI dengan OpenSSL error | Cek bahwa base image adalah Debian bookworm atau Ubuntu 22.04+ |
+
+Jalankan perintah berikut untuk memverifikasi OpenSSL di dalam container:
+
+```bash
+docker compose exec api openssl version
+```
+
+---
+
 ## 📚 Dokumentasi Tambahan
 
 - [Arsitektur Sistem](ARCHITECTURE.md)
