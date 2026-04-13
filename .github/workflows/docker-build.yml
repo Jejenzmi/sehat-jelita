@@ -44,6 +44,7 @@ jobs:
           push: ${{ github.event_name == 'push' }}
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/simrs-zen-api:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/simrs-zen-api:v1
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/simrs-zen-api:${{ github.sha }}
           labels: ${{ env.OCI_SOURCE_LABEL }}
           cache-from: type=gha,scope=backend-${{ hashFiles('backend/Dockerfile', 'backend/prisma/schema.prisma') }}

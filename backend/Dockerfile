@@ -5,6 +5,8 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends openssl libssl3 ca-certificates \
  && rm -rf /var/lib/apt/lists/*
 
+ENV PRISMA_SKIP_ENGINE_CHECK=1
+
 COPY package*.json ./
 RUN npm ci
 
