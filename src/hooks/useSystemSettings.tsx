@@ -66,7 +66,15 @@ export function useSystemSettings() {
       // Transform to key-value map
       const settingsMap: Record<string, any> = {};
       data?.forEach((s: any) => {
-        settingsMap[s.setting_key] = s.setting_value;
+        try {
+          // Attempt to parse JSON (like for hospital_info)
+          settingsMap[s.setting_key] = JSON.parse(s.setting_value);
+        } catch {
+          // Fallback to raw string if it's not valid JSON
+          if (s.setting_value === 'true') settingsMap[s.setting_key] = true;
+          else if (s.setting_value === 'false') settingsMap[s.setting_key] = false;
+          else settingsMap[s.setting_key] = s.setting_value;
+        }
       });
 
       return settingsMap;

@@ -6,7 +6,7 @@
 
 import { api } from '@/lib/api-client';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 // Table → backend endpoint mapping
 const TABLE_ENDPOINTS: Record<string, string> = {
@@ -20,7 +20,7 @@ const TABLE_ENDPOINTS: Record<string, string> = {
   inpatient_admissions: '/inpatient/admissions',
   beds: '/inpatient/beds',
   rooms: '/inpatient/rooms',
-  emergency_visits: '/emergency/visits',
+  emergency_visits: '/emergency/patients',
   lab_results: '/lab/results',
   lab_orders: '/lab/orders',
   surgeries: '/surgery',
@@ -77,6 +77,52 @@ const FUNCTION_ENDPOINTS: Record<string, string> = {
   'bpjs-antrean': '/bpjs/antrean',
   'pacs-bridge': '/radiology/pacs',
 };
+
+// Value translation layer - maps Indonesian UI values to backend English values
+const VALUE_TRANSLATIONS: Record<string, Record<string, string>> = {
+  visit_type: {
+    'rawat_jalan': 'outpatient',
+    'rawat_inap': 'inpatient',
+    'igd': 'emergency',
+    'mcu': 'mcu'
+  },
+  visit_status: {
+    'menunggu': 'waiting',
+    'dipanggil': 'called',
+    'dilayani': 'serving',
+    'diperiksa': 'in_progress',
+    'selesai': 'completed',
+    'dirawat': 'admitted',
+    'pulang': 'discharged',
+    'dibatalkan': 'cancelled'
+  },
+  gender: {
+    'laki-laki': 'male',
+    'perempuan': 'female'
+  }
+};
+
+// Apply translations to query parameters before sending to backend
+function translateValues(params: Record<string, unknown>): Record<string, unknown> {
+  const translated = { ...params };
+
+  // Translate visit_type
+  if (translated.visit_type && VALUE_TRANSLATIONS.visit_type[translated.visit_type as string]) {
+    translated.visit_type = VALUE_TRANSLATIONS.visit_type[translated.visit_type as string];
+  }
+
+  // Translate status
+  if (translated.status && VALUE_TRANSLATIONS.visit_status[translated.status as string]) {
+    translated.status = VALUE_TRANSLATIONS.visit_status[translated.status as string];
+  }
+
+  // Translate gender
+  if (translated.gender && VALUE_TRANSLATIONS.gender[translated.gender as string]) {
+    translated.gender = VALUE_TRANSLATIONS.gender[translated.gender as string];
+  }
+
+  return translated;
+}
 
 /**
  * Build fetch init with cookie auth + optional legacy Bearer fallback.
@@ -137,13 +183,13 @@ class QueryBuilder implements PromiseLike<any> {
   neq(col: string, val: unknown): this { this._filters.push({ type: 'neq', col, val }); return this; }
   gte(col: string, val: unknown): this { this._filters.push({ type: 'gte', col, val }); return this; }
   lte(col: string, val: unknown): this { this._filters.push({ type: 'lte', col, val }); return this; }
-  gt(col: string, val: unknown): this  { this._filters.push({ type: 'gt', col, val }); return this; }
-  lt(col: string, val: unknown): this  { this._filters.push({ type: 'lt', col, val }); return this; }
+  gt(col: string, val: unknown): this { this._filters.push({ type: 'gt', col, val }); return this; }
+  lt(col: string, val: unknown): this { this._filters.push({ type: 'lt', col, val }); return this; }
   in(col: string, vals: unknown[]): this { this._filters.push({ type: 'in', col, val: vals }); return this; }
-  or(filter: string): this  { this._filters.push({ type: 'or', col: '', val: filter }); return this; }
-  like(col: string, pattern: string): this  { this._filters.push({ type: 'like', col, val: pattern }); return this; }
+  or(filter: string): this { this._filters.push({ type: 'or', col: '', val: filter }); return this; }
+  like(col: string, pattern: string): this { this._filters.push({ type: 'like', col, val: pattern }); return this; }
   ilike(col: string, pattern: string): this { this._filters.push({ type: 'ilike', col, val: pattern }); return this; }
-  is(col: string, val: unknown): this   { this._filters.push({ type: 'is', col, val }); return this; }
+  is(col: string, val: unknown): this { this._filters.push({ type: 'is', col, val }); return this; }
   not(col: string, op: string, val: unknown): this { this._filters.push({ type: 'not', col, val: { op, val } }); return this; }
   order(col: string, opts?: { ascending?: boolean }): this {
     this._orderCol = col;
@@ -187,26 +233,36 @@ class QueryBuilder implements PromiseLike<any> {
 
     if (this._method !== 'GET') return `${API_BASE_URL}${path}`;
 
-    const params = new URLSearchParams();
+    // Build params object from filters
+    const paramsObj: Record<string, unknown> = {};
     for (const f of this._filters) {
-      if (f.type === 'eq') params.set(f.col, String(f.val));
-      else if (f.type === 'gte') params.set(`${f.col}_gte`, String(f.val));
-      else if (f.type === 'lte') params.set(`${f.col}_lte`, String(f.val));
-      else if (f.type === 'gt')  params.set(`${f.col}_gt`,  String(f.val));
-      else if (f.type === 'lt')  params.set(`${f.col}_lt`,  String(f.val));
-      else if (f.type === 'like') params.set(`${f.col}_like`, String(f.val));
-      else if (f.type === 'ilike') params.set(`${f.col}_ilike`, String(f.val));
-      else if (f.type === 'in') params.set(`${f.col}_in`, (f.val as unknown[]).join(','));
-      else if (f.type === 'or') params.set('or', String(f.val));
-      else if (f.type === 'is') params.set(`${f.col}_is`, String(f.val));
+      if (f.type === 'eq') paramsObj[f.col] = f.val;
+      else if (f.type === 'gte') paramsObj[`${f.col}_gte`] = f.val;
+      else if (f.type === 'lte') paramsObj[`${f.col}_lte`] = f.val;
+      else if (f.type === 'gt') paramsObj[`${f.col}_gt`] = f.val;
+      else if (f.type === 'lt') paramsObj[`${f.col}_lt`] = f.val;
+      else if (f.type === 'like') paramsObj[`${f.col}_like`] = f.val;
+      else if (f.type === 'ilike') paramsObj[`${f.col}_ilike`] = f.val;
+      else if (f.type === 'in') paramsObj[`${f.col}_in`] = (f.val as unknown[]).join(',');
+      else if (f.type === 'or') paramsObj['or'] = f.val;
+      else if (f.type === 'is') paramsObj[`${f.col}_is`] = f.val;
     }
     if (this._orderCol) {
-      params.set('order', this._orderCol);
-      params.set('dir', this._orderAsc ? 'asc' : 'desc');
+      paramsObj['order'] = this._orderCol;
+      paramsObj['dir'] = this._orderAsc ? 'asc' : 'desc';
     }
-    if (this._limitVal !== null) params.set('limit', String(this._limitVal));
-    if (this._rangeFrom !== null) params.set('offset', String(this._rangeFrom));
-    if (this._selectCols && this._selectCols !== '*') params.set('select', this._selectCols);
+    if (this._limitVal !== null) paramsObj['limit'] = String(this._limitVal);
+    if (this._rangeFrom !== null) paramsObj['offset'] = String(this._rangeFrom);
+    if (this._selectCols && this._selectCols !== '*') paramsObj['select'] = this._selectCols;
+
+    // Apply value translations to convert Indonesian UI values to backend English values
+    const translatedParams = translateValues(paramsObj);
+
+    // Build URLSearchParams from translated params
+    const params = new URLSearchParams();
+    for (const [key, value] of Object.entries(translatedParams)) {
+      params.set(key, String(value));
+    }
 
     const qs = params.toString();
     return `${API_BASE_URL}${path}${qs ? '?' + qs : ''}`;
@@ -326,7 +382,7 @@ const authShim = {
   onAuthStateChange(callback: (event: string, session: null) => void) {
     // No real-time session in Node.js mode; fire immediately with null session
     setTimeout(() => callback('INITIAL_SESSION', null), 0);
-    return { data: { subscription: { unsubscribe: () => {} } } };
+    return { data: { subscription: { unsubscribe: () => { } } } };
   },
   async updateUser({ password }: { password?: string }) {
     try {
@@ -365,29 +421,29 @@ function noopChannel(): RealtimeChannel {
   const ch: RealtimeChannel = {
     on: () => ch,
     subscribe: (cb?: (status: string) => void) => { cb?.('CLOSED'); return ch; },
-    unsubscribe: () => {},
+    unsubscribe: () => { },
   };
   return ch;
 }
 
 // ---- RPC function → backend endpoint mapping ----
 const RPC_ENDPOINTS: Record<string, { path: string; method: 'GET' | 'POST' }> = {
-  generate_medical_record_number: { path: '/patients/next-mrn', method: 'GET'  },
-  is_setup_completed:              { path: '/admin/setup-status',              method: 'GET'  },
-  get_available_modules:           { path: '/admin/modules',                   method: 'GET'  },
-  reset_system_to_initial:         { path: '/admin/reset-system',              method: 'POST' },
-  get_user_menu_access:            { path: '/admin/menu-access',               method: 'GET'  },
-  generate_invoice_number:         { path: '/billing/next-invoice-number',     method: 'GET'  },
-  generate_journal_number:         { path: '/accounting/next-journal-number',  method: 'GET'  },
-  generate_po_number:              { path: '/inventory/next-po-number',        method: 'GET'  },
-  generate_pr_number:              { path: '/inventory/next-pr-number',        method: 'GET'  },
-  generate_dispatch_number:        { path: '/ambulance/next-dispatch-number',  method: 'GET'  },
-  generate_home_care_visit_number: { path: '/home-care/next-visit-number',     method: 'GET'  },
-  calculate_rl6_indicators:        { path: '/reports/rl6-indicators',          method: 'POST' },
-  preview_hospital_type_migration: { path: '/admin/hospital-migration/preview',method: 'POST' },
-  migrate_hospital_type:           { path: '/admin/hospital-migration/execute',method: 'POST' },
-  update_enabled_modules:          { path: '/admin/enabled-modules',           method: 'POST' },
-  toggle_module:                   { path: '/admin/enabled-modules/toggle',    method: 'POST' },
+  generate_medical_record_number: { path: '/patients/next-mrn', method: 'GET' },
+  is_setup_completed: { path: '/admin/setup-status', method: 'GET' },
+  get_available_modules: { path: '/admin/modules', method: 'GET' },
+  reset_system_to_initial: { path: '/admin/reset-system', method: 'POST' },
+  get_user_menu_access: { path: '/admin/menu-access', method: 'GET' },
+  generate_invoice_number: { path: '/billing/next-invoice-number', method: 'GET' },
+  generate_journal_number: { path: '/accounting/next-journal-number', method: 'GET' },
+  generate_po_number: { path: '/inventory/next-po-number', method: 'GET' },
+  generate_pr_number: { path: '/inventory/next-pr-number', method: 'GET' },
+  generate_dispatch_number: { path: '/ambulance/next-dispatch-number', method: 'GET' },
+  generate_home_care_visit_number: { path: '/home-care/next-visit-number', method: 'GET' },
+  calculate_rl6_indicators: { path: '/reports/rl6-indicators', method: 'POST' },
+  preview_hospital_type_migration: { path: '/admin/hospital-migration/preview', method: 'POST' },
+  migrate_hospital_type: { path: '/admin/hospital-migration/execute', method: 'POST' },
+  update_enabled_modules: { path: '/admin/enabled-modules', method: 'POST' },
+  toggle_module: { path: '/admin/enabled-modules/toggle', method: 'POST' },
 };
 
 // ---- Main export ----
@@ -406,8 +462,10 @@ export const db = {
     const method = config.method;
     let url = `${API_BASE_URL}${config.path}`;
     if (method === 'GET' && hasParams) {
+      // Apply value translations to RPC params as well
+      const translatedParams = translateValues(params as Record<string, unknown>);
       const qs = new URLSearchParams();
-      Object.entries(params as Record<string, unknown>).forEach(([k, v]) => qs.append(k, String(v)));
+      Object.entries(translatedParams).forEach(([k, v]) => qs.append(k, String(v)));
       const qsStr = qs.toString();
       if (qsStr) url += `?${qsStr}`;
     }

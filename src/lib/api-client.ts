@@ -293,10 +293,10 @@ export const api = {
       return nodeRequest('POST', '/pharmacy/prescriptions', { body: data });
     },
     async verify(id: string, data: Record<string, unknown>) {
-      return nodeRequest('PUT', `/pharmacy/prescriptions/${id}/verify`, { body: data });
+      return nodeRequest('POST', `/pharmacy/prescriptions/${id}/verify`, { body: data });
     },
     async dispense(id: string, data: Record<string, unknown>) {
-      return nodeRequest('PUT', `/pharmacy/prescriptions/${id}/dispense`, { body: data });
+      return nodeRequest('POST', `/pharmacy/prescriptions/${id}/dispense`, { body: data });
     },
     async stock(params?: Record<string, string>) {
       return nodeRequest('GET', '/pharmacy/stock', { params });

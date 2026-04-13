@@ -31,7 +31,7 @@ import {
 import { db } from "@/lib/db";
 import { useToast } from "@/hooks/use-toast";
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
 const FETCH_OPTS: RequestInit = { credentials: 'include', headers: { 'Content-Type': 'application/json' } };
 import { format, differenceInYears } from "date-fns";
 import { ConfirmationDialog } from "@/components/shared/ConfirmationDialog";
@@ -67,15 +67,15 @@ export default function Pasien() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
-  
+
   // Delete confirmation
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [patientToDelete, setPatientToDelete] = useState<Patient | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  
+
   // Save confirmation
   const [saveConfirmOpen, setSaveConfirmOpen] = useState(false);
-  
+
   // Form state
   const [formData, setFormData] = useState({
     nik: "",
@@ -237,7 +237,7 @@ export default function Pasien() {
 
   const handleDelete = async () => {
     if (!patientToDelete) return;
-    
+
     setIsDeleting(true);
     try {
       const res = await fetch(`${API_BASE}/patients/${patientToDelete.id}`, {
@@ -387,7 +387,7 @@ export default function Pasien() {
                         <SelectValue placeholder="Pilih" />
                       </SelectTrigger>
                       <SelectContent>
-                    <SelectItem value="male">Laki-laki</SelectItem>
+                        <SelectItem value="male">Laki-laki</SelectItem>
                         <SelectItem value="female">Perempuan</SelectItem>
                       </SelectContent>
                     </Select>
@@ -541,7 +541,7 @@ export default function Pasien() {
                         </Avatar>
                         <div>
                           <p className="font-medium">{patient.full_name}</p>
-                      <p className="text-xs text-muted-foreground">
+                          <p className="text-xs text-muted-foreground">
                             {displayGender(patient.gender)}, {typeof calculateAge(patient.birth_date) === 'string' ? calculateAge(patient.birth_date) : `${calculateAge(patient.birth_date)}`}
                           </p>
                         </div>
@@ -586,7 +586,7 @@ export default function Pasien() {
                             Rekam Medis
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem 
+                          <DropdownMenuItem
                             onClick={() => handleDeleteConfirm(patient)}
                             className="text-destructive focus:text-destructive"
                           >

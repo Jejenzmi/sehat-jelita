@@ -2,7 +2,7 @@
  * Patient Portal API — typed wrappers around the real backend
  */
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
+const API_BASE = import.meta.env.VITE_API_URL || "/api";
 
 function getAuthHeaders(): HeadersInit {
   const token = localStorage.getItem("zen_access_token");

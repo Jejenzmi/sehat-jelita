@@ -16,7 +16,7 @@ import {
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
+const API_BASE = import.meta.env.VITE_API_URL || "/api";
 
 interface AuditLog {
   id: string;

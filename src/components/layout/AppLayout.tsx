@@ -12,7 +12,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header />
-        <main className="flex-1 overflow-y-auto p-4 lg:p-6">
+        <main className="flex-1 overflow-y-auto p-5 lg:p-6 max-w-screen-2xl">
           {children}
           <footer className="mt-8 py-4 border-t border-border text-center text-xs text-muted-foreground">
             © {new Date().getFullYear()} PT Zen Multimedia Indonesia. All rights reserved.

@@ -13,7 +13,7 @@ import {
   Pill, Heart, Beaker, X, ChevronDown, ChevronUp,
 } from "lucide-react";
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
+const API_BASE = import.meta.env.VITE_API_URL || "/api";
 
 interface CDSAlertItem {
   type: string;

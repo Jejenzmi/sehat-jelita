@@ -7,8 +7,8 @@
 @layer base {
   :root {
     /* Medical Healthcare Color Palette */
-    --background: 210 40% 98%;
-    --foreground: 220 25% 10%;
+    --background: 210 20% 97%;
+    --foreground: 222 25% 12%;
 
     --card: 0 0% 100%;
     --card-foreground: 220 25% 10%;
@@ -139,7 +139,7 @@
   }
 
   body {
-    @apply bg-[#F7F9FC] text-foreground font-sans antialiased;
+    @apply bg-[#F3F4F6] text-foreground font-sans antialiased;
     font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
   }
 
@@ -166,7 +166,7 @@
   }
 
   .stat-card {
-    @apply relative overflow-hidden rounded-[20px] p-6 transition-all duration-300 hover:shadow-md border border-border/40 shadow-sm bg-white;
+    @apply relative rounded-2xl p-4 transition-all duration-200 hover:shadow-md border border-border/50 shadow-sm bg-white;
   }
 
   .nav-item {

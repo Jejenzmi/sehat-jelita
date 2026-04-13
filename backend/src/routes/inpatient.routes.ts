@@ -1,0 +1,499 @@
+/**
+ * SIMRS ZEN - Inpatient (Rawat Inap) Routes
+ * Manages ward admissions, bed management, and nursing care
+ */
+
+import { Router, Request, Response } from 'express';
+import { z } from 'zod';
+import { prisma } from '../config/database.js';
+import { requireRole, ROLES } from '../middleware/role.middleware.js';
+import { asyncHandler, ApiError } from '../middleware/errorHandler.js';
+
+const router = Router();
+
+
+// Validation schemas
+const admissionSchema = z.object({
+  patientId: z.string().uuid(),
+  visitId: z.string().uuid(),
+  roomId: z.string().uuid(),
+  bedId: z.string().uuid(),
+  admissionType: z.enum(['PLANNED', 'EMERGENCY', 'TRANSFER']),
+  attendingDoctorId: z.string().uuid(),
+  admissionDiagnosis: z.string(),
+  paymentType: z.enum(['cash', 'bpjs', 'insurance', 'corporate']),
+  insuranceInfo: z.object({
+    insuranceId: z.string().optional(),
+    policyNumber: z.string().optional(),
+    sepNumber: z.string().optional()
+  }).optional(),
+  notes: z.string().optional()
+});
+
+// Type definitions
+interface AdmissionBody extends z.infer<typeof admissionSchema> { }
+interface NursingNoteBody {
+  noteType?: string;
+  content?: string;
+  vitalSigns?: any;
+  painScore?: number;
+  fallRiskScore?: number;
+  pressureUlcerRisk?: number;
+}
+interface TransferBody {
+  newBedId: string;
+  reason?: string;
+}
+interface DischargeBody {
+  dischargeType?: string;
+  dischargeDiagnosis?: string;
+  dischargeCondition?: string;
+  dischargeMedications?: string;
+  followUpInstructions?: string;
+  followUpDate?: string;
+  referralInfo?: string;
+}
+
+type AdmissionQuery = {
+  wardId?: string;
+  status?: string;
+  doctorId?: string;
+  page?: string;
+  limit?: string;
+};
+
+type BedQuery = {
+  wardId?: string;
+  roomType?: string;
+};
+
+type RoomQuery = {
+  department_id?: string;
+  room_type?: string;
+  is_active?: string;
+};
+
+/**
+ * GET /api/inpatient/admissions
+ * List current inpatients
+ */
+router.get('/admissions',
+  requireRole([ROLES.DOKTER, ROLES.PERAWAT, ROLES.PENDAFTARAN]),
+  asyncHandler(async (req: Request<Record<string, string>, any, any, AdmissionQuery>, res: Response) => {
+    const { wardId, status, doctorId, page = '1', limit = '50' } = req.query;
+
+    const where: Record<string, any> = { discharge_date: null };
+    if (wardId) where.rooms = { department_id: wardId };
+    if (status) where.status = status;
+    if (doctorId) where.attending_doctor_id = doctorId;
+
+    const [admissions, total] = await Promise.all([
+      prisma.inpatient_admissions.findMany({
+        where,
+        include: {
+          patients: {
+            select: {
+              id: true,
+              medical_record_number: true,
+              full_name: true,
+              birth_date: true,
+              gender: true,
+              blood_type: true,
+              allergy_notes: true
+            }
+          }
+          // TODO: beds and doctors relations don't exist on inpatient_admissions
+        },
+        orderBy: { admission_date: 'desc' },
+        skip: (parseInt(page) - 1) * parseInt(limit),
+        take: parseInt(limit)
+      }),
+      prisma.inpatient_admissions.count({ where })
+    ]);
+
+    res.json({
+      success: true,
+      data: admissions,
+      pagination: { page: parseInt(page), limit: parseInt(limit), total }
+    });
+  })
+);
+
+/**
+ * POST /api/inpatient/admissions
+ * Admit patient to ward
+ */
+router.post('/admissions',
+  requireRole([ROLES.PENDAFTARAN, ROLES.PERAWAT]),
+  asyncHandler(async (req: Request<Record<string, string>, any, AdmissionBody>, res: Response) => {
+    const data = admissionSchema.parse(req.body);
+
+    // Check bed availability
+    const bed = await prisma.beds.findUnique({
+      where: { id: data.bedId },
+      include: { rooms: true }
+    });
+
+    if (!bed || bed.status !== 'available') {
+      throw new ApiError(409, 'Bed tidak tersedia');
+    }
+
+    const admission = await prisma.$transaction(async (tx) => {
+      // Create admission
+      const inpatient = await tx.inpatient_admissions.create({
+        data: {
+          patient_id: data.patientId,
+          visit_id: data.visitId,
+          room_id: data.roomId,
+          bed_id: data.bedId,
+          admission_date: new Date(),
+          admission_type: data.admissionType,
+          attending_doctor_id: data.attendingDoctorId,
+          admission_diagnosis: data.admissionDiagnosis,
+          payment_type: data.paymentType,
+          insurance_info: data.insuranceInfo,
+          notes: data.notes,
+          status: 'ADMITTED',
+          admitted_by: req.user!.id
+        }
+      });
+
+      // Update bed status
+      await tx.beds.update({
+        where: { id: data.bedId },
+        data: {
+          status: 'occupied',
+          current_patient_id: data.patientId
+        }
+      });
+
+      // Update visit type
+      await tx.visits.update({
+        where: { id: data.visitId },
+        data: { visit_type: 'INPATIENT' }
+      });
+
+      return inpatient;
+    });
+
+    res.status(201).json({
+      success: true,
+      data: admission
+    });
+  })
+);
+
+/**
+ * POST /api/inpatient/admissions/:id/nursing-notes
+ * Add nursing notes/observations
+ */
+router.post('/admissions/:id/nursing-notes',
+  requireRole([ROLES.PERAWAT]),
+  asyncHandler(async (req: Request<{ id: string }, any, NursingNoteBody>, res: Response) => {
+    const { id } = req.params;
+    const {
+      noteType,
+      content,
+      vitalSigns,
+      painScore,
+      fallRiskScore,
+      pressureUlcerRisk
+    } = req.body;
+
+    const note = await prisma.nursing_notes.create({
+      data: {
+        admission_id: id,
+        nurse_id: req.user!.id,
+        note_type: noteType, // 'OBSERVATION', 'INTERVENTION', 'ASSESSMENT', 'HANDOVER'
+        content,
+        vital_signs: vitalSigns,
+        pain_score: painScore,
+        fall_risk_score: fallRiskScore,
+        pressure_ulcer_risk: pressureUlcerRisk,
+        recorded_at: new Date()
+      }
+    });
+
+    res.status(201).json({
+      success: true,
+      data: note
+    });
+  })
+);
+
+/**
+ * PUT /api/inpatient/admissions/:id/transfer
+ * Transfer patient to different bed/room
+ */
+router.put('/admissions/:id/transfer',
+  requireRole([ROLES.PERAWAT, ROLES.PENDAFTARAN]),
+  asyncHandler(async (req: Request<{ id: string }, any, TransferBody>, res: Response) => {
+    const { id } = req.params;
+    const { newBedId, reason } = req.body;
+
+    // Check new bed availability
+    const newBed = await prisma.beds.findUnique({
+      where: { id: newBedId }
+    });
+
+    if (!newBed || newBed.status !== 'available') {
+      throw new ApiError(409, 'Bed tujuan tidak tersedia');
+    }
+
+    const admission = await prisma.$transaction(async (tx) => {
+      const current = await tx.inpatient_admissions.findUnique({
+        where: { id }
+      });
+
+      // Free old bed
+      await tx.beds.update({
+        where: { id: current!.bed_id },
+        data: { status: 'maintenance', current_patient_id: null }
+      });
+
+      // Occupy new bed
+      await tx.beds.update({
+        where: { id: newBedId },
+        data: { status: 'occupied', current_patient_id: current!.patient_id }
+      });
+
+      // Log transfer
+      await tx.bed_transfers.create({
+        data: {
+          admission_id: id,
+          from_bed_id: current!.bed_id,
+          to_bed_id: newBedId,
+          transfer_reason: reason,
+          transferred_by: req.user!.id,
+          transferred_at: new Date()
+        }
+      });
+
+      // Update admission
+      return tx.inpatient_admissions.update({
+        where: { id },
+        data: { bed_id: newBedId }
+      });
+    });
+
+    res.json({
+      success: true,
+      data: admission
+    });
+  })
+);
+
+/**
+ * PUT /api/inpatient/admissions/:id/discharge
+ * Discharge patient
+ */
+router.put('/admissions/:id/discharge',
+  requireRole([ROLES.DOKTER, ROLES.PERAWAT]),
+  asyncHandler(async (req: Request<{ id: string }, any, DischargeBody>, res: Response) => {
+    const { id } = req.params;
+    const {
+      dischargeType,
+      dischargeDiagnosis,
+      dischargeCondition,
+      dischargeMedications,
+      followUpInstructions,
+      followUpDate,
+      referralInfo
+    } = req.body;
+
+    const admission = await prisma.$transaction(async (tx) => {
+      const current = await tx.inpatient_admissions.findUnique({
+        where: { id }
+      });
+
+      // Calculate LOS
+      const admissionDate = new Date(current!.admission_date);
+      const dischargeDate = new Date();
+      const losMs = dischargeDate.getTime() - admissionDate.getTime();
+      const losDays = Math.ceil(losMs / (1000 * 60 * 60 * 24));
+
+      // Update admission
+      const updated = await tx.inpatient_admissions.update({
+        where: { id },
+        data: {
+          discharge_date: dischargeDate,
+          // TODO: discharge_type not in schema - store in notes if needed
+          discharge_diagnosis: dischargeDiagnosis,
+          // TODO: discharge_condition, discharge_medications, follow_up_instructions, follow_up_date, referral_info not in schema
+          status: 'DISCHARGED',
+          discharged_by: req.user!.id
+        }
+      });
+
+      // Free bed
+      await tx.beds.update({
+        where: { id: current!.bed_id },
+        data: { status: 'maintenance', current_patient_id: null }
+      });
+
+      // Update visit
+      await tx.visits.update({
+        where: { id: current!.visit_id },
+        data: {
+          status: 'COMPLETED',
+          // TODO: checkout_time not in schema - use discharge_date instead
+        }
+      });
+
+      return updated;
+    });
+
+    res.json({
+      success: true,
+      data: admission
+    });
+  })
+);
+
+/**
+ * GET /api/inpatient/beds
+ * Get bed occupancy status
+ */
+router.get('/beds',
+  requireRole([ROLES.PERAWAT, ROLES.PENDAFTARAN, ROLES.MANAJEMEN]),
+  asyncHandler(async (req: Request<Record<string, string>, any, any, BedQuery>, res: Response) => {
+    const { wardId, roomType } = req.query;
+
+    const where: Record<string, any> = {};
+    if (wardId) where.rooms = { department_id: wardId };
+    if (roomType) where.rooms = { ...where.rooms, room_type: roomType };
+
+    const beds = await prisma.beds.findMany({
+      where,
+      include: {
+        rooms: {
+          select: {
+            id: true,
+            room_name: true,
+            room_type: true,
+            rate_per_day: true
+          }
+        }
+      },
+      orderBy: [
+        { rooms: { room_name: 'asc' } },
+        { bed_number: 'asc' }
+      ]
+    });
+
+    // Summary by status
+    const summary = beds.reduce((acc: Record<string, number>, bed) => {
+      acc[bed.status] = (acc[bed.status] || 0) + 1;
+      return acc;
+    }, { total: beds.length });
+
+    res.json({
+      success: true,
+      data: { beds, summary }
+    });
+  })
+);
+
+/**
+ * GET /api/inpatient/census
+ * Daily census report
+ */
+router.get('/census',
+  requireRole([ROLES.PERAWAT, ROLES.MANAJEMEN]),
+  asyncHandler(async (req: Request, res: Response) => {
+    const { date } = req.query;
+    const targetDate = date ? new Date(date as string) : new Date();
+    targetDate.setHours(0, 0, 0, 0);
+
+    const nextDate = new Date(targetDate);
+    nextDate.setDate(nextDate.getDate() + 1);
+
+    const [
+      previousDayPatients,
+      admissions,
+      discharges,
+      transfers
+    ] = await Promise.all([
+      // Patients from previous day
+      prisma.inpatient_admissions.count({
+        where: {
+          admission_date: { lt: targetDate },
+          OR: [
+            { discharge_date: null },
+            { discharge_date: { gte: targetDate } }
+          ]
+        }
+      }),
+      // New admissions
+      prisma.inpatient_admissions.count({
+        where: {
+          admission_date: {
+            gte: targetDate,
+            lt: nextDate
+          }
+        }
+      }),
+      // Discharges
+      prisma.inpatient_admissions.count({
+        where: {
+          discharge_date: {
+            gte: targetDate,
+            lt: nextDate
+          }
+        }
+      }),
+      // Transfers
+      prisma.bed_transfers.count({
+        where: {
+          transferred_at: {
+            gte: targetDate,
+            lt: nextDate
+          }
+        }
+      })
+    ]);
+
+    const currentPatients = previousDayPatients + admissions - discharges;
+
+    res.json({
+      success: true,
+      data: {
+        date: targetDate.toISOString().split('T')[0],
+        previousDay: previousDayPatients,
+        admissions,
+        discharges,
+        transfers,
+        currentPatients
+      }
+    });
+  })
+);
+
+/**
+ * GET /api/inpatient/rooms
+ * Get all inpatient rooms with bed availability
+ */
+router.get('/rooms',
+  requireRole([ROLES.PERAWAT, ROLES.PENDAFTARAN, ROLES.MANAJEMEN]),
+  asyncHandler(async (req: Request<Record<string, string>, any, any, RoomQuery>, res: Response) => {
+    const { department_id, room_type, is_active } = req.query;
+
+    const where: Record<string, any> = {};
+    if (department_id) where.department_id = department_id;
+    if (room_type) where.room_type = room_type;
+    if (is_active !== undefined) where.is_active = is_active === 'true';
+
+    const rooms = await prisma.rooms.findMany({
+      where,
+      include: {
+        departments: { select: { id: true, department_name: true } },
+        beds: { select: { id: true, bed_number: true, status: true, current_patient_id: true } },
+      },
+      orderBy: [{ room_number: 'asc' }],
+    });
+
+    res.json({ success: true, data: rooms });
+  })
+);
+
+export default router;

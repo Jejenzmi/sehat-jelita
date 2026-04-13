@@ -198,36 +198,36 @@ export function Sidebar() {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed lg:static inset-y-0 left-0 z-50 flex flex-col bg-sidebar transition-all duration-300 ease-in-out rounded-r-[30px] lg:rounded-r-[40px] overflow-hidden shadow-xl border-r-0",
-          collapsed ? "w-20" : "w-72",
+          "fixed lg:static inset-y-0 left-0 z-50 flex flex-col bg-[#1B4332] transition-all duration-300 ease-in-out rounded-r-3xl overflow-hidden shadow-lg",
+          collapsed ? "w-[68px]" : "w-60",
           mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
-        style={{ background: "var(--gradient-sidebar)" }}
+        style={{}}
       >
         {/* Header */}
-        <div className="flex items-center justify-between h-16 px-4 border-b border-sidebar-border bg-white/10 backdrop-blur-sm">
+        <div className="flex items-center justify-between h-14 px-3 border-b border-white/10">
           {!collapsed && (
-            <div className="flex items-center gap-3 animate-fade-in">
-              <img src={simrsZenLogo} alt="SIMRS ZEN" className="h-10 bg-white/90 rounded-lg px-1.5 py-0.5" />
+            <div className="flex items-center gap-2 animate-fade-in">
+              <img src={simrsZenLogo} alt="SIMRS ZEN" className="h-8 bg-white/90 rounded-lg px-1 py-0.5" />
             </div>
           )}
           {collapsed && (
-            <div className="w-10 h-10 mx-auto rounded-xl gradient-primary flex items-center justify-center shadow-glow">
-              <HeartPulse className="h-6 w-6 text-primary-foreground" />
+            <div className="w-9 h-9 mx-auto rounded-xl bg-white/15 flex items-center justify-center">
+              <HeartPulse className="h-5 w-5 text-white" />
             </div>
           )}
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-6">
+        <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-4">
           {navigationGroups.map((group) => (
             <div key={group.title}>
               {!collapsed && (
-                <h3 className="px-4 mb-2 text-xs font-semibold text-sidebar-foreground/40 uppercase tracking-wider">
+                <h3 className="px-3 mb-1.5 text-[10px] font-bold text-white/35 uppercase tracking-widest">
                   {group.title}
                 </h3>
               )}
-              <ul className="space-y-1">
+              <ul className="space-y-0.5">
                 {group.items.map((item) => {
                   const isActive = location.pathname === item.path;
                   return (
@@ -235,15 +235,18 @@ export function Sidebar() {
                       <Link
                         to={item.path}
                         onClick={() => setMobileOpen(false)}
-                        className={cn("nav-item", isActive && "active")}
+                        className={cn(
+                          "flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all duration-150 text-white/60 hover:text-white hover:bg-white/10 text-sm",
+                          isActive && "bg-white/20 text-white font-semibold"
+                        )}
                         title={collapsed ? item.label : undefined}
                       >
-                        <item.icon className={cn("h-5 w-5 flex-shrink-0", isActive && "text-current")} />
+                        <item.icon className={cn("h-4 w-4 flex-shrink-0", isActive && "text-white")} />
                         {!collapsed && (
                           <>
-                            <span className="flex-1">{item.label}</span>
+                            <span className="flex-1 truncate">{item.label}</span>
                             {item.badge && (
-                              <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-sidebar-primary/20 text-sidebar-primary">
+                              <span className="px-1.5 py-0.5 text-[9px] font-bold rounded-full bg-white/20 text-white">
                                 {item.badge}
                               </span>
                             )}
@@ -259,17 +262,17 @@ export function Sidebar() {
         </nav>
 
         {/* Collapse Button */}
-        <div className="hidden lg:block p-3 border-t border-sidebar-border">
+        <div className="hidden lg:block p-2 border-t border-white/10">
           <button
             onClick={() => setCollapsed(!collapsed)}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+            className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-white/40 hover:text-white hover:bg-white/10 transition-colors text-sm"
           >
             {collapsed ? (
-              <ChevronRight className="h-5 w-5" />
+              <ChevronRight className="h-4 w-4" />
             ) : (
               <>
-                <ChevronLeft className="h-5 w-5" />
-                <span className="text-sm">Collapse</span>
+                <ChevronLeft className="h-4 w-4" />
+                <span className="text-xs">Collapse</span>
               </>
             )}
           </button>

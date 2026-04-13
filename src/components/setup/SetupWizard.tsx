@@ -108,8 +108,9 @@ export default function SetupWizard({ onComplete }: SetupWizardProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 flex items-center justify-center p-4">
-      <Card className="w-full max-w-2xl shadow-2xl border-0">
+    <div className="min-h-screen bg-[#F3F4F6] flex items-center justify-center p-4">
+      <Card className="w-full max-w-2xl shadow-2xl border-0 overflow-hidden">
+        <div className="h-2 bg-[#1B4332] w-full" />
         <CardHeader className="text-center pb-2">
           <div className="flex justify-center mb-4">
             <img src={simrsZenLogo} alt="SIMRS ZEN" className="h-16" />
@@ -135,8 +136,8 @@ export default function SetupWizard({ onComplete }: SetupWizardProps) {
           {/* Step 1: Welcome */}
           {step === 1 && (
             <div className="text-center space-y-6">
-              <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
-                <Sparkles className="h-10 w-10 text-primary" />
+              <div className="w-20 h-20 bg-[#1B4332]/10 rounded-full flex items-center justify-center mx-auto">
+                <Sparkles className="h-10 w-10 text-[#1B4332]" />
               </div>
               <div>
                 <h3 className="text-xl font-semibold mb-2">Selamat Datang!</h3>
@@ -425,7 +426,7 @@ export default function SetupWizard({ onComplete }: SetupWizardProps) {
             )}
 
             {step < 4 ? (
-              <Button onClick={() => setStep(step + 1)} disabled={!canProceed()}>
+              <Button onClick={() => setStep(step + 1)} disabled={!canProceed()} className="bg-[#1B4332] text-white hover:bg-[#2D6A4F]">
                 Lanjut
                 <ChevronRight className="h-4 w-4 ml-1" />
               </Button>
@@ -433,7 +434,7 @@ export default function SetupWizard({ onComplete }: SetupWizardProps) {
               <Button 
                 onClick={handleComplete} 
                 disabled={completeSetup.isPending}
-                className="bg-gradient-to-r from-primary to-primary/80"
+                className="bg-[#1B4332] text-white hover:bg-[#2D6A4F]"
               >
                 {completeSetup.isPending ? (
                   "Menyimpan..."
