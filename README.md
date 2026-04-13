@@ -368,6 +368,54 @@ docker compose restart frontend
 
 ---
 
+## 🔐 Prisma & OpenSSL Configuration
+
+### Mengapa OpenSSL 3.x Compatibility Penting?
+
+Ubuntu 24.04 (Noble) dan Debian Bookworm menggunakan **OpenSSL 3.x** secara default. Prisma Client memerlukan binary engine yang dikompilasi untuk versi OpenSSL yang sesuai agar tidak terjadi error runtime seperti:
+
+```
+Error: Cannot find module: libssl.so.1.1
+```
+
+### Konfigurasi di `prisma/schema.prisma`
+
+```prisma
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+```
+
+Dengan `binaryTargets = ["native", "debian-openssl-3.0.x"]`, Prisma akan menghasilkan binary yang kompatibel dengan lingkungan Docker berbasis Debian/Ubuntu dengan OpenSSL 3.0.x.
+
+### Base Image Requirements
+
+| Base Image | OpenSSL Version | Prisma binaryTarget |
+|-----------|----------------|---------------------|
+| `node:20-bookworm-slim` | OpenSSL 3.0.x | `debian-openssl-3.0.x` ✅ |
+| `node:20-bullseye-slim` | OpenSSL 1.1.x | `debian-openssl-1.1.x` |
+| `node:20-alpine` | LibreSSL / musl | `linux-musl-openssl-3.0.x` |
+
+### Troubleshooting OpenSSL Version Mismatch
+
+Jika terjadi error terkait OpenSSL:
+
+```bash
+# Cek versi OpenSSL di container
+docker exec <container> openssl version
+
+# Pastikan paket libssl3 terpasang
+docker exec <container> dpkg -l | grep libssl
+
+# Rebuild image dengan cache bersih
+docker build --no-cache -t simrs-zen-api ./backend
+```
+
+Variabel `PRISMA_SKIP_ENGINE_CHECK=true` di `backend/Dockerfile` memastikan inisialisasi engine lebih aman saat build.
+
+---
+
 ## 🔧 Development Lokal
 
 ### Prasyarat
