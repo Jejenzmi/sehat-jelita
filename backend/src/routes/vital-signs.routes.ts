@@ -1,180 +1,203 @@
 /**
- * Vital Signs Time-Series Routes
+ * SIMRS ZEN - Vital Signs Routes
+ * CRUD operations for patient vital signs
  */
+
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
-import { authenticateToken } from '../middleware/auth.middleware.js';
-import { asyncHandler, ApiError } from '../middleware/errorHandler.js';
 import { prisma } from '../config/database.js';
+import { requireRole } from '../middleware/role.middleware.js';
+import { asyncHandler, ApiError } from '../middleware/errorHandler.js';
 
 const router = Router();
-router.use(authenticateToken);
 
-interface VitalsQuery {
-  patient_id?: string;
-  visit_id?: string;
-  from?: string;
-  to?: string;
-  limit?: string;
-}
+// Require clinical roles for all vital signs routes
+router.use(requireRole(['admin', 'dokter', 'perawat']));
 
-interface TrendQuery {
-  days?: string;
-  visit_id?: string;
-}
+// Validation schemas
+const createVitalSignSchema = z.object({
+  patient_id: z.string().uuid('Patient ID tidak valid'),
+  visit_id: z.string().uuid('Visit ID tidak valid').optional(),
+  recorded_at: z.string().datetime().optional(),
+  systolic_bp: z.number().int().positive().optional(),
+  diastolic_bp: z.number().int().positive().optional(),
+  heart_rate: z.number().int().positive().optional(),
+  respiratory_rate: z.number().int().positive().optional(),
+  temperature: z.number().positive().optional(),
+  spo2: z.number().min(0).max(100).optional(),
+  weight: z.number().positive().optional(),
+  height: z.number().positive().optional(),
+  bmi: z.number().positive().optional(),
+  pain_scale: z.number().min(0).max(10).optional(),
+  consciousness: z.string().optional(),
+  notes: z.string().optional()
+});
 
-const VitalSignsSchema = z.object({
-  patient_id: z.string().uuid(),
-  visit_id: z.string().uuid().optional().nullable(),
-  recorded_at: z.string().datetime({ offset: true }).optional(),
-  systolic_bp: z.coerce.number().int().min(0).max(350).optional().nullable(),
-  diastolic_bp: z.coerce.number().int().min(0).max(250).optional().nullable(),
-  heart_rate: z.coerce.number().int().min(0).max(350).optional().nullable(),
-  respiratory_rate: z.coerce.number().int().min(0).max(100).optional().nullable(),
-  spo2: z.coerce.number().min(0).max(100).optional().nullable(),
-  temperature: z.coerce.number().min(25).max(45).optional().nullable(),
-  temp_route: z.enum(['oral', 'axillary', 'rectal', 'tympanic', 'forehead']).optional(),
-  weight_kg: z.coerce.number().min(0).max(500).optional().nullable(),
-  height_cm: z.coerce.number().min(0).max(300).optional().nullable(),
-  pain_score: z.coerce.number().int().min(0).max(10).optional().nullable(),
-  gcs_total: z.coerce.number().int().min(3).max(15).optional().nullable(),
-  gcs_eye: z.coerce.number().int().min(1).max(4).optional().nullable(),
-  gcs_verbal: z.coerce.number().int().min(1).max(5).optional().nullable(),
-  gcs_motor: z.coerce.number().int().min(1).max(6).optional().nullable(),
-  blood_glucose: z.coerce.number().min(0).max(1000).optional().nullable(),
-  notes: z.string().max(500).optional(),
-  source: z.enum(['manual', 'device', 'lis', 'hl7']).default('manual'),
-}).refine(data => {
-  const vitalFields = [
-    'systolic_bp', 'heart_rate', 'respiratory_rate', 'spo2',
-    'temperature', 'weight_kg', 'pain_score', 'gcs_total', 'blood_glucose',
-  ];
-  return vitalFields.some(f => (data as Record<string, unknown>)[f] != null);
-}, { message: 'Minimal satu tanda vital harus diisi' });
+const updateVitalSignSchema = createVitalSignSchema.partial();
 
-interface VitalBody extends z.infer<typeof VitalSignsSchema> { }
+// ============================================
+// VITAL SIGNS CRUD
+// ============================================
 
-// GET LIST
-router.get('/', asyncHandler(async (req: Request<Record<string, string>, any, any, VitalsQuery>, res: Response) => {
-  const { patient_id, visit_id, from, to, limit = 50 } = req.query;
-
-  if (!patient_id && !visit_id) {
-    throw new ApiError(400, 'patient_id atau visit_id diperlukan');
-  }
+/**
+ * GET /api/vital-signs
+ * Get all vital signs with pagination
+ */
+router.get('/', asyncHandler(async (req: Request, res: Response) => {
+  const { page = '1', limit = '20', patient_id, visit_id } = req.query;
 
   const where: Record<string, unknown> = {};
   if (patient_id) where.patient_id = patient_id;
   if (visit_id) where.visit_id = visit_id;
-  if (from || to) {
-    where.recorded_at = {};
-    if (from) (where.recorded_at as Record<string, unknown>).gte = new Date(from);
-    if (to) (where.recorded_at as Record<string, unknown>).lte = new Date(to);
-  }
 
-  const vitals = await prisma.vital_signs.findMany({
-    where,
-    orderBy: { recorded_at: 'desc' },
-    take: Math.min(Number(limit), 200),
+  const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
+
+  const [vitalSigns, total] = await Promise.all([
+    prisma.vital_signs.findMany({
+      where,
+      include: {
+        patients: {
+          select: {
+            id: true,
+            medical_record_number: true,
+            full_name: true
+          }
+        }
+      },
+      orderBy: { recorded_at: 'desc' },
+      skip,
+      take: parseInt(limit as string)
+    }),
+    prisma.vital_signs.count({ where })
+  ]);
+
+  res.json({
+    success: true,
+    data: vitalSigns,
+    pagination: {
+      page: parseInt(page as string),
+      limit: parseInt(limit as string),
+      total,
+      totalPages: Math.ceil(total / parseInt(limit as string))
+    }
   });
-
-  res.json({ success: true, data: vitals });
 }));
 
-// LATEST
+/**
+ * GET /api/vital-signs/:id
+ * Get single vital sign record
+ */
+router.get('/:id', asyncHandler(async (req: Request<{ id: string }>, res: Response) => {
+  const { id } = req.params;
+
+  const vitalSign = await prisma.vital_signs.findUnique({
+    where: { id },
+    include: {
+      patients: {
+        select: {
+          id: true,
+          medical_record_number: true,
+          full_name: true
+        }
+      }
+    }
+  });
+
+  if (!vitalSign) {
+    throw new ApiError(404, 'Vital sign record tidak ditemukan', 'VITAL_SIGN_NOT_FOUND');
+  }
+
+  res.json({ success: true, data: vitalSign });
+}));
+
+/**
+ * GET /api/vital-signs/latest/:patient_id
+ * Get latest vital signs for a patient
+ */
 router.get('/latest/:patient_id', asyncHandler(async (req: Request<{ patient_id: string }>, res: Response) => {
-  const latest = await prisma.vital_signs.findFirst({
-    where: { patient_id: req.params.patient_id },
+  const { patient_id } = req.params;
+
+  const latestVital = await prisma.vital_signs.findFirst({
+    where: { patient_id },
+    orderBy: { recorded_at: 'desc' }
+  });
+
+  if (!latestVital) {
+    throw new ApiError(404, 'Tidak ada data vital sign untuk pasien ini', 'NO_VITAL_SIGNS');
+  }
+
+  res.json({ success: true, data: latestVital });
+}));
+
+/**
+ * GET /api/vital-signs/trend/:patient_id
+ * Get vital signs trend for a patient (last 10 records)
+ */
+router.get('/trend/:patient_id', asyncHandler(async (req: Request<{ patient_id: string }>, res: Response) => {
+  const { patient_id } = req.params;
+
+  const trends = await prisma.vital_signs.findMany({
+    where: { patient_id },
     orderBy: { recorded_at: 'desc' },
-  });
-  res.json({ success: true, data: latest });
-}));
-
-// TREND
-router.get('/trend/:patient_id', asyncHandler(async (req: Request<{ patient_id: string }, any, any, TrendQuery>, res: Response) => {
-  const { days = '7', visit_id } = req.query;
-  const since = new Date(Date.now() - Math.min(Number(days), 365) * 86400000);
-
-  const where: Record<string, unknown> = { patient_id: req.params.patient_id, recorded_at: { gte: since } };
-  if (visit_id) where.visit_id = visit_id;
-
-  const vitals = await prisma.vital_signs.findMany({
-    where,
-    orderBy: { recorded_at: 'asc' },
-    select: {
-      recorded_at: true,
-      systolic_bp: true, diastolic_bp: true, heart_rate: true,
-      respiratory_rate: true, spo2: true, temperature: true,
-      pain_score: true, gcs_total: true, blood_glucose: true,
-      weight_kg: true, bmi: true,
-    },
+    take: 10
   });
 
-  const latest = (vitals as Array<Record<string, unknown>>)[(vitals as Array<unknown>).length - 1] || null;
-  const latest_stats = latest ? {
-    bp: latest.systolic_bp ? `${latest.systolic_bp}/${latest.diastolic_bp}` : null,
-    hr: latest.heart_rate,
-    rr: latest.respiratory_rate,
-    spo2: latest.spo2,
-    temp: latest.temperature,
-    pain: latest.pain_score,
-    gcs: latest.gcs_total,
-  } : {};
-
-  res.json({ success: true, data: { trend: vitals, latest_stats } });
+  res.json({ success: true, data: trends.reverse() }); // Oldest first for chart
 }));
 
-// CREATE
+/**
+ * POST /api/vital-signs
+ * Create new vital sign record
+ */
 router.post('/', asyncHandler(async (req: Request, res: Response) => {
-  const body = VitalSignsSchema.parse(req.body);
+  const validatedData = createVitalSignSchema.parse(req.body);
 
-  let bmi: number | null = null;
-  if (body.weight_kg && body.height_cm) {
-    const h = body.height_cm / 100;
-    bmi = parseFloat((body.weight_kg / (h * h)).toFixed(2));
-  }
-
-  const vital = await prisma.vital_signs.create({
+  const vitalSign = await prisma.vital_signs.create({
     data: {
-      ...body,
-      bmi,
-      recorded_by: (req.user as Record<string, string>).id,
-      recorded_at: body.recorded_at ? new Date(body.recorded_at) : new Date(),
-    } as any,
+      ...validatedData,
+      recorded_at: validatedData.recorded_at ? new Date(validatedData.recorded_at) : new Date()
+    }
   });
 
-  const io = req.app.get('io');
-  if (io) {
-    io.to(`patient:${body.patient_id}`).emit('vital_signs_updated', {
-      patient_id: body.patient_id,
-      visit_id: body.visit_id,
-      data: vital,
-    });
-
-    const alerts: Array<Record<string, unknown>> = [];
-    if (body.systolic_bp && (body.systolic_bp >= 180 || body.systolic_bp < 90)) {
-      alerts.push({ type: 'BP_CRITICAL', value: `${body.systolic_bp}/${body.diastolic_bp}` });
-    }
-    if (body.spo2 != null && body.spo2 < 90) {
-      alerts.push({ type: 'SPO2_CRITICAL', value: body.spo2 });
-    }
-    if (body.gcs_total != null && body.gcs_total <= 8) {
-      alerts.push({ type: 'GCS_CRITICAL', value: body.gcs_total });
-    }
-    if (body.temperature != null && (body.temperature >= 40 || body.temperature < 35)) {
-      alerts.push({ type: 'TEMP_CRITICAL', value: body.temperature });
-    }
-    if (alerts.length > 0) {
-      io.emit('vital_signs_alert', { patient_id: body.patient_id, visit_id: body.visit_id, alerts });
-    }
-  }
-
-  res.status(201).json({ success: true, data: vital });
+  res.status(201).json({ success: true, data: vitalSign });
 }));
 
-// DELETE
-router.delete('/:id', asyncHandler(async (req: Request<{ id: string }>, res: Response) => {
-  await prisma.vital_signs.delete({ where: { id: req.params.id } });
-  res.json({ success: true, message: 'Data tanda vital dihapus' });
+/**
+ * PUT /api/vital-signs/:id
+ * Update vital sign record
+ */
+router.put('/:id', asyncHandler(async (req: Request<{ id: string }>, res: Response) => {
+  const { id } = req.params;
+  const validatedData = updateVitalSignSchema.parse(req.body);
+
+  const vitalSign = await prisma.vital_signs.findUnique({ where: { id } });
+  if (!vitalSign) {
+    throw new ApiError(404, 'Vital sign record tidak ditemukan', 'VITAL_SIGN_NOT_FOUND');
+  }
+
+  const updated = await prisma.vital_signs.update({
+    where: { id },
+    data: validatedData
+  });
+
+  res.json({ success: true, data: updated });
+}));
+
+/**
+ * DELETE /api/vital-signs/:id
+ * Delete vital sign record
+ */
+router.delete('/:id', requireRole(['admin']), asyncHandler(async (req: Request<{ id: string }>, res: Response) => {
+  const { id } = req.params;
+
+  const vitalSign = await prisma.vital_signs.findUnique({ where: { id } });
+  if (!vitalSign) {
+    throw new ApiError(404, 'Vital sign record tidak ditemukan', 'VITAL_SIGN_NOT_FOUND');
+  }
+
+  await prisma.vital_signs.delete({ where: { id } });
+
+  res.json({ success: true, message: 'Vital sign record berhasil dihapus' });
 }));
 
 export default router;

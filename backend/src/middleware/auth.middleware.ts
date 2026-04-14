@@ -8,10 +8,11 @@ import { createHash, randomBytes } from 'node:crypto';
 import type { Request, Response, NextFunction } from 'express';
 import { prisma } from '../config/database.js';
 import * as cache from '../services/cache.service.js';
+import { env } from '../config/Env.js';
 
-const JWT_SECRET = process.env.JWT_SECRET as string;
-const ACCESS_TOKEN_TTL = process.env.JWT_EXPIRES_IN || '15m'; // short-lived
-const REFRESH_TOKEN_TTL = process.env.JWT_REFRESH_EXPIRES_IN || '30d';
+const JWT_SECRET = env.JWT_SECRET;
+const ACCESS_TOKEN_TTL = env.JWT_EXPIRES_IN;
+const REFRESH_TOKEN_TTL = env.JWT_REFRESH_EXPIRES_IN;
 const REFRESH_TTL_SECONDS = 30 * 24 * 3600; // 30 days in seconds
 
 // -- Types --
@@ -230,7 +231,7 @@ export const refreshAccessToken = async (rawRefreshToken: string | undefined, me
   await prisma.profiles.update({
     where: { user_id: user.user_id },
     data: { last_login: new Date() }
-  }).catch(() => {});
+  }).catch(() => { });
 
   return tokens;
 };
@@ -257,7 +258,7 @@ export const revokeTokens = async (accessToken: string | undefined, rawRefreshTo
     await prisma.refresh_tokens.updateMany({
       where: { token_hash: tokenHash, revoked_at: null },
       data: { revoked_at: new Date(), revoked_reason: 'logout' }
-    }).catch(() => {});
+    }).catch(() => { });
   }
 };
 

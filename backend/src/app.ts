@@ -49,13 +49,21 @@ const __dirname = path.dirname(__filename);
 const app: Express = express();
 const httpServer: Server = createServer(app);
 
-// Socket.IO Setup
+// Socket.IO Setup (shared CORS config with Express)
+const corsOptions = {
+  origin: env.FRONTEND_URL,
+  credentials: true,
+  methods: ['GET', 'POST'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
+};
+
+app.use(cors({
+  ...corsOptions,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+}));
+
 const io = new SocketIOServer(httpServer, {
-  cors: {
-    origin: env.FRONTEND_URL,
-    methods: ['GET', 'POST'],
-    credentials: true
-  }
+  cors: corsOptions
 });
 
 // Make io accessible in routes
@@ -188,13 +196,19 @@ app.get('/health', async (_req: Request, res: Response) => {
   }
 
   const httpStatus = overallOk ? 200 : 503;
+
+  // Convert BigInt to string for JSON serialization
+  const sanitizedChecks = JSON.parse(JSON.stringify(checks, (_key, value) =>
+    typeof value === 'bigint' ? value.toString() : value
+  ));
+
   res.status(httpStatus).json({
     status: overallOk ? 'ok' : 'degraded',
     timestamp: new Date().toISOString(),
     uptime: Math.floor(process.uptime()),
     version: '1.0.0',
     service: 'SIMRS ZEN API',
-    checks,
+    checks: sanitizedChecks,
   });
 });
 

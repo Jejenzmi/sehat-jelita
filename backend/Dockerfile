@@ -1,9 +1,9 @@
-# Stage 1: deps + prisma generate
+# Stage 1: deps + prisma generate + build
 FROM node:20-bookworm-slim AS builder
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends openssl libssl3 ca-certificates \
- && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/*
 
 COPY package*.json ./
 RUN npm ci
@@ -15,6 +15,9 @@ RUN npx prisma generate
 
 COPY . .
 
+# Compile TypeScript to JavaScript
+RUN npm run build
+
 # Stage 2: production runtime
 FROM node:20-bookworm-slim AS production
 WORKDIR /app
@@ -24,13 +27,13 @@ WORKDIR /app
 LABEL org.opencontainers.image.source=https://github.com/Jejenzmi/sehat-jelita
 
 RUN apt-get update && apt-get install -y --no-install-recommends openssl libssl3 ca-certificates curl \
- && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/*
 
 # optional non-root
 RUN useradd -m nodejs
 
 COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
-COPY --from=builder --chown=nodejs:nodejs /app/src ./src
+COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
 COPY --from=builder --chown=nodejs:nodejs /app/prisma ./prisma
 COPY --from=builder --chown=nodejs:nodejs /app/package*.json ./
 COPY --from=builder --chown=nodejs:nodejs /app/entrypoint.sh ./entrypoint.sh

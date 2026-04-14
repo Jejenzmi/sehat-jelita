@@ -81,7 +81,7 @@ export const login = async (req: Request<unknown, unknown, LoginBody>, res: Resp
     }
 
     // Generate tokens
-    const tokens = generateTokens({
+    const tokens = await generateTokens({
       id: profile.user_id,
       email: profile.email,
       roles: profile.user_roles.map(r => r.role)

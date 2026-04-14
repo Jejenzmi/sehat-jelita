@@ -2,7 +2,6 @@ import { ReactNode } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsSetupCompleted } from "@/hooks/useSetupWizard";
-import { isNodeMode } from "@/lib/api-client";
 import { Loader2 } from "lucide-react";
 
 const SETUP_DONE_KEY = "simrs_setup_completed";
@@ -14,11 +13,12 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children, skipSetupCheck = false }: ProtectedRouteProps) {
-  const { user, loading: authLoading, session } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const location = useLocation();
 
-  // Only check setup status when user is authenticated
-  const isAuthenticated = isNodeMode() ? !!user : !!(user && session);
+  // In Node.js mode, user presence is sufficient for authentication
+  // session is always null in Node.js mode (uses httpOnly cookies instead)
+  const isAuthenticated = !!user;
   const { data: isSetupCompleted, isLoading: setupLoading } = useIsSetupCompleted();
 
   // Show loading while auth OR setup status is determined

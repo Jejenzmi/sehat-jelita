@@ -12,7 +12,8 @@ import { asyncHandler, ApiError } from '../middleware/errorHandler.js';
 const router = Router();
 
 // Authentication applied globally in routes/index.js
-router.use(checkMenuAccess('kasir'));
+// Using requireRole (in-memory check) instead of checkMenuAccess (DB query) to avoid N+1
+router.use(requireRole(['kasir', 'keuangan', 'admin']));
 
 // Validation schemas
 const billingItemSchema = z.object({

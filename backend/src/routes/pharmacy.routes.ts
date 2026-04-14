@@ -12,7 +12,8 @@ import * as cache from '../services/cache.service.js';
 
 const router = Router();
 
-router.use(checkMenuAccess('farmasi'));
+// Using requireRole (in-memory check) instead of checkMenuAccess (DB query) to avoid N+1
+router.use(requireRole(['farmasi', 'admin']));
 
 // Validation schemas
 const prescriptionItemSchema = z.object({
@@ -708,33 +709,39 @@ router.get('/medicines/:id/stock', asyncHandler(async (req: Request<{ id: string
 
 /**
  * GET /api/pharmacy/stock/low
- * Get medicines with low stock
+ * Get medicines with low stock (optimized with single groupBy query)
  */
 router.get('/stock/low', asyncHandler(async (req: Request, res: Response) => {
   const medicines = await prisma.medicines.findMany({
     where: { is_active: true }
   });
 
-  const lowStockMedicines: Array<any> = [];
+  // Single query to get all stock quantities grouped by medicine_id
+  const stockByMedicine = await prisma.medicine_batches.groupBy({
+    by: ['medicine_id'],
+    where: {
+      status: 'available',
+      quantity: { gt: 0 }
+    },
+    _sum: { quantity: true }
+  });
 
-  for (const med of medicines) {
-    const totalStock = await prisma.medicine_batches.aggregate({
-      where: {
-        medicine_id: med.id,
-        status: 'available',
-        quantity: { gt: 0 }
-      },
-      _sum: { quantity: true }
-    });
-
-    const stock = totalStock._sum.quantity || 0;
-    if (stock <= med.min_stock) {
-      lowStockMedicines.push({
-        ...med,
-        current_stock: stock
-      });
-    }
+  // Create a map of medicine_id -> total stock
+  const stockMap = new Map<string, number>();
+  for (const entry of stockByMedicine) {
+    stockMap.set(entry.medicine_id, entry._sum.quantity || 0);
   }
+
+  // Filter medicines with low stock
+  const lowStockMedicines = medicines
+    .filter(med => {
+      const stock = stockMap.get(med.id) || 0;
+      return stock <= med.min_stock;
+    })
+    .map(med => ({
+      ...med,
+      current_stock: stockMap.get(med.id) || 0
+    }));
 
   res.json({
     success: true,

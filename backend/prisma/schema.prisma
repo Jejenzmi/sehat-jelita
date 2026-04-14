@@ -10,7 +10,7 @@ datasource db {
   provider     = "postgresql"
   url          = env("DATABASE_URL")
   directUrl    = env("DIRECT_URL")
-  relationMode = "prisma"
+  relationMode = "foreignKeys"
 }
 
 // ============================================
@@ -184,7 +184,7 @@ model rooms {
   room_type     String?
   floor         Int?
   capacity      Int      @default(1)
-  rate_per_day  Decimal?
+  rate_per_day  Decimal? @db.Decimal(15,2)
   is_active     Boolean  @default(true)
   created_at    DateTime @default(now())
   updated_at    DateTime @updatedAt
@@ -222,7 +222,7 @@ model doctors {
   full_name        String?
   specialization   String?
   department_id    String?
-  consultation_fee Decimal?
+  consultation_fee Decimal? @db.Decimal(15,2)
   is_active        Boolean  @default(true)
   schedule         Json?
   satusehat_id     String?
@@ -280,6 +280,8 @@ model patients {
   emergency_contact_relation String?
   allergy_notes              String?
   chronic_conditions         String?
+  insurance_provider         String?
+  insurance_number           String?
   is_active                  Boolean   @default(true)
   photo_url                  String?
   satusehat_id               String?
@@ -445,8 +447,8 @@ model medicines {
   strength              String?
   unit                  String
   manufacturer          String?
-  selling_price         Decimal
-  purchase_price        Decimal?
+  selling_price         Decimal  @db.Decimal(15,2)
+  purchase_price        Decimal? @db.Decimal(15,2)
   min_stock             Int      @default(10)
   max_stock             Int      @default(1000)
   is_active             Boolean  @default(true)
@@ -468,7 +470,7 @@ model medicine_batches {
   quantity       Int
   expiry_date    DateTime
   purchase_date  DateTime?
-  purchase_price Decimal?
+  purchase_price Decimal? @db.Decimal(15,2)
   supplier_id    String?
   location       String?
   status         String   @default("available")
@@ -528,6 +530,7 @@ model prescription_items {
   dispensed_quantity      Int?
   dispensed_from_batches  Json     @default("[]")
   created_at              DateTime @default(now())
+  updated_at              DateTime @updatedAt
 
   prescriptions prescriptions @relation(fields: [prescription_id], references: [id])
 
@@ -597,12 +600,13 @@ model lab_reference_ranges {
   gender        String    @default("all")
   age_min       Int?
   age_max       Int?
-  normal_min    Decimal?
-  normal_max    Decimal?
-  critical_low  Decimal?
-  critical_high Decimal?
+  normal_min    Decimal?  @db.Decimal(8,2)
+  normal_max    Decimal?  @db.Decimal(8,2)
+  critical_low  Decimal?  @db.Decimal(8,2)
+  critical_high Decimal?  @db.Decimal(8,2)
   unit          String?
   created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
 
   @@unique([test_code, gender, age_min, age_max])
   @@index([test_code])
@@ -619,11 +623,11 @@ model billings {
   visit_id       String
   billing_date   DateTime      @default(now())
   payment_type   PaymentType
-  subtotal       Decimal       @default(0)
-  discount       Decimal?
-  tax            Decimal?
-  total          Decimal       @default(0)
-  paid_amount    Decimal?
+  subtotal       Decimal       @default(0) @db.Decimal(15,2)
+  discount       Decimal?      @db.Decimal(15,2)
+  tax            Decimal?      @db.Decimal(15,2)
+  total          Decimal       @default(0) @db.Decimal(15,2)
+  paid_amount    Decimal?      @db.Decimal(15,2)
   status         BillingStatus @default(pending)
   payment_method String?
   payment_date   DateTime?
@@ -648,10 +652,11 @@ model billing_items {
   item_type   String
   item_name   String
   quantity    Int      @default(1)
-  unit_price  Decimal
-  total_price Decimal
+  unit_price  Decimal  @db.Decimal(15,2)
+  total_price Decimal  @db.Decimal(15,2)
   notes       String?
   created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
 
   billings billings @relation(fields: [billing_id], references: [id])
 
@@ -669,8 +674,8 @@ model bpjs_claims {
   visit_id           String
   sep_number         String
   claim_date         DateTime    @default(now())
-  claim_amount       Decimal
-  approved_amount    Decimal?
+  claim_amount       Decimal     @db.Decimal(15,2)
+  approved_amount    Decimal?    @db.Decimal(15,2)
   status             ClaimStatus @default(draft)
   inacbg_code        String?
   inacbg_description String?
@@ -681,6 +686,9 @@ model bpjs_claims {
   created_by         String?
   created_at         DateTime    @default(now())
   updated_at         DateTime    @updatedAt
+
+  patients patients @relation(fields: [patient_id], references: [id], onDelete: Cascade)
+  visits   visits   @relation(fields: [visit_id], references: [id], onDelete: Cascade)
 
   @@index([patient_id])
   @@index([visit_id])
@@ -766,7 +774,7 @@ model employees {
   employment_type String?
   join_date       DateTime?
   resign_date     DateTime?
-  salary          Decimal?
+  salary          Decimal?    @db.Decimal(15,2)
   is_active       Boolean   @default(true)
   created_at      DateTime  @default(now())
   updated_at      DateTime  @updatedAt
@@ -824,11 +832,11 @@ model payroll {
   employee_id  String
   period_month Int
   period_year  Int
-  base_salary  Decimal
-  allowances   Decimal   @default(0)
-  deductions   Decimal   @default(0)
-  overtime     Decimal   @default(0)
-  net_salary   Decimal
+  base_salary  Decimal   @db.Decimal(15,2)
+  allowances   Decimal   @default(0) @db.Decimal(15,2)
+  deductions   Decimal   @default(0) @db.Decimal(15,2)
+  overtime     Decimal   @default(0) @db.Decimal(15,2)
+  net_salary   Decimal   @db.Decimal(15,2)
   status       String    @default("draft")
   paid_at      DateTime?
   created_at   DateTime  @default(now())
@@ -1446,9 +1454,9 @@ model icu_vital_signs {
   diastolic_bp          Int?
   mean_arterial_pressure Int?
   respiratory_rate      Int?
-  temperature           Decimal?
-  spo2                  Decimal?
-  fio2                  Decimal?
+  temperature           Decimal?  @db.Decimal(5,2)
+  spo2                  Decimal?  @db.Decimal(5,2)
+  fio2                  Decimal?  @db.Decimal(5,2)
   gcs_eye               Int?
   gcs_verbal            Int?
   gcs_motor             Int?
@@ -1459,6 +1467,7 @@ model icu_vital_signs {
   urine_output          Int?
   notes                 String?
   created_at            DateTime  @default(now())
+  updated_at            DateTime  @updatedAt
 
   icu_admissions icu_admissions @relation(fields: [admission_id], references: [id])
 
@@ -1473,10 +1482,11 @@ model icu_intake_output {
   recorded_by  String?
   type         String
   category     String?
-  amount       Decimal?
+  amount       Decimal?  @db.Decimal(10,2)
   route        String?
   notes        String?
   created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
 
   icu_admissions icu_admissions @relation(fields: [admission_id], references: [id])
 
@@ -1621,6 +1631,8 @@ model purchase_requests {
   approved_date    DateTime?
   created_at       DateTime  @default(now())
   updated_at       DateTime  @updatedAt
+
+  departments departments? @relation(fields: [department_id], references: [id])
 
   @@index([status])
 }

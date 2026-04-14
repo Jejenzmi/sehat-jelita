@@ -64,6 +64,69 @@ const TABLE_ENDPOINTS: Record<string, string> = {
   home_care_visits: '/home-care/visits',
   medical_records: '/icd11/medical-records',
   diagnoses: '/icd11/diagnoses',
+  lab_templates: '/lab/templates',
+  radiology_templates: '/radiology/templates',
+  vital_signs: '/vital-signs',
+  queue_entries: '/queue',
+  patient_insurances: '/patients/insurances',
+  staff_certifications: '/staff-certifications',
+  form_templates: '/form-templates',
+  report_templates: '/report-templates',
+  smart_display_config: '/smart-display/config',
+  smart_display_devices: '/smart-display/devices',
+  smart_display_media: '/smart-display/media',
+  education_programs: '/education/programs',
+  medical_trainees: '/education/trainees',
+  clinical_rotations: '/education/rotations',
+  academic_activities: '/education/activities',
+  research_projects: '/education/research',
+  executive_dashboard: '/executive-dashboard',
+  incidents: '/incidents',
+  patient_consents: '/consents',
+  telemedicine_sessions: '/telemedicine/sessions',
+  waste_records: '/waste/records',
+  cssd_batches: '/cssd/batches',
+  linen_inventory: '/linen/inventory',
+  linen_categories: '/linen/categories',
+  inventory_items: '/inventory/items',
+  suppliers: '/inventory/suppliers',
+  inventory_batches: '/inventory/batches',
+  inventory_reorder_settings: '/inventory/reorder-settings',
+  nutrition_orders: '/nutrition/orders',
+  nutrition_assessments: '/nutrition/assessments',
+  rehabilitation_cases: '/rehabilitation/cases',
+  mcu_clients: '/mcu/clients',
+  mcu_results: '/mcu/results',
+  blood_inventory: '/bloodbank/inventory',
+  transfusion_requests: '/bloodbank/transfusions',
+  crossmatch_tests: '/bloodbank/crossmatch',
+  dialysis_machines: '/dialysis/machines',
+  dialysis_schedules: '/dialysis/schedules',
+  icu_vital_signs: '/icu/vitals',
+  icu_intake_output: '/icu/intake-output',
+  icu_ventilator_records: '/icu/ventilator',
+  nursing_notes: '/inpatient/nursing-notes',
+  bed_transfers: '/inpatient/bed-transfers',
+  emergency_treatments: '/emergency/treatments',
+  death_certificates: '/forensic/death-certificates',
+  visum_reports: '/forensic/visum',
+  patient_allergies: '/patients/allergies',
+  patient_drug_allergies: '/patients/drug-allergies',
+  drug_interactions: '/drug-interactions',
+  drug_contraindications: '/drug-interactions/contraindications',
+  medicine_dosage_rules: '/drug-interactions/dosage-rules',
+  scheduled_reports: '/reports/scheduled',
+  notification_channels: '/notifications/channels',
+  notification_logs: '/notifications/logs',
+  dicom_studies: '/pacs/studies',
+  dicom_series: '/pacs/series',
+  dicom_instances: '/pacs/instances',
+  dicom_worklist: '/pacs/worklist',
+  pacs_config: '/pacs/config',
+  aspak_reports: '/aspak/reports',
+  custom_form_templates: '/form-templates/custom',
+  custom_report_templates: '/report-templates/custom',
+  patient_insurances: '/patients/insurances',
 };
 
 // Edge function → backend endpoint mapping
@@ -96,6 +159,18 @@ const VALUE_TRANSLATIONS: Record<string, Record<string, string>> = {
     'pulang': 'discharged',
     'dibatalkan': 'cancelled'
   },
+  prescription_status: {
+    'menunggu': 'pending',
+    'diproses': 'processing',
+    'siap': 'ready',
+    'diserahkan': 'dispensed',
+    'ditolak': 'rejected',
+    'dikembalikan': 'returned'
+  },
+  patient_status: {
+    'aktif': 'active',
+    'tidak_aktif': 'inactive'
+  },
   gender: {
     'laki-laki': 'male',
     'perempuan': 'female'
@@ -111,9 +186,19 @@ function translateValues(params: Record<string, unknown>): Record<string, unknow
     translated.visit_type = VALUE_TRANSLATIONS.visit_type[translated.visit_type as string];
   }
 
-  // Translate status
+  // Translate visit status
   if (translated.status && VALUE_TRANSLATIONS.visit_status[translated.status as string]) {
     translated.status = VALUE_TRANSLATIONS.visit_status[translated.status as string];
+  }
+
+  // Translate prescription status
+  if (translated.status && VALUE_TRANSLATIONS.prescription_status[translated.status as string]) {
+    translated.status = VALUE_TRANSLATIONS.prescription_status[translated.status as string];
+  }
+
+  // Translate patient status
+  if (translated.status && VALUE_TRANSLATIONS.patient_status[translated.status as string]) {
+    translated.status = VALUE_TRANSLATIONS.patient_status[translated.status as string];
   }
 
   // Translate gender
@@ -271,9 +356,15 @@ class QueryBuilder implements PromiseLike<any> {
   private async _execute(): Promise<any> {
     const isSingle = this._isSingle || this._isMaybeSingle;
 
-    // No endpoint mapped → return empty gracefully
+    // No endpoint mapped — return error instead of silently failing
     if (!this._endpoint) {
-      return isSingle ? { data: null, error: null } : { data: [], error: null };
+      const errorMsg = `Unknown table: ${this._table}. No endpoint mapped in TABLE_ENDPOINTS.`;
+      if (import.meta.env.DEV) {
+        console.error(`[db] ${errorMsg}`);
+      }
+      return isSingle
+        ? { data: null, error: { message: errorMsg } }
+        : { data: [], error: { message: errorMsg } };
     }
 
     // Count/head queries — call the backend stats endpoint if available
@@ -281,6 +372,10 @@ class QueryBuilder implements PromiseLike<any> {
       // Try to get real count from backend
       const statsEndpoints: Record<string, string> = {
         '/patients': '/patients/stats',
+        '/visits': '/visits/stats',
+        '/billing': '/billing/stats',
+        '/inpatient/admissions': '/inpatient/census',
+        '/inpatient/beds': '/inpatient/beds/stats',
       };
       const statsPath = this._endpoint ? statsEndpoints[this._endpoint] : null;
       if (statsPath) {
@@ -418,6 +513,9 @@ export type RealtimeChannel = {
 };
 
 function noopChannel(): RealtimeChannel {
+  if (import.meta.env.DEV) {
+    console.warn('[db] Realtime channels are not supported in Node.js mode. Use Socket.IO for real-time features.');
+  }
   const ch: RealtimeChannel = {
     on: () => ch,
     subscribe: (cb?: (status: string) => void) => { cb?.('CLOSED'); return ch; },
@@ -455,8 +553,11 @@ export const db = {
   async rpc(funcName: string, params?: Record<string, unknown>): Promise<{ data: unknown; error: { message: string } | null }> {
     const config = RPC_ENDPOINTS[funcName];
     if (!config) {
-      console.warn(`[db.rpc] Unknown function: ${funcName}`);
-      return { data: null, error: null };
+      const errorMsg = `Unknown function: ${funcName}. Not mapped in RPC_ENDPOINTS.`;
+      if (import.meta.env.DEV) {
+        console.error(`[db.rpc] ${errorMsg}`);
+      }
+      return { data: null, error: { message: errorMsg } };
     }
     const hasParams = params && Object.keys(params).length > 0;
     const method = config.method;

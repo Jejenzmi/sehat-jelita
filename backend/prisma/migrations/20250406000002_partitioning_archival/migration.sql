@@ -14,7 +14,7 @@ CREATE INDEX IF NOT EXISTS idx_patients_full_name_trgm
 CREATE INDEX IF NOT EXISTS idx_patients_nik_trgm
   ON patients USING GIN (nik gin_trgm_ops) WHERE nik IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_medicines_name_trgm
-  ON medicines USING GIN (name gin_trgm_ops);
+  ON medicines USING GIN (medicine_name gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idx_employees_full_name_trgm
   ON employees USING GIN (full_name gin_trgm_ops);
 

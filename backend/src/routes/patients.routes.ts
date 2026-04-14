@@ -68,24 +68,42 @@ function tryDecrypt(value: string): string {
 
 const router = Router();
 
-// Helper: Generate Medical Record Number in JavaScript (no DB stored proc needed)
+// Helper: Generate Medical Record Number in JavaScript (with retry on duplicate to prevent race conditions)
 async function generateMRN(): Promise<string> {
   const year = new Date().getFullYear().toString().slice(-2);
   const month = (new Date().getMonth() + 1).toString().padStart(2, '0');
   const prefix = `RM${year}${month}`;
 
-  const lastPatient = await prisma.patients.findFirst({
-    where: { medical_record_number: { startsWith: prefix } },
-    orderBy: { medical_record_number: 'desc' }
-  });
+  const maxRetries = 3;
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    const lastPatient = await prisma.patients.findFirst({
+      where: { medical_record_number: { startsWith: prefix } },
+      orderBy: { medical_record_number: 'desc' },
+      select: { medical_record_number: true }
+    });
 
-  let sequence = 1;
-  if (lastPatient) {
-    const lastSeq = parseInt(lastPatient.medical_record_number.slice(-5), 10);
-    if (!isNaN(lastSeq)) sequence = lastSeq + 1;
+    let sequence = 1;
+    if (lastPatient) {
+      const lastSeq = parseInt(lastPatient.medical_record_number.slice(-5), 10);
+      if (!isNaN(lastSeq)) sequence = lastSeq + 1;
+    }
+
+    const mrn = `${prefix}${sequence.toString().padStart(5, '0')}`;
+
+    // Verify uniqueness
+    const existing = await prisma.patients.findUnique({
+      where: { medical_record_number: mrn },
+      select: { id: true }
+    });
+
+    if (!existing) return mrn;
+
+    await new Promise(resolve => setTimeout(resolve, 50 * (attempt + 1)));
   }
 
-  return `${prefix}${sequence.toString().padStart(5, '0')}`;
+  // Fallback
+  const fallbackSeq = Math.floor(Math.random() * 90000) + 10000;
+  return `${prefix}${fallbackSeq}`;
 }
 
 // Validation schemas

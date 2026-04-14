@@ -5,7 +5,7 @@ echo "⏳ Running database migrations..."
 node_modules/.bin/prisma migrate deploy
 
 echo "🌱 Running database seed (first-run only)..."
-node src/scripts/seed.js || true
+node dist/scripts/seed.js || true
 
 echo "🚀 Starting application..."
-exec node src/app.js
+exec node dist/app.js

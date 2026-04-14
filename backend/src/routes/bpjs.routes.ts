@@ -13,7 +13,8 @@ import { MemoryQueue } from '../utils/queue.js';
 
 const router = Router();
 
-router.use(checkMenuAccess('bpjs'));
+// Using requireRole (in-memory check) instead of checkMenuAccess (DB query) to avoid N+1
+router.use(requireRole(['keuangan', 'kasir', 'admin']));
 router.use(externalApiLimiter);
 
 const bpjsQueue = new MemoryQueue('bpjs-sync', async (job: { name: string; data: Record<string, unknown> }) => {
@@ -586,15 +587,55 @@ router.put('/claims/:id', requireRole(['admin', 'keuangan']), asyncHandler(async
 }));
 
 // ============================================
-// VCLAIM PROXY
+// VCLAIM UNIFIED ENDPOINT (proxy + test-connection + config)
 // ============================================
+
+interface BpjsInvokeBody {
+  action?: string;
+  config?: {
+    consumer_id?: string;
+    consumer_secret?: string;
+    user_key?: string;
+    environment?: string;
+  };
+}
 
 /**
  * POST /api/bpjs/vclaim
- * Proxy for BPJS VClaim service calls
+ * Unified endpoint: handles proxy calls, test-connection, and config save
  */
-router.post('/vclaim', externalApiLimiter, asyncHandler(async (req: Request, res: Response) => {
-  const { action, ...params } = req.body;
+router.post('/vclaim', externalApiLimiter, asyncHandler(async (req: Request<{}, {}, BpjsInvokeBody & Record<string, unknown>>, res: Response) => {
+  const { action, config, ...params } = req.body;
+
+  // Handle test-connection
+  if (action === 'test-connection') {
+    try {
+      if (config?.consumer_id && config?.consumer_secret) {
+        const testService = new BPJSVClaimService();
+        testService.consId = config.consumer_id;
+        testService.secretKey = config.consumer_secret;
+        testService.userKey = config.user_key || '';
+        testService.baseUrl = config.environment === 'production'
+          ? 'https://apijkn.bpjs-kesehatan.go.id/vclaim-rest'
+          : 'https://apijkn-dev.bpjs-kesehatan.go.id/vclaim-rest-dev';
+        await testService.request('/Peserta/nik/0000000000000000/tglSEP/2024-01-01');
+      } else {
+        await vclaimService.request('/Peserta/nik/0000000000000000/tglSEP/2024-01-01');
+      }
+      return res.json({ success: true, data: { success: true } });
+    } catch (err) {
+      const reached = (err as { response?: { status: number } }).response?.status >= 400;
+      return res.json({ success: true, data: { success: reached, error: reached ? null : (err as Error).message } });
+    }
+  }
+
+  // Handle save-config
+  if (action === 'save-config') {
+    await vclaimService.saveConfiguration(config);
+    return res.json({ success: true, data: { message: 'Konfigurasi BPJS berhasil disimpan' } });
+  }
+
+  // Handle general proxy calls
   try {
     const service = new BPJSVClaimService();
     let result;
@@ -613,13 +654,8 @@ router.post('/vclaim', externalApiLimiter, asyncHandler(async (req: Request, res
 // ECLAIM GENERIC PROXY
 // ============================================
 
-/**
- * POST /api/bpjs/eclaim
- * Generic proxy for BPJS EClaim service calls
- */
 router.post('/eclaim', externalApiLimiter, asyncHandler(async (req: Request, res: Response) => {
   const { action, ...params } = req.body;
-  // EClaim service is not yet configured; return a placeholder response
   res.json({ success: true, data: { action, params, message: 'EClaim service not configured' } });
 }));
 
@@ -627,13 +663,8 @@ router.post('/eclaim', externalApiLimiter, asyncHandler(async (req: Request, res
 // ICARE GENERIC PROXY
 // ============================================
 
-/**
- * POST /api/bpjs/icare
- * Generic proxy for BPJS iCare service calls
- */
 router.post('/icare', externalApiLimiter, asyncHandler(async (req: Request, res: Response) => {
   const { action, ...params } = req.body;
-  // iCare service is not yet configured; return a placeholder response
   res.json({ success: true, data: { action, params, message: 'iCare service not configured' } });
 }));
 
@@ -641,67 +672,9 @@ router.post('/icare', externalApiLimiter, asyncHandler(async (req: Request, res:
 // ANTREAN GENERIC PROXY
 // ============================================
 
-/**
- * POST /api/bpjs/antrean
- * Generic proxy for BPJS Antrean service calls
- */
 router.post('/antrean', externalApiLimiter, asyncHandler(async (req: Request, res: Response) => {
   const { action, ...params } = req.body;
-  // Antrean service is not yet configured; return a placeholder response
   res.json({ success: true, data: { action, params, message: 'Antrean service not configured' } });
-}));
-
-// ============================================
-// VCLAIM GENERIC INVOKE (test-connection, config)
-// ============================================
-
-interface BpjsInvokeBody {
-  action?: string;
-  config?: {
-    consumer_id?: string;
-    consumer_secret?: string;
-    user_key?: string;
-    environment?: string;
-  };
-}
-
-/**
- * POST /api/bpjs/vclaim
- * Generic invoke endpoint for BPJS VClaim -- supports test-connection and config save
- */
-router.post('/vclaim', externalApiLimiter, asyncHandler(async (req: Request<{}, {}, BpjsInvokeBody>, res: Response) => {
-  const { action, config } = req.body;
-
-  if (action === 'test-connection') {
-    try {
-      if (config?.consumer_id && config?.consumer_secret) {
-        // Test using credentials sent in request
-        const testService = new BPJSVClaimService();
-        testService.consId = config.consumer_id;
-        testService.secretKey = config.consumer_secret;
-        testService.userKey = config.user_key || '';
-        testService.baseUrl = config.environment === 'production'
-          ? 'https://apijkn.bpjs-kesehatan.go.id/vclaim-rest'
-          : 'https://apijkn-dev.bpjs-kesehatan.go.id/vclaim-rest-dev';
-        // Minimal connectivity check -- fetch peserta with dummy NIK to verify auth headers
-        await testService.request('/Peserta/nik/0000000000000000/tglSEP/2024-01-01');
-      } else {
-        await vclaimService.request('/Peserta/nik/0000000000000000/tglSEP/2024-01-01');
-      }
-      return res.json({ success: true, data: { success: true } });
-    } catch (err) {
-      // A 4xx from BPJS still means we reached their server -> credentials are working
-      const reached = (err as { response?: { status: number } }).response?.status >= 400;
-      return res.json({ success: true, data: { success: reached, error: reached ? null : (err as Error).message } });
-    }
-  }
-
-  if (action === 'save-config') {
-    await vclaimService.saveConfiguration(config);
-    return res.json({ success: true, data: { message: 'Konfigurasi BPJS berhasil disimpan' } });
-  }
-
-  res.status(400).json({ success: false, error: 'action tidak dikenal' });
 }));
 
 export default router;

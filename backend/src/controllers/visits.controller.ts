@@ -59,7 +59,7 @@ interface VitalSignsBody {
 }
 
 /**
- * Generate Visit Number
+ * Generate Visit Number (with retry on duplicate to prevent race conditions)
  */
 const generateVisitNumber = async (visitType: string): Promise<string> => {
   const date = new Date();
@@ -71,21 +71,40 @@ const generateVisitNumber = async (visitType: string): Promise<string> => {
   }[visitType] || 'VIS';
 
   const dateStr = date.toISOString().slice(0, 10).replace(/-/g, '');
+  const visitPrefix = `${prefix}${dateStr}`;
 
-  const lastVisit = await prisma.visits.findFirst({
-    where: {
-      visit_number: { startsWith: `${prefix}${dateStr}` }
-    },
-    orderBy: { visit_number: 'desc' }
-  });
+  const maxRetries = 3;
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    const lastVisit = await prisma.visits.findFirst({
+      where: {
+        visit_number: { startsWith: visitPrefix }
+      },
+      orderBy: { visit_number: 'desc' },
+      select: { visit_number: true }
+    });
 
-  let sequence = 1;
-  if (lastVisit) {
-    const lastSeq = parseInt(lastVisit.visit_number.slice(-4));
-    sequence = lastSeq + 1;
+    let sequence = 1;
+    if (lastVisit) {
+      const lastSeq = parseInt(lastVisit.visit_number.slice(-4));
+      sequence = lastSeq + 1;
+    }
+
+    const visitNumber = `${visitPrefix}${sequence.toString().padStart(4, '0')}`;
+
+    // Verify uniqueness
+    const existing = await prisma.visits.findFirst({
+      where: { visit_number: visitNumber },
+      select: { id: true }
+    });
+
+    if (!existing) return visitNumber;
+
+    await new Promise(resolve => setTimeout(resolve, 50 * (attempt + 1)));
   }
 
-  return `${prefix}${dateStr}${sequence.toString().padStart(4, '0')}`;
+  // Fallback
+  const fallbackSeq = Math.floor(Math.random() * 9000) + 1000;
+  return `${visitPrefix}${fallbackSeq}`;
 };
 
 /**
@@ -491,18 +510,39 @@ export const getTodaySummary = async (req: Request, res: Response, next: NextFun
   }
 };
 
-// Helper function to get next queue number
+// Helper function to get next queue number (with retry on duplicate to prevent race conditions)
 async function getNextQueueNumber(departmentId: string): Promise<number> {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const lastQueue = await prisma.queue_entries.findFirst({
-    where: {
-      department_id: departmentId,
-      created_at: { gte: today }
-    },
-    orderBy: { queue_number: 'desc' }
-  });
+  const maxRetries = 3;
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    const lastQueue = await prisma.queue_entries.findFirst({
+      where: {
+        department_id: departmentId,
+        created_at: { gte: today }
+      },
+      orderBy: { queue_number: 'desc' },
+      select: { queue_number: true }
+    });
 
-  return (lastQueue?.queue_number || 0) + 1;
+    const nextNumber = (lastQueue?.queue_number || 0) + 1;
+
+    // Verify uniqueness
+    const existing = await prisma.queue_entries.findFirst({
+      where: {
+        department_id: departmentId,
+        queue_number: nextNumber,
+        created_at: { gte: today }
+      },
+      select: { id: true }
+    });
+
+    if (!existing) return nextNumber;
+
+    await new Promise(resolve => setTimeout(resolve, 50 * (attempt + 1)));
+  }
+
+  // Fallback: add random offset
+  return Math.floor(Math.random() * 900) + 100;
 }

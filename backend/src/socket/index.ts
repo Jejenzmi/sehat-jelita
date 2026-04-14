@@ -8,8 +8,9 @@
 import jwt from 'jsonwebtoken';
 import type { Server, Socket } from 'socket.io';
 import { prisma } from '../config/database.js';
+import { env } from '../config/Env.js';
 
-const JWT_SECRET = process.env.JWT_SECRET || '';
+const JWT_SECRET = env.JWT_SECRET;
 
 interface SocketUser {
   id: string;

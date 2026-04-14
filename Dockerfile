@@ -2,6 +2,11 @@
 FROM node:20-bookworm-slim AS builder
 WORKDIR /app
 COPY package*.json ./
+
+# Build arguments for environment variables
+ARG VITE_API_MODE=nodejs
+ARG VITE_API_URL=/api
+
 RUN npm ci
 COPY . .
 RUN npm run build

@@ -19,7 +19,8 @@ const satusehatQueue = new MemoryQueue('satusehat-sync', async (job: { name: str
 
 const router = Router();
 
-router.use(checkMenuAccess('satusehat'));
+// Using requireRole (in-memory check) instead of checkMenuAccess (DB query) to avoid N+1
+router.use(requireRole(['admin', 'dokter', 'perawat']));
 router.use(externalApiLimiter);
 
 const satusehatService = new SatuSehatService();
@@ -629,13 +630,16 @@ router.post('/invoke', externalApiLimiter, asyncHandler(async (req: Request<{}, 
 
     if (action === 'get-config') {
       const configInfo = await satusehatService.getConfiguration();
+      const rawSecret = configInfo?.clientSecret || process.env.SATU_SEHAT_CLIENT_SECRET || '';
+      // Mask secret: show only last 4 characters
+      const maskedSecret = rawSecret.length > 4 ? '****' + rawSecret.slice(-4) : '****';
       return res.json({
         success: true, data: {
           config: {
             organization_id: configInfo?.org_id || '',
             environment: configInfo?.environment || 'staging',
             client_id: configInfo?.client_id || '',
-            client_secret: process.env.SATU_SEHAT_CLIENT_SECRET || '',
+            client_secret: maskedSecret,
             auto_sync_enabled: true
           }
         }

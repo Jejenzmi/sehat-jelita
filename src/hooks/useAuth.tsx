@@ -11,7 +11,6 @@ interface AppUser {
 
 interface AuthContextType {
   user: AppUser | null;
-  session: null;
   loading: boolean;
   roles: AppRole[];
   hasRole: (role: AppRole) => boolean;
@@ -83,7 +82,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session: null, loading, roles, hasRole, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ user, loading, roles, hasRole, signIn, signUp, signOut }}>
       {children}
     </AuthContext.Provider>
   );

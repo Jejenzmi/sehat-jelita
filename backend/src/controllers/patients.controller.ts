@@ -69,28 +69,51 @@ interface HistoryQuery {
 }
 
 /**
- * Generate Medical Record Number
+ * Generate Medical Record Number (with retry on duplicate to prevent race conditions)
  */
 const generateMRN = async (): Promise<string> => {
   const year = new Date().getFullYear().toString().slice(-2);
   const month = (new Date().getMonth() + 1).toString().padStart(2, '0');
+  const prefix = `RM${year}${month}`;
 
-  const lastPatient = await prisma.patients.findFirst({
-    where: {
-      medical_record_number: {
-        startsWith: `RM${year}${month}`
-      }
-    },
-    orderBy: { medical_record_number: 'desc' }
-  });
+  // Try to get the next sequence number with retry logic for race conditions
+  const maxRetries = 3;
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    const lastPatient = await prisma.patients.findFirst({
+      where: {
+        medical_record_number: {
+          startsWith: prefix
+        }
+      },
+      orderBy: { medical_record_number: 'desc' },
+      select: { medical_record_number: true }
+    });
 
-  let sequence = 1;
-  if (lastPatient) {
-    const lastSequence = parseInt(lastPatient.medical_record_number.slice(-5));
-    sequence = lastSequence + 1;
+    let sequence = 1;
+    if (lastPatient) {
+      const lastSequence = parseInt(lastPatient.medical_record_number.slice(-5));
+      sequence = lastSequence + 1;
+    }
+
+    const mrn = `${prefix}${sequence.toString().padStart(5, '0')}`;
+
+    // Verify uniqueness before returning (double-check)
+    const existing = await prisma.patients.findUnique({
+      where: { medical_record_number: mrn },
+      select: { id: true }
+    });
+
+    if (!existing) {
+      return mrn;
+    }
+
+    // If duplicate, wait a bit and retry
+    await new Promise(resolve => setTimeout(resolve, 50 * (attempt + 1)));
   }
 
-  return `RM${year}${month}${sequence.toString().padStart(5, '0')}`;
+  // Fallback: add random suffix if all retries failed
+  const fallbackSeq = Math.floor(Math.random() * 90000) + 10000;
+  return `${prefix}${fallbackSeq}`;
 };
 
 /**

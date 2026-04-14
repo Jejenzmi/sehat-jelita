@@ -91,7 +91,8 @@ async function deltaCheck(orderId: string, testCode: string, currentValue: strin
 
 const router = Router();
 
-router.use(checkMenuAccess('laboratorium'));
+// Using requireRole (in-memory check) instead of checkMenuAccess (DB query) to avoid N+1
+router.use(requireRole(['laboratorium', 'dokter', 'admin']));
 
 // Validation schemas
 const labOrderSchema = z.object({

@@ -6,8 +6,12 @@
 import { Router, Request, Response } from 'express';
 import { prisma } from '../config/database.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
+import { requireRole } from '../middleware/role.middleware.js';
 
 const router = Router();
+
+// Require authentication for all dialysis routes
+router.use(requireRole(['admin', 'dokter', 'perawat', 'hemodialisa']));
 
 // ============================================
 // DIALYSIS MACHINES CRUD

@@ -377,12 +377,46 @@ export async function processReportJob(job: ReportJob): Promise<ReportResult> {
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
       const backupFile = join(backupDir, `backup_${dbName}_${timestamp}.sql.gz`);
 
-      // Run pg_dump | gzip via shell (requires pg_dump in PATH)
+      // Run pg_dump with environment variables (prevents command injection)
       try {
-        await execFileAsync('sh', [
-          '-c',
-          `PGPASSWORD="${dbUrl.password}" pg_dump -h ${dbHost} -p ${dbPort} -U ${dbUser} -d ${dbName} --no-password | gzip > "${backupFile}"`,
-        ]);
+        const { spawn } = await import('node:child_process');
+        const { createWriteStream } = await import('node:fs');
+        const { createGzip } = await import('node:zlib');
+
+        await new Promise<void>((resolve, reject) => {
+          const pgDump = spawn('pg_dump', [
+            '-h', dbHost,
+            '-p', dbPort,
+            '-U', dbUser,
+            '-d', dbName,
+            '--no-password',
+          ], {
+            env: {
+              ...process.env,
+              PGPASSWORD: dbUrl.password,
+            },
+          });
+
+          const gzip = createGzip();
+          const writeStream = createWriteStream(backupFile);
+
+          pgDump.stdout.pipe(gzip).pipe(writeStream);
+
+          let stderr = '';
+          pgDump.stderr.on('data', (chunk) => { stderr += chunk.toString(); });
+
+          pgDump.on('error', reject);
+          gzip.on('error', reject);
+          writeStream.on('error', reject);
+
+          writeStream.on('finish', () => {
+            if (pgDump.exitCode === 0) {
+              resolve();
+            } else {
+              reject(new Error(`pg_dump failed: ${stderr}`));
+            }
+          });
+        });
 
         // Get file size
         const { size } = statSync(backupFile);

@@ -155,8 +155,8 @@ router.get('/codes', searchRateLimiter, asyncHandler(async (req: Request<{}, {},
   const where: Record<string, unknown> = {};
   if (search) {
     where.OR = [
-      { icd10_code:  { contains: search, mode: 'insensitive' } },
-      { icd11_code:  { contains: search, mode: 'insensitive' } },
+      { icd10_code: { contains: search, mode: 'insensitive' } },
+      { icd11_code: { contains: search, mode: 'insensitive' } },
       { icd10_title: { contains: search, mode: 'insensitive' } },
       { icd11_title_id: { contains: search, mode: 'insensitive' } },
     ];
@@ -194,12 +194,12 @@ interface DiagnosesQuery {
 /**
  * GET /api/icd11/diagnoses?medical_record_id=&visit_id=
  */
-router.get('/diagnoses', asyncHandler(async (req: Request<{}, {}, {}, DiagnosesQuery>, res: Response) => {
+router.get('/diagnoses', requireRole(['admin', 'dokter', 'perawat']), asyncHandler(async (req: Request<{}, {}, {}, DiagnosesQuery>, res: Response) => {
   const { medical_record_id, visit_id, patient_id } = req.query;
   const where: Record<string, unknown> = {};
   if (medical_record_id) where.medical_record_id = medical_record_id;
-  if (visit_id)          where.visit_id          = visit_id;
-  if (patient_id)        where.patient_id        = patient_id;
+  if (visit_id) where.visit_id = visit_id;
+  if (patient_id) where.patient_id = patient_id;
 
   const diagnoses = await prisma.diagnoses.findMany({
     where,
@@ -226,7 +226,7 @@ interface DiagnosisBody {
 /**
  * POST /api/icd11/diagnoses
  */
-router.post('/diagnoses', asyncHandler(async (req: Request<{}, {}, DiagnosisBody>, res: Response) => {
+router.post('/diagnoses', requireRole(['admin', 'dokter', 'perawat']), asyncHandler(async (req: Request<{}, {}, DiagnosisBody>, res: Response) => {
   const {
     medical_record_id, visit_id, patient_id,
     icd11_code, icd11_entity_id, icd11_title_en, icd11_title_id,
@@ -237,10 +237,10 @@ router.post('/diagnoses', asyncHandler(async (req: Request<{}, {}, DiagnosisBody
   const diagnosis = await prisma.diagnoses.create({
     data: {
       medical_record_id: medical_record_id || null,
-      visit_id:          visit_id          || null,
-      patient_id:        patient_id        || null,
+      visit_id: visit_id || null,
+      patient_id: patient_id || null,
       icd11_code, icd11_entity_id, icd11_title_en, icd11_title_id,
-      icd10_code,  icd10_title,
+      icd10_code, icd10_title,
       diagnosis_type, is_confirmed,
       notes: notes || null,
       created_by: req.user?.id || null,
@@ -256,7 +256,7 @@ router.post('/diagnoses', asyncHandler(async (req: Request<{}, {}, DiagnosisBody
         ...(icd11_code ? { diagnosis: icd11_title_id || icd11_title_en || icd11_code } : {}),
         ...(icd10_code ? { icd10_code } : {}),
       },
-    }).catch(() => {});
+    }).catch(() => { });
   }
 
   res.status(201).json({ success: true, data: diagnosis });
@@ -265,11 +265,11 @@ router.post('/diagnoses', asyncHandler(async (req: Request<{}, {}, DiagnosisBody
 /**
  * PUT /api/icd11/diagnoses/:id
  */
-router.put('/diagnoses/:id', asyncHandler(async (req: Request<{ id: string }>, res: Response) => {
+router.put('/diagnoses/:id', requireRole(['admin', 'dokter', 'perawat']), asyncHandler(async (req: Request<{ id: string }>, res: Response) => {
   const { id } = req.params;
   const allowed = [
-    'icd11_code','icd11_entity_id','icd11_title_en','icd11_title_id',
-    'icd10_code','icd10_title','diagnosis_type','is_confirmed','notes',
+    'icd11_code', 'icd11_entity_id', 'icd11_title_en', 'icd11_title_id',
+    'icd10_code', 'icd10_title', 'diagnosis_type', 'is_confirmed', 'notes',
   ];
   const data: Record<string, unknown> = {};
   allowed.forEach(k => { if ((req.body as Record<string, unknown>)[k] !== undefined) data[k] = (req.body as Record<string, unknown>)[k]; });
@@ -281,7 +281,7 @@ router.put('/diagnoses/:id', asyncHandler(async (req: Request<{ id: string }>, r
 /**
  * DELETE /api/icd11/diagnoses/:id
  */
-router.delete('/diagnoses/:id', asyncHandler(async (req: Request<{ id: string }>, res: Response) => {
+router.delete('/diagnoses/:id', requireRole(['admin', 'dokter', 'perawat']), asyncHandler(async (req: Request<{ id: string }>, res: Response) => {
   const { id } = req.params;
   await prisma.diagnoses.delete({ where: { id } });
   res.json({ success: true });
@@ -301,11 +301,11 @@ interface MedicalRecordsQuery {
 /**
  * GET /api/icd11/medical-records?patient_id=&visit_id=&limit=50
  */
-router.get('/medical-records', asyncHandler(async (req: Request<{}, {}, {}, MedicalRecordsQuery>, res: Response) => {
+router.get('/medical-records', requireRole(['admin', 'dokter', 'perawat']), asyncHandler(async (req: Request<{}, {}, {}, MedicalRecordsQuery>, res: Response) => {
   const { patient_id, visit_id, limit = '50', page = '1' } = req.query;
   const where: Record<string, unknown> = {};
   if (patient_id) where.patient_id = patient_id;
-  if (visit_id)   where.visit_id   = visit_id;
+  if (visit_id) where.visit_id = visit_id;
 
   const skip = (parseInt(page) - 1) * parseInt(limit);
 
@@ -313,8 +313,8 @@ router.get('/medical-records', asyncHandler(async (req: Request<{}, {}, {}, Medi
     prisma.medical_records.findMany({
       where,
       include: {
-        patients:  { select: { full_name: true, medical_record_number: true, gender: true, birth_date: true } },
-        doctors:   { select: { full_name: true, specialization: true } },
+        patients: { select: { full_name: true, medical_record_number: true, gender: true, birth_date: true } },
+        doctors: { select: { full_name: true, specialization: true } },
         diagnoses: { orderBy: [{ diagnosis_type: 'asc' }, { created_at: 'asc' }] },
       },
       orderBy: { record_date: 'desc' },
@@ -330,12 +330,12 @@ router.get('/medical-records', asyncHandler(async (req: Request<{}, {}, {}, Medi
 /**
  * GET /api/icd11/medical-records/:id
  */
-router.get('/medical-records/:id', asyncHandler(async (req: Request<{ id: string }>, res: Response) => {
+router.get('/medical-records/:id', requireRole(['admin', 'dokter', 'perawat']), asyncHandler(async (req: Request<{ id: string }>, res: Response) => {
   const record = await prisma.medical_records.findUnique({
     where: { id: req.params.id },
     include: {
-      patients:  { select: { full_name: true, medical_record_number: true, gender: true, birth_date: true } },
-      doctors:   { select: { full_name: true, specialization: true } },
+      patients: { select: { full_name: true, medical_record_number: true, gender: true, birth_date: true } },
+      doctors: { select: { full_name: true, specialization: true } },
       diagnoses: { orderBy: [{ diagnosis_type: 'asc' }, { created_at: 'asc' }] },
     },
   });
@@ -373,7 +373,7 @@ interface MedicalRecordBody {
  * Body: { patient_id, visit_id, doctor_id, subjective, objective, assessment, plan,
  *         vital_signs, physical_exam, diagnoses: [...] }
  */
-router.post('/medical-records', asyncHandler(async (req: Request<{}, {}, MedicalRecordBody>, res: Response) => {
+router.post('/medical-records', requireRole(['admin', 'dokter', 'perawat']), asyncHandler(async (req: Request<{}, {}, MedicalRecordBody>, res: Response) => {
   const {
     patient_id, visit_id, doctor_id,
     subjective, objective, assessment, plan,
@@ -398,18 +398,18 @@ router.post('/medical-records', asyncHandler(async (req: Request<{}, {}, Medical
       await tx.diagnoses.createMany({
         data: diagnosesInput.map(d => ({
           medical_record_id: mr.id,
-          visit_id:          visit_id || null,
-          patient_id:        patient_id,
-          icd11_code:        d.icd11_code        || null,
-          icd11_entity_id:   d.icd11_entity_id   || null,
-          icd11_title_en:    d.icd11_title_en     || null,
-          icd11_title_id:    d.icd11_title_id     || null,
-          icd10_code:        d.icd10_code         || null,
-          icd10_title:       d.icd10_title        || null,
-          diagnosis_type:    d.diagnosis_type || 'primer',
-          is_confirmed:      d.is_confirmed   ?? true,
-          notes:             d.notes          || null,
-          created_by:        req.user?.id     || null,
+          visit_id: visit_id || null,
+          patient_id: patient_id,
+          icd11_code: d.icd11_code || null,
+          icd11_entity_id: d.icd11_entity_id || null,
+          icd11_title_en: d.icd11_title_en || null,
+          icd11_title_id: d.icd11_title_id || null,
+          icd10_code: d.icd10_code || null,
+          icd10_title: d.icd10_title || null,
+          diagnosis_type: d.diagnosis_type || 'primer',
+          is_confirmed: d.is_confirmed ?? true,
+          notes: d.notes || null,
+          created_by: req.user?.id || null,
         })),
       });
     }
@@ -417,8 +417,8 @@ router.post('/medical-records', asyncHandler(async (req: Request<{}, {}, Medical
     return tx.medical_records.findUnique({
       where: { id: mr.id },
       include: {
-        patients:  { select: { full_name: true, medical_record_number: true, gender: true, birth_date: true } },
-        doctors:   { select: { full_name: true, specialization: true } },
+        patients: { select: { full_name: true, medical_record_number: true, gender: true, birth_date: true } },
+        doctors: { select: { full_name: true, specialization: true } },
         diagnoses: true,
       },
     });
@@ -433,7 +433,7 @@ router.post('/medical-records', asyncHandler(async (req: Request<{}, {}, Medical
         diagnosis: primary.icd11_title_id || primary.icd11_title_en || primary.icd10_title || null,
         icd10_code: primary.icd10_code || null,
       },
-    }).catch(() => {});
+    }).catch(() => { });
   }
 
   res.status(201).json({ success: true, data: record });
@@ -442,9 +442,9 @@ router.post('/medical-records', asyncHandler(async (req: Request<{}, {}, Medical
 /**
  * PUT /api/icd11/medical-records/:id
  */
-router.put('/medical-records/:id', asyncHandler(async (req: Request<{ id: string }>, res: Response) => {
+router.put('/medical-records/:id', requireRole(['admin', 'dokter', 'perawat']), asyncHandler(async (req: Request<{ id: string }>, res: Response) => {
   const { id } = req.params;
-  const allowed = ['subjective','objective','assessment','plan','vital_signs','physical_exam','doctor_id'];
+  const allowed = ['subjective', 'objective', 'assessment', 'plan', 'vital_signs', 'physical_exam', 'doctor_id'];
   const data: Record<string, unknown> = {};
   allowed.forEach(k => { if ((req.body as Record<string, unknown>)[k] !== undefined) data[k] = (req.body as Record<string, unknown>)[k]; });
 
@@ -452,7 +452,7 @@ router.put('/medical-records/:id', asyncHandler(async (req: Request<{ id: string
     where: { id },
     data,
     include: {
-      patients:  { select: { full_name: true, medical_record_number: true } },
+      patients: { select: { full_name: true, medical_record_number: true } },
       diagnoses: true,
     },
   });
