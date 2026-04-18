@@ -66,7 +66,10 @@ export interface RL5Data {
 }
 
 export interface RL6Data {
-  period: { year: number; month: number; days_in_month: number };
+  id?: string;
+  period?: { year: number; month: number; days_in_month: number };
+  period_month?: number;
+  period_year?: number;
   total_beds: number;
   admissions: number;
   discharges: number;
@@ -87,6 +90,8 @@ export interface RLSubmission {
   status: string;
   submitted_at?: string;
   submitted_by?: string;
+  submission_date?: string;
+  verification_date?: string;
 }
 
 // ==================== HOOKS ====================

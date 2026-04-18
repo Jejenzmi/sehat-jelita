@@ -48,11 +48,14 @@ export interface ICUAdmission {
   visit_id: string;
   bed_id: string;
   admission_date: string;
+  admission_number?: string;
+  icu_type?: string;
   discharge_date?: string | null;
   admission_reason: string;
   admission_source: string;
   diagnosis_on_admission: string;
   apache_score?: number | null;
+  apache_ii_score?: number | null;
   sofa_score?: number | null;
   ventilator_required: boolean;
   isolation_required: boolean;
@@ -62,8 +65,9 @@ export interface ICUAdmission {
   discharge_condition?: string | null;
   discharge_notes?: string | null;
   patients?: { full_name: string; medical_record_number: string; blood_type?: string } | null;
+  doctors?: { full_name: string } | null;
   beds?: { bed_number: string; rooms?: { room_name: string; room_type: string } } | null;
-  icu_beds?: { bed_number: string } | null; // legacy alias
+  icu_beds?: { bed_number: string; has_ventilator?: boolean } | null; // legacy alias
   icu_vital_signs?: ICUVitalSigns[];
 }
 
@@ -130,8 +134,17 @@ export interface ICUFluidBalance {
   records: ICUIntakeOutput[];
 }
 
+export interface ICUBedDetail {
+  id: string;
+  bed_number: string;
+  icu_type: string;
+  is_available: boolean;
+  has_ventilator?: boolean;
+  has_monitor?: boolean;
+}
+
 export interface ICUBedSummary {
-  beds: ICUBed[];
+  beds: ICUBedDetail[];
   summary: { total: number; available: number; occupied: number; cleaning: number; maintenance: number };
 }
 
@@ -149,7 +162,10 @@ function normalizeVitals(v: ICUVitalSigns): ICUVitalSigns {
 export function useICUBeds() {
   return useQuery({
     queryKey: ["icu-beds"],
-    queryFn: () => apiFetch<ICUBedSummary>('/icu/beds'),
+    queryFn: async () => {
+      const res = await apiFetch<ICUBedSummary | ICUBedDetail[]>('/icu/beds');
+      return Array.isArray(res) ? res : res.beds;
+    },
   });
 }
 
