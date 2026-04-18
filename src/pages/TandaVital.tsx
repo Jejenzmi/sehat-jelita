@@ -183,7 +183,7 @@ export default function TandaVital() {
               <div className="flex items-center gap-2">
                 <Activity className="h-5 w-5 text-blue-500" />
                 <div>
-                  <p className="text-lg font-bold">{latest.heart_rate ?? "—"} <span className="text-xs text-muted-foreground">bpm</span></p>
+                  <p className="text-lg font-bold">{String(latest.heart_rate ?? "—")} <span className="text-xs text-muted-foreground">bpm</span></p>
                   <p className="text-xs text-muted-foreground">Nadi</p>
                 </div>
               </div>
@@ -192,7 +192,7 @@ export default function TandaVital() {
               <div className="flex items-center gap-2">
                 <Wind className="h-5 w-5 text-green-500" />
                 <div>
-                  <p className="text-lg font-bold">{latest.spo2 ?? "—"}<span className="text-xs text-muted-foreground">%</span></p>
+                  <p className="text-lg font-bold">{String(latest.spo2 ?? "—")}<span className="text-xs text-muted-foreground">%</span></p>
                   <p className="text-xs text-muted-foreground">SpO2</p>
                 </div>
               </div>
@@ -201,7 +201,7 @@ export default function TandaVital() {
               <div className="flex items-center gap-2">
                 <Thermometer className="h-5 w-5 text-orange-500" />
                 <div>
-                  <p className="text-lg font-bold">{latest.temperature ?? "—"}<span className="text-xs text-muted-foreground">°C</span></p>
+                  <p className="text-lg font-bold">{String(latest.temperature ?? "—")}<span className="text-xs text-muted-foreground">°C</span></p>
                   <p className="text-xs text-muted-foreground">Suhu</p>
                 </div>
               </div>

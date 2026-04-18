@@ -97,8 +97,6 @@ const TABLE_ENDPOINTS: Record<string, string> = {
   rehabilitation_cases: '/rehabilitation/cases',
   mcu_clients: '/mcu/clients',
   mcu_results: '/mcu/results',
-  blood_inventory: '/bloodbank/inventory',
-  transfusion_requests: '/bloodbank/transfusions',
   crossmatch_tests: '/bloodbank/crossmatch',
   dialysis_machines: '/dialysis/machines',
   dialysis_schedules: '/dialysis/schedules',

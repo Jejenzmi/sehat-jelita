@@ -127,7 +127,7 @@ export default function StaffCertifications() {
 
       {/* Summary stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {tab === "certs" ? [
+        {(tab === "certs" ? [
           { icon: <Award className="h-8 w-8 text-primary" />, value: certStats?.total ?? 0, label: "Total Sertifikasi", loading: loadingCertStats },
           { icon: <AlertTriangle className="h-8 w-8 text-warning" />, value: certStats?.expiring_soon ?? 0, label: "Segera Kedaluwarsa", loading: loadingCertStats },
           { icon: <AlertTriangle className="h-8 w-8 text-destructive" />, value: certStats?.expired ?? 0, label: "Sudah Kedaluwarsa", loading: loadingCertStats },
@@ -137,7 +137,7 @@ export default function StaffCertifications() {
           { icon: <Calendar className="h-8 w-8 text-info" />, value: trainStats?.upcoming ?? 0, label: "Akan Datang", loading: loadingTrainStats },
           { icon: <GraduationCap className="h-8 w-8 text-success" />, value: trainStats?.by_type?.internal ?? 0, label: "Internal", loading: loadingTrainStats },
           { icon: <GraduationCap className="h-8 w-8 text-warning" />, value: trainStats?.by_type?.external ?? 0, label: "Eksternal", loading: loadingTrainStats },
-        ].map(({ icon, value, label, loading }, i) => (
+        ]).map(({ icon, value, label, loading }, i) => (
           <Card key={i}>
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">

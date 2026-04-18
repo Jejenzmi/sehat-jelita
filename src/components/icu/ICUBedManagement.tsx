@@ -29,7 +29,7 @@ export function ICUBedManagement() {
   };
 
   const handleConfirmToggle = () => {
-    updateBed.mutate({ id: confirmDialog.bedId, is_available: !confirmDialog.currentStatus });
+    updateBed.mutate({ admissionId: confirmDialog.bedId, is_available: !confirmDialog.currentStatus });
     setConfirmDialog({ open: false, bedId: "", bedNumber: "", currentStatus: null });
   };
 
