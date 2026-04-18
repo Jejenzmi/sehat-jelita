@@ -43,6 +43,7 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  // @ts-expect-error vitest config extension
   test: {
     globals: true,
     environment: "jsdom",
