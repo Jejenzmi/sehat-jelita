@@ -134,7 +134,7 @@ export default function Kiosk() {
   const [searchQuery, setSearchQuery] = useState("");
   const [generatedTicket, setGeneratedTicket] = useState<string | null>(null);
   const [showKeyboard, setShowKeyboard] = useState(false);
-  const idleTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const services: ServiceType[] = [
     { id: "rawat_jalan", name: "Rawat Jalan", icon: <Stethoscope className="w-14 h-14" />, code: "RJ", description: "Poli Umum & Spesialis", gradient: "from-teal-500 to-cyan-500" },

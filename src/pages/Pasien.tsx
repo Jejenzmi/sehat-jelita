@@ -381,7 +381,7 @@ export default function Pasien() {
                     <Label>Jenis Kelamin *</Label>
                     <Select
                       value={formData.gender}
-                      onValueChange={(value: "L" | "P") => setFormData({ ...formData, gender: value })}
+                      onValueChange={(value) => setFormData({ ...formData, gender: value as "" | "male" | "female" })}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Pilih" />

@@ -100,7 +100,7 @@ export default function INACBGGrouper() {
       const [icdCodes, drgCodes, history] = await Promise.all([
         apiFetch<ICD10Code[]>('/icd11/codes?limit=100').catch(() => [] as ICD10Code[]),
         apiFetch<DRGCode[]>('/eklaim/drg-codes?limit=100').catch(() => [] as DRGCode[]),
-        apiFetch<CalculationResult[]>('/eklaim/inacbg-calculations?limit=20').catch(() => [] as CalculationResult[]),
+        apiFetch<CalculationHistory[]>('/eklaim/inacbg-calculations?limit=20').catch(() => [] as CalculationHistory[]),
       ]);
       setIcd10Codes(icdCodes);
       setDrgCodes(drgCodes);

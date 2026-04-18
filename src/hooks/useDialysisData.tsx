@@ -123,10 +123,32 @@ export function useDialysisMonitoring(sessionId: string) {
   });
 }
 
+export interface DialysisStatistics {
+  totalMachines: number;
+  availableMachines: number;
+  inUseMachines: number;
+  todayScheduled: number;
+  todayInProgress: number;
+  todayCompleted: number;
+  monthlyTotal: number;
+  avgKtV: string;
+}
+
+export interface WeeklySessionData {
+  day: string;
+  sessions: number;
+}
+
+export interface AdequacyData {
+  name: string;
+  value: number;
+  color: string;
+}
+
 export function useDialysisStatistics() {
   return useQuery({
     queryKey: ["dialysis-statistics"],
-    queryFn: () => apiFetch('/dialysis/statistics'),
+    queryFn: () => apiFetch<DialysisStatistics>('/dialysis/statistics'),
     refetchInterval: 60_000,
   });
 }
@@ -134,14 +156,14 @@ export function useDialysisStatistics() {
 export function useWeeklyDialysisSessions() {
   return useQuery({
     queryKey: ["dialysis-weekly-sessions"],
-    queryFn: () => apiFetch('/dialysis/weekly-summary'),
+    queryFn: () => apiFetch<WeeklySessionData[]>('/dialysis/weekly-summary'),
   });
 }
 
 export function useDialysisAdequacy() {
   return useQuery({
     queryKey: ["dialysis-adequacy"],
-    queryFn: () => apiFetch('/dialysis/adequacy'),
+    queryFn: () => apiFetch<AdequacyData[]>('/dialysis/adequacy'),
   });
 }
 

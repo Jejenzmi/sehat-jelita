@@ -183,7 +183,7 @@ export function JournalEntriesTab() {
         entry: {
           entry_date: entryDate,
           description: description,
-          status: "draft",
+          status: "DRAFT",
         },
         lines: validLines.map((l, idx) => ({
           account_id: l.account_id,
@@ -484,7 +484,7 @@ export function JournalEntriesTab() {
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
-                        {journal.status === "draft" && (
+                        {journal.status === "DRAFT" && (
                           <Button
                             size="icon"
                             variant="ghost"
@@ -494,7 +494,7 @@ export function JournalEntriesTab() {
                             <CheckCircle className="h-4 w-4" />
                           </Button>
                         )}
-                        {journal.status === "posted" && (
+                        {journal.status === "POSTED" && (
                           <Button
                             size="icon"
                             variant="ghost"

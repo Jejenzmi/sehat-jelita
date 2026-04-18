@@ -111,10 +111,19 @@ export function useAvailableBlood() {
   return useBloodInventory("available");
 }
 
+export interface BloodInventoryStats {
+  totalAvailable: number;
+  expiringCount: number;
+  pendingRequests: number;
+  todayTransfusions: number;
+  byBloodType: Record<string, number>;
+  byProductType: Record<string, number>;
+}
+
 export function useBloodInventoryStats() {
   return useQuery({
     queryKey: ["blood-inventory-stats"],
-    queryFn: () => apiFetch('/bloodbank/inventory/summary'),
+    queryFn: () => apiFetch<BloodInventoryStats>('/bloodbank/inventory/summary'),
     refetchInterval: 30_000,
   });
 }

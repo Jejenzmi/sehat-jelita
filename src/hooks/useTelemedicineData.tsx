@@ -51,6 +51,9 @@ export interface TelemedicineSession {
   technical_issues: string | null;
   patients?: { id: string; full_name: string; medical_record_number: string };
   doctors?:  { id: string; full_name: string; specialization: string | null };
+  patient?: { id: string; full_name: string; medical_record_number: string };
+  doctor?: { id: string; full_name: string; specialization: string | null };
+  appointment?: { id: string; chief_complaint?: string | null };
 }
 
 export interface TelemedicineStats {
@@ -58,6 +61,7 @@ export interface TelemedicineStats {
   waiting: number;
   completed: number;
   avg_duration: number;
+  avgDuration?: number;
 }
 
 // ==================== HOOKS ====================
@@ -166,7 +170,10 @@ export function useTelemedicineData() {
   return {
     sessions:      sessionsQuery.data ?? [],
     loading:       sessionsQuery.isLoading,
-    stats:         statsQuery.data ?? { today: 0, waiting: 0, completed: 0, avg_duration: 0 },
+    stats:         {
+      ...(statsQuery.data ?? { today: 0, waiting: 0, completed: 0, avg_duration: 0 }),
+      avgDuration: statsQuery.data?.avg_duration ?? 0,
+    },
     fetchSessions: () => queryClient.invalidateQueries({ queryKey: ["telemedicine-sessions"] }),
     createSession: (appointmentId: string) => {
       toast({ title: "Info", description: "Gunakan useCreateTelemedicineSession hook" });
@@ -176,5 +183,7 @@ export function useTelemedicineData() {
       updateSession.mutate({ id: sessionId, status: "in_progress", user_type: userType }),
     endSession: (sessionId: string, notes?: string) =>
       updateSession.mutate({ id: sessionId, status: "completed", notes }),
+    updateSessionNotes: (sessionId: string, notes: string) =>
+      updateSession.mutate({ id: sessionId, notes }),
   };
 }
