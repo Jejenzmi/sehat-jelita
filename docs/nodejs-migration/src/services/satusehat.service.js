@@ -348,58 +348,6 @@ class SatuSehatService {
   }
 
   // ==========================================
-  // CONFIGURATION MANAGEMENT
-  // ==========================================
-
-  /**
-   * Save SATU SEHAT Configuration
-   */
-  async saveConfiguration(config) {
-    const { org_id, environment, client_id, client_secret } = config;
-
-    const validEnvironments = ['sandbox', 'staging', 'production'];
-    if (!validEnvironments.includes(environment)) {
-      throw new Error('environment tidak valid, harus salah satu dari: sandbox, staging, production');
-    }
-
-    process.env.SATU_SEHAT_ORG_ID = org_id;
-    process.env.SATU_SEHAT_ENV = environment;
-    process.env.SATU_SEHAT_CLIENT_ID = client_id;
-    process.env.SATU_SEHAT_CLIENT_SECRET = client_secret;
-
-    // Update instance properties
-    this.orgId = org_id;
-    this.env = environment;
-    this.clientId = client_id;
-    this.clientSecret = client_secret;
-
-    // Invalidate cached token when credentials change
-    this.accessToken = null;
-    this.tokenExpiry = null;
-
-    return { org_id, environment, client_id };
-  }
-
-  /**
-   * Get SATU SEHAT Configuration (without sensitive credentials)
-   */
-  async getConfiguration() {
-    const orgId = process.env.SATU_SEHAT_ORG_ID || null;
-    const environment = process.env.SATU_SEHAT_ENV || null;
-    const clientId = process.env.SATU_SEHAT_CLIENT_ID || null;
-
-    if (!orgId || !environment || !clientId) {
-      return null;
-    }
-
-    return {
-      org_id: orgId,
-      environment: environment || 'sandbox',
-      client_id: clientId,
-    };
-  }
-
-  // ==========================================
   // BUNDLE RESOURCE (BATCH OPERATIONS)
   // ==========================================
 

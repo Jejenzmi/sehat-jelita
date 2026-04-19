@@ -27,7 +27,7 @@ export function WardDisplay() {
 
   return (
     <div className="space-y-5">
-      <DisplayHeader title="Ward Display" subtitle="Status Tempat Tidur Real-time — SIMRS ZEN" variant="blue" />
+      <DisplayHeader title="Ward Display" subtitle="Status Tempat Tidur Real-time — RSUD Dr. Moewardi" variant="blue" />
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">

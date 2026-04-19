@@ -8,13 +8,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { db } from "@/lib/db";
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { PaymentGateway } from "@/components/billing/PaymentGateway";
-import { ThermalReceipt } from "@/components/billing/ThermalReceipt";
 
-type BillingStatus = "pending" | "partial" | "paid" | "cancelled" | "refunded";
+type BillingStatus = "pending" | "lunas" | "batal" | "partial";
 type PaymentType = "umum" | "bpjs" | "asuransi";
 
 interface Billing {
@@ -50,19 +49,17 @@ interface BillingItem {
 }
 
 const statusColors: Record<string, string> = {
-  paid: "bg-success/10 text-success border-success/20",
+  lunas: "bg-success/10 text-success border-success/20",
   pending: "bg-warning/10 text-warning border-warning/20",
-  cancelled: "bg-destructive/10 text-destructive border-destructive/20",
+  batal: "bg-destructive/10 text-destructive border-destructive/20",
   partial: "bg-info/10 text-info border-info/20",
-  refunded: "bg-muted/10 text-muted-foreground border-muted/20",
 };
 
 const statusLabels: Record<string, string> = {
-  paid: "Lunas",
+  lunas: "Lunas",
   pending: "Pending",
-  cancelled: "Batal",
+  batal: "Batal",
   partial: "Sebagian",
-  refunded: "Dikembalikan",
 };
 
 const typeColors: Record<string, string> = {
@@ -85,7 +82,7 @@ export default function Billing() {
   const { data: billings = [], isLoading } = useQuery({
     queryKey: ["billings", statusFilter],
     queryFn: async () => {
-      let query = db
+      let query = supabase
         .from("billings")
         .select(`
           *,
@@ -94,12 +91,12 @@ export default function Billing() {
         `)
         .order("billing_date", { ascending: false });
 
-      if (statusFilter !== "all" && statusFilter !== "pending" && statusFilter !== "paid") {
+      if (statusFilter !== "all" && statusFilter !== "pending" && statusFilter !== "lunas") {
         // Skip filter for special tabs
       } else if (statusFilter === "pending") {
         query = query.eq("status", "pending");
-      } else if (statusFilter === "paid") {
-        query = query.eq("status", "paid");
+      } else if (statusFilter === "lunas") {
+        query = query.eq("status", "lunas");
       }
 
       const { data, error } = await query;
@@ -114,16 +111,16 @@ export default function Billing() {
     return billingDate.toDateString() === new Date().toDateString();
   });
   const todayRevenue = todayBillings.reduce((sum, b) => sum + (b.paid_amount || 0), 0);
-  const completedToday = todayBillings.filter(b => b.status === "paid").length;
+  const completedToday = todayBillings.filter(b => b.status === "lunas").length;
   const pendingBillings = billings.filter(b => b.status === "pending");
   const pendingTotal = pendingBillings.reduce((sum, b) => sum + b.total, 0);
 
   // Revenue by payment type
-  const bpjsRevenue = billings.filter(b => b.payment_type === "bpjs" && b.status === "paid")
+  const bpjsRevenue = billings.filter(b => b.payment_type === "bpjs" && b.status === "lunas")
     .reduce((sum, b) => sum + b.total, 0);
-  const umumRevenue = billings.filter(b => b.payment_type === "umum" && b.status === "paid")
+  const umumRevenue = billings.filter(b => b.payment_type === "umum" && b.status === "lunas")
     .reduce((sum, b) => sum + b.total, 0);
-  const asuransiRevenue = billings.filter(b => b.payment_type === "asuransi" && b.status === "paid")
+  const asuransiRevenue = billings.filter(b => b.payment_type === "asuransi" && b.status === "lunas")
     .reduce((sum, b) => sum + b.total, 0);
   const totalRevenue = bpjsRevenue + umumRevenue + asuransiRevenue;
 
@@ -134,9 +131,9 @@ export default function Billing() {
       if (!billing) throw new Error("Billing not found");
 
       const newPaidAmount = (billing.paid_amount || 0) + amount;
-      const newStatus = newPaidAmount >= billing.total ? "paid" : "partial";
+      const newStatus = newPaidAmount >= billing.total ? "lunas" : "pending";
 
-      const { error } = await db
+      const { error } = await supabase
         .from("billings")
         .update({
           paid_amount: newPaidAmount,
@@ -148,23 +145,16 @@ export default function Billing() {
 
       if (error) throw error;
     },
-    onSuccess: (_data, variables) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["billings"] });
-      const billing = billings.find(b => b.id === variables.billingId);
-      const newPaid = (billing?.paid_amount || 0) + variables.amount;
-      const isFullyPaid = billing && newPaid >= billing.total;
       setIsPaymentOpen(false);
+      setSelectedBilling(null);
       setPaymentMethod("");
       setPayAmount("");
       toast({
         title: "Pembayaran Berhasil",
         description: "Status tagihan telah diperbarui",
       });
-      // Auto-open receipt print dialog after full payment
-      if (isFullyPaid && variables.billingId) {
-        setReceiptBillingId(variables.billingId);
-      }
-      setSelectedBilling(null);
     },
     onError: (error) => {
       toast({
@@ -200,7 +190,6 @@ export default function Billing() {
   };
 
   const [mainTab, setMainTab] = useState("billing");
-  const [receiptBillingId, setReceiptBillingId] = useState<string | null>(null);
 
   return (
     <div className="space-y-6">
@@ -322,7 +311,7 @@ export default function Billing() {
             <TabsList>
               <TabsTrigger value="all">Semua</TabsTrigger>
               <TabsTrigger value="pending">Pending</TabsTrigger>
-              <TabsTrigger value="paid">Lunas</TabsTrigger>
+              <TabsTrigger value="lunas">Lunas</TabsTrigger>
             </TabsList>
             <div className="flex items-center gap-2">
               <div className="relative">
@@ -408,8 +397,8 @@ export default function Billing() {
                                 Bayar
                               </Button>
                             )}
-                            {bill.status === "paid" && (
-                              <Button size="sm" variant="outline" onClick={() => setReceiptBillingId(bill.id)}>
+                            {bill.status === "lunas" && (
+                              <Button size="sm" variant="outline">
                                 <Printer className="h-4 w-4 mr-1" />
                                 Cetak
                               </Button>
@@ -469,7 +458,7 @@ export default function Billing() {
             </div>
           </TabsContent>
 
-          <TabsContent value="paid" className="mt-0">
+          <TabsContent value="lunas" className="mt-0">
             <div className="overflow-x-auto">
               <table className="data-table">
                 <thead>
@@ -483,7 +472,7 @@ export default function Billing() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredBillings.filter(b => b.status === "paid").map((bill) => (
+                  {filteredBillings.filter(b => b.status === "lunas").map((bill) => (
                     <tr key={bill.id}>
                       <td className="font-mono text-sm font-medium">{bill.invoice_number}</td>
                       <td>{bill.patients?.full_name}</td>
@@ -495,7 +484,7 @@ export default function Billing() {
                       <td className="font-medium">{formatCurrency(bill.total)}</td>
                       <td>{bill.payment_date ? new Date(bill.payment_date).toLocaleDateString("id-ID") : "-"}</td>
                       <td>
-                        <Button size="sm" variant="outline" onClick={() => setReceiptBillingId(bill.id)}>
+                        <Button size="sm" variant="outline">
                           <Printer className="h-4 w-4 mr-1" />
                           Cetak
                         </Button>
@@ -630,13 +619,6 @@ export default function Billing() {
       </Dialog>
       </>
       )}
-
-      {/* Thermal receipt print dialog */}
-      <ThermalReceipt
-        billingId={receiptBillingId}
-        open={!!receiptBillingId}
-        onClose={() => setReceiptBillingId(null)}
-      />
     </div>
   );
 }

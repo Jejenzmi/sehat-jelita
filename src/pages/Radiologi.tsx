@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Scan, Search, Plus, Clock, CheckCircle, XCircle, Image, Activity, Printer, Monitor, Loader2 } from "lucide-react";
-import { db } from "@/lib/db";
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
@@ -96,7 +96,7 @@ export default function Radiologi() {
   const { data: radiologyTemplates = [], isLoading: isLoadingTemplates } = useQuery({
     queryKey: ['radiology-templates'],
     queryFn: async () => {
-      const { data, error } = await db
+      const { data, error } = await supabase
         .from('radiology_templates')
         .select('*')
         .eq('is_active', true)
@@ -111,7 +111,7 @@ export default function Radiologi() {
   const { data: radiologyResults = [], isLoading: isLoadingResults } = useQuery({
     queryKey: ['radiology-results'],
     queryFn: async () => {
-      const { data, error } = await db
+      const { data, error } = await supabase
         .from('radiology_results')
         .select(`
           *,
@@ -126,7 +126,7 @@ export default function Radiologi() {
       const doctorIds = [...new Set((data || []).map(d => d.requested_by).filter(Boolean))];
       let doctorMap: Record<string, string> = {};
       if (doctorIds.length > 0) {
-        const { data: doctors } = await db
+        const { data: doctors } = await supabase
           .from('doctors')
           .select('id, full_name')
           .in('id', doctorIds);
@@ -146,7 +146,7 @@ export default function Radiologi() {
   const { data: patients = [] } = useQuery({
     queryKey: ['patients-dropdown'],
     queryFn: async () => {
-      const { data, error } = await db
+      const { data, error } = await supabase
         .from('patients')
         .select('id, full_name, medical_record_number')
         .eq('status', 'aktif')
@@ -162,7 +162,7 @@ export default function Radiologi() {
   const { data: doctors = [] } = useQuery({
     queryKey: ['doctors-dropdown'],
     queryFn: async () => {
-      const { data, error } = await db
+      const { data, error } = await supabase
         .from('doctors')
         .select('id, full_name, specialization')
         .eq('is_active', true)
@@ -178,7 +178,7 @@ export default function Radiologi() {
     queryKey: ['visits-for-patient', newRequest.patient_id],
     queryFn: async () => {
       if (!newRequest.patient_id) return [];
-      const { data, error } = await db
+      const { data, error } = await supabase
         .from('visits')
         .select('id, visit_number, visit_date')
         .eq('patient_id', newRequest.patient_id)
@@ -200,7 +200,7 @@ export default function Radiologi() {
         updateData.exam_date = new Date().toISOString();
       }
       
-      const { error } = await db
+      const { error } = await supabase
         .from('radiology_results')
         .update(updateData)
         .eq('id', id);
@@ -219,7 +219,7 @@ export default function Radiologi() {
   // Save results mutation
   const saveResultsMutation = useMutation({
     mutationFn: async ({ id, findings, impression, recommendation }: { id: string; findings: string; impression: string; recommendation: string }) => {
-      const { error } = await db
+      const { error } = await supabase
         .from('radiology_results')
         .update({
           findings,
@@ -249,7 +249,7 @@ export default function Radiologi() {
     mutationFn: async (data: { patient_id: string; doctor_id: string; template_id: string; notes: string; visit_id: string }) => {
       const radNumber = `RAD-${format(new Date(), 'yyyyMMdd')}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
       
-      const { error } = await db
+      const { error } = await supabase
         .from('radiology_results')
         .insert({
           radiology_number: radNumber,

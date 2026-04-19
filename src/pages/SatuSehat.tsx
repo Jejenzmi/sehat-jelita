@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { db } from "@/lib/db";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 interface SyncStat {
@@ -30,8 +30,6 @@ interface Config {
   organization_id: string;
   environment: string;
   auto_sync_enabled: boolean;
-  client_id: string;
-  client_secret: string;
 }
 
 export default function SatuSehat() {
@@ -47,8 +45,6 @@ export default function SatuSehat() {
     organization_id: '',
     environment: 'staging',
     auto_sync_enabled: false,
-    client_id: '',
-    client_secret: '',
   });
   const [lastSync, setLastSync] = useState<string | null>(null);
 
@@ -69,7 +65,7 @@ export default function SatuSehat() {
 
   const loadStats = async () => {
     try {
-      const { data, error } = await db.functions.invoke('satusehat', {
+      const { data, error } = await supabase.functions.invoke('satusehat', {
         body: { action: 'get-sync-stats' },
       });
 
@@ -85,7 +81,7 @@ export default function SatuSehat() {
 
   const loadLogs = async () => {
     try {
-      const { data, error } = await db.functions.invoke('satusehat', {
+      const { data, error } = await supabase.functions.invoke('satusehat', {
         body: { action: 'get-sync-logs', data: { limit: 10 } },
       });
 
@@ -102,7 +98,7 @@ export default function SatuSehat() {
 
   const loadConfig = async () => {
     try {
-      const { data, error } = await db.functions.invoke('satusehat', {
+      const { data, error } = await supabase.functions.invoke('satusehat', {
         body: { action: 'get-config' },
       });
 
@@ -113,8 +109,6 @@ export default function SatuSehat() {
           organization_id: data.config.organization_id || '',
           environment: data.config.environment || 'staging',
           auto_sync_enabled: data.config.auto_sync_enabled || false,
-          client_id: data.config.client_id || '',
-          client_secret: data.config.client_secret || '',
         });
       }
     } catch (error) {
@@ -125,7 +119,7 @@ export default function SatuSehat() {
   const testConnection = async () => {
     setIsTesting(true);
     try {
-      const { data, error } = await db.functions.invoke('satusehat', {
+      const { data, error } = await supabase.functions.invoke('satusehat', {
         body: { action: 'test-connection' },
       });
 
@@ -148,15 +142,13 @@ export default function SatuSehat() {
 
   const saveConfig = async () => {
     try {
-      const { error } = await db.functions.invoke('satusehat', {
+      const { error } = await supabase.functions.invoke('satusehat', {
         body: {
           action: 'save-config',
           data: {
             organizationId: config.organization_id,
             environment: config.environment,
             autoSyncEnabled: config.auto_sync_enabled,
-            clientId: config.client_id,
-            clientSecret: config.client_secret,
           },
         },
       });
@@ -172,7 +164,7 @@ export default function SatuSehat() {
   const bulkSyncPatients = async () => {
     setIsSyncing(true);
     try {
-      const { data, error } = await db.functions.invoke('satusehat', {
+      const { data, error } = await supabase.functions.invoke('satusehat', {
         body: { action: 'bulk-sync-patients' },
       });
 
@@ -526,33 +518,6 @@ export default function SatuSehat() {
                 />
                 <p className="text-xs text-muted-foreground">
                   ID organisasi yang terdaftar di platform SATU SEHAT
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="client-id">Client ID</Label>
-                <Input
-                  id="client-id"
-                  placeholder="Masukkan Client ID dari SATU SEHAT"
-                  value={config.client_id}
-                  onChange={(e) => setConfig({ ...config, client_id: e.target.value })}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Client ID (Kunci Akses)
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="client-secret">Client Secret</Label>
-                <Input
-                  id="client-secret"
-                  type="password"
-                  placeholder="Masukkan Client Secret dari SATU SEHAT"
-                  value={config.client_secret}
-                  onChange={(e) => setConfig({ ...config, client_secret: e.target.value })}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Client Secret (Kunci Akses Rahasia)
                 </p>
               </div>
 

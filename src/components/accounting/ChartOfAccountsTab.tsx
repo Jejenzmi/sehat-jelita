@@ -184,7 +184,7 @@ export function ChartOfAccountsTab() {
         parent_account_id: (formData.get("parent_account_id") as string) || undefined,
         level: parseInt(formData.get("level") as string) || 3,
         is_header: formData.get("is_header") === "on",
-        normal_balance: (formData.get("normal_balance") as string).toUpperCase() as "DEBIT" | "CREDIT",
+        normal_balance: formData.get("normal_balance") as "debit" | "credit",
         description: (formData.get("description") as string) || undefined,
         opening_balance: parseFloat(formData.get("opening_balance") as string) || 0,
         is_active: true,

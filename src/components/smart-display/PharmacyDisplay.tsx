@@ -11,7 +11,7 @@ export function PharmacyDisplay() {
 
   return (
     <div className="space-y-5">
-      <DisplayHeader title="Antrian Farmasi" subtitle="Display Antrian Resep — SIMRS ZEN" variant="emerald" />
+      <DisplayHeader title="Antrian Farmasi" subtitle="Display Antrian Resep — RSUD Dr. Moewardi" variant="emerald" />
 
       {/* Stats bar */}
       <div className="grid grid-cols-3 gap-3">

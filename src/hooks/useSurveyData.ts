@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { db } from "@/lib/db";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
 // Types
@@ -73,7 +73,7 @@ export function useSurveyTemplates() {
   return useQuery({
     queryKey: ["survey-templates"],
     queryFn: async () => {
-      const { data, error } = await db
+      const { data, error } = await supabase
         .from("survey_templates")
         .select("*")
         .eq("is_active", true)
@@ -91,7 +91,7 @@ export function useSurveyQuestions(templateId: string | null) {
     queryFn: async () => {
       if (!templateId) return [];
       
-      const { data, error } = await db
+      const { data, error } = await supabase
         .from("survey_questions")
         .select("*")
         .eq("template_id", templateId)
@@ -114,7 +114,7 @@ export function useSurveyResponses(filters?: {
   return useQuery({
     queryKey: ["survey-responses", filters],
     queryFn: async () => {
-      let query = db
+      let query = supabase
         .from("survey_responses")
         .select(`
           *,
@@ -164,7 +164,7 @@ export function useSubmitSurvey() {
         : null;
 
       // Create survey response
-      const { data: response, error: responseError } = await db
+      const { data: response, error: responseError } = await supabase
         .from("survey_responses")
         .insert({
           template_id: params.templateId,
@@ -191,7 +191,7 @@ export function useSubmitSurvey() {
         selected_options: a.selected_options,
       }));
 
-      const { error: answersError } = await db
+      const { error: answersError } = await supabase
         .from("survey_answers")
         .insert(answersToInsert);
 
@@ -225,7 +225,7 @@ export function useSatisfactionScore(filters?: {
   return useQuery({
     queryKey: ["satisfaction-score", filters],
     queryFn: async () => {
-      const { data, error } = await db
+      const { data, error } = await supabase
         .rpc("calculate_satisfaction_score", {
           p_department_id: filters?.departmentId || null,
           p_start_date: filters?.startDate || null,
@@ -245,7 +245,7 @@ export function useDepartmentSatisfaction() {
   return useQuery({
     queryKey: ["department-satisfaction"],
     queryFn: async () => {
-      const { data, error } = await db
+      const { data, error } = await supabase
         .from("department_satisfaction_summary")
         .select("*")
         .order("avg_satisfaction", { ascending: false });
@@ -262,7 +262,7 @@ export function useRecentFeedback(limit: number = 10) {
   return useQuery({
     queryKey: ["recent-feedback", limit],
     queryFn: async () => {
-      const { data, error } = await db
+      const { data, error } = await supabase
         .from("survey_responses")
         .select(`
           id,

@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Search, Plus, Calendar as CalendarIcon, Package } from "lucide-react";
-import { db } from "@/lib/db";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format, differenceInDays } from "date-fns";
 import { id } from "date-fns/locale";
@@ -64,14 +64,14 @@ export default function InventoryBatches() {
   const fetchData = async () => {
     try {
       const [batchesRes, medicinesRes] = await Promise.all([
-        db
+        supabase
           .from("medicine_batches")
           .select(`
             *,
             medicine:medicine_id (name, code, unit)
           `)
           .order("expiry_date"),
-        db
+        supabase
           .from("medicines")
           .select("id, name, code, unit")
           .eq("is_active", true)
@@ -103,7 +103,7 @@ export default function InventoryBatches() {
       const price = parseFloat(unitPrice) || 0;
 
       // Add batch
-      const { error: batchError } = await db
+      const { error: batchError } = await supabase
         .from("medicine_batches")
         .insert({
           medicine_id: selectedMedicine,
@@ -122,7 +122,7 @@ export default function InventoryBatches() {
       // Update medicine stock
       const medicine = medicines.find(m => m.id === selectedMedicine);
       if (medicine) {
-        const { data: currentMed } = await db
+        const { data: currentMed } = await supabase
           .from("medicines")
           .select("stock")
           .eq("id", selectedMedicine)
@@ -130,13 +130,13 @@ export default function InventoryBatches() {
 
         const newStock = (currentMed?.stock || 0) + qty;
 
-        await db
+        await supabase
           .from("medicines")
           .update({ stock: newStock })
           .eq("id", selectedMedicine);
 
         // Record transaction
-        await db
+        await supabase
           .from("inventory_transactions")
           .insert({
             medicine_id: selectedMedicine,

@@ -18,7 +18,7 @@ import {
   Calculator,
   Send
 } from "lucide-react";
-import { useHospitalProfile, useRL6Indicators, useRLReportSubmissions, useCalculateRL6, useSubmitAllRL } from "@/hooks/useRLReports";
+import { useHospitalProfile, useRL6Indicators, useRLReportSubmissions, useCalculateRL6 } from "@/hooks/useRLReports";
 
 const currentYear = new Date().getFullYear();
 const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
@@ -46,14 +46,9 @@ export default function RLReportsDashboard() {
   const { data: rl6Indicators, isLoading: loadingRL6 } = useRL6Indicators(selectedYear);
   const { data: submissions } = useRLReportSubmissions(selectedYear);
   const calculateRL6 = useCalculateRL6();
-  const submitAllRL  = useSubmitAllRL();
 
   const handleCalculateRL6 = () => {
     calculateRL6.mutate({ month: selectedMonth, year: selectedYear });
-  };
-
-  const handleSubmitAll = () => {
-    submitAllRL.mutate({ month: selectedMonth, year: selectedYear });
   };
 
   const getSubmissionStatus = (reportType: string) => {
@@ -124,15 +119,6 @@ export default function RLReportsDashboard() {
               ))}
             </SelectContent>
           </Select>
-          <Button
-            onClick={handleSubmitAll}
-            disabled={submitAllRL.isPending}
-            className="gap-2"
-          >
-            {submitAllRL.isPending
-              ? <><RefreshCw className="h-4 w-4 animate-spin" /> Mengirim...</>
-              : <><Send className="h-4 w-4" /> Submit RL1–RL6</>}
-          </Button>
         </div>
       </div>
 

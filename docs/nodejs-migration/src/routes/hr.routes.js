@@ -41,7 +41,7 @@ router.get('/employees',
       prisma.employees.findMany({
         where,
         include: {
-          departments: { select: { id: true, department_name: true } },
+          departments: { select: { id: true, name: true } },
           profiles: { select: { email: true, avatar_url: true } }
         },
         orderBy: { full_name: 'asc' },

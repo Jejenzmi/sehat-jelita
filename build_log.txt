@@ -1,7 +1,0 @@
-
-> vite_react_shadcn_ts@0.0.0 build
-> vite build
-
-NODE_ENV=production is not supported in the .env file. Only NODE_ENV=development is supported to create a development build of your project. If you need to set process.env.NODE_ENV, you can set it in the Vite config instead.
-vite v5.4.21 building for production...
-transforming...

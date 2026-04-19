@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,106 +13,68 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/hooks/use-toast";
-import { Stethoscope, Building2, Pill, BedDouble, Plus, Search } from "lucide-react";
+import { 
+  Stethoscope, Building2, Pill, BedDouble, Plus, Search, 
+  Pencil, Trash2, Users
+} from "lucide-react";
 
-const API_BASE = import.meta.env.VITE_API_URL || '/api';
-
-const FETCH_OPTS: RequestInit = { credentials: 'include', headers: { 'Content-Type': 'application/json' } };
-
-async function apiFetch<T>(path: string): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, FETCH_OPTS);
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(json.error || res.statusText);
-  return (json.data ?? json) as T;
-}
-
-async function apiPost<T>(path: string, body: unknown): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...FETCH_OPTS, method: 'POST', body: JSON.stringify(body),
-  });
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(json.error || res.statusText);
-  return (json.data ?? json) as T;
-}
-
-async function apiPut<T>(path: string, body: unknown): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...FETCH_OPTS, method: 'PUT', body: JSON.stringify(body),
-  });
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(json.error || res.statusText);
-  return (json.data ?? json) as T;
-}
-
-interface Doctor {
-  id: string;
-  full_name: string;
-  doctor_code: string;
-  sip_number: string | null;
-  specialization: string | null;
-  department_id: string | null;
-  consultation_fee: number | null;
-  is_active: boolean | null;
-  departments?: { id: string; department_name: string } | null;
-}
-
-interface Department {
-  id: string;
-  department_name: string;
-  department_code: string;
-  department_type: string | null;
-  is_active: boolean | null;
-}
-
-interface Medicine {
-  id: string;
-  medicine_code: string;
-  medicine_name: string;
-  generic_name: string | null;
-  category: string | null;
-  unit: string | null;
-  unit_price: number | null;
-  current_stock: number | null;
-  min_stock: number | null;
-  is_active: boolean | null;
-}
-
-interface Room {
-  id: string;
-  room_number: string;
-  room_name: string;
-  room_class: string | null;
-  capacity: number | null;
-  daily_rate: number | null;
-  is_active: boolean | null;
-  beds?: { id: string }[];
-}
-
+// Fetch doctors
 function useDoctors() {
   return useQuery({
     queryKey: ["master-doctors"],
-    queryFn: () => apiFetch<Doctor[]>('/admin/doctors'),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("doctors")
+        .select(`*, departments (name)`)
+        .order("full_name");
+      if (error) throw error;
+      return data;
+    },
   });
 }
 
+// Fetch departments
 function useDepartments() {
   return useQuery({
     queryKey: ["master-departments"],
-    queryFn: () => apiFetch<Department[]>('/admin/departments'),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("departments")
+        .select("*")
+        .order("name");
+      if (error) throw error;
+      return data;
+    },
   });
 }
 
+// Fetch medicines
 function useMedicines() {
   return useQuery({
     queryKey: ["master-medicines"],
-    queryFn: () => apiFetch<Medicine[]>('/admin/medicines'),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("medicines")
+        .select("*")
+        .order("name");
+      if (error) throw error;
+      return data;
+    },
   });
 }
 
+// Fetch rooms
 function useRooms() {
   return useQuery({
     queryKey: ["master-rooms"],
-    queryFn: () => apiFetch<Room[]>('/admin/rooms'),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("rooms")
+        .select(`*, beds (id)`)
+        .order("room_number");
+      if (error) throw error;
+      return data;
+    },
   });
 }
 
@@ -126,131 +89,137 @@ export default function MasterData() {
   const { data: medicines, isLoading: loadingMedicines } = useMedicines();
   const { data: rooms, isLoading: loadingRooms } = useRooms();
 
+  // Add doctor mutation
   const addDoctorMutation = useMutation({
-    mutationFn: (doctor: Record<string, unknown>) => apiPost('/admin/doctors', doctor),
+    mutationFn: async (doctor: any) => {
+      const { data, error } = await supabase.from("doctors").insert(doctor).select().single();
+      if (error) throw error;
+      return data;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["master-doctors"] });
       setIsAddDialogOpen(false);
       toast({ title: "Dokter berhasil ditambahkan" });
     },
-    onError: (error: Error) => toast({ title: "Gagal menambah dokter", description: error.message, variant: "destructive" }),
+    onError: (error: any) => {
+      toast({ title: "Gagal menambah dokter", description: error.message, variant: "destructive" });
+    },
   });
 
+  // Add department mutation
   const addDepartmentMutation = useMutation({
-    mutationFn: (dept: Record<string, unknown>) => apiPost('/admin/departments', dept),
+    mutationFn: async (dept: any) => {
+      const { data, error } = await supabase.from("departments").insert(dept).select().single();
+      if (error) throw error;
+      return data;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["master-departments"] });
       setIsAddDialogOpen(false);
       toast({ title: "Departemen berhasil ditambahkan" });
     },
-    onError: (error: Error) => toast({ title: "Gagal menambah departemen", description: error.message, variant: "destructive" }),
+    onError: (error: any) => {
+      toast({ title: "Gagal menambah departemen", description: error.message, variant: "destructive" });
+    },
   });
 
+  // Add medicine mutation
   const addMedicineMutation = useMutation({
-    mutationFn: (medicine: Record<string, unknown>) => apiPost('/admin/medicines', medicine),
+    mutationFn: async (medicine: any) => {
+      const { data, error } = await supabase.from("medicines").insert(medicine).select().single();
+      if (error) throw error;
+      return data;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["master-medicines"] });
       setIsAddDialogOpen(false);
       toast({ title: "Obat berhasil ditambahkan" });
     },
-    onError: (error: Error) => toast({ title: "Gagal menambah obat", description: error.message, variant: "destructive" }),
+    onError: (error: any) => {
+      toast({ title: "Gagal menambah obat", description: error.message, variant: "destructive" });
+    },
   });
 
+  // Add room mutation
   const addRoomMutation = useMutation({
-    mutationFn: (room: Record<string, unknown>) => apiPost('/admin/rooms', room),
+    mutationFn: async (room: any) => {
+      const { data, error } = await supabase.from("rooms").insert(room).select().single();
+      if (error) throw error;
+      return data;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["master-rooms"] });
       setIsAddDialogOpen(false);
       toast({ title: "Ruangan berhasil ditambahkan" });
     },
-    onError: (error: Error) => toast({ title: "Gagal menambah ruangan", description: error.message, variant: "destructive" }),
+    onError: (error: any) => {
+      toast({ title: "Gagal menambah ruangan", description: error.message, variant: "destructive" });
+    },
   });
 
-  const toggleDoctorMutation = useMutation({
-    mutationFn: ({ id, is_active }: { id: string; is_active: boolean }) =>
-      apiPut(`/admin/doctors/${id}`, { is_active }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["master-doctors"] }),
-  });
-
-  const toggleDepartmentMutation = useMutation({
-    mutationFn: ({ id, is_active }: { id: string; is_active: boolean }) =>
-      apiPut(`/admin/departments/${id}`, { is_active }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["master-departments"] }),
-  });
-
-  const toggleMedicineMutation = useMutation({
-    mutationFn: ({ id, is_active }: { id: string; is_active: boolean }) =>
-      apiPut(`/admin/medicines/${id}`, { is_active }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["master-medicines"] }),
-  });
-
-  const toggleRoomMutation = useMutation({
-    mutationFn: ({ id, is_active }: { id: string; is_active: boolean }) =>
-      apiPut(`/admin/rooms/${id}`, { is_active }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["master-rooms"] }),
+  // Toggle active status
+  const toggleActiveMutation = useMutation({
+    mutationFn: async ({ table, id, is_active }: { table: string; id: string; is_active: boolean }) => {
+      const { error } = await supabase.from(table as any).update({ is_active }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`master-${activeTab}`] });
+      toast({ title: "Status berhasil diperbarui" });
+    },
   });
 
   const handleAddDoctor = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const fd = new FormData(e.currentTarget);
+    const formData = new FormData(e.currentTarget);
     addDoctorMutation.mutate({
-      doctor_code: `DR${Date.now()}`,
-      full_name: fd.get("full_name") as string,
-      sip_number: fd.get("sip_number") as string || null,
-      specialization: fd.get("specialization") as string || null,
-      department_id: fd.get("department_id") as string || null,
-      consultation_fee: parseInt(fd.get("consultation_fee") as string) || 0,
+      full_name: formData.get("full_name"),
+      sip_number: formData.get("sip_number"),
+      specialization: formData.get("specialization") || null,
+      department_id: formData.get("department_id") || null,
+      consultation_fee: parseInt(formData.get("consultation_fee") as string) || 0,
       is_active: true,
     });
   };
 
   const handleAddDepartment = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const fd = new FormData(e.currentTarget);
+    const formData = new FormData(e.currentTarget);
     addDepartmentMutation.mutate({
-      department_name: fd.get("name") as string,
-      department_code: fd.get("code") as string,
+      name: formData.get("name"),
+      code: formData.get("code"),
+      description: formData.get("description") || null,
       is_active: true,
     });
   };
 
   const handleAddMedicine = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const fd = new FormData(e.currentTarget);
+    const formData = new FormData(e.currentTarget);
     addMedicineMutation.mutate({
-      medicine_name: fd.get("name") as string,
-      medicine_code: fd.get("code") as string,
-      generic_name: fd.get("generic_name") as string || null,
-      category: fd.get("category") as string || null,
-      unit: fd.get("unit") as string,
-      unit_price: parseInt(fd.get("price") as string) || 0,
-      current_stock: parseInt(fd.get("stock") as string) || 0,
-      min_stock: parseInt(fd.get("min_stock") as string) || 10,
+      name: formData.get("name"),
+      code: formData.get("code"),
+      generic_name: formData.get("generic_name") || null,
+      category: formData.get("category") || null,
+      unit: formData.get("unit"),
+      price: parseInt(formData.get("price") as string) || 0,
+      stock: parseInt(formData.get("stock") as string) || 0,
+      min_stock: parseInt(formData.get("min_stock") as string) || 10,
       is_active: true,
     });
   };
 
   const handleAddRoom = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const fd = new FormData(e.currentTarget);
+    const formData = new FormData(e.currentTarget);
     addRoomMutation.mutate({
-      room_number: fd.get("code") as string,
-      room_name: fd.get("name") as string,
-      room_class: fd.get("room_class") as string,
-      capacity: parseInt(fd.get("total_beds") as string) || 1,
-      daily_rate: parseInt(fd.get("daily_rate") as string) || 0,
+      code: formData.get("code"),
+      name: formData.get("name"),
+      room_class: formData.get("room_class"),
+      total_beds: parseInt(formData.get("total_beds") as string) || 1,
+      daily_rate: parseInt(formData.get("daily_rate") as string) || 0,
       is_active: true,
     });
-  };
-
-  const getDialogTitle = () => {
-    switch (activeTab) {
-      case "doctors": return "Tambah Dokter";
-      case "departments": return "Tambah Departemen";
-      case "medicines": return "Tambah Obat";
-      case "rooms": return "Tambah Ruangan";
-      default: return "Tambah Data";
-    }
   };
 
   const getAddDialogContent = () => {
@@ -263,8 +232,8 @@ export default function MasterData() {
               <Input id="full_name" name="full_name" required />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="sip_number">Nomor SIP</Label>
-              <Input id="sip_number" name="sip_number" />
+              <Label htmlFor="sip_number">Nomor SIP *</Label>
+              <Input id="sip_number" name="sip_number" required />
             </div>
             <div className="space-y-2">
               <Label htmlFor="specialization">Spesialisasi</Label>
@@ -278,7 +247,7 @@ export default function MasterData() {
                 </SelectTrigger>
                 <SelectContent>
                   {departments?.map((dept) => (
-                    <SelectItem key={dept.id} value={dept.id}>{dept.department_name}</SelectItem>
+                    <SelectItem key={dept.id} value={dept.id}>{dept.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -305,6 +274,10 @@ export default function MasterData() {
             <div className="space-y-2">
               <Label htmlFor="code">Kode *</Label>
               <Input id="code" name="code" required placeholder="Contoh: POL-001" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="description">Deskripsi</Label>
+              <Input id="description" name="description" />
             </div>
             <div className="flex gap-2 justify-end">
               <Button type="button" variant="outline" onClick={() => setIsAddDialogOpen(false)}>Batal</Button>
@@ -335,7 +308,9 @@ export default function MasterData() {
               <div className="space-y-2">
                 <Label htmlFor="category">Kategori</Label>
                 <Select name="category">
-                  <SelectTrigger><SelectValue placeholder="Pilih kategori" /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Pilih kategori" />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="obat_keras">Obat Keras</SelectItem>
                     <SelectItem value="obat_bebas">Obat Bebas</SelectItem>
@@ -347,7 +322,7 @@ export default function MasterData() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="unit">Satuan *</Label>
-                <Input id="unit" name="unit" required placeholder="Tablet, Kapsul..." />
+                <Input id="unit" name="unit" required placeholder="Contoh: Tablet, Kapsul" />
               </div>
             </div>
             <div className="grid grid-cols-3 gap-4">
@@ -388,7 +363,9 @@ export default function MasterData() {
             <div className="space-y-2">
               <Label htmlFor="room_class">Kelas Ruangan *</Label>
               <Select name="room_class" defaultValue="Kelas 3">
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="VIP">VIP</SelectItem>
                   <SelectItem value="Kelas 1">Kelas 1</SelectItem>
@@ -401,7 +378,7 @@ export default function MasterData() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="total_beds">Kapasitas Bed</Label>
+                <Label htmlFor="total_beds">Jumlah Bed</Label>
                 <Input id="total_beds" name="total_beds" type="number" defaultValue="1" />
               </div>
               <div className="space-y-2">
@@ -422,8 +399,19 @@ export default function MasterData() {
     }
   };
 
+  const getDialogTitle = () => {
+    switch (activeTab) {
+      case "doctors": return "Tambah Dokter";
+      case "departments": return "Tambah Departemen";
+      case "medicines": return "Tambah Obat";
+      case "rooms": return "Tambah Ruangan";
+      default: return "Tambah Data";
+    }
+  };
+
   return (
     <div className="p-6 space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Master Data</h1>
@@ -436,37 +424,58 @@ export default function MasterData() {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
-              <div className="p-3 bg-primary/10 rounded-xl"><Stethoscope className="h-6 w-6 text-primary" /></div>
-              <div><p className="text-2xl font-bold">{doctors?.length || 0}</p><p className="text-sm text-muted-foreground">Dokter</p></div>
+              <div className="p-3 bg-primary/10 rounded-xl">
+                <Stethoscope className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{doctors?.length || 0}</p>
+                <p className="text-sm text-muted-foreground">Dokter</p>
+              </div>
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
-              <div className="p-3 bg-blue-500/10 rounded-xl"><Building2 className="h-6 w-6 text-blue-500" /></div>
-              <div><p className="text-2xl font-bold">{departments?.length || 0}</p><p className="text-sm text-muted-foreground">Departemen</p></div>
+              <div className="p-3 bg-blue-500/10 rounded-xl">
+                <Building2 className="h-6 w-6 text-blue-500" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{departments?.length || 0}</p>
+                <p className="text-sm text-muted-foreground">Departemen</p>
+              </div>
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
-              <div className="p-3 bg-green-500/10 rounded-xl"><Pill className="h-6 w-6 text-green-500" /></div>
-              <div><p className="text-2xl font-bold">{medicines?.length || 0}</p><p className="text-sm text-muted-foreground">Obat</p></div>
+              <div className="p-3 bg-green-500/10 rounded-xl">
+                <Pill className="h-6 w-6 text-green-500" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{medicines?.length || 0}</p>
+                <p className="text-sm text-muted-foreground">Obat</p>
+              </div>
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
-              <div className="p-3 bg-orange-500/10 rounded-xl"><BedDouble className="h-6 w-6 text-orange-500" /></div>
-              <div><p className="text-2xl font-bold">{rooms?.length || 0}</p><p className="text-sm text-muted-foreground">Ruangan</p></div>
+              <div className="p-3 bg-orange-500/10 rounded-xl">
+                <BedDouble className="h-6 w-6 text-orange-500" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{rooms?.length || 0}</p>
+                <p className="text-sm text-muted-foreground">Ruangan</p>
+              </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
+      {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList>
           <TabsTrigger value="doctors">Dokter</TabsTrigger>
@@ -493,9 +502,11 @@ export default function MasterData() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="mb-4 relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Cari dokter..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10" />
+              <div className="mb-4">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input placeholder="Cari dokter..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10" />
+                </div>
               </div>
               {loadingDoctors ? (
                 <div className="space-y-2">{[1, 2, 3].map((i) => <Skeleton key={i} className="h-16 w-full" />)}</div>
@@ -515,14 +526,14 @@ export default function MasterData() {
                     {doctors?.filter(d => d.full_name.toLowerCase().includes(searchTerm.toLowerCase())).map((doc) => (
                       <TableRow key={doc.id}>
                         <TableCell className="font-medium">{doc.full_name}</TableCell>
-                        <TableCell className="font-mono text-sm">{doc.sip_number || "-"}</TableCell>
+                        <TableCell className="font-mono text-sm">{doc.sip_number}</TableCell>
                         <TableCell>{doc.specialization || "-"}</TableCell>
-                        <TableCell>{doc.departments?.department_name || "-"}</TableCell>
+                        <TableCell>{(doc as any).departments?.name || "-"}</TableCell>
                         <TableCell>Rp {(doc.consultation_fee || 0).toLocaleString("id-ID")}</TableCell>
                         <TableCell>
                           <Switch
-                            checked={!!doc.is_active}
-                            onCheckedChange={(checked) => toggleDoctorMutation.mutate({ id: doc.id, is_active: checked })}
+                            checked={doc.is_active}
+                            onCheckedChange={(checked) => toggleActiveMutation.mutate({ table: "doctors", id: doc.id, is_active: checked })}
                           />
                         </TableCell>
                       </TableRow>
@@ -560,20 +571,20 @@ export default function MasterData() {
                     <TableRow>
                       <TableHead>Nama</TableHead>
                       <TableHead>Kode</TableHead>
-                      <TableHead>Tipe</TableHead>
+                      <TableHead>Deskripsi</TableHead>
                       <TableHead>Status</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {departments?.map((dept) => (
                       <TableRow key={dept.id}>
-                        <TableCell className="font-medium">{dept.department_name}</TableCell>
-                        <TableCell className="font-mono">{dept.department_code}</TableCell>
-                        <TableCell>{dept.department_type || "-"}</TableCell>
+                        <TableCell className="font-medium">{dept.name}</TableCell>
+                        <TableCell className="font-mono">{dept.code}</TableCell>
+                        <TableCell>{dept.description || "-"}</TableCell>
                         <TableCell>
                           <Switch
-                            checked={!!dept.is_active}
-                            onCheckedChange={(checked) => toggleDepartmentMutation.mutate({ id: dept.id, is_active: checked })}
+                            checked={dept.is_active}
+                            onCheckedChange={(checked) => toggleActiveMutation.mutate({ table: "departments", id: dept.id, is_active: checked })}
                           />
                         </TableCell>
                       </TableRow>
@@ -603,9 +614,11 @@ export default function MasterData() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="mb-4 relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Cari obat..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10" />
+              <div className="mb-4">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input placeholder="Cari obat..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10" />
+                </div>
               </div>
               {loadingMedicines ? (
                 <div className="space-y-2">{[1, 2, 3].map((i) => <Skeleton key={i} className="h-16 w-full" />)}</div>
@@ -623,22 +636,22 @@ export default function MasterData() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {medicines?.filter(m => m.medicine_name.toLowerCase().includes(searchTerm.toLowerCase())).map((med) => (
+                    {medicines?.filter(m => m.name.toLowerCase().includes(searchTerm.toLowerCase())).map((med) => (
                       <TableRow key={med.id}>
-                        <TableCell className="font-mono">{med.medicine_code}</TableCell>
-                        <TableCell className="font-medium">{med.medicine_name}</TableCell>
+                        <TableCell className="font-mono">{med.code}</TableCell>
+                        <TableCell className="font-medium">{med.name}</TableCell>
                         <TableCell>{med.category || "-"}</TableCell>
-                        <TableCell>{med.unit || "-"}</TableCell>
+                        <TableCell>{med.unit}</TableCell>
                         <TableCell>
-                          <Badge variant={(med.current_stock || 0) < (med.min_stock || 10) ? "destructive" : "default"}>
-                            {med.current_stock ?? 0}
+                          <Badge variant={med.stock < (med.min_stock || 10) ? "destructive" : "default"}>
+                            {med.stock}
                           </Badge>
                         </TableCell>
-                        <TableCell>Rp {(med.unit_price || 0).toLocaleString("id-ID")}</TableCell>
+                        <TableCell>Rp {med.price.toLocaleString("id-ID")}</TableCell>
                         <TableCell>
                           <Switch
-                            checked={!!med.is_active}
-                            onCheckedChange={(checked) => toggleMedicineMutation.mutate({ id: med.id, is_active: checked })}
+                            checked={med.is_active}
+                            onCheckedChange={(checked) => toggleActiveMutation.mutate({ table: "medicines", id: med.id, is_active: checked })}
                           />
                         </TableCell>
                       </TableRow>
@@ -674,7 +687,7 @@ export default function MasterData() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Nomor</TableHead>
+                      <TableHead>Kode</TableHead>
                       <TableHead>Nama</TableHead>
                       <TableHead>Kelas</TableHead>
                       <TableHead>Kapasitas</TableHead>
@@ -686,16 +699,18 @@ export default function MasterData() {
                   <TableBody>
                     {rooms?.map((room) => (
                       <TableRow key={room.id}>
-                        <TableCell className="font-mono">{room.room_number}</TableCell>
-                        <TableCell className="font-medium">{room.room_name}</TableCell>
-                        <TableCell><Badge variant="outline">{room.room_class || "-"}</Badge></TableCell>
-                        <TableCell>{room.capacity || "-"}</TableCell>
-                        <TableCell>{room.beds?.length || 0}</TableCell>
+                        <TableCell className="font-mono">{room.code}</TableCell>
+                        <TableCell className="font-medium">{room.name}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{room.room_class}</Badge>
+                        </TableCell>
+                        <TableCell>{room.total_beds}</TableCell>
+                        <TableCell>{(room as any).beds?.length || 0}</TableCell>
                         <TableCell>Rp {(room.daily_rate || 0).toLocaleString("id-ID")}</TableCell>
                         <TableCell>
                           <Switch
-                            checked={!!room.is_active}
-                            onCheckedChange={(checked) => toggleRoomMutation.mutate({ id: room.id, is_active: checked })}
+                            checked={room.is_active}
+                            onCheckedChange={(checked) => toggleActiveMutation.mutate({ table: "rooms", id: room.id, is_active: checked })}
                           />
                         </TableCell>
                       </TableRow>

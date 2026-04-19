@@ -1,34 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-
-const API_BASE = import.meta.env.VITE_API_URL || '/api';
-
-const FETCH_OPTS: RequestInit = { credentials: 'include', headers: { 'Content-Type': 'application/json' } };
-
-async function apiFetch<T>(path: string): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, FETCH_OPTS);
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(json.error || res.statusText);
-  return (json.data ?? json) as T;
-}
-
-async function apiPost<T>(path: string, body: unknown): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...FETCH_OPTS, method: 'POST', body: JSON.stringify(body),
-  });
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(json.error || res.statusText);
-  return (json.data ?? json) as T;
-}
-
-async function apiPut<T>(path: string, body: unknown): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...FETCH_OPTS, method: 'PUT', body: JSON.stringify(body),
-  });
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(json.error || res.statusText);
-  return (json.data ?? json) as T;
-}
 
 export interface OperatingRoom {
   id: string;
@@ -60,8 +32,8 @@ export interface Surgery {
   wound_class: string;
   status: 'scheduled' | 'preparation' | 'in_progress' | 'completed' | 'cancelled' | 'postponed';
   cancellation_reason: string | null;
-  anesthesia_type: string | null;
-  asa_classification: string | null;
+  anesthesia_type: 'general' | 'regional' | 'local' | 'sedation' | 'combined' | null;
+  asa_classification: 'ASA_I' | 'ASA_II' | 'ASA_III' | 'ASA_IV' | 'ASA_V' | 'ASA_VI' | null;
   preoperative_notes: string | null;
   operative_notes: string | null;
   postoperative_notes: string | null;
@@ -72,6 +44,7 @@ export interface Surgery {
   consent_signed_by: string | null;
   created_at: string;
   updated_at: string;
+  // Joined data
   patient?: {
     full_name: string;
     medical_record_number: string;
@@ -103,82 +76,229 @@ export interface SurgicalSafetyChecklist {
   sign_out_completed: boolean;
   sign_out_time: string | null;
   sign_out_by: string | null;
+  // ... other checklist fields
 }
 
 export function useSurgeryData() {
   const queryClient = useQueryClient();
 
+  // Fetch operating rooms
   const { data: operatingRooms = [], isLoading: loadingRooms } = useQuery({
     queryKey: ["operating-rooms"],
-    queryFn: () => apiFetch<OperatingRoom[]>('/surgery/operating-rooms'),
-  });
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("operating_rooms")
+        .select("*")
+        .eq("is_active", true)
+        .order("room_number");
 
-  const { data: surgeries = [], isLoading: loadingSurgeries, refetch: refetchSurgeries } = useQuery({
-    queryKey: ["surgeries"],
-    queryFn: () => apiFetch<Surgery[]>('/surgery/schedule'),
-  });
-
-  const { data: todaySurgeries = [], isLoading: loadingToday } = useQuery({
-    queryKey: ["surgeries-today"],
-    queryFn: () => {
-      const today = new Date().toISOString().split("T")[0];
-      return apiFetch<Surgery[]>(`/surgery/schedule?date=${today}`);
+      if (error) throw error;
+      return data as OperatingRoom[];
     },
   });
 
+  // Fetch surgeries with patient and room data
+  const { data: surgeries = [], isLoading: loadingSurgeries, refetch: refetchSurgeries } = useQuery({
+    queryKey: ["surgeries"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("surgeries")
+        .select(`
+          *,
+          patient:patients(full_name, medical_record_number, birth_date, gender),
+          operating_room:operating_rooms(*)
+        `)
+        .order("scheduled_date", { ascending: true })
+        .order("scheduled_start_time", { ascending: true });
+
+      if (error) throw error;
+      return data as Surgery[];
+    },
+  });
+
+  // Fetch today's surgeries
+  const { data: todaySurgeries = [], isLoading: loadingToday } = useQuery({
+    queryKey: ["surgeries-today"],
+    queryFn: async () => {
+      const today = new Date().toISOString().split("T")[0];
+      const { data, error } = await supabase
+        .from("surgeries")
+        .select(`
+          *,
+          patient:patients(full_name, medical_record_number, birth_date, gender),
+          operating_room:operating_rooms(*)
+        `)
+        .eq("scheduled_date", today)
+        .order("scheduled_start_time", { ascending: true });
+
+      if (error) throw error;
+      return data as Surgery[];
+    },
+  });
+
+  // Create surgery
   const createSurgery = useMutation({
-    mutationFn: (surgeryData: Partial<Surgery>) => apiPost<Surgery>('/surgery', surgeryData),
+    mutationFn: async (surgeryData: Partial<Surgery>) => {
+      // Generate surgery number
+      const { data: surgeryNumber } = await supabase.rpc("generate_surgery_number");
+      
+      const insertData = {
+        patient_id: surgeryData.patient_id!,
+        scheduled_date: surgeryData.scheduled_date!,
+        scheduled_start_time: surgeryData.scheduled_start_time!,
+        preoperative_diagnosis: surgeryData.preoperative_diagnosis!,
+        procedure_name: surgeryData.procedure_name!,
+        surgery_number: surgeryNumber as string,
+        visit_id: surgeryData.visit_id || null,
+        operating_room_id: surgeryData.operating_room_id || null,
+        scheduled_end_time: surgeryData.scheduled_end_time || null,
+        procedure_code: surgeryData.procedure_code || null,
+        procedure_type: surgeryData.procedure_type || 'elective',
+        wound_class: surgeryData.wound_class || 'clean',
+        anesthesia_type: surgeryData.anesthesia_type || null,
+        asa_classification: surgeryData.asa_classification || null,
+        preoperative_notes: surgeryData.preoperative_notes || null,
+      };
+      
+      const { data, error } = await supabase
+        .from("surgeries")
+        .insert(insertData)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["surgeries"] });
       queryClient.invalidateQueries({ queryKey: ["surgeries-today"] });
       toast.success("Jadwal operasi berhasil dibuat");
     },
-    onError: (error: Error) => toast.error(`Gagal membuat jadwal: ${error.message}`),
+    onError: (error: Error) => {
+      toast.error(`Gagal membuat jadwal: ${error.message}`);
+    },
   });
 
+  // Update surgery
   const updateSurgery = useMutation({
-    mutationFn: ({ id, ...updateData }: Partial<Surgery> & { id: string }) =>
-      apiPut<Surgery>(`/surgery/${id}`, updateData),
+    mutationFn: async ({ id, ...updateData }: Partial<Surgery> & { id: string }) => {
+      const { data, error } = await supabase
+        .from("surgeries")
+        .update(updateData)
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["surgeries"] });
       queryClient.invalidateQueries({ queryKey: ["surgeries-today"] });
       toast.success("Data operasi berhasil diperbarui");
     },
-    onError: (error: Error) => toast.error(`Gagal memperbarui: ${error.message}`),
+    onError: (error: Error) => {
+      toast.error(`Gagal memperbarui: ${error.message}`);
+    },
   });
 
+  // Update surgery status
   const updateSurgeryStatus = useMutation({
-    mutationFn: ({ id, status, notes }: { id: string; status: Surgery['status']; notes?: string }) => {
-      if (status === 'in_progress') return apiPut(`/surgery/${id}/start`, { notes });
-      if (status === 'completed') return apiPut(`/surgery/${id}/complete`, { notes });
-      return apiPut(`/surgery/${id}`, { status, cancellation_reason: notes });
+    mutationFn: async ({ id, status, notes }: { id: string; status: Surgery['status']; notes?: string }) => {
+      const updateData: Partial<Surgery> = { status };
+      
+      if (status === 'in_progress') {
+        updateData.actual_start_time = new Date().toISOString();
+      } else if (status === 'completed') {
+        updateData.actual_end_time = new Date().toISOString();
+      } else if (status === 'cancelled') {
+        updateData.cancellation_reason = notes;
+      }
+
+      const { data, error } = await supabase
+        .from("surgeries")
+        .update(updateData)
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["surgeries"] });
       queryClient.invalidateQueries({ queryKey: ["surgeries-today"] });
       toast.success("Status operasi diperbarui");
     },
-    onError: (error: Error) => toast.error(`Gagal memperbarui status: ${error.message}`),
+    onError: (error: Error) => {
+      toast.error(`Gagal memperbarui status: ${error.message}`);
+    },
   });
 
+  // Surgery team operations
   const addTeamMember = useMutation({
-    mutationFn: (member: Omit<SurgeryTeamMember, 'id'>) => apiPost('/surgery/teams', member),
+    mutationFn: async (member: Omit<SurgeryTeamMember, 'id'>) => {
+      const { data, error } = await supabase
+        .from("surgery_teams")
+        .insert(member)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["surgery-team"] });
       toast.success("Anggota tim ditambahkan");
     },
   });
 
-  const fetchSurgeryTeam = async (surgeryId: string): Promise<SurgeryTeamMember[]> => {
-    return apiFetch<SurgeryTeamMember[]>(`/surgery/teams?surgery_id=${surgeryId}`);
+  // Fetch surgery team
+  const fetchSurgeryTeam = async (surgeryId: string) => {
+    const { data, error } = await supabase
+      .from("surgery_teams")
+      .select("*")
+      .eq("surgery_id", surgeryId);
+
+    if (error) throw error;
+    return data as SurgeryTeamMember[];
   };
 
+  // Create/update safety checklist
   const updateSafetyChecklist = useMutation({
-    mutationFn: ({ surgeryId, ...checklistData }: Partial<SurgicalSafetyChecklist> & { surgeryId: string }) =>
-      apiPost('/surgery/safety-checklists', { surgery_id: surgeryId, ...checklistData }),
-    onSuccess: () => toast.success("Checklist diperbarui"),
+    mutationFn: async ({ surgeryId, ...checklistData }: Partial<SurgicalSafetyChecklist> & { surgeryId: string }) => {
+      // Check if checklist exists
+      const { data: existing } = await supabase
+        .from("surgical_safety_checklists")
+        .select("id")
+        .eq("surgery_id", surgeryId)
+        .single();
+
+      if (existing) {
+        const { data, error } = await supabase
+          .from("surgical_safety_checklists")
+          .update(checklistData)
+          .eq("surgery_id", surgeryId)
+          .select()
+          .single();
+        if (error) throw error;
+        return data;
+      } else {
+        const { data, error } = await supabase
+          .from("surgical_safety_checklists")
+          .insert({ surgery_id: surgeryId, ...checklistData })
+          .select()
+          .single();
+        if (error) throw error;
+        return data;
+      }
+    },
+    onSuccess: () => {
+      toast.success("Checklist diperbarui");
+    },
   });
 
+  // Statistics
   const stats = {
     totalToday: todaySurgeries.length,
     scheduled: todaySurgeries.filter(s => s.status === 'scheduled').length,

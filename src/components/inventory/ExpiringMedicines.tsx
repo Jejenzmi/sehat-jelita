@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { AlertTriangle, Calendar, Package, Trash2 } from "lucide-react";
-import { db } from "@/lib/db";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format, differenceInDays } from "date-fns";
 import { id } from "date-fns/locale";
@@ -38,7 +38,7 @@ export default function ExpiringMedicines() {
       const futureDate = new Date();
       futureDate.setDate(futureDate.getDate() + 180);
 
-      const { data, error } = await db
+      const { data, error } = await supabase
         .from("medicine_batches")
         .select(`
           id,
@@ -70,7 +70,7 @@ export default function ExpiringMedicines() {
   const handleMarkExpired = async (batch: ExpiringBatch) => {
     try {
       // Update batch status
-      const { error: batchError } = await db
+      const { error: batchError } = await supabase
         .from("medicine_batches")
         .update({ status: "expired", quantity: 0 })
         .eq("id", batch.id);
@@ -81,13 +81,13 @@ export default function ExpiringMedicines() {
       if (batch.medicine) {
         const newStock = Math.max(0, batch.medicine.stock - batch.quantity);
         
-        await db
+        await supabase
           .from("medicines")
           .update({ stock: newStock })
           .eq("id", batch.medicine.id);
 
         // Record transaction
-        await db
+        await supabase
           .from("inventory_transactions")
           .insert({
             medicine_id: batch.medicine.id,

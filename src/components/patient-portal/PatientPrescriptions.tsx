@@ -7,57 +7,128 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { Pill, Calendar, QrCode, CheckCircle, Clock, Package, Copy } from "lucide-react";
-import { getPrescriptions, type Prescription } from "@/lib/patient-portal-api";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import { toast } from "sonner";
 import QRCode from "@/components/patient-portal/QRCodeGenerator";
 
+interface Prescription {
+  id: string;
+  prescription_number: string;
+  prescription_date: string;
+  status: string;
+  notes: string | null;
+  qr_token: string | null;
+  pickup_code: string | null;
+  doctor: {
+    full_name: string;
+    specialization: string | null;
+  } | null;
+  items: {
+    id: string;
+    dosage: string;
+    frequency: string;
+    duration: string | null;
+    quantity: number;
+    instructions: string | null;
+    medicine: {
+      name: string;
+      unit: string;
+    } | null;
+  }[];
+}
+
 export default function PatientPrescriptions() {
+  const { user } = useAuth();
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPrescription, setSelectedPrescription] = useState<Prescription | null>(null);
   const [showQR, setShowQR] = useState(false);
-  const [nextCursor, setNextCursor] = useState<string | null>(null);
-  const [loadingMore, setLoadingMore] = useState(false);
 
-  useEffect(() => { fetchPrescriptions(); }, []);
+  useEffect(() => {
+    if (user) {
+      fetchPrescriptions();
+    }
+  }, [user]);
 
-  const fetchPrescriptions = async (cursor?: string) => {
+  const fetchPrescriptions = async () => {
     try {
-      const json = await getPrescriptions(cursor);
-      if (json.success) {
-        if (cursor) {
-          setPrescriptions(prev => [...prev, ...json.data]);
-        } else {
-          setPrescriptions(json.data);
-        }
-        setNextCursor(json.next_cursor || null);
-      }
-    } catch {
-      toast.error("Gagal memuat resep");
+      const { data: patient } = await supabase
+        .from("patients")
+        .select("id")
+        .eq("user_id", user?.id)
+        .single();
+
+      if (!patient) return;
+
+      const { data, error } = await supabase
+        .from("prescriptions")
+        .select(`
+          id,
+          prescription_number,
+          prescription_date,
+          status,
+          notes,
+          qr_token,
+          pickup_code,
+          doctor:doctor_id (
+            full_name,
+            specialization
+          )
+        `)
+        .eq("patient_id", patient.id)
+        .order("prescription_date", { ascending: false });
+
+      if (error) throw error;
+
+      // Fetch items for each prescription
+      const prescriptionsWithItems = await Promise.all(
+        (data || []).map(async (prescription) => {
+          const { data: items } = await supabase
+            .from("prescription_items")
+            .select(`
+              id,
+              dosage,
+              frequency,
+              duration,
+              quantity,
+              instructions,
+              medicine:medicine_id (
+                name,
+                unit
+              )
+            `)
+            .eq("prescription_id", prescription.id);
+
+          return {
+            ...prescription,
+            items: items || [],
+          };
+        })
+      );
+
+      setPrescriptions(prescriptionsWithItems);
+    } catch (error) {
+      console.error("Error fetching prescriptions:", error);
     } finally {
       setLoading(false);
-      setLoadingMore(false);
     }
-  };
-
-  const loadMore = () => {
-    if (!nextCursor) return;
-    setLoadingMore(true);
-    fetchPrescriptions(nextCursor);
   };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "diserahkan":
-        return <Badge className="bg-green-500/10 text-green-600"><CheckCircle className="h-3 w-3 mr-1" />Sudah Diambil</Badge>;
-      case "siap": case "ready":
-        return <Badge className="bg-blue-500/10 text-blue-600"><Package className="h-3 w-3 mr-1" />Siap Diambil</Badge>;
-      case "diproses": case "preparing":
-        return <Badge className="bg-amber-500/10 text-amber-600"><Clock className="h-3 w-3 mr-1" />Sedang Disiapkan</Badge>;
-      default:
+        return <Badge className="bg-green-500/10 text-green-600 hover:bg-green-500/20"><CheckCircle className="h-3 w-3 mr-1" />Sudah Diambil</Badge>;
+      case "siap":
+        return <Badge className="bg-blue-500/10 text-blue-600 hover:bg-blue-500/20"><Package className="h-3 w-3 mr-1" />Siap Diambil</Badge>;
+      case "diproses":
+        return <Badge className="bg-amber-500/10 text-amber-600 hover:bg-amber-500/20"><Clock className="h-3 w-3 mr-1" />Sedang Disiapkan</Badge>;
+      case "menunggu":
         return <Badge variant="secondary"><Clock className="h-3 w-3 mr-1" />Menunggu</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
     }
   };
 
@@ -69,7 +140,9 @@ export default function PatientPrescriptions() {
   if (loading) {
     return (
       <div className="space-y-4">
-        {[1, 2, 3].map(i => <Skeleton key={i} className="h-24 w-full" />)}
+        {[1, 2, 3].map((i) => (
+          <Skeleton key={i} className="h-24 w-full" />
+        ))}
       </div>
     );
   }
@@ -87,74 +160,79 @@ export default function PatientPrescriptions() {
 
   return (
     <>
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Pill className="h-5 w-5" />
-            E-Prescription
-          </CardTitle>
-          <CardDescription>Resep obat digital dengan QR Code untuk pengambilan di farmasi</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ScrollArea className="h-[500px] pr-4">
-            <div className="space-y-3">
-              {prescriptions.map(prescription => (
-                <Card key={prescription.id} className="hover:bg-muted/50 transition-colors">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-1">
+      <div className="space-y-4">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Pill className="h-5 w-5" />
+              E-Prescription
+            </CardTitle>
+            <CardDescription>
+              Resep obat digital dengan QR Code untuk pengambilan di farmasi
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ScrollArea className="h-[500px] pr-4">
+              <div className="space-y-3">
+                {prescriptions.map((prescription) => (
+                  <Card key={prescription.id} className="hover:bg-muted/50 transition-colors">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <p className="font-semibold">{prescription.prescription_number}</p>
+                            {getStatusBadge(prescription.status)}
+                          </div>
+                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              {format(new Date(prescription.prescription_date), "d MMM yyyy", { locale: id })}
+                            </span>
+                            <span>{prescription.items.length} item obat</span>
+                          </div>
+                        </div>
                         <div className="flex items-center gap-2">
-                          <p className="font-semibold">{prescription.prescription_number}</p>
-                          {getStatusBadge(prescription.status)}
-                        </div>
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            {format(new Date(prescription.prescription_date), "d MMM yyyy", { locale: id })}
-                          </span>
-                          <span>{prescription.prescription_items.length} item obat</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {prescription.qr_token && !["diserahkan"].includes(prescription.status) && (
+                          {(prescription.status === "siap" || prescription.status === "menunggu" || prescription.status === "diproses") && prescription.qr_token && (
+                            <Button
+                              variant="default"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedPrescription(prescription);
+                                setShowQR(true);
+                              }}
+                            >
+                              <QrCode className="h-4 w-4 mr-1" />
+                              QR Code
+                            </Button>
+                          )}
                           <Button
-                            variant="default"
+                            variant="outline"
                             size="sm"
-                            onClick={() => { setSelectedPrescription(prescription); setShowQR(true); }}
+                            onClick={() => {
+                              setSelectedPrescription(prescription);
+                              setShowQR(false);
+                            }}
                           >
-                            <QrCode className="h-4 w-4 mr-1" />
-                            QR Code
+                            Detail
                           </Button>
-                        )}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => { setSelectedPrescription(prescription); setShowQR(false); }}
-                        >
-                          Detail
-                        </Button>
+                        </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-            {nextCursor && (
-              <div className="pt-4 text-center">
-                <Button variant="outline" size="sm" onClick={loadMore} disabled={loadingMore}>
-                  {loadingMore ? "Memuat..." : "Muat lebih banyak"}
-                </Button>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
-            )}
-          </ScrollArea>
-        </CardContent>
-      </Card>
+            </ScrollArea>
+          </CardContent>
+        </Card>
+      </div>
 
-      {/* Detail / QR Dialog */}
+      {/* Detail/QR Dialog */}
       <Dialog open={!!selectedPrescription} onOpenChange={() => setSelectedPrescription(null)}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>{showQR ? "QR Code Pengambilan Obat" : "Detail Resep"}</DialogTitle>
+            <DialogTitle>
+              {showQR ? "QR Code Pengambilan Obat" : "Detail Resep"}
+            </DialogTitle>
           </DialogHeader>
           {selectedPrescription && (
             <div className="space-y-4">
@@ -163,21 +241,32 @@ export default function PatientPrescriptions() {
                   <div className="bg-white p-6 rounded-xl inline-block">
                     <QRCode value={selectedPrescription.qr_token || ""} size={200} />
                   </div>
+                  
                   <div className="space-y-2">
                     <p className="text-sm text-muted-foreground">Kode Pickup</p>
                     <div className="flex items-center justify-center gap-2">
                       <code className="text-2xl font-bold tracking-widest bg-muted px-4 py-2 rounded-lg">
                         {selectedPrescription.pickup_code}
                       </code>
-                      <Button variant="ghost" size="icon" onClick={() => copyPickupCode(selectedPrescription.pickup_code || "")}>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => copyPickupCode(selectedPrescription.pickup_code || "")}
+                      >
                         <Copy className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>
+
                   <p className="text-sm text-muted-foreground">
                     Tunjukkan QR code atau sebutkan kode pickup ini di apotek rumah sakit
                   </p>
-                  <Button variant="outline" className="w-full" onClick={() => setShowQR(false)}>
+
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => setShowQR(false)}
+                  >
                     Lihat Detail Obat
                   </Button>
                 </div>
@@ -196,7 +285,7 @@ export default function PatientPrescriptions() {
                     </div>
                     <div>
                       <p className="text-muted-foreground">Dokter</p>
-                      <p className="font-medium">{selectedPrescription.doctors?.full_name || "-"}</p>
+                      <p className="font-medium">{selectedPrescription.doctor?.full_name}</p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">Status</p>
@@ -209,20 +298,26 @@ export default function PatientPrescriptions() {
                   <div>
                     <h4 className="font-semibold mb-3">Daftar Obat</h4>
                     <div className="space-y-3">
-                      {selectedPrescription.prescription_items.map((item, index) => (
+                      {selectedPrescription.items.map((item, index) => (
                         <div key={item.id} className="bg-muted/50 rounded-lg p-3">
                           <div className="flex items-start justify-between">
                             <div>
-                              <p className="font-medium">{index + 1}. {item.medicines?.name}</p>
+                              <p className="font-medium">
+                                {index + 1}. {item.medicine?.name}
+                              </p>
                               <p className="text-sm text-muted-foreground">
                                 {item.dosage} - {item.frequency}
                                 {item.duration && ` - ${item.duration}`}
                               </p>
                               {item.instructions && (
-                                <p className="text-xs text-muted-foreground mt-1 italic">{item.instructions}</p>
+                                <p className="text-xs text-muted-foreground mt-1 italic">
+                                  {item.instructions}
+                                </p>
                               )}
                             </div>
-                            <Badge variant="outline">{item.quantity} {item.medicines?.unit}</Badge>
+                            <Badge variant="outline">
+                              {item.quantity} {item.medicine?.unit}
+                            </Badge>
                           </div>
                         </div>
                       ))}
@@ -237,7 +332,10 @@ export default function PatientPrescriptions() {
                   )}
 
                   {selectedPrescription.qr_token && selectedPrescription.status !== "diserahkan" && (
-                    <Button className="w-full" onClick={() => setShowQR(true)}>
+                    <Button
+                      className="w-full"
+                      onClick={() => setShowQR(true)}
+                    >
                       <QrCode className="h-4 w-4 mr-2" />
                       Tampilkan QR Code
                     </Button>

@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { db } from "@/lib/db";
+import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import { 
@@ -44,7 +44,7 @@ export function SurgeryDetailDialog({ surgeryId, open, onClose }: SurgeryDetailD
       setLoading(true);
       
       // Fetch team
-      const { data: teamData } = await db
+      const { data: teamData } = await supabase
         .from("surgery_teams")
         .select("*")
         .eq("surgery_id", surgeryId);
@@ -52,7 +52,7 @@ export function SurgeryDetailDialog({ surgeryId, open, onClose }: SurgeryDetailD
       if (teamData) setTeam(teamData);
 
       // Fetch checklist
-      const { data: checklistData } = await db
+      const { data: checklistData } = await supabase
         .from("surgical_safety_checklists")
         .select("*")
         .eq("surgery_id", surgeryId)

@@ -5,25 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-
-const API_BASE = import.meta.env.VITE_API_URL || '/api';
-async function apiPost<T>(path: string, body: unknown): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
-  });
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(json.error || res.statusText);
-  return (json.data ?? json) as T;
-}
-async function apiFetch<T>(path: string, token?: string): Promise<T> {
-  const h: HeadersInit = { 'Content-Type': 'application/json' };
-  if (token) h['Authorization'] = `Bearer ${token}`;
-  const res = await fetch(`${API_BASE}${path}`, { headers: h });
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(json.error || res.statusText);
-  return (json.data ?? json) as T;
-}
 import { Loader2, User, Heart, Shield, Calendar } from "lucide-react";
 
 export default function PatientAuth() {
@@ -40,27 +23,32 @@ export default function PatientAuth() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+
     try {
-      const result = await apiPost<{ access_token: string; user: { id: string } }>('/auth/login', {
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: loginEmail,
         password: loginPassword,
       });
-      // Check if user has a linked patient record
-      const patient = await apiFetch<{ id: string } | null>(
-        `/patients?user_id=${result.user.id}&limit=1`,
-        result.access_token
-      ).catch(() => null);
+
+      if (error) throw error;
+
+      // Check if user has linked patient record
+      const { data: patient } = await supabase
+        .from("patients")
+        .select("id")
+        .eq("user_id", data.user.id)
+        .single();
 
       if (!patient) {
         toast.error("Akun Anda belum terhubung dengan data pasien. Silakan hubungi admin rumah sakit.");
+        await supabase.auth.signOut();
         return;
       }
 
-      localStorage.setItem('zen_access_token', result.access_token);
       toast.success("Login berhasil!");
       navigate("/patient-portal");
-    } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : "Login gagal");
+    } catch (error: any) {
+      toast.error(error.message || "Login gagal");
     } finally {
       setIsLoading(false);
     }
@@ -69,18 +57,59 @@ export default function PatientAuth() {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+
     try {
-      await apiPost('/auth/register', {
+      // First check if patient with NIK exists
+      const { data: existingPatient } = await supabase
+        .from("patients")
+        .select("id, user_id")
+        .eq("nik", registerNIK)
+        .single();
+
+      if (!existingPatient) {
+        toast.error("NIK tidak ditemukan dalam sistem. Pastikan Anda sudah pernah berobat di rumah sakit ini.");
+        setIsLoading(false);
+        return;
+      }
+
+      if (existingPatient.user_id) {
+        toast.error("NIK ini sudah terdaftar dengan akun lain.");
+        setIsLoading(false);
+        return;
+      }
+
+      // Create auth user
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email: registerEmail,
         password: registerPassword,
-        full_name: registerFullName,
-        nik: registerNIK,
-        phone: registerPhone || undefined,
-        is_patient: true,
+        options: {
+          emailRedirectTo: `${window.location.origin}/patient-portal`,
+          data: {
+            full_name: registerFullName,
+            is_patient: true,
+          },
+        },
       });
-      toast.success("Registrasi berhasil! Silakan masuk dengan akun Anda.");
-    } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : "Registrasi gagal");
+
+      if (authError) throw authError;
+
+      if (authData.user) {
+        // Link patient record to user
+        const { error: updateError } = await supabase
+          .from("patients")
+          .update({ 
+            user_id: authData.user.id,
+            email: registerEmail,
+            phone: registerPhone || undefined 
+          })
+          .eq("id", existingPatient.id);
+
+        if (updateError) throw updateError;
+      }
+
+      toast.success("Registrasi berhasil! Silakan cek email Anda untuk verifikasi.");
+    } catch (error: any) {
+      toast.error(error.message || "Registrasi gagal");
     } finally {
       setIsLoading(false);
     }

@@ -21,7 +21,7 @@ import {
   Globe
 } from "lucide-react";
 import { useCompleteSetup, HospitalProfileData, HospitalType, useAvailableModulesForType } from "@/hooks/useSetupWizard";
-import simrsZenLogo from "@/assets/simrs-zen-logo.png";
+import rsudLogo from "@/assets/logo-rsud-moewardi.png";
 
 interface SetupWizardProps {
   onComplete: () => void;
@@ -108,14 +108,13 @@ export default function SetupWizard({ onComplete }: SetupWizardProps) {
   };
 
   return (
-    <div className="min-h-screen bg-[#F3F4F6] flex items-center justify-center p-4">
-      <Card className="w-full max-w-2xl shadow-2xl border-0 overflow-hidden">
-        <div className="h-2 bg-[#1B4332] w-full" />
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 flex items-center justify-center p-4">
+      <Card className="w-full max-w-2xl shadow-2xl border-0">
         <CardHeader className="text-center pb-2">
           <div className="flex justify-center mb-4">
-            <img src={simrsZenLogo} alt="SIMRS ZEN" className="h-16" />
+            <img src={rsudLogo} alt="RSUD Dr. Moewardi" className="h-16" />
           </div>
-          <CardTitle className="text-2xl">Setup Awal SIMRS ZEN</CardTitle>
+          <CardTitle className="text-2xl">Setup Awal SIMRS RSUD Dr. Moewardi</CardTitle>
           <CardDescription>
             Langkah {step} dari 4 - Konfigurasi sistem pertama kali
           </CardDescription>
@@ -136,13 +135,13 @@ export default function SetupWizard({ onComplete }: SetupWizardProps) {
           {/* Step 1: Welcome */}
           {step === 1 && (
             <div className="text-center space-y-6">
-              <div className="w-20 h-20 bg-[#1B4332]/10 rounded-full flex items-center justify-center mx-auto">
-                <Sparkles className="h-10 w-10 text-[#1B4332]" />
+              <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
+                <Sparkles className="h-10 w-10 text-primary" />
               </div>
               <div>
                 <h3 className="text-xl font-semibold mb-2">Selamat Datang!</h3>
                 <p className="text-muted-foreground">
-                  Terima kasih telah memilih SIMRS ZEN. Wizard ini akan membantu Anda
+                  Terima kasih telah memilih SIMRS RSUD Dr. Moewardi. Wizard ini akan membantu Anda
                   mengkonfigurasi sistem sesuai dengan tipe dan kebutuhan fasilitas kesehatan Anda.
                 </p>
               </div>
@@ -426,7 +425,7 @@ export default function SetupWizard({ onComplete }: SetupWizardProps) {
             )}
 
             {step < 4 ? (
-              <Button onClick={() => setStep(step + 1)} disabled={!canProceed()} className="bg-[#1B4332] text-white hover:bg-[#2D6A4F]">
+              <Button onClick={() => setStep(step + 1)} disabled={!canProceed()}>
                 Lanjut
                 <ChevronRight className="h-4 w-4 ml-1" />
               </Button>
@@ -434,7 +433,7 @@ export default function SetupWizard({ onComplete }: SetupWizardProps) {
               <Button 
                 onClick={handleComplete} 
                 disabled={completeSetup.isPending}
-                className="bg-[#1B4332] text-white hover:bg-[#2D6A4F]"
+                className="bg-gradient-to-r from-primary to-primary/80"
               >
                 {completeSetup.isPending ? (
                   "Menyimpan..."

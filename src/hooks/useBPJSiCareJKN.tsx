@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { db } from "@/lib/db";
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 // ============================================
@@ -34,7 +34,7 @@ export interface ICareValidateResponse {
 
 // Helper function to call BPJS Antrean edge function
 async function callBPJSAntrean(action: string, params: Record<string, any> = {}) {
-  const { data, error } = await db.functions.invoke("bpjs-antrean", {
+  const { data, error } = await supabase.functions.invoke("bpjs-antrean", {
     body: { action, ...params },
   });
 
@@ -119,7 +119,7 @@ export function useICarePatientValidation(nomorKartu: string, kodeDokter: number
 // ============================================
 
 async function callBPJSiCare(action: string, data: Record<string, any> = {}) {
-  const { data: result, error } = await db.functions.invoke("bpjs-icare", {
+  const { data: result, error } = await supabase.functions.invoke("bpjs-icare", {
     body: { action, data },
   });
 

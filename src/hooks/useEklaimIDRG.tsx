@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { db } from "@/lib/db";
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 // ============================================
@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 // ============================================
 
 async function callEklaimIDRG(action: string, data: Record<string, any> = {}) {
-  const { data: result, error } = await db.functions.invoke("eklaim-idrg", {
+  const { data: result, error } = await supabase.functions.invoke("eklaim-idrg", {
     body: { action, data },
   });
   if (error) throw error;

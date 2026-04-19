@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { db } from "@/lib/db";
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 // ==================== PESERTA ====================
@@ -8,7 +8,7 @@ export function useGetPesertaByNoKartu() {
   
   return useMutation({
     mutationFn: async ({ noKartu, tglSep }: { noKartu: string; tglSep: string }) => {
-      const { data, error } = await db.functions.invoke("bpjs-vclaim", {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
         body: { action: "get_peserta_by_nokartu", data: { noKartu, tglSep } },
       });
       if (error) throw error;
@@ -25,7 +25,7 @@ export function useGetPesertaByNIK() {
   
   return useMutation({
     mutationFn: async ({ nik, tglSep }: { nik: string; tglSep: string }) => {
-      const { data, error } = await db.functions.invoke("bpjs-vclaim", {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
         body: { action: "get_peserta_by_nik", data: { nik, tglSep } },
       });
       if (error) throw error;
@@ -43,7 +43,7 @@ export function useCreateSEP() {
   
   return useMutation({
     mutationFn: async (sepData: any) => {
-      const { data, error } = await db.functions.invoke("bpjs-vclaim", {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
         body: { action: "create_sep", data: sepData },
       });
       if (error) throw error;
@@ -65,7 +65,7 @@ export function useCreateSEP() {
 export function useGetSEP() {
   return useMutation({
     mutationFn: async (noSep: string) => {
-      const { data, error } = await db.functions.invoke("bpjs-vclaim", {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
         body: { action: "get_sep", data: { noSep } },
       });
       if (error) throw error;
@@ -79,7 +79,7 @@ export function useDeleteSEP() {
   
   return useMutation({
     mutationFn: async ({ noSep, user }: { noSep: string; user: string }) => {
-      const { data, error } = await db.functions.invoke("bpjs-vclaim", {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
         body: { action: "delete_sep", data: { noSep, user } },
       });
       if (error) throw error;
@@ -101,7 +101,7 @@ export function useInsertLPK() {
   
   return useMutation({
     mutationFn: async (lpkData: any) => {
-      const { data, error } = await db.functions.invoke("bpjs-vclaim", {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
         body: { action: "insert_lpk", data: lpkData },
       });
       if (error) throw error;
@@ -122,7 +122,7 @@ export function useUpdateLPK() {
   
   return useMutation({
     mutationFn: async (lpkData: any) => {
-      const { data, error } = await db.functions.invoke("bpjs-vclaim", {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
         body: { action: "update_lpk", data: lpkData },
       });
       if (error) throw error;
@@ -143,7 +143,7 @@ export function useDeleteLPK() {
   
   return useMutation({
     mutationFn: async (noSep: string) => {
-      const { data, error } = await db.functions.invoke("bpjs-vclaim", {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
         body: { action: "delete_lpk", data: { noSep } },
       });
       if (error) throw error;
@@ -155,7 +155,7 @@ export function useDeleteLPK() {
 export function useGetLPK() {
   return useMutation({
     mutationFn: async ({ tglMasuk, jnsPelayanan }: { tglMasuk: string; jnsPelayanan: string }) => {
-      const { data, error } = await db.functions.invoke("bpjs-vclaim", {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
         body: { action: "get_lpk", data: { tglMasuk, jnsPelayanan } },
       });
       if (error) throw error;
@@ -168,7 +168,7 @@ export function useGetLPK() {
 export function useMonitoringKunjungan() {
   return useMutation({
     mutationFn: async ({ tanggal, jnsPelayanan }: { tanggal: string; jnsPelayanan: string }) => {
-      const { data, error } = await db.functions.invoke("bpjs-vclaim", {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
         body: { action: "monitoring_kunjungan", data: { tanggal, jnsPelayanan } },
       });
       if (error) throw error;
@@ -180,7 +180,7 @@ export function useMonitoringKunjungan() {
 export function useMonitoringKlaim() {
   return useMutation({
     mutationFn: async ({ tanggal, jnsPelayanan, status }: { tanggal: string; jnsPelayanan: string; status: string }) => {
-      const { data, error } = await db.functions.invoke("bpjs-vclaim", {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
         body: { action: "monitoring_klaim", data: { tanggal, jnsPelayanan, status } },
       });
       if (error) throw error;
@@ -192,7 +192,7 @@ export function useMonitoringKlaim() {
 export function useMonitoringHistoriPelayanan() {
   return useMutation({
     mutationFn: async ({ noKartu, tglMulai, tglAkhir }: { noKartu: string; tglMulai: string; tglAkhir: string }) => {
-      const { data, error } = await db.functions.invoke("bpjs-vclaim", {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
         body: { action: "monitoring_histori_pelayanan", data: { noKartu, tglMulai, tglAkhir } },
       });
       if (error) throw error;
@@ -204,7 +204,7 @@ export function useMonitoringHistoriPelayanan() {
 export function useMonitoringJasaRaharja() {
   return useMutation({
     mutationFn: async ({ jnsPelayanan, tglMulai, tglAkhir }: { jnsPelayanan: string; tglMulai: string; tglAkhir: string }) => {
-      const { data, error } = await db.functions.invoke("bpjs-vclaim", {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
         body: { action: "monitoring_jasa_raharja", data: { jnsPelayanan, tglMulai, tglAkhir } },
       });
       if (error) throw error;
@@ -217,7 +217,7 @@ export function useMonitoringJasaRaharja() {
 export function useRefDiagnosa() {
   return useMutation({
     mutationFn: async (keyword: string) => {
-      const { data, error } = await db.functions.invoke("bpjs-vclaim", {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
         body: { action: "ref_diagnosa", data: { keyword } },
       });
       if (error) throw error;
@@ -229,7 +229,7 @@ export function useRefDiagnosa() {
 export function useRefProsedur() {
   return useMutation({
     mutationFn: async (keyword: string) => {
-      const { data, error } = await db.functions.invoke("bpjs-vclaim", {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
         body: { action: "ref_prosedur", data: { keyword } },
       });
       if (error) throw error;
@@ -241,7 +241,7 @@ export function useRefProsedur() {
 export function useRefPoli() {
   return useMutation({
     mutationFn: async (keyword: string) => {
-      const { data, error } = await db.functions.invoke("bpjs-vclaim", {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
         body: { action: "ref_poli", data: { keyword } },
       });
       if (error) throw error;
@@ -253,7 +253,7 @@ export function useRefPoli() {
 export function useRefFaskes() {
   return useMutation({
     mutationFn: async ({ keyword, jenisFaskes }: { keyword: string; jenisFaskes: string }) => {
-      const { data, error } = await db.functions.invoke("bpjs-vclaim", {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
         body: { action: "ref_faskes", data: { keyword, jenisFaskes } },
       });
       if (error) throw error;
@@ -265,7 +265,7 @@ export function useRefFaskes() {
 export function useRefDokter() {
   return useMutation({
     mutationFn: async ({ jnsPelayanan, tglPelayanan, spesialisasi }: { jnsPelayanan: string; tglPelayanan: string; spesialisasi: string }) => {
-      const { data, error } = await db.functions.invoke("bpjs-vclaim", {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
         body: { action: "ref_dokter", data: { jnsPelayanan, tglPelayanan, spesialisasi } },
       });
       if (error) throw error;
@@ -278,7 +278,7 @@ export function useRefRuangRawat() {
   return useQuery({
     queryKey: ["bpjs-ref-ruang-rawat"],
     queryFn: async () => {
-      const { data, error } = await db.functions.invoke("bpjs-vclaim", {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
         body: { action: "ref_ruang_rawat", data: {} },
       });
       if (error) throw error;
@@ -292,7 +292,7 @@ export function useRefCaraKeluar() {
   return useQuery({
     queryKey: ["bpjs-ref-cara-keluar"],
     queryFn: async () => {
-      const { data, error } = await db.functions.invoke("bpjs-vclaim", {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
         body: { action: "ref_cara_keluar", data: {} },
       });
       if (error) throw error;
@@ -306,7 +306,7 @@ export function useRefKondisiPulang() {
   return useQuery({
     queryKey: ["bpjs-ref-kondisi-pulang"],
     queryFn: async () => {
-      const { data, error } = await db.functions.invoke("bpjs-vclaim", {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
         body: { action: "ref_kondisi_pulang", data: {} },
       });
       if (error) throw error;
@@ -322,7 +322,7 @@ export function useInsertPRB() {
   
   return useMutation({
     mutationFn: async (prbData: any) => {
-      const { data, error } = await db.functions.invoke("bpjs-vclaim", {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
         body: { action: "insert_prb", data: prbData },
       });
       if (error) throw error;
@@ -346,7 +346,7 @@ export function useUpdatePRB() {
   
   return useMutation({
     mutationFn: async (prbData: any) => {
-      const { data, error } = await db.functions.invoke("bpjs-vclaim", {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
         body: { action: "update_prb", data: prbData },
       });
       if (error) throw error;
@@ -367,7 +367,7 @@ export function useDeletePRB() {
   
   return useMutation({
     mutationFn: async ({ noSrb, noSep, user }: { noSrb: string; noSep: string; user: string }) => {
-      const { data, error } = await db.functions.invoke("bpjs-vclaim", {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
         body: { action: "delete_prb", data: { noSrb, noSep, user } },
       });
       if (error) throw error;
@@ -386,7 +386,7 @@ export function useDeletePRB() {
 export function useGetPRBBySRB() {
   return useMutation({
     mutationFn: async ({ noSrb, noSep }: { noSrb: string; noSep: string }) => {
-      const { data, error } = await db.functions.invoke("bpjs-vclaim", {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
         body: { action: "get_prb_by_srb", data: { noSrb, noSep } },
       });
       if (error) throw error;
@@ -398,7 +398,7 @@ export function useGetPRBBySRB() {
 export function useGetPRBByDate() {
   return useMutation({
     mutationFn: async ({ tglMulai, tglAkhir }: { tglMulai: string; tglAkhir: string }) => {
-      const { data, error } = await db.functions.invoke("bpjs-vclaim", {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
         body: { action: "get_prb_by_date", data: { tglMulai, tglAkhir } },
       });
       if (error) throw error;
@@ -410,7 +410,7 @@ export function useGetPRBByDate() {
 export function useGetPRBPotensi() {
   return useMutation({
     mutationFn: async ({ tahun, bulan }: { tahun: string; bulan: string }) => {
-      const { data, error } = await db.functions.invoke("bpjs-vclaim", {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
         body: { action: "get_prb_potensi", data: { tahun, bulan } },
       });
       if (error) throw error;
@@ -424,7 +424,7 @@ export function useRefDiagnosaPRB() {
   return useQuery({
     queryKey: ["bpjs-ref-diagnosa-prb"],
     queryFn: async () => {
-      const { data, error } = await db.functions.invoke("bpjs-vclaim", {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
         body: { action: "ref_diagnosa_prb", data: {} },
       });
       if (error) throw error;
@@ -437,7 +437,7 @@ export function useRefDiagnosaPRB() {
 export function useRefObatPRB() {
   return useMutation({
     mutationFn: async (keyword: string) => {
-      const { data, error } = await db.functions.invoke("bpjs-vclaim", {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
         body: { action: "ref_obat_prb", data: { keyword } },
       });
       if (error) throw error;
@@ -450,7 +450,7 @@ export function useRefPropinsi() {
   return useQuery({
     queryKey: ["bpjs-ref-propinsi"],
     queryFn: async () => {
-      const { data, error } = await db.functions.invoke("bpjs-vclaim", {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
         body: { action: "ref_propinsi", data: {} },
       });
       if (error) throw error;
@@ -463,7 +463,7 @@ export function useRefPropinsi() {
 export function useRefKabupaten() {
   return useMutation({
     mutationFn: async (kodePropinsi: string) => {
-      const { data, error } = await db.functions.invoke("bpjs-vclaim", {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
         body: { action: "ref_kabupaten", data: { kodePropinsi } },
       });
       if (error) throw error;
@@ -475,7 +475,7 @@ export function useRefKabupaten() {
 export function useRefKecamatan() {
   return useMutation({
     mutationFn: async (kodeKabupaten: string) => {
-      const { data, error } = await db.functions.invoke("bpjs-vclaim", {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
         body: { action: "ref_kecamatan", data: { kodeKabupaten } },
       });
       if (error) throw error;
@@ -488,7 +488,7 @@ export function useRefSpesialistik() {
   return useQuery({
     queryKey: ["bpjs-ref-spesialistik"],
     queryFn: async () => {
-      const { data, error } = await db.functions.invoke("bpjs-vclaim", {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
         body: { action: "ref_spesialistik", data: {} },
       });
       if (error) throw error;
@@ -502,7 +502,7 @@ export function useRefKelasRawat() {
   return useQuery({
     queryKey: ["bpjs-ref-kelas-rawat"],
     queryFn: async () => {
-      const { data, error } = await db.functions.invoke("bpjs-vclaim", {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
         body: { action: "ref_kelas_rawat", data: {} },
       });
       if (error) throw error;
@@ -515,7 +515,7 @@ export function useRefKelasRawat() {
 export function useRefDokterLPK() {
   return useMutation({
     mutationFn: async (keyword: string) => {
-      const { data, error } = await db.functions.invoke("bpjs-vclaim", {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
         body: { action: "ref_dokter_lpk", data: { keyword } },
       });
       if (error) throw error;
@@ -530,7 +530,7 @@ export function useInsertRencanaKontrol() {
   
   return useMutation({
     mutationFn: async (kontrolData: any) => {
-      const { data, error } = await db.functions.invoke("bpjs-vclaim", {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
         body: { action: "insert_rencana_kontrol", data: kontrolData },
       });
       if (error) throw error;
@@ -554,7 +554,7 @@ export function useUpdateRencanaKontrol() {
   
   return useMutation({
     mutationFn: async (kontrolData: any) => {
-      const { data, error } = await db.functions.invoke("bpjs-vclaim", {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
         body: { action: "update_rencana_kontrol", data: kontrolData },
       });
       if (error) throw error;
@@ -575,7 +575,7 @@ export function useInsertRencanaKontrolV2() {
   
   return useMutation({
     mutationFn: async (kontrolData: any) => {
-      const { data, error } = await db.functions.invoke("bpjs-vclaim", {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
         body: { action: "insert_rencana_kontrol_v2", data: kontrolData },
       });
       if (error) throw error;
@@ -599,7 +599,7 @@ export function useUpdateRencanaKontrolV2() {
   
   return useMutation({
     mutationFn: async (kontrolData: any) => {
-      const { data, error } = await db.functions.invoke("bpjs-vclaim", {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
         body: { action: "update_rencana_kontrol_v2", data: kontrolData },
       });
       if (error) throw error;
@@ -620,7 +620,7 @@ export function useDeleteRencanaKontrol() {
   
   return useMutation({
     mutationFn: async ({ noSuratKontrol, user }: { noSuratKontrol: string; user: string }) => {
-      const { data, error } = await db.functions.invoke("bpjs-vclaim", {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
         body: { action: "delete_rencana_kontrol", data: { noSuratKontrol, user } },
       });
       if (error) throw error;
@@ -641,7 +641,7 @@ export function useInsertSPRI() {
   
   return useMutation({
     mutationFn: async (spriData: any) => {
-      const { data, error } = await db.functions.invoke("bpjs-vclaim", {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
         body: { action: "insert_spri", data: spriData },
       });
       if (error) throw error;
@@ -665,7 +665,7 @@ export function useUpdateSPRI() {
   
   return useMutation({
     mutationFn: async (spriData: any) => {
-      const { data, error } = await db.functions.invoke("bpjs-vclaim", {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
         body: { action: "update_spri", data: spriData },
       });
       if (error) throw error;
@@ -684,7 +684,7 @@ export function useUpdateSPRI() {
 export function useGetRencanaKontrolBySEP() {
   return useMutation({
     mutationFn: async (noSep: string) => {
-      const { data, error } = await db.functions.invoke("bpjs-vclaim", {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
         body: { action: "get_rencana_kontrol_by_sep", data: { noSep } },
       });
       if (error) throw error;
@@ -696,7 +696,7 @@ export function useGetRencanaKontrolBySEP() {
 export function useGetRencanaKontrolBySurat() {
   return useMutation({
     mutationFn: async (noSuratKontrol: string) => {
-      const { data, error } = await db.functions.invoke("bpjs-vclaim", {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
         body: { action: "get_rencana_kontrol_by_surat", data: { noSuratKontrol } },
       });
       if (error) throw error;
@@ -708,7 +708,7 @@ export function useGetRencanaKontrolBySurat() {
 export function useListRencanaKontrolByKartu() {
   return useMutation({
     mutationFn: async ({ bulan, tahun, noKartu, filter }: { bulan: string; tahun: string; noKartu: string; filter: string }) => {
-      const { data, error } = await db.functions.invoke("bpjs-vclaim", {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
         body: { action: "list_rencana_kontrol_by_kartu", data: { bulan, tahun, noKartu, filter } },
       });
       if (error) throw error;
@@ -720,7 +720,7 @@ export function useListRencanaKontrolByKartu() {
 export function useListRencanaKontrolByDate() {
   return useMutation({
     mutationFn: async ({ tglAwal, tglAkhir, filter }: { tglAwal: string; tglAkhir: string; filter: string }) => {
-      const { data, error } = await db.functions.invoke("bpjs-vclaim", {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
         body: { action: "list_rencana_kontrol_by_date", data: { tglAwal, tglAkhir, filter } },
       });
       if (error) throw error;
@@ -732,7 +732,7 @@ export function useListRencanaKontrolByDate() {
 export function useListSpesialistikKontrol() {
   return useMutation({
     mutationFn: async ({ jnsKontrol, nomor, tglRencanaKontrol }: { jnsKontrol: string; nomor: string; tglRencanaKontrol: string }) => {
-      const { data, error } = await db.functions.invoke("bpjs-vclaim", {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
         body: { action: "list_spesialistik_kontrol", data: { jnsKontrol, nomor, tglRencanaKontrol } },
       });
       if (error) throw error;
@@ -744,7 +744,7 @@ export function useListSpesialistikKontrol() {
 export function useJadwalPraktekDokter() {
   return useMutation({
     mutationFn: async ({ jnsKontrol, kdPoli, tglRencanaKontrol }: { jnsKontrol: string; kdPoli: string; tglRencanaKontrol: string }) => {
-      const { data, error } = await db.functions.invoke("bpjs-vclaim", {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
         body: { action: "jadwal_praktek_dokter", data: { jnsKontrol, kdPoli, tglRencanaKontrol } },
       });
       if (error) throw error;
@@ -759,7 +759,7 @@ export function useInsertRujukan() {
   
   return useMutation({
     mutationFn: async (rujukanData: any) => {
-      const { data, error } = await db.functions.invoke("bpjs-vclaim", {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
         body: { action: "insert_rujukan", data: rujukanData },
       });
       if (error) throw error;
@@ -783,7 +783,7 @@ export function useUpdateRujukan() {
   
   return useMutation({
     mutationFn: async (rujukanData: any) => {
-      const { data, error } = await db.functions.invoke("bpjs-vclaim", {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
         body: { action: "update_rujukan", data: rujukanData },
       });
       if (error) throw error;
@@ -804,7 +804,7 @@ export function useDeleteRujukan() {
   
   return useMutation({
     mutationFn: async ({ noRujukan, user }: { noRujukan: string; user: string }) => {
-      const { data, error } = await db.functions.invoke("bpjs-vclaim", {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
         body: { action: "delete_rujukan", data: { noRujukan, user } },
       });
       if (error) throw error;
@@ -825,7 +825,7 @@ export function useInsertRujukanKhusus() {
   
   return useMutation({
     mutationFn: async (rujukanData: any) => {
-      const { data, error } = await db.functions.invoke("bpjs-vclaim", {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
         body: { action: "insert_rujukan_khusus", data: rujukanData },
       });
       if (error) throw error;
@@ -849,7 +849,7 @@ export function useDeleteRujukanKhusus() {
   
   return useMutation({
     mutationFn: async (rujukanData: { idRujukan: string; noRujukan: string; user: string }) => {
-      const { data, error } = await db.functions.invoke("bpjs-vclaim", {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
         body: { action: "delete_rujukan_khusus", data: rujukanData },
       });
       if (error) throw error;
@@ -868,7 +868,7 @@ export function useDeleteRujukanKhusus() {
 export function useListRujukanKhusus() {
   return useMutation({
     mutationFn: async ({ bulan, tahun }: { bulan: string; tahun: string }) => {
-      const { data, error } = await db.functions.invoke("bpjs-vclaim", {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
         body: { action: "list_rujukan_khusus", data: { bulan, tahun } },
       });
       if (error) throw error;
@@ -882,7 +882,7 @@ export function useInsertRujukanV2() {
   
   return useMutation({
     mutationFn: async (rujukanData: any) => {
-      const { data, error } = await db.functions.invoke("bpjs-vclaim", {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
         body: { action: "insert_rujukan_v2", data: rujukanData },
       });
       if (error) throw error;
@@ -904,7 +904,7 @@ export function useInsertRujukanV2() {
 export function useListSpesialistikRujukan() {
   return useMutation({
     mutationFn: async ({ ppkRujukan, tglRujukan }: { ppkRujukan: string; tglRujukan: string }) => {
-      const { data, error } = await db.functions.invoke("bpjs-vclaim", {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
         body: { action: "list_spesialistik_rujukan", data: { ppkRujukan, tglRujukan } },
       });
       if (error) throw error;
@@ -916,7 +916,7 @@ export function useListSpesialistikRujukan() {
 export function useListSaranaRujukan() {
   return useMutation({
     mutationFn: async (ppkRujukan: string) => {
-      const { data, error } = await db.functions.invoke("bpjs-vclaim", {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
         body: { action: "list_sarana_rujukan", data: { ppkRujukan } },
       });
       if (error) throw error;
@@ -928,7 +928,7 @@ export function useListSaranaRujukan() {
 export function useListRujukanKeluar() {
   return useMutation({
     mutationFn: async ({ tglMulai, tglAkhir }: { tglMulai: string; tglAkhir: string }) => {
-      const { data, error } = await db.functions.invoke("bpjs-vclaim", {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
         body: { action: "list_rujukan_keluar", data: { tglMulai, tglAkhir } },
       });
       if (error) throw error;
@@ -940,7 +940,7 @@ export function useListRujukanKeluar() {
 export function useGetRujukanKeluar() {
   return useMutation({
     mutationFn: async (noRujukan: string) => {
-      const { data, error } = await db.functions.invoke("bpjs-vclaim", {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
         body: { action: "get_rujukan_keluar", data: { noRujukan } },
       });
       if (error) throw error;
@@ -952,7 +952,7 @@ export function useGetRujukanKeluar() {
 export function useGetJumlahSEPRujukan() {
   return useMutation({
     mutationFn: async ({ jnsRujukan, noRujukan }: { jnsRujukan: string; noRujukan: string }) => {
-      const { data, error } = await db.functions.invoke("bpjs-vclaim", {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
         body: { action: "get_jumlah_sep_rujukan", data: { jnsRujukan, noRujukan } },
       });
       if (error) throw error;
@@ -965,7 +965,7 @@ export function useGetJumlahSEPRujukan() {
 export function useGetSEPInternal() {
   return useMutation({
     mutationFn: async (noSep: string) => {
-      const { data, error } = await db.functions.invoke("bpjs-vclaim", {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
         body: { action: "get_sep_internal", data: { noSep } },
       });
       if (error) throw error;
@@ -985,7 +985,7 @@ export function useDeleteSEPInternal() {
       kdPoliTuj: string;
       user: string;
     }) => {
-      const { data, error } = await db.functions.invoke("bpjs-vclaim", {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
         body: { action: "delete_sep_internal", data: sepInternalData },
       });
       if (error) throw error;
@@ -1005,7 +1005,7 @@ export function useDeleteSEPInternal() {
 export function useGetFingerPrint() {
   return useMutation({
     mutationFn: async ({ noKartu, tglPelayanan }: { noKartu: string; tglPelayanan: string }) => {
-      const { data, error } = await db.functions.invoke("bpjs-vclaim", {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
         body: { action: "get_finger_print", data: { noKartu, tglPelayanan } },
       });
       if (error) throw error;
@@ -1017,7 +1017,7 @@ export function useGetFingerPrint() {
 export function useGetListFingerPrint() {
   return useMutation({
     mutationFn: async (tglPelayanan: string) => {
-      const { data, error } = await db.functions.invoke("bpjs-vclaim", {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
         body: { action: "get_list_finger_print", data: { tglPelayanan } },
       });
       if (error) throw error;
@@ -1029,7 +1029,7 @@ export function useGetListFingerPrint() {
 export function useGetFingerPrintRandomQuestion() {
   return useMutation({
     mutationFn: async ({ noKartu, tglSep }: { noKartu: string; tglSep: string }) => {
-      const { data, error } = await db.functions.invoke("bpjs-vclaim", {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
         body: { action: "get_finger_print_random_question", data: { noKartu, tglSep } },
       });
       if (error) throw error;
@@ -1051,7 +1051,7 @@ export function usePostFingerPrintRandomAnswer() {
       ppkPst: string;
       user: string;
     }) => {
-      const { data, error } = await db.functions.invoke("bpjs-vclaim", {
+      const { data, error } = await supabase.functions.invoke("bpjs-vclaim", {
         body: { action: "post_finger_print_random_answer", data: answerData },
       });
       if (error) throw error;

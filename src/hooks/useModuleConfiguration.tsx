@@ -1,99 +1,123 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "./use-toast";
-import { HospitalType, ModuleDefinition, getModulesForType, MODULE_DEFINITIONS } from "@/lib/modules";
 
-const API_BASE = import.meta.env.VITE_API_URL || '/api';
-
-const FETCH_OPTS: RequestInit = { credentials: 'include', headers: { 'Content-Type': 'application/json' } };
-
-async function apiFetch(path: string) {
-  const res = await fetch(`${API_BASE}${path}`, FETCH_OPTS);
-  if (!res.ok) throw new Error(res.statusText);
-  return res.json();
-}
-
-async function apiPost(path: string, body: unknown) {
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...FETCH_OPTS, method: 'POST', body: JSON.stringify(body),
-  });
-  if (!res.ok) throw new Error(res.statusText);
-  return res.json();
+interface ModuleConfig {
+  module_code: string;
+  module_name: string;
+  module_category: string;
+  module_path: string;
+  module_icon: string | null;
+  display_order: number;
+  is_core_module: boolean;
 }
 
 export function useModuleConfiguration() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch hospital profile to get facility_level
-  const { data: hospitalProfile, isLoading: loadingProfile } = useQuery({
-    queryKey: ["hospital-profile-for-modules"],
+  // Get all available modules for current hospital type
+  const { data: availableModules, isLoading: loadingModules } = useQuery({
+    queryKey: ["all-modules-for-config"],
     queryFn: async () => {
-      const json = await apiFetch('/admin/hospital-profile');
-      return json.data as { facility_level?: string } | null;
-    },
-    staleTime: 1000 * 60 * 5,
-  });
+      // First get hospital type
+      const { data: profile } = await supabase
+        .from("hospital_profile")
+        .select("facility_level, enabled_modules")
+        .limit(1)
+        .maybeSingle();
 
-  // Fetch enabled_modules list from system_settings
-  const { data: enabledModulesRaw, isLoading: loadingEnabled } = useQuery({
-    queryKey: ["enabled-modules"],
-    queryFn: async () => {
-      const json = await apiFetch('/admin/system-settings');
-      const settings: { setting_key: string; setting_value: unknown }[] = json.data || [];
-      const row = settings.find(s => s.setting_key === 'enabled_modules');
-      if (!row) return null;
-      const val = row.setting_value;
-      return Array.isArray(val) ? (val as string[]) : null;
-    },
-    staleTime: 1000 * 60 * 2,
-  });
+      if (!profile?.facility_level) {
+        // Return all modules if no profile
+        const { data, error } = await supabase
+          .from("module_configurations")
+          .select("*")
+          .eq("is_active", true)
+          .order("display_order");
+        if (error) throw error;
+        return { modules: data, enabledModules: [] as string[], hospitalType: null };
+      }
 
-  const hospitalType = hospitalProfile?.facility_level as HospitalType | undefined;
+      // Get modules for this hospital type
+      const { data, error } = await supabase.rpc("get_available_modules", {
+        p_hospital_type: profile.facility_level,
+      });
+      if (error) throw error;
 
-  // Modules available for this hospital type (from shared definitions)
-  const modules: ModuleDefinition[] = hospitalType
-    ? getModulesForType(hospitalType)
-    : MODULE_DEFINITIONS;
+      // Parse enabled_modules from JSONB
+      let enabledModules: string[] = [];
+      if (profile.enabled_modules && Array.isArray(profile.enabled_modules)) {
+        enabledModules = profile.enabled_modules as string[];
+      }
 
-  // Enabled module codes: if admin has saved a list, use it; otherwise default to all
-  const enabledModules: string[] = enabledModulesRaw
-    ?? modules.map(m => m.module_code);
-
-  // Batch update enabled modules list
-  const updateEnabledModules = useMutation({
-    mutationFn: async (moduleCodes: string[]) => {
-      await apiPost('/admin/enabled-modules', { p_module_codes: moduleCodes });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["enabled-modules"] });
-      queryClient.invalidateQueries({ queryKey: ["hospital-profile-for-modules"] });
-      toast({ title: "Berhasil", description: "Konfigurasi modul berhasil disimpan" });
-    },
-    onError: (error: Error) => {
-      toast({ title: "Gagal menyimpan", description: error.message, variant: "destructive" });
+      return {
+        modules: data as ModuleConfig[],
+        enabledModules,
+        hospitalType: profile.facility_level,
+      };
     },
   });
 
-  // Toggle single module
+  // Toggle module enabled/disabled
   const toggleModule = useMutation({
     mutationFn: async ({ moduleCode, enabled }: { moduleCode: string; enabled: boolean }) => {
-      await apiPost('/admin/enabled-modules/toggle', { p_module_code: moduleCode, p_enabled: enabled });
+      const { error } = await supabase.rpc("toggle_module", {
+        p_module_code: moduleCode,
+        p_enabled: enabled,
+      });
+      if (error) throw error;
+      return true;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["enabled-modules"] });
+      queryClient.invalidateQueries({ queryKey: ["all-modules-for-config"] });
+      queryClient.invalidateQueries({ queryKey: ["available-modules-for-sidebar"] });
       queryClient.invalidateQueries({ queryKey: ["hospital-profile-for-modules"] });
-      toast({ title: "Berhasil", description: "Modul berhasil diperbarui" });
+      toast({
+        title: "Berhasil",
+        description: "Konfigurasi modul berhasil diperbarui",
+      });
     },
     onError: (error: Error) => {
-      toast({ title: "Gagal", description: error.message, variant: "destructive" });
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Batch update enabled modules
+  const updateEnabledModules = useMutation({
+    mutationFn: async (moduleCodes: string[]) => {
+      const { error } = await supabase.rpc("update_enabled_modules", {
+        p_module_codes: moduleCodes,
+      });
+      if (error) throw error;
+      return true;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["all-modules-for-config"] });
+      queryClient.invalidateQueries({ queryKey: ["available-modules-for-sidebar"] });
+      queryClient.invalidateQueries({ queryKey: ["hospital-profile-for-modules"] });
+      toast({
+        title: "Berhasil",
+        description: "Konfigurasi modul berhasil disimpan",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 
   return {
-    modules,
-    enabledModules,
-    hospitalType,
-    isLoading: loadingProfile || loadingEnabled,
+    modules: availableModules?.modules || [],
+    enabledModules: availableModules?.enabledModules || [],
+    hospitalType: availableModules?.hospitalType,
+    isLoading: loadingModules,
     toggleModule,
     updateEnabledModules,
   };

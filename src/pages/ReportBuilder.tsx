@@ -140,51 +140,6 @@ interface ReportFilter {
   value: string;
 }
 
-function exportToCSV(reportName: string, columns: ReportColumn[], data: Record<string, unknown>[]) {
-  if (data.length === 0) { toast.error("Tidak ada data untuk diekspor"); return; }
-  const visibleCols = columns.filter(c => c.visible);
-  const header = visibleCols.map(c => `"${c.label}"`).join(",");
-  const rows = data.map(row =>
-    visibleCols.map(c => {
-      const v = row[c.sourceColumn];
-      const str = v === null || v === undefined ? "" : String(v);
-      return `"${str.replace(/"/g, '""')}"`;
-    }).join(",")
-  );
-  const csv = [header, ...rows].join("\n");
-  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `${reportName.replace(/\s+/g, "_")}_${new Date().toISOString().slice(0,10)}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
-function exportReportToPDF(reportName: string, columns: ReportColumn[], data: Record<string, unknown>[]) {
-  if (data.length === 0) { toast.error("Tidak ada data untuk dicetak"); return; }
-  const visibleCols = columns.filter(c => c.visible);
-  const thead = visibleCols.map(c => `<th style="background:#f3f4f6;padding:6px 8px;border:1px solid #d1d5db;font-size:11px;text-align:left">${c.label}</th>`).join("");
-  const tbody = data.slice(0, 500).map(row =>
-    `<tr>${visibleCols.map(c => {
-      const v = row[c.sourceColumn];
-      return `<td style="padding:5px 8px;border:1px solid #e5e7eb;font-size:11px">${v === null || v === undefined ? "-" : String(v)}</td>`;
-    }).join("")}</tr>`
-  ).join("");
-
-  const win = window.open("", "_blank", "width=1100,height=800");
-  if (!win) { alert("Izinkan popup untuk mencetak laporan"); return; }
-  win.document.write(`<!DOCTYPE html><html><head><title>${reportName}</title>
-    <style>@page{size:A4 landscape;margin:15mm} body{font-family:Arial,sans-serif;color:#333;} table{border-collapse:collapse;width:100%}</style>
-    </head><body>
-    <h2 style="margin-bottom:4px">${reportName}</h2>
-    <p style="color:#666;font-size:10px;margin-bottom:12px">Dicetak: ${new Date().toLocaleDateString("id-ID",{day:"2-digit",month:"long",year:"numeric",hour:"2-digit",minute:"2-digit"})} • ${data.length} baris data</p>
-    <table><thead><tr>${thead}</tr></thead><tbody>${tbody}</tbody></table>
-    <script>window.onload=()=>{window.print();window.close();}</script>
-  </body></html>`);
-  win.document.close();
-}
-
 export default function ReportBuilder() {
   const { templates: dbTemplates, saveTemplate: saveToDb } = useReportBuilderData();
   const [reportName, setReportName] = useState("Laporan Baru");
@@ -264,10 +219,10 @@ export default function ReportBuilder() {
           <p className="text-muted-foreground text-sm">Buat laporan custom dengan filtering dinamis</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => exportToCSV(reportName, columns, displayData)}>
+          <Button variant="outline" size="sm" onClick={() => toast.success("Laporan diekspor ke Excel")}>
             <FileSpreadsheet className="h-4 w-4 mr-1" /> Excel
           </Button>
-          <Button variant="outline" size="sm" onClick={() => exportReportToPDF(reportName, columns, displayData)}>
+          <Button variant="outline" size="sm" onClick={() => toast.success("Laporan diekspor ke PDF")}>
             <FileDown className="h-4 w-4 mr-1" /> PDF
           </Button>
           <Button size="sm" onClick={handleSave}>

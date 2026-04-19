@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { db } from "@/lib/db";
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "./use-toast";
 
 export interface IntegrationStatus {
@@ -128,7 +128,7 @@ export function useExternalIntegrations() {
   const { data: integrations, isLoading } = useQuery({
     queryKey: ["external-integrations"],
     queryFn: async () => {
-      const { data, error } = await db
+      const { data, error } = await supabase
         .from("system_settings")
         .select("*")
         .in("setting_key", [
@@ -168,20 +168,20 @@ export function useExternalIntegrations() {
   const updateIntegration = useMutation({
     mutationFn: async ({ key, value }: { key: string; value: any }) => {
       // Check if setting exists
-      const { data: existing } = await db
+      const { data: existing } = await supabase
         .from("system_settings")
         .select("id")
         .eq("setting_key", key)
         .maybeSingle();
 
       if (existing) {
-        const { error } = await db
+        const { error } = await supabase
           .from("system_settings")
-          .update({ setting_key: key, setting_value: value, updated_at: new Date().toISOString() })
+          .update({ setting_value: value, updated_at: new Date().toISOString() })
           .eq("setting_key", key);
         if (error) throw error;
       } else {
-        const { error } = await db
+        const { error } = await supabase
           .from("system_settings")
           .insert({ setting_key: key, setting_value: value });
         if (error) throw error;
@@ -222,7 +222,7 @@ export function useExternalIntegrations() {
           throw new Error("Integrasi tidak dikenal");
       }
 
-      const { data, error } = await db.functions.invoke(endpoint, {
+      const { data, error } = await supabase.functions.invoke(endpoint, {
         body: {
           action: "test-connection",
           config,

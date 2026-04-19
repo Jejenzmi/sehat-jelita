@@ -28,25 +28,22 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { db } from "@/lib/db";
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-
-const API_BASE = import.meta.env.VITE_API_URL || '/api';
-const FETCH_OPTS: RequestInit = { credentials: 'include', headers: { 'Content-Type': 'application/json' } };
 import { format, differenceInYears } from "date-fns";
 import { ConfirmationDialog } from "@/components/shared/ConfirmationDialog";
 
 interface Patient {
   id: string;
   medical_record_number: string;
-  nik: string | null;
+  nik: string;
   full_name: string;
-  gender: string; // 'male' | 'female' from backend
-  birth_date: string | null;
+  gender: "L" | "P";
+  birth_date: string;
   phone: string | null;
   address: string | null;
   bpjs_number: string | null;
-  is_active: boolean;
+  status: string;
   created_at: string;
 }
 
@@ -67,21 +64,21 @@ export default function Pasien() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
-
+  
   // Delete confirmation
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [patientToDelete, setPatientToDelete] = useState<Patient | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-
+  
   // Save confirmation
   const [saveConfirmOpen, setSaveConfirmOpen] = useState(false);
-
+  
   // Form state
   const [formData, setFormData] = useState({
     nik: "",
     full_name: "",
     birth_date: "",
-    gender: "" as "male" | "female" | "",
+    gender: "" as "L" | "P" | "",
     phone: "",
     address: "",
     bpjs_number: "",
@@ -99,17 +96,30 @@ export default function Pasien() {
 
   const fetchStats = async () => {
     try {
-      const res = await fetch(`${API_BASE}/patients/stats`, FETCH_OPTS);
-      if (res.ok) {
-        const json = await res.json();
-        const d = json.data;
-        setStats({
-          total: d.total || 0,
-          bpjs: d.bpjs || 0,
-          umum: d.umum || 0,
-          newThisMonth: d.newThisMonth || 0,
-        });
-      }
+      const { count: total } = await supabase
+        .from("patients")
+        .select("*", { count: "exact", head: true });
+
+      const { count: bpjs } = await supabase
+        .from("patients")
+        .select("*", { count: "exact", head: true })
+        .not("bpjs_number", "is", null);
+
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      startOfMonth.setHours(0, 0, 0, 0);
+
+      const { count: newThisMonth } = await supabase
+        .from("patients")
+        .select("*", { count: "exact", head: true })
+        .gte("created_at", startOfMonth.toISOString());
+
+      setStats({
+        total: total || 0,
+        bpjs: bpjs || 0,
+        umum: (total || 0) - (bpjs || 0),
+        newThisMonth: newThisMonth || 0,
+      });
     } catch (error) {
       console.error("Error fetching stats:", error);
     }
@@ -118,30 +128,28 @@ export default function Pasien() {
   const fetchPatients = async () => {
     setLoading(true);
     try {
-      const params: Record<string, string> = {
-        page: String(page),
-        limit: String(pageSize),
-        sort_by: 'created_at',
-        sort_order: 'desc',
-        status: 'active',
-      };
+      let query = supabase
+        .from("patients")
+        .select("*", { count: "exact" })
+        .order("created_at", { ascending: false })
+        .range((page - 1) * pageSize, page * pageSize - 1);
 
-      if (searchTerm) params.search = searchTerm;
-
-      if (filter === 'bpjs') params.has_bpjs = 'true';
-      else if (filter === 'umum') params.has_bpjs = 'false';
-
-      const qs = new URLSearchParams(params).toString();
-      const res = await fetch(`${API_BASE}/patients?${qs}`, FETCH_OPTS);
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: res.statusText }));
-        throw new Error(err.error || 'Gagal memuat data pasien');
+      if (searchTerm) {
+        query = query.or(`full_name.ilike.%${searchTerm}%,nik.ilike.%${searchTerm}%,medical_record_number.ilike.%${searchTerm}%`);
       }
 
-      const json = await res.json();
-      setPatients(json.data || []);
-      setTotalCount(json.pagination?.total || 0);
+      if (filter === "bpjs") {
+        query = query.not("bpjs_number", "is", null);
+      } else if (filter === "umum") {
+        query = query.is("bpjs_number", null);
+      }
+
+      const { data, error, count } = await query;
+
+      if (error) throw error;
+
+      setPatients(data || []);
+      setTotalCount(count || 0);
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -169,50 +177,48 @@ export default function Pasien() {
     setSaveConfirmOpen(false);
     setIsSubmitting(true);
     try {
-      // Map frontend gender (L/P) → backend (male/female)
-      const genderMap: Record<string, string> = { L: 'male', P: 'female' };
-      const backendGender = genderMap[formData.gender as string] ?? formData.gender;
-
       if (editingPatient) {
         // Update existing patient
-        const res = await fetch(`${API_BASE}/patients/${editingPatient.id}`, {
-          ...FETCH_OPTS,
-          method: 'PUT',
-          body: JSON.stringify({
-            nik: formData.nik || null,
+        const { error } = await supabase
+          .from("patients")
+          .update({
+            nik: formData.nik,
             full_name: formData.full_name,
-            birth_date: formData.birth_date || null,
-            gender: backendGender || undefined,
+            birth_date: formData.birth_date,
+            gender: formData.gender as "L" | "P",
             phone: formData.phone || null,
             address: formData.address || null,
             bpjs_number: formData.bpjs_number || null,
-          }),
+          })
+          .eq("id", editingPatient.id);
+
+        if (error) throw error;
+
+        toast({
+          title: "Berhasil",
+          description: "Data pasien berhasil diperbarui",
         });
-        if (!res.ok) {
-          const errJson = await res.json().catch(() => ({ error: res.statusText }));
-          throw new Error(errJson.error || 'Gagal mengupdate pasien');
-        }
-        toast({ title: "Berhasil", description: "Data pasien berhasil diperbarui" });
       } else {
         // Create new patient
-        const res = await fetch(`${API_BASE}/patients`, {
-          ...FETCH_OPTS,
-          method: 'POST',
-          body: JSON.stringify({
-            full_name: formData.full_name,
-            nik: formData.nik || null,
-            birth_date: formData.birth_date || null,
-            gender: backendGender || undefined,
-            phone: formData.phone || null,
-            address: formData.address || null,
-            bpjs_number: formData.bpjs_number || null,
-          }),
+        const { data: mrn } = await supabase.rpc("generate_medical_record_number");
+        
+        const { error } = await supabase.from("patients").insert({
+          medical_record_number: mrn,
+          nik: formData.nik,
+          full_name: formData.full_name,
+          birth_date: formData.birth_date,
+          gender: formData.gender as "L" | "P",
+          phone: formData.phone || null,
+          address: formData.address || null,
+          bpjs_number: formData.bpjs_number || null,
         });
-        if (!res.ok) {
-          const errJson = await res.json().catch(() => ({ error: res.statusText }));
-          throw new Error(errJson.error || 'Gagal mendaftarkan pasien');
-        }
-        toast({ title: "Berhasil", description: "Pasien baru berhasil didaftarkan" });
+
+        if (error) throw error;
+
+        toast({
+          title: "Berhasil",
+          description: "Pasien baru berhasil didaftarkan",
+        });
       }
 
       setIsDialogOpen(false);
@@ -237,18 +243,21 @@ export default function Pasien() {
 
   const handleDelete = async () => {
     if (!patientToDelete) return;
-
+    
     setIsDeleting(true);
     try {
-      const res = await fetch(`${API_BASE}/patients/${patientToDelete.id}`, {
-        ...FETCH_OPTS,
-        method: 'DELETE',
+      const { error } = await supabase
+        .from("patients")
+        .delete()
+        .eq("id", patientToDelete.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Berhasil",
+        description: "Data pasien berhasil dihapus",
       });
-      if (!res.ok) {
-        const errJson = await res.json().catch(() => ({ error: res.statusText }));
-        throw new Error(errJson.error || 'Gagal menghapus pasien');
-      }
-      toast({ title: "Berhasil", description: "Data pasien berhasil dihapus" });
+
       fetchPatients();
       fetchStats();
     } catch (error: any) {
@@ -279,14 +288,11 @@ export default function Pasien() {
 
   const handleEdit = (patient: Patient) => {
     setEditingPatient(patient);
-    // Map backend gender (male/female) → frontend (L/P)
-    const genderMap: Record<string, "male" | "female"> = { L: 'male', P: 'female', male: 'male', female: 'female' };
-    const frontGender = (patient.gender === 'male' || patient.gender === 'female') ? patient.gender : (patient.gender === 'L' ? 'male' : 'female');
     setFormData({
-      nik: patient.nik || "",
+      nik: patient.nik,
       full_name: patient.full_name,
-      birth_date: patient.birth_date ? patient.birth_date.split('T')[0] : "",
-      gender: frontGender as "male" | "female",
+      birth_date: patient.birth_date,
+      gender: patient.gender,
       phone: patient.phone || "",
       address: patient.address || "",
       bpjs_number: patient.bpjs_number || "",
@@ -294,17 +300,8 @@ export default function Pasien() {
     setIsDialogOpen(true);
   };
 
-  const calculateAge = (birthDate: string | null) => {
-    if (!birthDate) return '-';
-    try {
-      return differenceInYears(new Date(), new Date(birthDate)) + ' th';
-    } catch { return '-'; }
-  };
-
-  const displayGender = (g: string | null) => {
-    if (g === 'male' || g === 'L') return 'Laki-laki';
-    if (g === 'female' || g === 'P') return 'Perempuan';
-    return '-';
+  const calculateAge = (birthDate: string) => {
+    return differenceInYears(new Date(), new Date(birthDate));
   };
 
   const totalPages = Math.ceil(totalCount / pageSize);
@@ -381,14 +378,14 @@ export default function Pasien() {
                     <Label>Jenis Kelamin *</Label>
                     <Select
                       value={formData.gender}
-                      onValueChange={(value) => setFormData({ ...formData, gender: value as "" | "male" | "female" })}
+                      onValueChange={(value: "L" | "P") => setFormData({ ...formData, gender: value })}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Pilih" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="male">Laki-laki</SelectItem>
-                        <SelectItem value="female">Perempuan</SelectItem>
+                        <SelectItem value="L">Laki-laki</SelectItem>
+                        <SelectItem value="P">Perempuan</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -542,7 +539,7 @@ export default function Pasien() {
                         <div>
                           <p className="font-medium">{patient.full_name}</p>
                           <p className="text-xs text-muted-foreground">
-                            {displayGender(patient.gender)}, {typeof calculateAge(patient.birth_date) === 'string' ? calculateAge(patient.birth_date) : `${calculateAge(patient.birth_date)}`}
+                            {patient.gender === "L" ? "Laki-laki" : "Perempuan"}, {calculateAge(patient.birth_date)} tahun
                           </p>
                         </div>
                       </div>
@@ -586,7 +583,7 @@ export default function Pasien() {
                             Rekam Medis
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem
+                          <DropdownMenuItem 
                             onClick={() => handleDeleteConfirm(patient)}
                             className="text-destructive focus:text-destructive"
                           >

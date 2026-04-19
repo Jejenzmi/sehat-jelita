@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { db } from "@/lib/db";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 export interface PurchaseRequest {
@@ -45,7 +45,7 @@ export function usePurchaseRequests() {
   return useQuery({
     queryKey: ["purchase-requests"],
     queryFn: async () => {
-      const { data, error } = await (db as any)
+      const { data, error } = await (supabase as any)
         .from("purchase_requests")
         .select("*, purchase_request_items(*), purchase_request_approvals(*)")
         .order("created_at", { ascending: false });
@@ -69,7 +69,7 @@ export function useCreatePurchaseRequest() {
       items: Omit<PurchaseRequestItem, "id" | "pr_id">[];
     }) => {
       // Create PR
-      const { data: pr, error: prErr } = await (db as any)
+      const { data: pr, error: prErr } = await (supabase as any)
         .from("purchase_requests")
         .insert(input.pr)
         .select()
@@ -79,7 +79,7 @@ export function useCreatePurchaseRequest() {
       // Create items
       if (input.items.length > 0) {
         const itemsWithPrId = input.items.map((i) => ({ ...i, pr_id: pr.id }));
-        const { error: itemErr } = await (db as any)
+        const { error: itemErr } = await (supabase as any)
           .from("purchase_request_items")
           .insert(itemsWithPrId);
         if (itemErr) throw itemErr;
@@ -91,7 +91,7 @@ export function useCreatePurchaseRequest() {
         { pr_id: pr.id, approval_level: 2, role_name: "Manajer Logistik", status: "waiting" },
         { pr_id: pr.id, approval_level: 3, role_name: "Direktur/Keuangan", status: "waiting" },
       ];
-      const { error: appErr } = await (db as any)
+      const { error: appErr } = await (supabase as any)
         .from("purchase_request_approvals")
         .insert(approvals);
       if (appErr) throw appErr;
@@ -111,13 +111,13 @@ export function useApprovePR() {
   return useMutation({
     mutationFn: async ({ approvalId, prId, level }: { approvalId: string; prId: string; level: number }) => {
       // Approve current level
-      await (db as any)
+      await (supabase as any)
         .from("purchase_request_approvals")
         .update({ status: "approved", approved_at: new Date().toISOString() })
         .eq("id", approvalId);
 
       // Activate next level
-      const { data: nextApproval } = await (db as any)
+      const { data: nextApproval } = await (supabase as any)
         .from("purchase_request_approvals")
         .select("id")
         .eq("pr_id", prId)
@@ -125,20 +125,20 @@ export function useApprovePR() {
         .single();
 
       if (nextApproval) {
-        await (db as any)
+        await (supabase as any)
           .from("purchase_request_approvals")
           .update({ status: "pending" })
           .eq("id", nextApproval.id);
 
         // Update PR status
         const statusMap: Record<number, string> = { 1: "pending_manager", 2: "pending_director" };
-        await (db as any)
+        await (supabase as any)
           .from("purchase_requests")
           .update({ status: statusMap[level] || "pending_director" })
           .eq("id", prId);
       } else {
         // Final approval
-        await (db as any)
+        await (supabase as any)
           .from("purchase_requests")
           .update({ status: "approved" })
           .eq("id", prId);
@@ -156,12 +156,12 @@ export function useRejectPR() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ approvalId, prId, reason }: { approvalId: string; prId: string; reason?: string }) => {
-      await (db as any)
+      await (supabase as any)
         .from("purchase_request_approvals")
         .update({ status: "rejected", rejection_reason: reason || null, approved_at: new Date().toISOString() })
         .eq("id", approvalId);
 
-      await (db as any)
+      await (supabase as any)
         .from("purchase_requests")
         .update({ status: "rejected" })
         .eq("id", prId);
@@ -175,7 +175,7 @@ export function useRejectPR() {
 }
 
 export async function generatePRNumber(): Promise<string> {
-  const { data, error } = await (db as any).rpc("generate_pr_number");
+  const { data, error } = await (supabase as any).rpc("generate_pr_number");
   if (error) throw error;
   return data;
 }

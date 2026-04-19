@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Search, Stethoscope, Clock, CheckCircle, Users, FileText, RefreshCw, X } from "lucide-react";
+import { Search, Filter, Stethoscope, Clock, CheckCircle, Users, FileText, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -7,13 +7,12 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { db } from "@/lib/db";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ICD11SearchInput, type ICD11Entity } from "@/components/icd11/ICD11SearchInput";
 
 interface PoliStats {
   department_id: string;
@@ -43,7 +42,6 @@ interface QueuePatient {
   patient_name: string;
   medical_record_number: string;
   doctor_name: string;
-  department_name: string;
   status: string;
   check_in_time: string;
 }
@@ -55,9 +53,9 @@ export default function RawatJalan() {
   const [queuePatients, setQueuePatients] = useState<QueuePatient[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDepartment, setSelectedDepartment] = useState<string>("all");
-  const [departments, setDepartments] = useState<{ id: string; department_name: string }[]>([]);
+  const [departments, setDepartments] = useState<{ id: string; name: string }[]>([]);
   const [stats, setStats] = useState({ activePoli: 0, totalQueue: 0, served: 0, waiting: 0 });
-
+  
   // Medical Record Dialog
   const [medicalRecordOpen, setMedicalRecordOpen] = useState(false);
   const [selectedVisit, setSelectedVisit] = useState<CurrentPatient | null>(null);
@@ -75,17 +73,6 @@ export default function RawatJalan() {
     height: "",
   });
   const [savingRecord, setSavingRecord] = useState(false);
-  const [diagnoses, setDiagnoses] = useState<ICD11Entity[]>([]);
-
-  const handleAddDiagnosis = (entity: ICD11Entity) => {
-    if (!diagnoses.find(d => d.entity_id === entity.entity_id)) {
-      setDiagnoses(prev => [...prev, entity]);
-    }
-  };
-
-  const handleRemoveDiagnosis = (entityId: string | null) => {
-    setDiagnoses(prev => prev.filter(d => d.entity_id !== entityId));
-  };
 
   useEffect(() => {
     fetchData();
@@ -109,11 +96,11 @@ export default function RawatJalan() {
   };
 
   const fetchDepartments = async () => {
-    const { data, error } = await db
+    const { data, error } = await supabase
       .from("departments")
-      .select("id, department_name")
+      .select("id, name")
       .eq("is_active", true)
-      .order("department_name");
+      .order("name");
 
     if (!error && data) {
       setDepartments(data);
@@ -124,7 +111,7 @@ export default function RawatJalan() {
     const today = new Date().toISOString().split("T")[0];
 
     // Get visits grouped by department
-    const { data: visits, error } = await db
+    const { data: visits, error } = await supabase
       .from("visits")
       .select(`
         id,
@@ -144,7 +131,7 @@ export default function RawatJalan() {
 
     // Group by department
     const statsMap = new Map<string, PoliStats>();
-
+    
     visits?.forEach((visit: any) => {
       const deptId = visit.department_id;
       if (!deptId) return;
@@ -192,7 +179,7 @@ export default function RawatJalan() {
   const fetchCurrentPatients = async () => {
     const today = new Date().toISOString().split("T")[0];
 
-    const { data, error } = await db
+    const { data, error } = await supabase
       .from("visits")
       .select(`
         id,
@@ -232,7 +219,7 @@ export default function RawatJalan() {
   const fetchQueuePatients = async () => {
     const today = new Date().toISOString().split("T")[0];
 
-    const { data, error } = await db
+    const { data, error } = await supabase
       .from("visits")
       .select(`
         id,
@@ -240,8 +227,7 @@ export default function RawatJalan() {
         status,
         check_in_time,
         patients(full_name, medical_record_number),
-        doctors(full_name),
-        departments(department_name)
+        doctors(full_name)
       `)
       .eq("visit_date", today)
       .eq("visit_type", "rawat_jalan")
@@ -259,7 +245,6 @@ export default function RawatJalan() {
       patient_name: v.patients?.full_name || "Unknown",
       medical_record_number: v.patients?.medical_record_number || "",
       doctor_name: v.doctors?.full_name || "",
-      department_name: v.departments?.department_name || "",
       status: v.status,
       check_in_time: v.check_in_time || "",
     }));
@@ -269,7 +254,7 @@ export default function RawatJalan() {
 
   const handleStartExamination = async (patient: CurrentPatient) => {
     // Update status to "diperiksa"
-    const { error } = await db
+    const { error } = await supabase
       .from("visits")
       .update({ status: "dilayani" })
       .eq("id", patient.visit_id);
@@ -286,59 +271,66 @@ export default function RawatJalan() {
 
   const handleSaveMedicalRecord = async () => {
     if (!selectedVisit) return;
+
     setSavingRecord(true);
     try {
-      const apiBase = import.meta.env.VITE_API_URL || '/api';
-      const fetchOpts: RequestInit = { credentials: 'include', headers: { 'Content-Type': 'application/json' } };
+      // Get doctor info (use first doctor for now)
+      const { data: doctorData } = await supabase
+        .from("doctors")
+        .select("id")
+        .limit(1)
+        .single();
 
-      const res = await fetch(`${apiBase}/icd11/medical-records`, {
-        ...fetchOpts,
-        method: 'POST',
-        body: JSON.stringify({
-          patient_id: selectedVisit.id,
+      if (!doctorData) {
+        toast.error("Data dokter tidak ditemukan");
+        return;
+      }
+
+      // Create medical record
+      const { error: mrError } = await supabase
+        .from("medical_records")
+        .insert({
           visit_id: selectedVisit.visit_id,
+          patient_id: selectedVisit.id,
+          doctor_id: doctorData.id,
           subjective: medicalForm.subjective,
           objective: medicalForm.objective,
           assessment: medicalForm.assessment,
           plan: medicalForm.plan,
-          vital_signs: {
-            blood_pressure_systolic: medicalForm.blood_pressure_systolic ? parseInt(medicalForm.blood_pressure_systolic) : null,
-            blood_pressure_diastolic: medicalForm.blood_pressure_diastolic ? parseInt(medicalForm.blood_pressure_diastolic) : null,
-            heart_rate: medicalForm.heart_rate ? parseInt(medicalForm.heart_rate) : null,
-            temperature: medicalForm.temperature ? parseFloat(medicalForm.temperature) : null,
-            respiratory_rate: medicalForm.respiratory_rate ? parseInt(medicalForm.respiratory_rate) : null,
-            weight: medicalForm.weight ? parseFloat(medicalForm.weight) : null,
-            height: medicalForm.height ? parseFloat(medicalForm.height) : null,
-          },
-          diagnoses: diagnoses.map(d => ({
-            icd11_code: d.icd11_code,
-            icd11_entity_id: d.entity_id,
-            icd11_title_en: d.title,
-            icd11_title_id: d.title,
-            icd10_code: d.icd10_code,
-            diagnosis_type: 'primer',
-          })),
-        }),
-      });
+          blood_pressure_systolic: medicalForm.blood_pressure_systolic ? parseInt(medicalForm.blood_pressure_systolic) : null,
+          blood_pressure_diastolic: medicalForm.blood_pressure_diastolic ? parseInt(medicalForm.blood_pressure_diastolic) : null,
+          heart_rate: medicalForm.heart_rate ? parseInt(medicalForm.heart_rate) : null,
+          temperature: medicalForm.temperature ? parseFloat(medicalForm.temperature) : null,
+          respiratory_rate: medicalForm.respiratory_rate ? parseInt(medicalForm.respiratory_rate) : null,
+          weight: medicalForm.weight ? parseFloat(medicalForm.weight) : null,
+          height: medicalForm.height ? parseFloat(medicalForm.height) : null,
+        });
 
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(json.error || res.statusText);
+      if (mrError) throw mrError;
 
-      // Update visit status
-      await fetch(`${apiBase}/visits/${selectedVisit.visit_id}`, {
-        ...fetchOpts,
-        method: 'PUT',
-        body: JSON.stringify({ status: 'selesai' }),
-      });
+      // Update visit status to selesai
+      const { error: visitError } = await supabase
+        .from("visits")
+        .update({ status: "selesai" as const })
+        .eq("id", selectedVisit.visit_id);
+
+      if (visitError) throw visitError;
 
       toast.success("Rekam medis berhasil disimpan");
       setMedicalRecordOpen(false);
       setSelectedVisit(null);
-      setDiagnoses([]);
       setMedicalForm({
-        subjective: "", objective: "", assessment: "", plan: "",
-        blood_pressure_systolic: "", blood_pressure_diastolic: "",
-        heart_rate: "", temperature: "", respiratory_rate: "", weight: "", height: "",
+        subjective: "",
+        objective: "",
+        assessment: "",
+        plan: "",
+        blood_pressure_systolic: "",
+        blood_pressure_diastolic: "",
+        heart_rate: "",
+        temperature: "",
+        respiratory_rate: "",
+        weight: "",
+        height: "",
       });
       fetchData();
     } catch (error) {
@@ -356,7 +348,7 @@ export default function RawatJalan() {
 
   const filteredQueue = selectedDepartment === "all"
     ? queuePatients
-    : queuePatients.filter(q => q.department_name === selectedDepartment);
+    : queuePatients.filter(q => q.doctor_name.includes(selectedDepartment));
 
   const formatTime = (timeString: string) => {
     if (!timeString) return "-";
@@ -367,7 +359,6 @@ export default function RawatJalan() {
     switch (status) {
       case "dipanggil": return "Dipanggil";
       case "diperiksa": return "Pemeriksaan";
-      case "dilayani": return "Sedang Diperiksa";
       default: return status;
     }
   };
@@ -575,7 +566,7 @@ export default function RawatJalan() {
                   <SelectContent>
                     <SelectItem value="all">Semua Poli</SelectItem>
                     {departments.map((dept) => (
-                      <SelectItem key={dept.id} value={dept.department_name}>{dept.department_name}</SelectItem>
+                      <SelectItem key={dept.id} value={dept.name}>{dept.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -634,168 +625,151 @@ export default function RawatJalan() {
           <DialogHeader>
             <DialogTitle>Input Rekam Medis</DialogTitle>
           </DialogHeader>
-
+          
           <ScrollArea className="max-h-[70vh] pr-4">
-            {selectedVisit && (
-              <div className="space-y-6">
-                {/* Patient Info */}
-                <div className="p-4 bg-muted/30 rounded-lg">
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-muted-foreground">Nama Pasien:</span>
-                      <p className="font-medium">{selectedVisit.patient_name}</p>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">No. Rekam Medis:</span>
-                      <p className="font-medium">{selectedVisit.medical_record_number}</p>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Poli:</span>
-                      <p className="font-medium">{selectedVisit.department_name}</p>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Dokter:</span>
-                      <p className="font-medium">{selectedVisit.doctor_name}</p>
-                    </div>
-                    {selectedVisit.chief_complaint && (
-                      <div className="col-span-2">
-                        <span className="text-muted-foreground">Keluhan:</span>
-                        <p className="font-medium">{selectedVisit.chief_complaint}</p>
-                      </div>
-                    )}
+          {selectedVisit && (
+            <div className="space-y-6">
+              {/* Patient Info */}
+              <div className="p-4 bg-muted/30 rounded-lg">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">Nama Pasien:</span>
+                    <p className="font-medium">{selectedVisit.patient_name}</p>
                   </div>
+                  <div>
+                    <span className="text-muted-foreground">No. Rekam Medis:</span>
+                    <p className="font-medium">{selectedVisit.medical_record_number}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Poli:</span>
+                    <p className="font-medium">{selectedVisit.department_name}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Dokter:</span>
+                    <p className="font-medium">{selectedVisit.doctor_name}</p>
+                  </div>
+                  {selectedVisit.chief_complaint && (
+                    <div className="col-span-2">
+                      <span className="text-muted-foreground">Keluhan:</span>
+                      <p className="font-medium">{selectedVisit.chief_complaint}</p>
+                    </div>
+                  )}
                 </div>
+              </div>
 
-                {/* Vital Signs */}
-                <div>
-                  <h4 className="font-semibold mb-3">Tanda Vital</h4>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="space-y-2">
-                      <Label>TD Sistolik (mmHg)</Label>
-                      <Input
-                        type="number"
-                        placeholder="120"
-                        value={medicalForm.blood_pressure_systolic}
-                        onChange={(e) => setMedicalForm({ ...medicalForm, blood_pressure_systolic: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>TD Diastolik (mmHg)</Label>
-                      <Input
-                        type="number"
-                        placeholder="80"
-                        value={medicalForm.blood_pressure_diastolic}
-                        onChange={(e) => setMedicalForm({ ...medicalForm, blood_pressure_diastolic: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Nadi (x/menit)</Label>
-                      <Input
-                        type="number"
-                        placeholder="80"
-                        value={medicalForm.heart_rate}
-                        onChange={(e) => setMedicalForm({ ...medicalForm, heart_rate: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Suhu (°C)</Label>
-                      <Input
-                        type="number"
-                        step="0.1"
-                        placeholder="36.5"
-                        value={medicalForm.temperature}
-                        onChange={(e) => setMedicalForm({ ...medicalForm, temperature: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Pernapasan (x/menit)</Label>
-                      <Input
-                        type="number"
-                        placeholder="20"
-                        value={medicalForm.respiratory_rate}
-                        onChange={(e) => setMedicalForm({ ...medicalForm, respiratory_rate: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Berat Badan (kg)</Label>
-                      <Input
-                        type="number"
-                        step="0.1"
-                        placeholder="60"
-                        value={medicalForm.weight}
-                        onChange={(e) => setMedicalForm({ ...medicalForm, weight: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Tinggi Badan (cm)</Label>
-                      <Input
-                        type="number"
-                        placeholder="170"
-                        value={medicalForm.height}
-                        onChange={(e) => setMedicalForm({ ...medicalForm, height: e.target.value })}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* SOAP Notes */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Vital Signs */}
+              <div>
+                <h4 className="font-semibold mb-3">Tanda Vital</h4>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="space-y-2">
-                    <Label>Subjective (Keluhan Pasien)</Label>
-                    <Textarea
-                      rows={4}
-                      placeholder="Keluhan utama dan riwayat penyakit..."
-                      value={medicalForm.subjective}
-                      onChange={(e) => setMedicalForm({ ...medicalForm, subjective: e.target.value })}
+                    <Label>TD Sistolik (mmHg)</Label>
+                    <Input
+                      type="number"
+                      placeholder="120"
+                      value={medicalForm.blood_pressure_systolic}
+                      onChange={(e) => setMedicalForm({ ...medicalForm, blood_pressure_systolic: e.target.value })}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Objective (Pemeriksaan Fisik)</Label>
-                    <Textarea
-                      rows={4}
-                      placeholder="Hasil pemeriksaan fisik..."
-                      value={medicalForm.objective}
-                      onChange={(e) => setMedicalForm({ ...medicalForm, objective: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2 md:col-span-2">
-                    <Label>Assessment (Diagnosis ICD-11)</Label>
-                    <ICD11SearchInput
-                      onSelect={handleAddDiagnosis}
-                      placeholder="Cari diagnosis ICD-11..."
-                    />
-                    {diagnoses.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {diagnoses.map((d) => (
-                          <div key={d.entity_id} className="flex items-center gap-1 bg-primary/10 text-primary rounded-md px-2 py-1 text-xs">
-                            {d.icd11_code && <span className="font-mono font-bold">{d.icd11_code}</span>}
-                            <span>{d.title}</span>
-                            <button type="button" onClick={() => handleRemoveDiagnosis(d.entity_id)} className="ml-1 hover:text-destructive">
-                              <X className="h-3 w-3" />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    <Textarea
-                      rows={2}
-                      placeholder="Catatan tambahan diagnosis..."
-                      value={medicalForm.assessment}
-                      onChange={(e) => setMedicalForm({ ...medicalForm, assessment: e.target.value })}
+                    <Label>TD Diastolik (mmHg)</Label>
+                    <Input
+                      type="number"
+                      placeholder="80"
+                      value={medicalForm.blood_pressure_diastolic}
+                      onChange={(e) => setMedicalForm({ ...medicalForm, blood_pressure_diastolic: e.target.value })}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Plan (Rencana Tindakan)</Label>
-                    <Textarea
-                      rows={4}
-                      placeholder="Rencana terapi dan tindak lanjut..."
-                      value={medicalForm.plan}
-                      onChange={(e) => setMedicalForm({ ...medicalForm, plan: e.target.value })}
+                    <Label>Nadi (x/menit)</Label>
+                    <Input
+                      type="number"
+                      placeholder="80"
+                      value={medicalForm.heart_rate}
+                      onChange={(e) => setMedicalForm({ ...medicalForm, heart_rate: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Suhu (°C)</Label>
+                    <Input
+                      type="number"
+                      step="0.1"
+                      placeholder="36.5"
+                      value={medicalForm.temperature}
+                      onChange={(e) => setMedicalForm({ ...medicalForm, temperature: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Pernapasan (x/menit)</Label>
+                    <Input
+                      type="number"
+                      placeholder="20"
+                      value={medicalForm.respiratory_rate}
+                      onChange={(e) => setMedicalForm({ ...medicalForm, respiratory_rate: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Berat Badan (kg)</Label>
+                    <Input
+                      type="number"
+                      step="0.1"
+                      placeholder="60"
+                      value={medicalForm.weight}
+                      onChange={(e) => setMedicalForm({ ...medicalForm, weight: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Tinggi Badan (cm)</Label>
+                    <Input
+                      type="number"
+                      placeholder="170"
+                      value={medicalForm.height}
+                      onChange={(e) => setMedicalForm({ ...medicalForm, height: e.target.value })}
                     />
                   </div>
                 </div>
               </div>
-            )}
+
+              {/* SOAP Notes */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Subjective (Keluhan Pasien)</Label>
+                  <Textarea
+                    rows={4}
+                    placeholder="Keluhan utama dan riwayat penyakit..."
+                    value={medicalForm.subjective}
+                    onChange={(e) => setMedicalForm({ ...medicalForm, subjective: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Objective (Pemeriksaan Fisik)</Label>
+                  <Textarea
+                    rows={4}
+                    placeholder="Hasil pemeriksaan fisik..."
+                    value={medicalForm.objective}
+                    onChange={(e) => setMedicalForm({ ...medicalForm, objective: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Assessment (Diagnosis)</Label>
+                  <Textarea
+                    rows={4}
+                    placeholder="Diagnosis kerja..."
+                    value={medicalForm.assessment}
+                    onChange={(e) => setMedicalForm({ ...medicalForm, assessment: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Plan (Rencana Tindakan)</Label>
+                  <Textarea
+                    rows={4}
+                    placeholder="Rencana terapi dan tindak lanjut..."
+                    value={medicalForm.plan}
+                    onChange={(e) => setMedicalForm({ ...medicalForm, plan: e.target.value })}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
           </ScrollArea>
 
           <DialogFooter>

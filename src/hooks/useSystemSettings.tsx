@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { db } from "@/lib/db";
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "./use-toast";
 
 export interface HospitalInfo {
@@ -56,7 +56,7 @@ export function useSystemSettings() {
   const { data: settings, isLoading } = useQuery({
     queryKey: ["system-settings"],
     queryFn: async () => {
-      const { data, error } = await db
+      const { data, error } = await supabase
         .from("system_settings")
         .select("*")
         .order("setting_key");
@@ -66,15 +66,7 @@ export function useSystemSettings() {
       // Transform to key-value map
       const settingsMap: Record<string, any> = {};
       data?.forEach((s: any) => {
-        try {
-          // Attempt to parse JSON (like for hospital_info)
-          settingsMap[s.setting_key] = JSON.parse(s.setting_value);
-        } catch {
-          // Fallback to raw string if it's not valid JSON
-          if (s.setting_value === 'true') settingsMap[s.setting_key] = true;
-          else if (s.setting_value === 'false') settingsMap[s.setting_key] = false;
-          else settingsMap[s.setting_key] = s.setting_value;
-        }
+        settingsMap[s.setting_key] = s.setting_value;
       });
 
       return settingsMap;
@@ -89,9 +81,9 @@ export function useSystemSettings() {
   // Update setting mutation
   const updateSetting = useMutation({
     mutationFn: async ({ key, value }: { key: string; value: any }) => {
-      const { error } = await db
+      const { error } = await supabase
         .from("system_settings")
-        .update({ setting_key: key, setting_value: value, updated_at: new Date().toISOString() })
+        .update({ setting_value: value, updated_at: new Date().toISOString() })
         .eq("setting_key", key);
 
       if (error) throw error;
@@ -111,13 +103,13 @@ export function useSystemSettings() {
 
   // Convenience methods for specific settings
   const hospitalInfo = getSetting<HospitalInfo>("hospital_info", {
-    name: "SIMRS ZEN",
+    name: "RSUD Dr. Moewardi",
     code: "3372058",
     address: "Jl. Kolonel Sutarto No.132, Jebres, Kec. Jebres, Kota Surakarta, Jawa Tengah 57126",
     city: "Surakarta",
     phone: "(0271) 637415",
-    email: "info@simrszen.id",
-    website: "https://simrszen.id",
+    email: "rsmoewardi@jatengprov.go.id",
+    website: "https://rsmoewardi.com",
     npwp: "",
     director: "dr. Zulfachmi Wahab, Sp.PD",
   });

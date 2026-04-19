@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { db } from "@/lib/db";
+import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 
@@ -89,7 +89,7 @@ export default function Asuransi() {
   const { data: providers = [] } = useQuery({
     queryKey: ["insurance-providers"],
     queryFn: async () => {
-      const { data, error } = await db
+      const { data, error } = await supabase
         .from("insurance_providers")
         .select("*")
         .eq("is_active", true)
@@ -103,7 +103,7 @@ export default function Asuransi() {
   const { data: claims = [], isLoading } = useQuery({
     queryKey: ["insurance-claims", statusFilter, typeFilter],
     queryFn: async () => {
-      let query = db
+      let query = supabase
         .from("insurance_claims")
         .select(`
           *,
@@ -169,7 +169,7 @@ export default function Asuransi() {
         updates.approval_date = new Date().toISOString().split("T")[0];
       }
 
-      const { error } = await db
+      const { error } = await supabase
         .from("insurance_claims")
         .update(updates)
         .eq("id", claimId);

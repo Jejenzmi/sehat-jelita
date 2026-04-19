@@ -18,7 +18,7 @@ interface ImageSlideshowProps {
 }
 
 const defaultSlides: Slide[] = [
-  { id: "1", url: "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=1200&h=600&fit=crop", title: "Fasilitas Modern", caption: "SIMRS ZEN dilengkapi fasilitas medis berstandar internasional" },
+  { id: "1", url: "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=1200&h=600&fit=crop", title: "Fasilitas Modern", caption: "RSUD Dr. Moewardi dilengkapi fasilitas medis berstandar internasional" },
   { id: "2", url: "https://images.unsplash.com/photo-1551190822-a9ce113ac100?w=1200&h=600&fit=crop", title: "Tim Medis Profesional", caption: "Didukung oleh dokter spesialis dan tenaga medis berpengalaman" },
   { id: "3", url: "https://images.unsplash.com/photo-1538108149393-fbbd81895907?w=1200&h=600&fit=crop", title: "Layanan 24 Jam", caption: "IGD dan layanan darurat tersedia 24 jam setiap hari" },
   { id: "4", url: "https://images.unsplash.com/photo-1579684385127-1ef15d508118?w=1200&h=600&fit=crop", title: "Laboratorium Lengkap", caption: "Pemeriksaan laboratorium cepat dan akurat dengan peralatan terkini" },

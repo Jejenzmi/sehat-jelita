@@ -1,8 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "./use-toast";
-import { HospitalType, MODULE_DEFINITIONS as SHARED_MODULE_DEFINITIONS, getModulesForType } from "@/lib/modules";
 
-export type { HospitalType };
+export type HospitalType = 'A' | 'B' | 'C' | 'D' | 'FKTP';
 
 export interface HospitalProfileData {
   hospital_name: string;
@@ -24,141 +24,138 @@ export interface HospitalProfileData {
   organization_id?: string;
 }
 
-const API_BASE = import.meta.env.VITE_API_URL || '/api';
-
-const FETCH_OPTS: RequestInit = { credentials: 'include', headers: { 'Content-Type': 'application/json' } };
-
-async function apiGet<T>(path: string): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, FETCH_OPTS);
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(json.error || res.statusText);
-  return json.data as T;
-}
-
-async function apiPost<T>(path: string, body: unknown): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...FETCH_OPTS, method: 'POST', body: JSON.stringify(body),
-  });
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(json.error || res.statusText);
-  return json.data as T;
-}
-
-// ----------------------------------------------------------------
-// Check whether setup has been completed (reads system_settings)
-// ----------------------------------------------------------------
-const SETUP_DONE_KEY = "simrs_setup_completed";
-
-/** Tandai setup selesai di sessionStorage agar tetap ada setelah full-page reload */
-export function markSetupCompleted() {
-  sessionStorage.setItem(SETUP_DONE_KEY, "true");
-}
-
 export function useIsSetupCompleted() {
   return useQuery({
     queryKey: ["setup-completed"],
     queryFn: async () => {
-      // Jika setup baru saja diselesaikan (flag dari sessionStorage), langsung return true
-      // tanpa perlu menunggu respons API. Ini mencegah redirect balik ke /setup setelah reload.
-      if (sessionStorage.getItem(SETUP_DONE_KEY) === "true") {
-        return true;
-      }
-      try {
-        // Try public endpoint first (works even before auth is fully ready)
-        const res = await fetch(`${API_BASE}/setup-status`, FETCH_OPTS);
-        if (res.ok) {
-          const json = await res.json().catch(() => ({}));
-          const done = json.data === true;
-          if (done) sessionStorage.setItem(SETUP_DONE_KEY, "true");
-          return done;
-        }
-        // Fallback: try authenticated endpoint
-        const res2 = await fetch(`${API_BASE}/admin/setup-status`, FETCH_OPTS);
-        if (res2.ok) {
-          const json2 = await res2.json().catch(() => ({}));
-          const done2 = json2.data === true;
-          if (done2) sessionStorage.setItem(SETUP_DONE_KEY, "true");
-          return done2;
-        }
-        return false;
-      } catch {
-        return false;
-      }
+      const { data, error } = await supabase.rpc("is_setup_completed");
+      if (error) throw error;
+      return data as boolean;
     },
-    staleTime: 1000 * 60 * 5, // 5 min
-    retry: false,
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 }
 
-// ----------------------------------------------------------------
-// Fetch current hospital profile (if any)
-// ----------------------------------------------------------------
 export function useHospitalProfile() {
   return useQuery({
     queryKey: ["hospital-profile"],
-    queryFn: () => apiGet<HospitalProfileData | null>('/admin/hospital-profile'),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("hospital_profile")
+        .select("*")
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
   });
 }
 
-// ----------------------------------------------------------------
-// Available modules for a hospital type  (uses shared MODULE_DEFINITIONS)
-// ----------------------------------------------------------------
 export function useModuleConfigurations(hospitalType?: HospitalType) {
   return useQuery({
     queryKey: ["module-configurations", hospitalType],
     queryFn: async () => {
-      if (!hospitalType) return SHARED_MODULE_DEFINITIONS;
-      return getModulesForType(hospitalType);
+      if (!hospitalType) {
+        const { data, error } = await supabase
+          .from("module_configurations")
+          .select("*")
+          .eq("is_active", true)
+          .order("display_order");
+        if (error) throw error;
+        return data;
+      }
+
+      const { data, error } = await supabase.rpc("get_available_modules", {
+        p_hospital_type: hospitalType,
+      });
+      if (error) throw error;
+      return data;
     },
     enabled: true,
   });
 }
 
-export function useAvailableModulesForType(hospitalType: HospitalType) {
-  return useQuery({
-    queryKey: ["available-modules", hospitalType],
-    queryFn: async () => getModulesForType(hospitalType),
-    enabled: !!hospitalType,
-  });
-}
-
-// ----------------------------------------------------------------
-// Complete setup: saves hospital profile to DB then redirects
-// ----------------------------------------------------------------
 export function useCompleteSetup() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (profileData: HospitalProfileData) => {
-      // POST to /api/admin/hospital-profile
-      // This endpoint upserts the hospital record AND writes setup_completed=true
-      const result = await apiPost('/admin/hospital-profile', profileData);
-      return result;
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("User not authenticated");
+
+      // Check if profile exists
+      const { data: existing } = await supabase
+        .from("hospital_profile")
+        .select("id")
+        .limit(1)
+        .maybeSingle();
+
+      if (existing) {
+        // Update existing
+        const { error } = await supabase
+          .from("hospital_profile")
+          .update({
+            ...profileData,
+            setup_completed: true,
+            setup_completed_at: new Date().toISOString(),
+            setup_completed_by: user.id,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", existing.id);
+        if (error) throw error;
+      } else {
+        // Insert new
+        const { error } = await supabase
+          .from("hospital_profile")
+          .insert({
+            ...profileData,
+            setup_completed: true,
+            setup_completed_at: new Date().toISOString(),
+            setup_completed_by: user.id,
+          });
+        if (error) throw error;
+      }
+
+      return true;
     },
     onSuccess: () => {
-      // Tandai di sessionStorage SEBELUM reload — flag ini tetap ada setelah full page reload
-      // sehingga ProtectedRoute tidak redirect balik ke /setup saat query API belum selesai.
-      markSetupCompleted();
-      // Immediately set cache to true so ProtectedRoute doesn't bounce back to /setup
-      queryClient.setQueryData(["setup-completed"], true);
-      // Then invalidate to trigger a background refetch to confirm
       queryClient.invalidateQueries({ queryKey: ["setup-completed"] });
       queryClient.invalidateQueries({ queryKey: ["hospital-profile"] });
-      queryClient.invalidateQueries({ queryKey: ["hospital-profile-for-modules"] });
-      queryClient.invalidateQueries({ queryKey: ["enabled-modules"] });
       queryClient.invalidateQueries({ queryKey: ["module-configurations"] });
       toast({
         title: "Setup Selesai!",
-        description: "Konfigurasi rumah sakit berhasil disimpan. Selamat datang di SIMRS ZEN!",
+        description: "Konfigurasi rumah sakit berhasil disimpan.",
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Gagal Menyimpan Setup",
+        title: "Error",
         description: error.message,
         variant: "destructive",
       });
     },
+  });
+}
+
+export function useAvailableModulesForType(hospitalType: HospitalType) {
+  return useQuery({
+    queryKey: ["available-modules", hospitalType],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_available_modules", {
+        p_hospital_type: hospitalType,
+      });
+      if (error) throw error;
+      return data as Array<{
+        module_code: string;
+        module_name: string;
+        module_category: string;
+        module_path: string;
+        module_icon: string | null;
+        display_order: number;
+        is_core_module: boolean;
+      }>;
+    },
+    enabled: !!hospitalType,
   });
 }

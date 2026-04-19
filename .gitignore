@@ -12,15 +12,6 @@ dist
 dist-ssr
 *.local
 
-# Environment variables (never commit secrets)
-.env
-.env.local
-.env.*.local
-.env.production
-.env.staging
-!.env.example
-!.env.production.example
-
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -31,11 +22,3 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-build_log.txt
-
-# SSL Certificates (never commit private keys)
-ssl/
-*.pem
-*.key
-*.p12
-*.pfx

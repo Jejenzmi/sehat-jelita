@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { db } from "@/lib/db";
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 // ============================================
@@ -147,7 +147,7 @@ export interface MedicalRecordBundleParams {
 
 // Helper function to call BPJS Antrean edge function
 async function callBPJSAntrean(action: string, params: Record<string, any> = {}) {
-  const { data, error } = await db.functions.invoke("bpjs-antrean", {
+  const { data, error } = await supabase.functions.invoke("bpjs-antrean", {
     body: { action, ...params },
   });
 
@@ -464,7 +464,7 @@ export function useBuildAndSendMedicalRecord() {
       jnsPelayanan: "1" | "2";
     }) => {
       // Fetch visit data with related records
-      const { data: visit, error: visitError } = await db
+      const { data: visit, error: visitError } = await supabase
         .from("visits")
         .select(`
           *,

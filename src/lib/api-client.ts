@@ -1,13 +1,19 @@
 /**
- * SIMRS ZEN - API Client
- *
- * Auth strategy: httpOnly cookies (primary) + Authorization header fallback.
- * Cookies are set by the server on login/refresh and sent automatically
- * via credentials:'include'. localStorage tokens are read during transition
- * for existing sessions but NO LONGER WRITTEN — new logins use cookies only.
+ * SIMRS ZEN - Unified API Client
+ * Supports both Lovable Cloud (Supabase) and Node.js/Express backend
+ * 
+ * Configuration via environment variable:
+ * VITE_API_MODE = 'supabase' | 'nodejs'
+ * VITE_API_URL = 'http://localhost:3000/api' (for nodejs mode)
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
+import { supabase } from '@/integrations/supabase/client';
+
+// API Mode Configuration
+type ApiMode = 'supabase' | 'nodejs';
+
+const API_MODE: ApiMode = (import.meta.env.VITE_API_MODE as ApiMode) || 'supabase';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 // ============================================
 // CUSTOM ERROR CLASS
@@ -26,61 +32,72 @@ export class ApiError extends Error {
 }
 
 // ============================================
-// LEGACY TOKEN MANAGER
-// Used read-only to support existing sessions still in localStorage.
-// No new tokens are written here — cookies handle that now.
+// TOKEN MANAGEMENT (for Node.js mode)
 // ============================================
 
-class LegacyTokenManager {
-  /** Read token written by an older session (before cookie migration). */
-  getLegacyAccessToken(): string | null {
-    return localStorage.getItem('zen_access_token');
+class TokenManager {
+  private accessToken: string | null = null;
+  private refreshToken: string | null = null;
+
+  setTokens(tokens: { accessToken: string; refreshToken: string }) {
+    this.accessToken = tokens.accessToken;
+    this.refreshToken = tokens.refreshToken;
+    localStorage.setItem('zen_access_token', tokens.accessToken);
+    localStorage.setItem('zen_refresh_token', tokens.refreshToken);
   }
 
-  /** Clear stale localStorage tokens (called on logout or after cookie refresh). */
-  clearLegacy() {
+  loadTokens() {
+    this.accessToken = localStorage.getItem('zen_access_token');
+    this.refreshToken = localStorage.getItem('zen_refresh_token');
+  }
+
+  clearTokens() {
+    this.accessToken = null;
+    this.refreshToken = null;
     localStorage.removeItem('zen_access_token');
     localStorage.removeItem('zen_refresh_token');
   }
+
+  getAccessToken() {
+    return this.accessToken;
+  }
+
+  getRefreshToken() {
+    return this.refreshToken;
+  }
 }
 
-const legacyTokens = new LegacyTokenManager();
+const tokenManager = new TokenManager();
+tokenManager.loadTokens();
 
 // ============================================
-// CORE REQUEST
+// NODE.JS REST API CLIENT
 // ============================================
-
-let isRefreshing = false;
-let refreshQueue: Array<() => void> = [];
 
 async function nodeRequest<T>(
   method: string,
   endpoint: string,
-  options: { body?: unknown; params?: Record<string, string | undefined> } = {}
+  options: { body?: unknown; params?: Record<string, string> } = {}
 ): Promise<T> {
   let url = `${API_BASE_URL}${endpoint}`;
 
   if (options.params) {
-    const filtered = Object.fromEntries(
-      Object.entries(options.params).filter(([, v]) => v !== undefined && v !== '')
-    ) as Record<string, string>;
-    const qs = new URLSearchParams(filtered).toString();
-    if (qs) url += `?${qs}`;
+    const queryString = new URLSearchParams(options.params).toString();
+    if (queryString) url += `?${queryString}`;
   }
 
-  const headers: HeadersInit = { 'Content-Type': 'application/json' };
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+  };
 
-  // Fallback: send legacy localStorage token during transition period.
-  // The backend checks cookie first, so this only activates when no cookie exists.
-  const legacyToken = legacyTokens.getLegacyAccessToken();
-  if (legacyToken) {
-    headers['Authorization'] = `Bearer ${legacyToken}`;
+  const accessToken = tokenManager.getAccessToken();
+  if (accessToken) {
+    headers['Authorization'] = `Bearer ${accessToken}`;
   }
 
   const config: RequestInit = {
     method,
     headers,
-    credentials: 'include', // Always send/receive httpOnly cookies
   };
 
   if (options.body && method !== 'GET') {
@@ -90,17 +107,12 @@ async function nodeRequest<T>(
   try {
     let response = await fetch(url, config);
 
-    // 401 → attempt silent refresh via cookie
-    if (response.status === 401 && !endpoint.includes('/auth/refresh')) {
-      const refreshed = await silentRefresh();
+    // Handle token refresh
+    if (response.status === 401 && tokenManager.getRefreshToken()) {
+      const refreshed = await refreshAccessToken();
       if (refreshed) {
-        // After refresh, cookie is updated; clear stale localStorage token
-        legacyTokens.clearLegacy();
-        delete (headers as Record<string, string>)['Authorization'];
+        headers['Authorization'] = `Bearer ${tokenManager.getAccessToken()}`;
         response = await fetch(url, { ...config, headers });
-      } else {
-        // Refresh failed — clear legacy tokens and let caller handle 401
-        legacyTokens.clearLegacy();
       }
     }
 
@@ -121,35 +133,28 @@ async function nodeRequest<T>(
   }
 }
 
-/**
- * Silent token refresh using the httpOnly refreshToken cookie.
- * Deduplicates concurrent refresh attempts.
- */
-async function silentRefresh(): Promise<boolean> {
-  if (isRefreshing) {
-    return new Promise(resolve => {
-      refreshQueue.push(() => resolve(true));
-    });
-  }
-
-  isRefreshing = true;
+async function refreshAccessToken(): Promise<boolean> {
   try {
     const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      credentials: 'include', // refreshToken cookie is sent automatically
+      body: JSON.stringify({ refreshToken: tokenManager.getRefreshToken() }),
     });
 
-    if (!response.ok) return false;
+    if (!response.ok) {
+      tokenManager.clearTokens();
+      return false;
+    }
 
-    // Server sets new httpOnly access + refresh cookies in response
-    refreshQueue.forEach(cb => cb());
+    const data = await response.json();
+    tokenManager.setTokens({
+      accessToken: data.data.accessToken,
+      refreshToken: data.data.refreshToken,
+    });
     return true;
   } catch {
+    tokenManager.clearTokens();
     return false;
-  } finally {
-    isRefreshing = false;
-    refreshQueue = [];
   }
 }
 
@@ -158,7 +163,8 @@ async function silentRefresh(): Promise<boolean> {
 // ============================================
 
 export const api = {
-  getMode: () => 'nodejs' as const,
+  // Get current API mode
+  getMode: () => API_MODE,
 
   // ==========================================
   // AUTHENTICATION
@@ -166,43 +172,78 @@ export const api = {
 
   auth: {
     async login(email: string, password: string) {
-      const response = await nodeRequest<{
-        success: boolean;
-        data: { user: unknown; accessToken?: string; refreshToken?: string };
-      }>('POST', '/auth/login', { body: { email, password } });
-
-      // Cookies are set by server. Clean up any stale localStorage tokens.
-      legacyTokens.clearLegacy();
-
-      return response;
+      if (API_MODE === 'supabase') {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        if (error) throw new ApiError(error.message, 401, 'AUTH_ERROR');
+        return { success: true, data };
+      } else {
+        const response = await nodeRequest<{
+          success: boolean;
+          data: { user: unknown; accessToken: string; refreshToken: string };
+        }>('POST', '/auth/login', { body: { email, password } });
+        if (response.success) {
+          tokenManager.setTokens({
+            accessToken: response.data.accessToken,
+            refreshToken: response.data.refreshToken,
+          });
+        }
+        return response;
+      }
     },
 
     async logout() {
-      try {
-        await nodeRequest('POST', '/auth/logout');
-      } finally {
-        legacyTokens.clearLegacy();
+      if (API_MODE === 'supabase') {
+        await supabase.auth.signOut();
+      } else {
+        try {
+          await nodeRequest('POST', '/auth/logout');
+        } finally {
+          tokenManager.clearTokens();
+        }
       }
     },
 
     async register(email: string, password: string, fullName: string) {
-      return nodeRequest('POST', '/auth/register', {
-        body: { email, password, fullName },
-      });
+      if (API_MODE === 'supabase') {
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: { data: { full_name: fullName } },
+        });
+        if (error) throw new ApiError(error.message, 400, 'REGISTER_ERROR');
+        return { success: true, data };
+      } else {
+        return nodeRequest('POST', '/auth/register', {
+          body: { email, password, fullName },
+        });
+      }
     },
 
     async getCurrentUser() {
-      return nodeRequest('GET', '/auth/me');
+      if (API_MODE === 'supabase') {
+        const { data, error } = await supabase.auth.getUser();
+        if (error) throw new ApiError(error.message, 401, 'AUTH_ERROR');
+        return { success: true, data: data.user };
+      } else {
+        return nodeRequest('GET', '/auth/me');
+      }
     },
 
     async changePassword(currentPassword: string, newPassword: string) {
-      return nodeRequest('POST', '/auth/change-password', {
-        body: { currentPassword, newPassword },
-      });
-    },
-
-    async refreshToken() {
-      return silentRefresh();
+      if (API_MODE === 'supabase') {
+        const { error } = await supabase.auth.updateUser({
+          password: newPassword,
+        });
+        if (error) throw new ApiError(error.message, 400, 'PASSWORD_ERROR');
+        return { success: true };
+      } else {
+        return nodeRequest('POST', '/auth/change-password', {
+          body: { currentPassword, newPassword },
+        });
+      }
     },
   },
 
@@ -212,22 +253,73 @@ export const api = {
 
   patients: {
     async list(params?: Record<string, string>) {
-      return nodeRequest('GET', '/patients', { params });
+      if (API_MODE === 'supabase') {
+        let query = supabase.from('patients').select('*');
+        if (params?.search) {
+          query = query.or(`full_name.ilike.%${params.search}%,medical_record_number.ilike.%${params.search}%`);
+        }
+        if (params?.limit) {
+          query = query.limit(parseInt(params.limit));
+        }
+        const { data, error } = await query.order('created_at', { ascending: false });
+        if (error) throw new ApiError(error.message, 400, 'QUERY_ERROR');
+        return { success: true, data };
+      } else {
+        return nodeRequest('GET', '/patients', { params });
+      }
     },
+
     async get(id: string) {
-      return nodeRequest('GET', `/patients/${id}`);
+      if (API_MODE === 'supabase') {
+        const { data, error } = await supabase
+          .from('patients')
+          .select('*')
+          .eq('id', id)
+          .single();
+        if (error) throw new ApiError(error.message, 404, 'NOT_FOUND');
+        return { success: true, data };
+      } else {
+        return nodeRequest('GET', `/patients/${id}`);
+      }
     },
-    async create(data: Record<string, unknown>) {
-      return nodeRequest('POST', '/patients', { body: data });
+
+    async create(patientData: Record<string, unknown>) {
+      if (API_MODE === 'supabase') {
+        const { data, error } = await supabase
+          .from('patients')
+          .insert(patientData as never)
+          .select()
+          .single();
+        if (error) throw new ApiError(error.message, 400, 'CREATE_ERROR');
+        return { success: true, data };
+      } else {
+        return nodeRequest('POST', '/patients', { body: patientData });
+      }
     },
-    async update(id: string, data: Record<string, unknown>) {
-      return nodeRequest('PUT', `/patients/${id}`, { body: data });
+
+    async update(id: string, patientData: Record<string, unknown>) {
+      if (API_MODE === 'supabase') {
+        const { data, error } = await supabase
+          .from('patients')
+          .update(patientData as never)
+          .eq('id', id)
+          .select()
+          .single();
+        if (error) throw new ApiError(error.message, 400, 'UPDATE_ERROR');
+        return { success: true, data };
+      } else {
+        return nodeRequest('PUT', `/patients/${id}`, { body: patientData });
+      }
     },
+
     async delete(id: string) {
-      return nodeRequest('DELETE', `/patients/${id}`);
-    },
-    async search(q: string, params?: Record<string, string>) {
-      return nodeRequest('GET', '/patients/search', { params: { q, ...params } });
+      if (API_MODE === 'supabase') {
+        const { error } = await supabase.from('patients').delete().eq('id', id);
+        if (error) throw new ApiError(error.message, 400, 'DELETE_ERROR');
+        return { success: true };
+      } else {
+        return nodeRequest('DELETE', `/patients/${id}`);
+      }
     },
   },
 
@@ -237,16 +329,63 @@ export const api = {
 
   visits: {
     async list(params?: Record<string, string>) {
-      return nodeRequest('GET', '/visits', { params });
+      if (API_MODE === 'supabase') {
+        let query = supabase.from('visits').select('*, patients(*)');
+        if (params?.patient_id) {
+          query = query.eq('patient_id', params.patient_id);
+        }
+        if (params?.status) {
+          query = query.eq('status', params.status as 'menunggu' | 'dipanggil' | 'dilayani' | 'selesai' | 'batal');
+        }
+        const { data, error } = await query.order('created_at', { ascending: false });
+        if (error) throw new ApiError(error.message, 400, 'QUERY_ERROR');
+        return { success: true, data };
+      } else {
+        return nodeRequest('GET', '/visits', { params });
+      }
     },
+
     async get(id: string) {
-      return nodeRequest('GET', `/visits/${id}`);
+      if (API_MODE === 'supabase') {
+        const { data, error } = await supabase
+          .from('visits')
+          .select('*, patients(*)')
+          .eq('id', id)
+          .single();
+        if (error) throw new ApiError(error.message, 404, 'NOT_FOUND');
+        return { success: true, data };
+      } else {
+        return nodeRequest('GET', `/visits/${id}`);
+      }
     },
-    async create(data: Record<string, unknown>) {
-      return nodeRequest('POST', '/visits', { body: data });
+
+    async create(visitData: Record<string, unknown>) {
+      if (API_MODE === 'supabase') {
+        const { data, error } = await supabase
+          .from('visits')
+          .insert(visitData as never)
+          .select()
+          .single();
+        if (error) throw new ApiError(error.message, 400, 'CREATE_ERROR');
+        return { success: true, data };
+      } else {
+        return nodeRequest('POST', '/visits', { body: visitData });
+      }
     },
-    async update(id: string, data: Record<string, unknown>) {
-      return nodeRequest('PUT', `/visits/${id}`, { body: data });
+
+    async update(id: string, visitData: Record<string, unknown>) {
+      if (API_MODE === 'supabase') {
+        const { data, error } = await supabase
+          .from('visits')
+          .update(visitData as never)
+          .eq('id', id)
+          .select()
+          .single();
+        if (error) throw new ApiError(error.message, 400, 'UPDATE_ERROR');
+        return { success: true, data };
+      } else {
+        return nodeRequest('PUT', `/visits/${id}`, { body: visitData });
+      }
     },
   },
 
@@ -256,25 +395,64 @@ export const api = {
 
   billing: {
     async list(params?: Record<string, string>) {
-      return nodeRequest('GET', '/billing', { params });
+      if (API_MODE === 'supabase') {
+        const { data, error } = await supabase
+          .from('billings')
+          .select('*, patients(*), visits(*)')
+          .order('created_at', { ascending: false });
+        if (error) throw new ApiError(error.message, 400, 'QUERY_ERROR');
+        return { success: true, data };
+      } else {
+        return nodeRequest('GET', '/billing', { params });
+      }
     },
+
     async get(id: string) {
-      return nodeRequest('GET', `/billing/${id}`);
+      if (API_MODE === 'supabase') {
+        const { data, error } = await supabase
+          .from('billings')
+          .select('*, patients(*), visits(*), billing_items(*)')
+          .eq('id', id)
+          .single();
+        if (error) throw new ApiError(error.message, 404, 'NOT_FOUND');
+        return { success: true, data };
+      } else {
+        return nodeRequest('GET', `/billing/${id}`);
+      }
     },
-    async create(data: Record<string, unknown>) {
-      return nodeRequest('POST', '/billing', { body: data });
+
+    async create(billingData: Record<string, unknown>) {
+      if (API_MODE === 'supabase') {
+        const { data, error } = await supabase
+          .from('billings')
+          .insert(billingData as never)
+          .select()
+          .single();
+        if (error) throw new ApiError(error.message, 400, 'CREATE_ERROR');
+        return { success: true, data };
+      } else {
+        return nodeRequest('POST', '/billing', { body: billingData });
+      }
     },
-    async processPayment(id: string, data: Record<string, unknown>) {
-      return nodeRequest('POST', `/billing/${id}/pay`, { body: data });
-    },
-    async export(params?: Record<string, string>) {
-      const qs = params ? new URLSearchParams(params).toString() : '';
-      const res = await fetch(`${API_BASE_URL}/export/billing${qs ? `?${qs}` : ''}`, {
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-      });
-      if (!res.ok) throw new ApiError('Export gagal', res.status);
-      return res.blob();
+
+    async processPayment(id: string, paymentData: Record<string, unknown>) {
+      if (API_MODE === 'supabase') {
+        const updateData = {
+          status: 'lunas' as const,
+          payment_date: new Date().toISOString(),
+          ...paymentData,
+        };
+        const { data, error } = await supabase
+          .from('billings')
+          .update(updateData as never)
+          .eq('id', id)
+          .select()
+          .single();
+        if (error) throw new ApiError(error.message, 400, 'PAYMENT_ERROR');
+        return { success: true, data };
+      } else {
+        return nodeRequest('POST', `/billing/${id}/payment`, { body: paymentData });
+      }
     },
   },
 
@@ -284,119 +462,86 @@ export const api = {
 
   pharmacy: {
     async prescriptions(params?: Record<string, string>) {
-      return nodeRequest('GET', '/pharmacy/prescriptions', { params });
+      if (API_MODE === 'supabase') {
+        const { data, error } = await supabase
+          .from('prescriptions')
+          .select('*, patients(*), doctors(*)')
+          .order('created_at', { ascending: false });
+        if (error) throw new ApiError(error.message, 400, 'QUERY_ERROR');
+        return { success: true, data };
+      } else {
+        return nodeRequest('GET', '/pharmacy/prescriptions', { params });
+      }
     },
-    async getPrescription(id: string) {
-      return nodeRequest('GET', `/pharmacy/prescriptions/${id}`);
+
+    async dispense(id: string, dispenseData: Record<string, unknown>) {
+      if (API_MODE === 'supabase') {
+        const updateData = {
+          status: 'diserahkan' as const,
+          updated_at: new Date().toISOString(),
+          ...dispenseData,
+        };
+        const { data, error } = await supabase
+          .from('prescriptions')
+          .update(updateData as never)
+          .eq('id', id)
+          .select()
+          .single();
+        if (error) throw new ApiError(error.message, 400, 'DISPENSE_ERROR');
+        return { success: true, data };
+      } else {
+        return nodeRequest('PUT', `/pharmacy/prescriptions/${id}/dispense`, {
+          body: dispenseData,
+        });
+      }
     },
-    async createPrescription(data: Record<string, unknown>) {
-      return nodeRequest('POST', '/pharmacy/prescriptions', { body: data });
-    },
-    async verify(id: string, data: Record<string, unknown>) {
-      return nodeRequest('POST', `/pharmacy/prescriptions/${id}/verify`, { body: data });
-    },
-    async dispense(id: string, data: Record<string, unknown>) {
-      return nodeRequest('POST', `/pharmacy/prescriptions/${id}/dispense`, { body: data });
-    },
+
     async stock(params?: Record<string, string>) {
-      return nodeRequest('GET', '/pharmacy/stock', { params });
-    },
-    async checkInteractions(data: Record<string, unknown>) {
-      return nodeRequest('POST', '/cds/check-prescription', { body: data });
-    },
-    async checkSingleDrug(data: Record<string, unknown>) {
-      return nodeRequest('POST', '/cds/check-drug', { body: data });
+      if (API_MODE === 'supabase') {
+        const { data, error } = await supabase
+          .from('medicines')
+          .select('*')
+          .order('name');
+        if (error) throw new ApiError(error.message, 400, 'QUERY_ERROR');
+        return { success: true, data };
+      } else {
+        return nodeRequest('GET', '/pharmacy/stock', { params });
+      }
     },
   },
 
   // ==========================================
-  // LABORATORY
+  // LABORATORY (Placeholder - uses nodeRequest for now)
   // ==========================================
 
   lab: {
     async orders(params?: Record<string, string>) {
-      return nodeRequest('GET', '/lab/orders', { params });
+      if (API_MODE === 'supabase') {
+        // Lab orders table may not exist yet in schema, return empty for now
+        return { success: true, data: [] };
+      } else {
+        return nodeRequest('GET', '/lab/orders', { params });
+      }
     },
-    async getOrder(id: string) {
-      return nodeRequest('GET', `/lab/orders/${id}`);
+
+    async createOrder(orderData: Record<string, unknown>) {
+      if (API_MODE === 'supabase') {
+        // Lab orders table may not exist yet
+        console.warn('Lab orders not available in Supabase mode yet');
+        return { success: false, error: 'Not implemented' };
+      } else {
+        return nodeRequest('POST', '/lab/orders', { body: orderData });
+      }
     },
-    async createOrder(data: Record<string, unknown>) {
-      return nodeRequest('POST', '/lab/orders', { body: data });
-    },
+
     async addResult(orderId: string, results: Record<string, unknown>) {
-      return nodeRequest('POST', `/lab/orders/${orderId}/results`, { body: results });
-    },
-    async exportResult(orderId: string) {
-      const res = await fetch(`${API_BASE_URL}/export/lab-results/${orderId}`, {
-        credentials: 'include',
-      });
-      if (!res.ok) throw new ApiError('Export gagal', res.status);
-      return res.blob();
-    },
-  },
-
-  // ==========================================
-  // HR / SDM
-  // ==========================================
-
-  hr: {
-    async employees(params?: Record<string, string>) {
-      return nodeRequest('GET', '/hr/employees', { params });
-    },
-    async getEmployee(id: string) {
-      return nodeRequest('GET', `/hr/employees/${id}`);
-    },
-    async createEmployee(data: Record<string, unknown>) {
-      return nodeRequest('POST', '/hr/employees', { body: data });
-    },
-    async attendance(params?: Record<string, string>) {
-      return nodeRequest('GET', '/hr/attendance', { params });
-    },
-    async leaveRequests(params?: Record<string, string>) {
-      return nodeRequest('GET', '/hr/leave-requests', { params });
-    },
-    async payroll(params?: Record<string, string>) {
-      return nodeRequest('GET', '/hr/payroll', { params });
-    },
-  },
-
-  // ==========================================
-  // INVENTORY
-  // ==========================================
-
-  inventory: {
-    async stock(params?: Record<string, string>) {
-      return nodeRequest('GET', '/inventory/stock', { params });
-    },
-    async purchaseOrders(params?: Record<string, string>) {
-      return nodeRequest('GET', '/inventory/purchase-orders', { params });
-    },
-    async createPurchaseOrder(data: Record<string, unknown>) {
-      return nodeRequest('POST', '/inventory/purchase-orders', { body: data });
-    },
-  },
-
-  // ==========================================
-  // ACCOUNTING
-  // ==========================================
-
-  accounting: {
-    async accounts(params?: Record<string, string>) {
-      return nodeRequest('GET', '/accounting/accounts', { params });
-    },
-    async journals(params?: Record<string, string>) {
-      return nodeRequest('GET', '/accounting/journals', { params });
-    },
-    async createJournal(data: Record<string, unknown>) {
-      return nodeRequest('POST', '/accounting/journals', { body: data });
-    },
-    async exportJournal(params?: Record<string, string>) {
-      const qs = params ? new URLSearchParams(params).toString() : '';
-      const res = await fetch(`${API_BASE_URL}/export/accounting/journal${qs ? `?${qs}` : ''}`, {
-        credentials: 'include',
-      });
-      if (!res.ok) throw new ApiError('Export gagal', res.status);
-      return res.blob();
+      if (API_MODE === 'supabase') {
+        // Lab results table may not exist yet
+        console.warn('Lab results not available in Supabase mode yet');
+        return { success: false, error: 'Not implemented' };
+      } else {
+        return nodeRequest('POST', `/lab/orders/${orderId}/results`, { body: results });
+      }
     },
   },
 
@@ -406,119 +551,131 @@ export const api = {
 
   bpjs: {
     async checkPeserta(noBpjs: string) {
-      return nodeRequest('GET', `/bpjs/peserta/noka/${noBpjs}`);
+      if (API_MODE === 'supabase') {
+        const { data, error } = await supabase.functions.invoke('bpjs-vclaim', {
+          body: { action: 'getPeserta', noBpjs },
+        });
+        if (error) throw new ApiError(error.message, 400, 'BPJS_ERROR');
+        return { success: true, data };
+      } else {
+        return nodeRequest('GET', `/bpjs/peserta/${noBpjs}`);
+      }
     },
-    async createSEP(data: unknown) {
-      return nodeRequest('POST', '/bpjs/sep', { body: data });
+
+    async createSEP(sepData: unknown) {
+      if (API_MODE === 'supabase') {
+        const { data, error } = await supabase.functions.invoke('bpjs-vclaim', {
+          body: { action: 'createSEP', ...sepData as Record<string, unknown> },
+        });
+        if (error) throw new ApiError(error.message, 400, 'BPJS_ERROR');
+        return { success: true, data };
+      } else {
+        return nodeRequest('POST', '/bpjs/sep', { body: sepData });
+      }
     },
+
     async getRujukan(noRujukan: string) {
-      return nodeRequest('GET', `/bpjs/rujukan/${noRujukan}`);
+      if (API_MODE === 'supabase') {
+        const { data, error } = await supabase.functions.invoke('bpjs-vclaim', {
+          body: { action: 'getRujukan', noRujukan },
+        });
+        if (error) throw new ApiError(error.message, 400, 'BPJS_ERROR');
+        return { success: true, data };
+      } else {
+        return nodeRequest('GET', `/bpjs/rujukan/${noRujukan}`);
+      }
     },
   },
 
   // ==========================================
-  // SATU SEHAT
+  // SATU SEHAT INTEGRATION
   // ==========================================
 
   satusehat: {
     async syncPatient(patientId: string) {
-      return nodeRequest('POST', '/satusehat/sync/patient', { body: { patientId } });
+      if (API_MODE === 'supabase') {
+        const { data, error } = await supabase.functions.invoke('satusehat', {
+          body: { action: 'syncPatient', patientId },
+        });
+        if (error) throw new ApiError(error.message, 400, 'SATUSEHAT_ERROR');
+        return { success: true, data };
+      } else {
+        return nodeRequest('POST', '/satusehat/sync/patient', { body: { patientId } });
+      }
     },
+
     async syncEncounter(visitId: string) {
-      return nodeRequest('POST', '/satusehat/sync/encounter', { body: { visitId } });
+      if (API_MODE === 'supabase') {
+        const { data, error } = await supabase.functions.invoke('satusehat', {
+          body: { action: 'syncEncounter', visitId },
+        });
+        if (error) throw new ApiError(error.message, 400, 'SATUSEHAT_ERROR');
+        return { success: true, data };
+      } else {
+        return nodeRequest('POST', '/satusehat/sync/encounter', { body: { visitId } });
+      }
     },
+
     async getIHSPatient(nik: string) {
-      return nodeRequest('GET', `/satusehat/patient/${nik}`);
+      if (API_MODE === 'supabase') {
+        const { data, error } = await supabase.functions.invoke('satusehat', {
+          body: { action: 'getPatientByNIK', nik },
+        });
+        if (error) throw new ApiError(error.message, 400, 'SATUSEHAT_ERROR');
+        return { success: true, data };
+      } else {
+        return nodeRequest('GET', `/satusehat/patient/${nik}`);
+      }
     },
   },
 
   // ==========================================
-  // REPORTS & ANALYTICS
+  // REPORTS & DASHBOARD
   // ==========================================
 
   reports: {
     async dashboard(params?: Record<string, string>) {
-      return nodeRequest('GET', '/reports/dashboard', { params });
+      if (API_MODE === 'supabase') {
+        // Aggregate dashboard data from multiple tables
+        const [patientsResult, visitsResult, billingsResult] = await Promise.all([
+          supabase.from('patients').select('id', { count: 'exact', head: true }),
+          supabase.from('visits').select('id', { count: 'exact', head: true }).eq('visit_date', new Date().toISOString().split('T')[0]),
+          supabase.from('billings').select('total').eq('status', 'pending' as const),
+        ]);
+
+        return {
+          success: true,
+          data: {
+            totalPatients: patientsResult.count || 0,
+            todayVisits: visitsResult.count || 0,
+            pendingBillings: billingsResult.data?.length || 0,
+            pendingAmount: billingsResult.data?.reduce((sum, b) => sum + (b.total || 0), 0) || 0,
+          },
+        };
+      } else {
+        return nodeRequest('GET', '/reports/dashboard', { params });
+      }
     },
+
     async revenue(params?: Record<string, string>) {
-      return nodeRequest('GET', '/reports/revenue', { params });
-    },
-    async visits(params?: Record<string, string>) {
-      return nodeRequest('GET', '/reports/visits', { params });
-    },
-    async exportKemenkes(reportType: string, params?: Record<string, string>) {
-      const qs = params ? new URLSearchParams(params).toString() : '';
-      const res = await fetch(`${API_BASE_URL}/export/kemenkes/${reportType}${qs ? `?${qs}` : ''}`, {
-        credentials: 'include',
-      });
-      if (!res.ok) throw new ApiError('Export gagal', res.status);
-      return res.blob();
-    },
-  },
-
-  // ==========================================
-  // ADMIN
-  // ==========================================
-
-  admin: {
-    async auditLogs(params?: Record<string, string>) {
-      return nodeRequest('GET', '/admin/audit-logs', { params });
-    },
-    async systemSettings() {
-      return nodeRequest('GET', '/admin/system-settings');
-    },
-    async updateSetting(key: string, value: unknown) {
-      return nodeRequest('PUT', `/admin/system-settings/${key}`, { body: { value } });
-    },
-    async circuitBreakers() {
-      return nodeRequest('GET', '/admin/circuit-breakers');
-    },
-    async resetBreaker(name: string) {
-      return nodeRequest('POST', `/admin/circuit-breakers/${name}/reset`);
-    },
-    async triggerBackup() {
-      return nodeRequest('POST', '/admin/jobs/backup');
+      if (API_MODE === 'supabase') {
+        const { data, error } = await supabase
+          .from('billings')
+          .select('total, payment_date, payment_type')
+          .eq('status', 'lunas' as const)
+          .order('payment_date', { ascending: false });
+        if (error) throw new ApiError(error.message, 400, 'QUERY_ERROR');
+        return { success: true, data };
+      } else {
+        return nodeRequest('GET', '/reports/revenue', { params });
+      }
     },
   },
-
-  // ==========================================
-  // NOTIFICATIONS
-  // ==========================================
-
-  notifications: {
-    async send(data: { phone: string; template_type: string; data?: unknown }) {
-      return nodeRequest('POST', '/notifications/send', { body: data });
-    },
-    async logs(params?: Record<string, string>) {
-      return nodeRequest('GET', '/notifications/logs', { params });
-    },
-    async stats() {
-      return nodeRequest('GET', '/notifications/stats');
-    },
-  },
-
-  // ==========================================
-  // CLINICAL DECISION SUPPORT
-  // ==========================================
-
-  cds: {
-    async checkPrescription(data: { patient_id: string; items: unknown[]; diagnosis_codes?: string[] }) {
-      return nodeRequest('POST', '/cds/check-prescription', { body: data });
-    },
-    async checkDrug(data: { patient_id: string; medicine_id: string; dosage?: string; existing_medicine_ids?: string[] }) {
-      return nodeRequest('POST', '/cds/check-drug', { body: data });
-    },
-  },
-
-  // ==========================================
-  // GENERIC
-  // ==========================================
-
-  request: nodeRequest,
 };
 
 // Export utilities
-export const isNodeMode = () => true;
-export const getApiBaseUrl = () => API_BASE_URL;
+export const isNodeMode = () => API_MODE === 'nodejs';
+export const isSupabaseMode = () => API_MODE === 'supabase';
+export const getApiBaseUrl = () => API_MODE === 'nodejs' ? API_BASE_URL : null;
 
 export default api;

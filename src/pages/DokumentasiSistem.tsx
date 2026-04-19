@@ -37,7 +37,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import simrsZenLogo from "@/assets/simrs-zen-logo.png";
+import rsudLogo from "@/assets/logo-rsud-moewardi.png";
 
 interface Slide {
   id: number;
@@ -60,8 +60,8 @@ const DokumentasiSistem = () => {
       content: (
         <div className="flex flex-col items-center justify-center h-full text-white text-center px-8">
           <motion.img 
-            src={simrsZenLogo} 
-            alt="SIMRS ZEN" 
+            src={rsudLogo} 
+            alt="RSUD Dr. Moewardi" 
             className="w-32 h-32 mb-8"
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
@@ -73,7 +73,7 @@ const DokumentasiSistem = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
           >
-            SIMRS ZEN
+            SIMRS RSUD Dr. Moewardi
           </motion.h1>
           <motion.p 
             className="text-2xl md:text-3xl text-teal-100 mb-6"
@@ -98,26 +98,26 @@ const DokumentasiSistem = () => {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.9 }}
           >
-            <p className="font-semibold">PT Zen Multimedia Indonesia</p>
+            <p className="font-semibold">RSUD Dr. Moewardi</p>
             <p className="text-sm">Jl. Kolonel Sutarto No.132, Surakarta</p>
           </motion.div>
         </div>
       )
     },
-    // Slide 2: Tentang SIMRS ZEN
+    // Slide 2: Tentang SIMRS RSUD Dr. Moewardi
     {
       id: 2,
-      title: "Tentang SIMRS ZEN",
+      title: "Tentang SIMRS RSUD Dr. Moewardi",
       content: (
         <div className="p-8 md:p-12">
           <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-8 flex items-center gap-3">
             <Building2 className="w-10 h-10 text-teal-600" />
-            Tentang SIMRS ZEN
+            Tentang SIMRS RSUD Dr. Moewardi
           </h2>
           <div className="grid md:grid-cols-2 gap-8">
             <div className="space-y-6">
               <p className="text-lg text-gray-600 leading-relaxed">
-                SIMRS ZEN adalah <strong>Sistem Informasi Manajemen Rumah Sakit</strong> berbasis web 
+                SIMRS RSUD Dr. Moewardi adalah <strong>Sistem Informasi Manajemen Rumah Sakit</strong> berbasis web 
                 yang dikembangkan untuk memenuhi kebutuhan digitalisasi layanan kesehatan di Indonesia.
               </p>
               <div className="bg-teal-50 rounded-xl p-6 border border-teal-100">
@@ -205,7 +205,7 @@ const DokumentasiSistem = () => {
           <div className="flex flex-col items-center space-y-4">
             {[
               { label: "Frontend Layer", tech: "React 18 + TypeScript + Vite + TailwindCSS", color: "bg-blue-500" },
-              { label: "API Layer", tech: "Node.js Express REST API", color: "bg-teal-500" },
+              { label: "API Layer", tech: "Supabase Edge Functions (Deno) / Node.js Express", color: "bg-teal-500" },
               { label: "Database Layer", tech: "PostgreSQL 15 + Row Level Security", color: "bg-green-500" },
               { label: "External APIs", tech: "SATU SEHAT • BPJS • SISRUTE • ASPAK", color: "bg-purple-500" }
             ].map((layer, i) => (
@@ -720,8 +720,8 @@ const DokumentasiSistem = () => {
           <div className="max-w-2xl mx-auto w-full">
             <div className="bg-white/10 backdrop-blur rounded-2xl p-8 mb-8">
               <div className="text-center mb-6">
-                <img src={simrsZenLogo} alt="SIMRS ZEN" className="w-20 h-20 mx-auto mb-4" />
-                <h3 className="text-2xl font-bold">SIMRS ZEN</h3>
+                <img src={rsudLogo} alt="RSUD Dr. Moewardi" className="w-20 h-20 mx-auto mb-4" />
+                <h3 className="text-2xl font-bold">RSUD Dr. Moewardi</h3>
               </div>
               <div className="space-y-4">
                 <div className="flex items-center gap-4">
@@ -743,8 +743,8 @@ const DokumentasiSistem = () => {
               </div>
             </div>
             <div className="text-center text-slate-400">
-              <p>Website: <span className="text-teal-400">simrszen.id</span></p>
-              <p className="mt-4 text-sm">© 2026 PT Zen Multimedia Indonesia. All rights reserved.</p>
+              <p>Website: <span className="text-teal-400">rsmoewardi.jatengprov.go.id</span></p>
+              <p className="mt-4 text-sm">© 2026 RSUD Dr. Moewardi. All rights reserved.</p>
             </div>
           </div>
         </div>
@@ -762,7 +762,7 @@ const DokumentasiSistem = () => {
             animate={{ scale: 1 }}
             transition={{ type: "spring", duration: 0.8 }}
           >
-            <img src={simrsZenLogo} alt="SIMRS ZEN" className="w-24 h-24 mb-8" />
+            <img src={rsudLogo} alt="RSUD Dr. Moewardi" className="w-24 h-24 mb-8" />
           </motion.div>
           <motion.h1 
             className="text-5xl md:text-6xl font-bold mb-4"
@@ -778,7 +778,7 @@ const DokumentasiSistem = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
           >
-            SIMRS ZEN - Solusi Digital Rumah Sakit Indonesia
+            SIMRS RSUD Dr. Moewardi - Solusi Digital Rumah Sakit Indonesia
           </motion.p>
           <motion.div 
             className="bg-white/10 backdrop-blur rounded-xl px-8 py-4"

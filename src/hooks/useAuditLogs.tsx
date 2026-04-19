@@ -1,19 +1,21 @@
 import { useQuery } from "@tanstack/react-query";
-
-const API_BASE = import.meta.env.VITE_API_URL || "/api";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface AuditLog {
   id: string;
   table_name: string;
   record_id: string | null;
   action: string;
-  old_data: unknown;
-  new_data: unknown;
+  old_data: any;
+  new_data: any;
   user_id: string | null;
   created_at: string;
   ip_address: string | null;
   user_agent: string | null;
-  user?: { id: string; email: string; full_name: string };
+  profiles?: {
+    full_name: string;
+    email: string;
+  };
 }
 
 interface UseAuditLogsOptions {
@@ -24,27 +26,60 @@ interface UseAuditLogsOptions {
   endDate?: string;
 }
 
-async function fetchAuditLogs(params: URLSearchParams): Promise<AuditLog[]> {
-  const res = await fetch(`${API_BASE}/admin/audit-logs?${params}`, {
-    credentials: "include",
-  });
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(json.error || res.statusText);
-  return json.data || [];
-}
-
 export function useAuditLogs(options: UseAuditLogsOptions = {}) {
   const { tableName, action, limit = 100, startDate, endDate } = options;
 
   return useQuery({
     queryKey: ["audit-logs", tableName, action, limit, startDate, endDate],
-    queryFn: () => {
-      const params = new URLSearchParams({ limit: String(limit) });
-      if (tableName)  params.set("table_name", tableName);
-      if (action)     params.set("action", action);
-      if (startDate)  params.set("from", startDate);
-      if (endDate)    params.set("to", endDate);
-      return fetchAuditLogs(params);
+    queryFn: async (): Promise<AuditLog[]> => {
+      let query = supabase
+        .from("audit_logs")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(limit);
+
+      if (tableName) {
+        query = query.eq("table_name", tableName);
+      }
+
+      if (action) {
+        query = query.eq("action", action);
+      }
+
+      if (startDate) {
+        query = query.gte("created_at", startDate);
+      }
+
+      if (endDate) {
+        query = query.lte("created_at", endDate);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error("Error fetching audit logs:", error);
+        throw error;
+      }
+
+      // Fetch user profiles separately
+      const userIds = [...new Set(data?.map(d => d.user_id).filter(Boolean))];
+      let profilesMap: Record<string, any> = {};
+
+      if (userIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("user_id, full_name, email")
+          .in("user_id", userIds);
+
+        profiles?.forEach(p => {
+          profilesMap[p.user_id] = p;
+        });
+      }
+
+      return (data || []).map(log => ({
+        ...log,
+        profiles: profilesMap[log.user_id || ""] || undefined,
+      })) as AuditLog[];
     },
   });
 }
@@ -53,25 +88,53 @@ export function useAuditStats() {
   return useQuery({
     queryKey: ["audit-stats"],
     queryFn: async () => {
-      const today   = new Date().toISOString().split("T")[0];
+      const today = new Date().toISOString().split("T")[0];
       const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
 
-      const [todayLogs, weekLogs] = await Promise.all([
-        fetchAuditLogs(new URLSearchParams({ from: today, limit: "1000" })),
-        fetchAuditLogs(new URLSearchParams({ from: weekAgo, limit: "1000" })),
-      ]);
+      // Get today's count
+      const { count: todayCount } = await supabase
+        .from("audit_logs")
+        .select("*", { count: "exact", head: true })
+        .gte("created_at", today);
 
-      const actionCounts = { INSERT: 0, UPDATE: 0, DELETE: 0 } as Record<string, number>;
+      // Get this week's count
+      const { count: weekCount } = await supabase
+        .from("audit_logs")
+        .select("*", { count: "exact", head: true })
+        .gte("created_at", weekAgo);
+
+      // Get action breakdown
+      const { data: actionBreakdown } = await supabase
+        .from("audit_logs")
+        .select("action")
+        .gte("created_at", weekAgo);
+
+      const actionCounts = {
+        INSERT: 0,
+        UPDATE: 0,
+        DELETE: 0,
+      };
+
+      actionBreakdown?.forEach((log: any) => {
+        if (log.action in actionCounts) {
+          actionCounts[log.action as keyof typeof actionCounts]++;
+        }
+      });
+
+      // Get table breakdown
+      const { data: tableBreakdown } = await supabase
+        .from("audit_logs")
+        .select("table_name")
+        .gte("created_at", weekAgo);
+
       const tableCounts: Record<string, number> = {};
-
-      weekLogs.forEach((log) => {
-        if (log.action in actionCounts) actionCounts[log.action]++;
+      tableBreakdown?.forEach((log: any) => {
         tableCounts[log.table_name] = (tableCounts[log.table_name] || 0) + 1;
       });
 
       return {
-        todayCount: todayLogs.length,
-        weekCount:  weekLogs.length,
+        todayCount: todayCount || 0,
+        weekCount: weekCount || 0,
         actionCounts,
         tableCounts,
       };

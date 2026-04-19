@@ -1,40 +1,11 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-
-const API_BASE = import.meta.env.VITE_API_URL || '/api';
-
-const FETCH_OPTS: RequestInit = { credentials: 'include', headers: { 'Content-Type': 'application/json' } };
-
-async function apiFetch<T>(path: string): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, FETCH_OPTS);
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(json.error || res.statusText);
-  return (json.data ?? json) as T;
-}
-
-async function apiPost<T>(path: string, body: unknown): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...FETCH_OPTS, method: 'POST', body: JSON.stringify(body),
-  });
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(json.error || res.statusText);
-  return (json.data ?? json) as T;
-}
-
-async function apiPatch<T>(path: string, body: unknown): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...FETCH_OPTS, method: 'PATCH', body: JSON.stringify(body),
-  });
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(json.error || res.statusText);
-  return (json.data ?? json) as T;
-}
-
-// ==================== TYPES ====================
+import { format } from "date-fns";
 
 export interface TelemedicineSession {
   id: string;
-  appointment_id: string | null;
+  appointment_id: string;
   patient_id: string;
   doctor_id: string;
   room_name: string;
@@ -49,141 +20,246 @@ export interface TelemedicineSession {
   recording_url: string | null;
   notes: string | null;
   technical_issues: string | null;
-  patients?: { id: string; full_name: string; medical_record_number: string };
-  doctors?:  { id: string; full_name: string; specialization: string | null };
-  patient?: { id: string; full_name: string; medical_record_number: string };
-  doctor?: { id: string; full_name: string; specialization: string | null };
-  appointment?: { id: string; chief_complaint?: string | null };
+  patient?: {
+    id: string;
+    full_name: string;
+    medical_record_number: string;
+  };
+  doctor?: {
+    id: string;
+    full_name: string;
+    specialization: string | null;
+  };
+  appointment?: {
+    id: string;
+    chief_complaint: string | null;
+    appointment_date: string;
+    appointment_time: string;
+  };
 }
 
-export interface TelemedicineStats {
-  today: number;
-  waiting: number;
-  completed: number;
-  avg_duration: number;
-  avgDuration?: number;
-}
-
-// ==================== HOOKS ====================
-
-export function useTelemedicineStats() {
-  return useQuery({
-    queryKey: ["telemedicine-stats"],
-    queryFn: () => apiFetch<TelemedicineStats>('/telemedicine/stats'),
-    refetchInterval: 30_000,
-  });
-}
-
-export function useTelemedicineSessions(date?: string, status?: string) {
-  return useQuery({
-    queryKey: ["telemedicine-sessions", date, status],
-    queryFn: () => {
-      const p = new URLSearchParams();
-      if (date)   p.set('date', date);
-      if (status) p.set('status', status);
-      return apiFetch<TelemedicineSession[]>(`/telemedicine/sessions?${p}`);
-    },
-    refetchInterval: 15_000,
-  });
-}
-
-export function useTelemedicineSession(id?: string) {
-  return useQuery({
-    queryKey: ["telemedicine-session", id],
-    queryFn: () => apiFetch<TelemedicineSession>(`/telemedicine/sessions/${id}`),
-    enabled: !!id,
-  });
-}
-
-export function useCreateTelemedicineSession() {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (data: { appointment_id?: string; patient_id: string; doctor_id: string; scheduled_start: string }) =>
-      apiPost<TelemedicineSession>('/telemedicine/sessions', data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["telemedicine-sessions"] });
-      queryClient.invalidateQueries({ queryKey: ["telemedicine-stats"] });
-      toast({ title: "Sesi telemedicine berhasil dibuat" });
-    },
-    onError: (e: Error) => toast({ title: "Gagal", description: e.message, variant: "destructive" }),
-  });
-}
-
-export function useUpdateTelemedicineSession() {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, ...data }: { id: string; status?: string; user_type?: string; notes?: string; technical_issues?: string }) =>
-      apiPatch<TelemedicineSession>(`/telemedicine/sessions/${id}`, data),
-    onSuccess: (_, vars) => {
-      queryClient.invalidateQueries({ queryKey: ["telemedicine-sessions"] });
-      queryClient.invalidateQueries({ queryKey: ["telemedicine-session", vars.id] });
-      queryClient.invalidateQueries({ queryKey: ["telemedicine-stats"] });
-    },
-    onError: (e: Error) => toast({ title: "Gagal", description: e.message, variant: "destructive" }),
-  });
-}
-
-// ─── WebRTC Signaling (polling) ──────────────────────────────────────────────
-
-export interface WebRTCSignal {
-  id: string;
-  session_id: string;
-  sender_id: string;
-  signal_type: "offer" | "answer" | "ice-candidate";
-  signal_data: RTCSessionDescriptionInit | RTCIceCandidateInit;
-  created_at: string;
-}
-
-export function usePollWebRTCSignals(sessionId?: string, since?: string, excludeSender?: string) {
-  return useQuery({
-    queryKey: ["webrtc-signals", sessionId, since, excludeSender],
-    queryFn: () => {
-      const p = new URLSearchParams();
-      if (since)          p.set('since', since);
-      if (excludeSender)  p.set('exclude_sender', excludeSender);
-      return apiFetch<WebRTCSignal[]>(`/telemedicine/sessions/${sessionId}/signals?${p}`);
-    },
-    enabled: !!sessionId,
-    refetchInterval: 1_500,
-  });
-}
-
-export function useSendWebRTCSignal() {
-  return useMutation({
-    mutationFn: ({ sessionId, ...data }: { sessionId: string; sender_id: string; signal_type: string; signal_data: unknown }) =>
-      apiPost(`/telemedicine/sessions/${sessionId}/signal`, data),
-  });
-}
-
-// ─── Legacy compatibility ────────────────────────────────────────────────────
-
-/** @deprecated Use useTelemedicineSessions + useTelemedicineStats instead */
 export function useTelemedicineData() {
+  const [sessions, setSessions] = useState<TelemedicineSession[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    today: 0,
+    waiting: 0,
+    completed: 0,
+    avgDuration: 0,
+  });
   const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const sessionsQuery = useTelemedicineSessions();
-  const statsQuery    = useTelemedicineStats();
-  const updateSession = useUpdateTelemedicineSession();
+
+  const fetchSessions = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("telemedicine_sessions")
+        .select(`
+          *,
+          patient:patients(id, full_name, medical_record_number),
+          doctor:doctors(id, full_name, specialization),
+          appointment:appointments(id, chief_complaint, appointment_date, appointment_time)
+        `)
+        .order("scheduled_start", { ascending: true });
+
+      if (error) throw error;
+      setSessions(data || []);
+
+      // Calculate stats
+      const today = format(new Date(), "yyyy-MM-dd");
+      const todaySessions = (data || []).filter(s => 
+        s.scheduled_start.startsWith(today)
+      );
+      
+      const completedSessions = todaySessions.filter(s => s.status === "completed");
+      const totalDuration = completedSessions.reduce((sum, s) => sum + (s.duration_minutes || 0), 0);
+
+      setStats({
+        today: todaySessions.length,
+        waiting: todaySessions.filter(s => s.status === "waiting" || s.status === "in_progress").length,
+        completed: completedSessions.length,
+        avgDuration: completedSessions.length > 0 ? Math.round(totalDuration / completedSessions.length) : 0,
+      });
+    } catch (error: any) {
+      console.error("Error fetching telemedicine sessions:", error);
+      toast({
+        title: "Error",
+        description: "Gagal memuat data sesi telemedicine",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const createSession = async (appointmentId: string) => {
+    try {
+      // Get appointment details
+      const { data: appointment, error: aptError } = await supabase
+        .from("appointments")
+        .select("*")
+        .eq("id", appointmentId)
+        .single();
+
+      if (aptError) throw aptError;
+
+      const roomName = `room-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+      const scheduledStart = `${appointment.appointment_date}T${appointment.appointment_time}`;
+
+      const { data, error } = await supabase
+        .from("telemedicine_sessions")
+        .insert([{
+          appointment_id: appointmentId,
+          patient_id: appointment.patient_id,
+          doctor_id: appointment.doctor_id,
+          room_name: roomName,
+          scheduled_start: scheduledStart,
+          status: "scheduled",
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+      toast({ title: "Berhasil", description: "Sesi telemedicine berhasil dibuat" });
+      fetchSessions();
+      return data;
+    } catch (error: any) {
+      console.error("Error creating telemedicine session:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Gagal membuat sesi telemedicine",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
+  const startSession = async (sessionId: string, userType: "doctor" | "patient") => {
+    try {
+      const updates: any = {
+        status: "in_progress",
+      };
+
+      if (userType === "doctor") {
+        updates.doctor_joined_at = new Date().toISOString();
+        updates.actual_start = new Date().toISOString();
+      } else {
+        updates.patient_joined_at = new Date().toISOString();
+      }
+
+      const { error } = await supabase
+        .from("telemedicine_sessions")
+        .update(updates)
+        .eq("id", sessionId);
+
+      if (error) throw error;
+      toast({ title: "Berhasil", description: "Sesi telemedicine dimulai" });
+      fetchSessions();
+    } catch (error: any) {
+      console.error("Error starting session:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Gagal memulai sesi",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const endSession = async (sessionId: string, notes?: string) => {
+    try {
+      // Get session to calculate duration
+      const { data: session, error: sessionError } = await supabase
+        .from("telemedicine_sessions")
+        .select("actual_start, appointment_id")
+        .eq("id", sessionId)
+        .single();
+
+      if (sessionError) throw sessionError;
+
+      let durationMinutes = 0;
+      if (session.actual_start) {
+        const start = new Date(session.actual_start);
+        const end = new Date();
+        durationMinutes = Math.round((end.getTime() - start.getTime()) / 60000);
+      }
+
+      const { error } = await supabase
+        .from("telemedicine_sessions")
+        .update({
+          status: "completed",
+          actual_end: new Date().toISOString(),
+          duration_minutes: durationMinutes,
+          notes: notes || null,
+        })
+        .eq("id", sessionId);
+
+      if (error) throw error;
+
+      // Update appointment status
+      if (session.appointment_id) {
+        await supabase
+          .from("appointments")
+          .update({ status: "completed" })
+          .eq("id", session.appointment_id);
+      }
+
+      toast({ title: "Berhasil", description: "Sesi telemedicine selesai" });
+      fetchSessions();
+    } catch (error: any) {
+      console.error("Error ending session:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Gagal mengakhiri sesi",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const updateSessionNotes = async (sessionId: string, notes: string) => {
+    try {
+      const { error } = await supabase
+        .from("telemedicine_sessions")
+        .update({ notes })
+        .eq("id", sessionId);
+
+      if (error) throw error;
+    } catch (error: any) {
+      console.error("Error updating notes:", error);
+    }
+  };
+
+  const reportTechnicalIssue = async (sessionId: string, issue: string) => {
+    try {
+      const { error } = await supabase
+        .from("telemedicine_sessions")
+        .update({ technical_issues: issue })
+        .eq("id", sessionId);
+
+      if (error) throw error;
+      toast({ title: "Berhasil", description: "Masalah teknis telah dilaporkan" });
+    } catch (error: any) {
+      console.error("Error reporting issue:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Gagal melaporkan masalah",
+        variant: "destructive",
+      });
+    }
+  };
+
+  useEffect(() => {
+    fetchSessions();
+  }, []);
 
   return {
-    sessions:      sessionsQuery.data ?? [],
-    loading:       sessionsQuery.isLoading,
-    stats:         {
-      ...(statsQuery.data ?? { today: 0, waiting: 0, completed: 0, avg_duration: 0 }),
-      avgDuration: statsQuery.data?.avg_duration ?? 0,
-    },
-    fetchSessions: () => queryClient.invalidateQueries({ queryKey: ["telemedicine-sessions"] }),
-    createSession: (appointmentId: string) => {
-      toast({ title: "Info", description: "Gunakan useCreateTelemedicineSession hook" });
-      void appointmentId;
-    },
-    startSession: (sessionId: string, userType: "doctor" | "patient") =>
-      updateSession.mutate({ id: sessionId, status: "in_progress", user_type: userType }),
-    endSession: (sessionId: string, notes?: string) =>
-      updateSession.mutate({ id: sessionId, status: "completed", notes }),
-    updateSessionNotes: (sessionId: string, notes: string) =>
-      updateSession.mutate({ id: sessionId, notes }),
+    sessions,
+    stats,
+    loading,
+    fetchSessions,
+    createSession,
+    startSession,
+    endSession,
+    updateSessionNotes,
+    reportTechnicalIssue,
   };
 }

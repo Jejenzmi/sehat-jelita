@@ -1,16 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-
-const API_BASE = import.meta.env.VITE_API_URL || '/api';
-
-const FETCH_OPTS: RequestInit = { credentials: 'include', headers: { 'Content-Type': 'application/json' } };
-
-async function apiFetch<T>(path: string): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, FETCH_OPTS);
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(json.error || res.statusText);
-  return (json.data ?? json) as T;
-}
 
 export interface SmartDisplayMedia {
   id: string;
@@ -26,42 +16,64 @@ export interface SmartDisplayMedia {
 export function useSmartDisplayMedia(displayType: string, mediaType?: "image" | "video") {
   return useQuery({
     queryKey: ["smart-display-media", displayType, mediaType],
-    queryFn: () => {
-      const p = new URLSearchParams({ display_type: displayType });
-      if (mediaType) p.set('media_type', mediaType);
-      return apiFetch<SmartDisplayMedia[]>(`/smart-display/media?${p}`);
+    queryFn: async () => {
+      let query = (supabase as any)
+        .from("smart_display_media")
+        .select("*")
+        .eq("display_type", displayType)
+        .order("display_order", { ascending: true });
+
+      if (mediaType) {
+        query = query.eq("media_type", mediaType);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return (data || []) as SmartDisplayMedia[];
     },
   });
 }
 
 export function useUploadSmartDisplayMedia() {
   const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: async ({
-      file, displayType, mediaType, title,
-    }: { file: File; displayType: string; mediaType: "image" | "video"; title?: string }) => {
-      // Convert file to base64 and POST to backend
-      const base64 = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
+      file,
+      displayType,
+      mediaType,
+      title,
+    }: {
+      file: File;
+      displayType: string;
+      mediaType: "image" | "video";
+      title?: string;
+    }) => {
+      const ext = file.name.split(".").pop();
+      const filePath = `${displayType}/${mediaType}/${Date.now()}.${ext}`;
 
-      const res = await fetch(`${API_BASE}/smart-display/media/upload`, {
-        ...FETCH_OPTS,
-        method: 'POST',
-        body: JSON.stringify({
+      const { error: uploadError } = await supabase.storage
+        .from("smart-display-media")
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from("smart-display-media")
+        .getPublicUrl(filePath);
+
+      const { error: dbError } = await (supabase as any)
+        .from("smart_display_media")
+        .insert({
           display_type: displayType,
-          media_type:   mediaType,
-          file_name:    file.name,
-          file_data:    base64,
-          title:        title || file.name,
-        }),
-      });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(json.error || res.statusText);
-      return json.data as SmartDisplayMedia;
+          media_type: mediaType,
+          file_url: urlData.publicUrl,
+          file_name: file.name,
+          title: title || file.name,
+          created_by: (await supabase.auth.getUser()).data.user?.id,
+        });
+
+      if (dbError) throw dbError;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["smart-display-media"] });
@@ -73,13 +85,22 @@ export function useUploadSmartDisplayMedia() {
 
 export function useDeleteSmartDisplayMedia() {
   const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: async (media: SmartDisplayMedia) => {
-      const res = await fetch(`${API_BASE}/smart-display/media/${media.id}`, {
-        ...FETCH_OPTS, method: 'DELETE',
-      });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(json.error || res.statusText);
+      // Extract storage path from URL
+      const url = new URL(media.file_url);
+      const pathParts = url.pathname.split("/storage/v1/object/public/smart-display-media/");
+      if (pathParts[1]) {
+        await supabase.storage.from("smart-display-media").remove([decodeURIComponent(pathParts[1])]);
+      }
+
+      const { error } = await (supabase as any)
+        .from("smart_display_media")
+        .delete()
+        .eq("id", media.id);
+
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["smart-display-media"] });

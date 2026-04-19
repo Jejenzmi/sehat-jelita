@@ -1,21 +1,7 @@
 import { useState, useMemo } from "react";
 import { useEmployees, useWorkShifts } from "@/hooks/useHRData";
+import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
-
-const API_BASE = import.meta.env.VITE_API_URL || '/api';
-const FETCH_OPTS: RequestInit = { credentials: 'include', headers: { 'Content-Type': 'application/json' } };
-async function apiFetch<T>(path: string): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, FETCH_OPTS);
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(json.error || res.statusText);
-  return (json.data ?? json) as T;
-}
-async function apiPost<T>(path: string, body: unknown): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, { ...FETCH_OPTS, method: 'POST', body: JSON.stringify(body) });
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(json.error || res.statusText);
-  return (json.data ?? json) as T;
-}
 import { useToast } from "@/hooks/use-toast";
 import { format, startOfWeek, addDays, parseISO } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
@@ -84,10 +70,18 @@ export function ScheduleRosterTab() {
     queryFn: async () => {
       const startDate = format(weekStart, "yyyy-MM-dd");
       const endDate = format(addDays(weekStart, 6), "yyyy-MM-dd");
-      const data = await apiFetch<EmployeeSchedule[]>(
-        `/hr/schedules?start_date=${startDate}&end_date=${endDate}`
-      );
-      return Array.isArray(data) ? data : [];
+
+      const { data, error } = await supabase
+        .from("employee_schedules")
+        .select(`
+          *,
+          shift:work_shifts(shift_code, shift_name, is_night_shift)
+        `)
+        .gte("schedule_date", startDate)
+        .lte("schedule_date", endDate);
+
+      if (error) throw error;
+      return data as EmployeeSchedule[];
     },
   });
 
@@ -112,12 +106,16 @@ export function ScheduleRosterTab() {
       shiftId?: string;
       isOffDay: boolean;
     }) => {
-      await apiPost('/hr/schedules/upsert', {
-        employee_id: employeeId,
-        schedule_date: date,
-        shift_id: shiftId || null,
-        is_off_day: isOffDay,
-      });
+      const { error } = await supabase.from("employee_schedules").upsert(
+        {
+          employee_id: employeeId,
+          schedule_date: date,
+          shift_id: shiftId || null,
+          is_off_day: isOffDay,
+        },
+        { onConflict: "employee_id,schedule_date" }
+      );
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["employee-schedules"] });
@@ -145,7 +143,12 @@ export function ScheduleRosterTab() {
           is_off_day: false,
         }))
       );
-      await apiPost('/hr/schedules/bulk', { records });
+
+      const { error } = await supabase
+        .from("employee_schedules")
+        .upsert(records, { onConflict: "employee_id,schedule_date" });
+
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["employee-schedules"] });
@@ -210,11 +213,14 @@ export function ScheduleRosterTab() {
       const prevStartDate = format(prevWeekStart, "yyyy-MM-dd");
       const prevEndDate = format(addDays(prevWeekStart, 6), "yyyy-MM-dd");
 
-      const prevSchedules = await apiFetch<any[]>(
-        `/hr/schedules?start_date=${prevStartDate}&end_date=${prevEndDate}`
-      );
+      const { data: prevSchedules, error: fetchError } = await supabase
+        .from("employee_schedules")
+        .select("employee_id, shift_id, is_off_day, schedule_date")
+        .gte("schedule_date", prevStartDate)
+        .lte("schedule_date", prevEndDate);
 
-      if (!Array.isArray(prevSchedules) || prevSchedules.length === 0) {
+      if (fetchError) throw fetchError;
+      if (!prevSchedules || prevSchedules.length === 0) {
         throw new Error("Tidak ada jadwal minggu sebelumnya");
       }
 
@@ -225,7 +231,11 @@ export function ScheduleRosterTab() {
         schedule_date: format(addDays(parseISO(s.schedule_date), 7), "yyyy-MM-dd"),
       }));
 
-      await apiPost('/hr/schedules/bulk', { records: newSchedules });
+      const { error: insertError } = await supabase
+        .from("employee_schedules")
+        .upsert(newSchedules, { onConflict: "employee_id,schedule_date" });
+
+      if (insertError) throw insertError;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["employee-schedules"] });

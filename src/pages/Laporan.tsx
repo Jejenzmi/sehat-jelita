@@ -33,7 +33,7 @@ import {
 } from "recharts";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import ExcelJS from "exceljs";
+import * as XLSX from "xlsx";
 import { useToast } from "@/hooks/use-toast";
 import { 
   useReportStats, 
@@ -120,12 +120,12 @@ export default function Laporan() {
     });
   };
 
-  const exportToExcel = async () => {
-    const wb = new ExcelJS.Workbook();
-
+  const exportToExcel = () => {
+    // Create workbook
+    const wb = XLSX.utils.book_new();
+    
     // Summary sheet
-    const wsSummary = wb.addWorksheet("Ringkasan");
-    wsSummary.addRows([
+    const summaryData = [
       ["LAPORAN SIMRS"],
       [`Periode: ${dateRange.start} - ${dateRange.end}`],
       [],
@@ -136,11 +136,12 @@ export default function Laporan() {
       ["IGD", stats?.emergencyVisits || 0],
       ["Total Pendapatan (Rp)", stats?.totalRevenue || 0],
       ["Rata-rata LOS (hari)", stats?.avgLOS || 0],
-    ]);
-
+    ];
+    const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
+    XLSX.utils.book_append_sheet(wb, wsSummary, "Ringkasan");
+    
     // Monthly visits sheet
-    const wsVisits = wb.addWorksheet("Kunjungan Bulanan");
-    wsVisits.addRows([
+    const visitsData = [
       ["Bulan", "Rawat Jalan", "Rawat Inap", "IGD", "Total"],
       ...monthlyVisits.map(m => [
         m.month,
@@ -149,11 +150,12 @@ export default function Laporan() {
         m.igd,
         m.rawatJalan + m.rawatInap + m.igd,
       ]),
-    ]);
-
+    ];
+    const wsVisits = XLSX.utils.aoa_to_sheet(visitsData);
+    XLSX.utils.book_append_sheet(wb, wsVisits, "Kunjungan Bulanan");
+    
     // Revenue sheet
-    const wsRevenue = wb.addWorksheet("Pendapatan Bulanan");
-    wsRevenue.addRows([
+    const revenueData = [
       ["Bulan", "BPJS (Jt)", "Umum (Jt)", "Asuransi (Jt)", "Total (Jt)"],
       ...monthlyRevenue.map(m => [
         m.month,
@@ -162,28 +164,22 @@ export default function Laporan() {
         m.asuransi,
         m.bpjs + m.umum + m.asuransi,
       ]),
-    ]);
-
+    ];
+    const wsRevenue = XLSX.utils.aoa_to_sheet(revenueData);
+    XLSX.utils.book_append_sheet(wb, wsRevenue, "Pendapatan Bulanan");
+    
     // Diagnoses sheet
     if (topDiagnoses.length > 0) {
-      const wsDiagnoses = wb.addWorksheet("Top Diagnosa");
-      wsDiagnoses.addRows([
+      const diagnosesData = [
         ["Kode ICD", "Diagnosa", "Jumlah", "Persentase"],
         ...topDiagnoses.map(d => [d.code, d.description, d.count, `${d.percentage}%`]),
-      ]);
+      ];
+      const wsDiagnoses = XLSX.utils.aoa_to_sheet(diagnosesData);
+      XLSX.utils.book_append_sheet(wb, wsDiagnoses, "Top Diagnosa");
     }
-
-    const buffer = await wb.xlsx.writeBuffer();
-    const blob = new Blob([buffer], {
-      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `Laporan_SIMRS_${dateRange.start}_${dateRange.end}.xlsx`;
-    a.click();
-    URL.revokeObjectURL(url);
-
+    
+    XLSX.writeFile(wb, `Laporan_SIMRS_${dateRange.start}_${dateRange.end}.xlsx`);
+    
     toast({
       title: "Export Berhasil",
       description: "Laporan Excel telah didownload",

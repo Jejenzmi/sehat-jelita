@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { db } from "@/lib/db";
+import { supabase } from "@/integrations/supabase/client";
 import { useSurgeryData } from "@/hooks/useSurgeryData";
 import { Loader2, Search } from "lucide-react";
 import { toast } from "sonner";
@@ -83,7 +83,7 @@ export function SurgeryForm({ onSuccess, initialData }: SurgeryFormProps) {
       }
 
       setSearchingPatient(true);
-      const { data, error } = await db
+      const { data, error } = await supabase
         .from("patients")
         .select("id, full_name, medical_record_number")
         .or(`full_name.ilike.%${patientSearch}%,medical_record_number.ilike.%${patientSearch}%`)

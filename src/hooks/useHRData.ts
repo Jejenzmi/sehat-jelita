@@ -1,6 +1,6 @@
 // HR Data Management Hook - All CRUD operations for HR module
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { db } from "@/lib/db";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 
@@ -194,7 +194,7 @@ export function useEmployees() {
   return useQuery({
     queryKey: ["employees"],
     queryFn: async () => {
-      const { data, error } = await db
+      const { data, error } = await supabase
         .from("employees")
         .select(`
           *,
@@ -212,7 +212,7 @@ export function useEmployee(id: string) {
   return useQuery({
     queryKey: ["employee", id],
     queryFn: async () => {
-      const { data, error } = await db
+      const { data, error } = await supabase
         .from("employees")
         .select(`
           *,
@@ -232,7 +232,7 @@ export function useAttendance(date: string) {
   return useQuery({
     queryKey: ["attendance", date],
     queryFn: async () => {
-      const { data, error } = await db
+      const { data, error } = await supabase
         .from("attendance")
         .select(`
           *,
@@ -251,7 +251,7 @@ export function useLeaveRequests() {
   return useQuery({
     queryKey: ["leave-requests"],
     queryFn: async () => {
-      const { data, error } = await db
+      const { data, error } = await supabase
         .from("leave_requests")
         .select(`
           *,
@@ -269,7 +269,7 @@ export function useSalaryComponents() {
   return useQuery({
     queryKey: ["salary-components"],
     queryFn: async () => {
-      const { data, error } = await db
+      const { data, error } = await supabase
         .from("salary_components")
         .select("*")
         .order("component_type", { ascending: true });
@@ -284,7 +284,7 @@ export function useEmployeeGrades() {
   return useQuery({
     queryKey: ["employee-grades"],
     queryFn: async () => {
-      const { data, error } = await db
+      const { data, error } = await supabase
         .from("employee_grades")
         .select("*")
         .order("level", { ascending: true });
@@ -299,7 +299,7 @@ export function usePositions() {
   return useQuery({
     queryKey: ["positions"],
     queryFn: async () => {
-      const { data, error } = await db
+      const { data, error } = await supabase
         .from("positions")
         .select(`
           *,
@@ -318,7 +318,7 @@ export function usePayroll(month?: number, year?: number) {
   return useQuery({
     queryKey: ["payroll", month, year],
     queryFn: async () => {
-      let query = db
+      let query = supabase
         .from("payroll")
         .select(`
           *,
@@ -341,7 +341,7 @@ export function useOvertimeRecords(month?: number, year?: number) {
   return useQuery({
     queryKey: ["overtime-records", month, year],
     queryFn: async () => {
-      let query = db
+      let query = supabase
         .from("overtime_records")
         .select(`
           *,
@@ -366,7 +366,7 @@ export function usePerformanceReviews(year?: number) {
   return useQuery({
     queryKey: ["performance-reviews", year],
     queryFn: async () => {
-      let query = db
+      let query = supabase
         .from("performance_reviews")
         .select(`
           *,
@@ -389,7 +389,7 @@ export function useTrainingRecords() {
   return useQuery({
     queryKey: ["training-records"],
     queryFn: async () => {
-      const { data, error } = await db
+      const { data, error } = await supabase
         .from("training_records")
         .select(`
           *,
@@ -407,7 +407,7 @@ export function useLeaveBalances(year?: number) {
   return useQuery({
     queryKey: ["leave-balances", year],
     queryFn: async () => {
-      let query = db
+      let query = supabase
         .from("leave_balances")
         .select(`
           *,
@@ -430,7 +430,7 @@ export function useWorkShifts() {
   return useQuery({
     queryKey: ["work-shifts"],
     queryFn: async () => {
-      const { data, error } = await db
+      const { data, error } = await supabase
         .from("work_shifts")
         .select("*")
         .eq("is_active", true)
@@ -446,7 +446,7 @@ export function useDepartments() {
   return useQuery({
     queryKey: ["departments"],
     queryFn: async () => {
-      const { data, error } = await db
+      const { data, error } = await supabase
         .from("departments")
         .select("*")
         .eq("is_active", true)
@@ -462,24 +462,24 @@ export function useEmployeeStats() {
   return useQuery({
     queryKey: ["employee-stats"],
     queryFn: async () => {
-      const { count: total } = await db
+      const { count: total } = await supabase
         .from("employees")
         .select("*", { count: "exact", head: true })
         .eq("status", "active");
 
       const today = format(new Date(), "yyyy-MM-dd");
-      const { count: presentToday } = await db
+      const { count: presentToday } = await supabase
         .from("attendance")
         .select("*", { count: "exact", head: true })
         .eq("attendance_date", today)
         .eq("status", "present");
 
-      const { count: pendingLeave } = await db
+      const { count: pendingLeave } = await supabase
         .from("leave_requests")
         .select("*", { count: "exact", head: true })
         .eq("status", "pending");
 
-      const { count: pendingPayroll } = await db
+      const { count: pendingPayroll } = await supabase
         .from("payroll")
         .select("*", { count: "exact", head: true })
         .eq("status", "pending");
@@ -500,7 +500,7 @@ export function useAddEmployee() {
   
   return useMutation({
     mutationFn: async (employee: Record<string, unknown>) => {
-      const { data, error } = await db
+      const { data, error } = await supabase
         .from("employees")
         .insert(employee as any)
         .select()
@@ -524,7 +524,7 @@ export function useUpdateEmployee() {
   
   return useMutation({
     mutationFn: async ({ id, ...employee }: Partial<Employee> & { id: string }) => {
-      const { data, error } = await db
+      const { data, error } = await supabase
         .from("employees")
         .update(employee)
         .eq("id", id)
@@ -548,7 +548,7 @@ export function useDeleteEmployee() {
   
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await db
+      const { error } = await supabase
         .from("employees")
         .delete()
         .eq("id", id);
@@ -578,7 +578,7 @@ export function useUpdateLeaveRequest() {
         updateData.rejection_reason = rejection_reason;
       }
       
-      const { error } = await db
+      const { error } = await supabase
         .from("leave_requests")
         .update(updateData)
         .eq("id", id);
@@ -607,7 +607,7 @@ export function useAddLeaveRequest() {
       total_days: number;
       reason?: string;
     }) => {
-      const { data, error } = await db
+      const { data, error } = await supabase
         .from("leave_requests")
         .insert(leaveRequest)
         .select()
@@ -638,7 +638,7 @@ export function useAddAttendance() {
       status: string;
       notes?: string;
     }) => {
-      const { data, error } = await db
+      const { data, error } = await supabase
         .from("attendance")
         .insert(attendance)
         .select()
@@ -662,7 +662,7 @@ export function useCreatePayroll() {
   
   return useMutation({
     mutationFn: async (payroll: Record<string, unknown>) => {
-      const { data, error } = await db
+      const { data, error } = await supabase
         .from("payroll")
         .insert(payroll as any)
         .select()
@@ -685,7 +685,7 @@ export function useUpdatePayroll() {
   
   return useMutation({
     mutationFn: async ({ id, ...payroll }: { id: string } & Record<string, unknown>) => {
-      const { data, error } = await db
+      const { data, error } = await supabase
         .from("payroll")
         .update(payroll as any)
         .eq("id", id)
@@ -709,7 +709,7 @@ export function useAddOvertime() {
   
   return useMutation({
     mutationFn: async (overtime: Record<string, unknown>) => {
-      const { data, error } = await db
+      const { data, error } = await supabase
         .from("overtime_records")
         .insert(overtime as any)
         .select()
@@ -732,7 +732,7 @@ export function useUpdateOvertime() {
   
   return useMutation({
     mutationFn: async ({ id, ...overtime }: Partial<OvertimeRecord> & { id: string }) => {
-      const { data, error } = await db
+      const { data, error } = await supabase
         .from("overtime_records")
         .update(overtime)
         .eq("id", id)
@@ -756,7 +756,7 @@ export function useAddPerformanceReview() {
   
   return useMutation({
     mutationFn: async (review: Record<string, unknown>) => {
-      const { data, error } = await db
+      const { data, error } = await supabase
         .from("performance_reviews")
         .insert(review as any)
         .select()
@@ -779,7 +779,7 @@ export function useAddTraining() {
   
   return useMutation({
     mutationFn: async (training: Record<string, unknown>) => {
-      const { data, error } = await db
+      const { data, error } = await supabase
         .from("training_records")
         .insert(training as any)
         .select()

@@ -9,7 +9,7 @@ FROM node:20-alpine AS deps
 WORKDIR /app
 
 # Install dependencies needed for native modules
-RUN apk add --no-cache python3 make g++ libc6-compat openssl
+RUN apk add --no-cache python3 make g++ libc6-compat
 
 # Copy package files
 COPY package*.json ./
@@ -24,9 +24,6 @@ RUN npm ci
 FROM node:20-alpine AS builder
 
 WORKDIR /app
-
-# Install openssl required by Prisma on Alpine
-RUN apk add --no-cache openssl
 
 # Copy dependencies from deps stage
 COPY --from=deps /app/node_modules ./node_modules
@@ -48,7 +45,6 @@ RUN apk update && \
     apk upgrade && \
     apk add --no-cache \
     curl \
-    openssl \
     dumb-init \
     && rm -rf /var/cache/apk/*
 

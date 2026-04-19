@@ -1,26 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-
-const API_BASE = import.meta.env.VITE_API_URL || '/api';
-
-const FETCH_OPTS: RequestInit = { credentials: 'include', headers: { 'Content-Type': 'application/json' } };
-
-async function apiFetch<T>(path: string): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, FETCH_OPTS);
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(json.error || res.statusText);
-  return (json.data ?? json) as T;
-}
-
-async function apiMethod<T>(method: string, path: string, body?: unknown): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...FETCH_OPTS, method,
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-  });
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(json.error || res.statusText);
-  return (json.data ?? json) as T;
-}
 
 export interface SmartDisplayDevice {
   id: string;
@@ -41,14 +21,30 @@ export interface SmartDisplayDevice {
 export function useSmartDisplayDevices() {
   return useQuery({
     queryKey: ["smart-display-devices"],
-    queryFn: () => apiFetch<SmartDisplayDevice[]>('/smart-display/devices'),
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("smart_display_devices")
+        .select("*")
+        .order("device_code");
+      if (error) throw error;
+      return (data || []) as SmartDisplayDevice[];
+    },
   });
 }
 
 export function useSmartDisplayDevice(deviceCode: string | null) {
   return useQuery({
     queryKey: ["smart-display-device", deviceCode],
-    queryFn: () => apiFetch<SmartDisplayDevice | null>(`/smart-display/devices/${deviceCode}`),
+    queryFn: async () => {
+      if (!deviceCode) return null;
+      const { data, error } = await (supabase as any)
+        .from("smart_display_devices")
+        .select("*")
+        .eq("device_code", deviceCode)
+        .maybeSingle();
+      if (error) throw error;
+      return data as SmartDisplayDevice | null;
+    },
     enabled: !!deviceCode,
   });
 }
@@ -56,12 +52,16 @@ export function useSmartDisplayDevice(deviceCode: string | null) {
 export function useCreateSmartDisplayDevice() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (device: Omit<SmartDisplayDevice, "id" | "created_at" | "updated_at">) =>
-      apiMethod<SmartDisplayDevice>('POST', '/smart-display/devices', device),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["smart-display-devices"] });
-      toast.success("Device berhasil ditambahkan");
+    mutationFn: async (device: Omit<SmartDisplayDevice, "id" | "created_at" | "updated_at">) => {
+      const { error } = await (supabase as any)
+        .from("smart_display_devices")
+        .insert({
+          ...device,
+          created_by: (await supabase.auth.getUser()).data.user?.id,
+        });
+      if (error) throw error;
     },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["smart-display-devices"] }); toast.success("Device berhasil ditambahkan"); },
     onError: (e: Error) => toast.error(e.message),
   });
 }
@@ -69,12 +69,14 @@ export function useCreateSmartDisplayDevice() {
 export function useUpdateSmartDisplayDevice() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...updates }: { id: string } & Partial<SmartDisplayDevice>) =>
-      apiMethod<SmartDisplayDevice>('PUT', `/smart-display/devices/${id}`, updates),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["smart-display-devices"] });
-      toast.success("Device berhasil diupdate");
+    mutationFn: async ({ id, ...updates }: { id: string } & Partial<SmartDisplayDevice>) => {
+      const { error } = await (supabase as any)
+        .from("smart_display_devices")
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq("id", id);
+      if (error) throw error;
     },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["smart-display-devices"] }); toast.success("Device berhasil diupdate"); },
     onError: (e: Error) => toast.error(e.message),
   });
 }
@@ -82,11 +84,14 @@ export function useUpdateSmartDisplayDevice() {
 export function useDeleteSmartDisplayDevice() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => apiMethod('DELETE', `/smart-display/devices/${id}`),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["smart-display-devices"] });
-      toast.success("Device berhasil dihapus");
+    mutationFn: async (id: string) => {
+      const { error } = await (supabase as any)
+        .from("smart_display_devices")
+        .delete()
+        .eq("id", id);
+      if (error) throw error;
     },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["smart-display-devices"] }); toast.success("Device berhasil dihapus"); },
     onError: (e: Error) => toast.error(e.message),
   });
 }

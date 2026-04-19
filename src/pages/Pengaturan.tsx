@@ -151,7 +151,7 @@ export default function Pengaturan() {
               </div>
               <div>
                 <p className="font-medium">Database</p>
-                <p className="text-sm text-muted-foreground">SIMRS ZEN Cloud</p>
+                <p className="text-sm text-muted-foreground">SIMRS RSUD Dr. Moewardi Cloud</p>
               </div>
             </div>
           </CardContent>
@@ -585,7 +585,7 @@ export default function Pengaturan() {
                             {format(new Date(log.created_at), "dd MMM yyyy HH:mm", { locale: id })}
                           </TableCell>
                           <TableCell>
-                            <span className="text-sm">{log.user?.full_name || "System"}</span>
+                            <span className="text-sm">{log.profiles?.full_name || "System"}</span>
                           </TableCell>
                           <TableCell>
                             <Badge variant="outline">{getTableLabel(log.table_name)}</Badge>

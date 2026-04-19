@@ -1,335 +1,261 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useToast } from "./use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import type { Database } from "@/integrations/supabase/types";
 
-const API_BASE = import.meta.env.VITE_API_URL || '/api';
+type IcuType = Database['public']['Enums']['icu_type'];
+type IcuAdmissionStatus = Database['public']['Enums']['icu_admission_status'];
 
-const FETCH_OPTS: RequestInit = { credentials: 'include', headers: { 'Content-Type': 'application/json' } };
-
-async function apiFetch<T>(path: string): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, FETCH_OPTS);
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(json.error || res.statusText);
-  return (json.data ?? json) as T;
-}
-
-async function apiPost<T>(path: string, body: unknown): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...FETCH_OPTS, method: 'POST', body: JSON.stringify(body),
-  });
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(json.error || res.statusText);
-  return (json.data ?? json) as T;
-}
-
-async function apiPut<T>(path: string, body: unknown): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...FETCH_OPTS, method: 'PUT', body: JSON.stringify(body),
-  });
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(json.error || res.statusText);
-  return (json.data ?? json) as T;
-}
-
-// ==================== TYPES ====================
-
+// Types
 export interface ICUBed {
   id: string;
   bed_number: string;
-  room_id: string;
-  status: string;
-  current_patient_id?: string | null;
-  rooms?: { room_name: string; room_type: string };
-  patients?: { id: string; full_name: string; medical_record_number: string } | null;
+  icu_type: IcuType;
+  is_available: boolean | null;
+  has_ventilator: boolean | null;
+  has_monitor: boolean | null;
+  equipment_notes: string | null;
 }
 
 export interface ICUAdmission {
   id: string;
+  admission_number: string;
   patient_id: string;
   visit_id: string;
-  bed_id: string;
+  icu_bed_id: string | null;
+  icu_type: IcuType;
   admission_date: string;
-  admission_number?: string;
-  icu_type?: string;
-  discharge_date?: string | null;
   admission_reason: string;
-  admission_source: string;
-  diagnosis_on_admission: string;
-  apache_score?: number | null;
-  apache_ii_score?: number | null;
-  sofa_score?: number | null;
-  ventilator_required: boolean;
-  isolation_required: boolean;
-  attending_physician_id?: string;
-  discharge_destination?: string | null;
-  diagnosis_on_discharge?: string | null;
-  discharge_condition?: string | null;
-  discharge_notes?: string | null;
-  patients?: { full_name: string; medical_record_number: string; blood_type?: string } | null;
+  admission_diagnosis: string | null;
+  attending_doctor_id: string | null;
+  status: IcuAdmissionStatus | null;
+  apache_ii_score: number | null;
+  sofa_score: number | null;
+  discharge_date: string | null;
+  discharge_reason: string | null;
+  total_icu_days: number | null;
+  notes: string | null;
+  patients?: { full_name: string; medical_record_number: string } | null;
   doctors?: { full_name: string } | null;
-  beds?: { bed_number: string; rooms?: { room_name: string; room_type: string } } | null;
-  icu_beds?: { bed_number: string; has_ventilator?: boolean } | null; // legacy alias
-  icu_vital_signs?: ICUVitalSigns[];
+  icu_beds?: { bed_number: string; icu_type: IcuType; has_ventilator?: boolean | null } | null;
 }
 
-export interface ICUVitalSigns {
+export interface ICUMonitoring {
   id: string;
   admission_id: string;
   recorded_at: string;
-  recorded_by?: string;
-  heart_rate?: number | null;
-  systolic_bp?: number | null;
-  diastolic_bp?: number | null;
-  mean_arterial_pressure?: number | null;
-  respiratory_rate?: number | null;
-  temperature?: number | null;
-  spo2?: number | null;
-  fio2?: number | null;
-  gcs_eye?: number | null;
-  gcs_verbal?: number | null;
-  gcs_motor?: number | null;
-  gcs_total?: number | null;
-  pupil_left?: string | null;
-  pupil_right?: string | null;
-  cvp?: number | null;
-  urine_output?: number | null;
-  notes?: string | null;
-  // legacy aliases used in ICUMonitoringView
-  blood_pressure_systolic?: number | null;
-  blood_pressure_diastolic?: number | null;
+  heart_rate: number | null;
+  blood_pressure_systolic: number | null;
+  blood_pressure_diastolic: number | null;
+  map: number | null;
+  temperature: number | null;
+  respiratory_rate: number | null;
+  spo2: number | null;
+  gcs_total: number | null;
+  urine_output: number | null;
+  fluid_balance: number | null;
+  notes: string | null;
 }
 
-export interface ICUIntakeOutput {
+export interface VentilatorSetting {
   id: string;
   admission_id: string;
   recorded_at: string;
-  type: 'INTAKE' | 'OUTPUT';
-  category: string;
-  amount: number;
-  route?: string | null;
-  notes?: string | null;
+  ventilator_mode: string | null;
+  fio2: number | null;
+  peep: number | null;
+  tidal_volume: number | null;
+  respiratory_rate_set: number | null;
+  p_f_ratio: number | null;
+  notes: string | null;
 }
 
-export interface ICUVentilator {
-  id: string;
-  admission_id: string;
-  recorded_at: string;
-  mode?: string | null;
-  fio2?: number | null;
-  peep?: number | null;
-  tidal_volume?: number | null;
-  respiratory_rate_set?: number | null;
-  respiratory_rate_actual?: number | null;
-  pip?: number | null;
-  plateau_pressure?: number | null;
-  ie_ratio?: string | null;
-  minute_volume?: number | null;
-  notes?: string | null;
-}
-
-export interface ICUFluidBalance {
-  date: string;
-  intake: number;
-  output: number;
-  balance: number;
-  records: ICUIntakeOutput[];
-}
-
-export interface ICUBedDetail {
-  id: string;
-  bed_number: string;
-  icu_type: string;
-  is_available: boolean;
-  has_ventilator?: boolean;
-  has_monitor?: boolean;
-}
-
-export interface ICUBedSummary {
-  beds: ICUBedDetail[];
-  summary: { total: number; available: number; occupied: number; cleaning: number; maintenance: number };
-}
-
-// Normalize vitals — add legacy aliases so ICUMonitoringView still works
-function normalizeVitals(v: ICUVitalSigns): ICUVitalSigns {
-  return {
-    ...v,
-    blood_pressure_systolic:  v.systolic_bp,
-    blood_pressure_diastolic: v.diastolic_bp,
-  };
-}
-
-// ==================== QUERIES ====================
-
+// ICU Beds
 export function useICUBeds() {
   return useQuery({
     queryKey: ["icu-beds"],
     queryFn: async () => {
-      const res = await apiFetch<ICUBedSummary | ICUBedDetail[]>('/icu/beds');
-      return Array.isArray(res) ? res : res.beds;
+      const { data, error } = await supabase
+        .from("icu_beds")
+        .select("*")
+        .order("bed_number");
+
+      if (error) throw error;
+      return data as ICUBed[];
     },
   });
 }
 
+// ICU Admissions
+export function useICUAdmissions(icuType?: IcuType) {
+  return useQuery({
+    queryKey: ["icu-admissions", icuType],
+    queryFn: async () => {
+      let query = supabase
+        .from("icu_admissions")
+        .select(`
+          *,
+          patients(full_name, medical_record_number),
+          doctors(full_name),
+          icu_beds(bed_number, icu_type)
+        `)
+        .order("admission_date", { ascending: false });
+
+      if (icuType) {
+        query = query.eq("icu_type", icuType);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return data as unknown as ICUAdmission[];
+    },
+  });
+}
+
+// Active ICU Patients
 export function useActiveICUPatients() {
   return useQuery({
     queryKey: ["active-icu-patients"],
-    queryFn: () => apiFetch<ICUAdmission[]>('/icu/patients'),
-    refetchInterval: 30_000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("icu_admissions")
+        .select(`
+          *,
+          patients(full_name, medical_record_number, birth_date, gender),
+          doctors(full_name),
+          icu_beds(bed_number, icu_type, has_ventilator)
+        `)
+        .eq("status", "active")
+        .order("admission_date", { ascending: false });
+
+      if (error) throw error;
+      return data as unknown as ICUAdmission[];
+    },
   });
 }
 
-export function useICUAdmissions() {
-  return useQuery({
-    queryKey: ["icu-admissions"],
-    queryFn: () => apiFetch<ICUAdmission[]>('/icu/patients'),
-  });
-}
-
-export function useICUMonitoring(admissionId?: string) {
+// ICU Monitoring
+export function useICUMonitoring(admissionId: string) {
   return useQuery({
     queryKey: ["icu-monitoring", admissionId],
     queryFn: async () => {
-      const params = admissionId ? `?admission_id=${admissionId}&limit=50` : '?limit=50';
-      const data = await apiFetch<ICUVitalSigns[]>(`/icu/monitoring${params}`);
-      return data.map(normalizeVitals);
+      const { data, error } = await supabase
+        .from("icu_monitoring")
+        .select("*")
+        .eq("admission_id", admissionId)
+        .order("recorded_at", { ascending: false })
+        .limit(50);
+
+      if (error) throw error;
+      return data as ICUMonitoring[];
     },
     enabled: !!admissionId,
-    refetchInterval: 15_000,
   });
 }
 
-export function useICUVitalsHistory(admissionId: string, hours = 24) {
+// Ventilator Settings
+export function useVentilatorSettings(admissionId: string) {
   return useQuery({
-    queryKey: ["icu-vitals-history", admissionId, hours],
+    queryKey: ["ventilator-settings", admissionId],
     queryFn: async () => {
-      const data = await apiFetch<ICUVitalSigns[]>(`/icu/admissions/${admissionId}/vitals?hours=${hours}`);
-      return data.map(normalizeVitals);
-    },
-    enabled: !!admissionId,
-    refetchInterval: 15_000,
-  });
-}
+      const { data, error } = await supabase
+        .from("ventilator_settings")
+        .select("*")
+        .eq("admission_id", admissionId)
+        .order("recorded_at", { ascending: false })
+        .limit(20);
 
-export function useICUFluidBalance(admissionId: string, date?: string) {
-  return useQuery({
-    queryKey: ["icu-fluid-balance", admissionId, date],
-    queryFn: () => {
-      const q = date ? `?date=${date}` : '';
-      return apiFetch<ICUFluidBalance>(`/icu/admissions/${admissionId}/balance${q}`);
+      if (error) throw error;
+      return data as VentilatorSetting[];
     },
     enabled: !!admissionId,
   });
 }
 
+// ICU Statistics
 export function useICUStatistics() {
   return useQuery({
     queryKey: ["icu-statistics"],
     queryFn: async () => {
-      const bedData = await apiFetch<ICUBedSummary>('/icu/beds');
-      const patients = await apiFetch<ICUAdmission[]>('/icu/patients');
-      const { summary } = bedData;
-      const occupancyRate = summary.total > 0
-        ? Math.round((summary.occupied / summary.total) * 100)
-        : 0;
+      // Get beds
+      const { data: beds } = await supabase.from("icu_beds").select("*");
+      
+      // Get active admissions
+      const { data: activeAdmissions } = await supabase
+        .from("icu_admissions")
+        .select("icu_type, status")
+        .eq("status", "active");
+
+      const totalBeds = beds?.length || 0;
+      const availableBeds = beds?.filter(b => b.is_available).length || 0;
+      const occupiedBeds = totalBeds - availableBeds;
+      const occupancyRate = totalBeds > 0 ? (occupiedBeds / totalBeds) * 100 : 0;
+
+      // Count by type
+      const byType: Record<string, { total: number; occupied: number }> = {
+        icu: { total: 0, occupied: 0 },
+        iccu: { total: 0, occupied: 0 },
+        nicu: { total: 0, occupied: 0 },
+        picu: { total: 0, occupied: 0 },
+        hcu: { total: 0, occupied: 0 },
+      };
+
+      beds?.forEach(bed => {
+        const type = bed.icu_type;
+        if (byType[type]) {
+          byType[type].total++;
+          if (!bed.is_available) byType[type].occupied++;
+        }
+      });
+
+      const ventilatorInUse = activeAdmissions?.length || 0;
+
       return {
-        totalBeds:       summary.total,
-        availableBeds:   summary.available,
-        occupiedBeds:    summary.occupied,
-        occupancyRate,
-        activePatients:  patients.length,
-        ventilatorInUse: patients.filter(p => p.ventilator_required).length,
-        byType: {} as Record<string, { total: number; occupied: number }>,
+        totalBeds,
+        availableBeds,
+        occupiedBeds,
+        occupancyRate: Math.round(occupancyRate),
+        ventilatorInUse,
+        activePatients: activeAdmissions?.length || 0,
+        byType,
       };
     },
-    refetchInterval: 30_000,
   });
 }
 
-// ==================== MUTATIONS ====================
-
-export function useAdmitICUPatient() {
-  const { toast } = useToast();
+// Mutations
+export function useAddICUMonitoring() {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   return useMutation({
-    mutationFn: (data: {
-      patientId: string; visitId: string; bedId: string;
-      admissionReason: string; admissionSource: 'ER' | 'OR' | 'WARD' | 'TRANSFER' | 'DIRECT';
-      diagnosisOnAdmission: string; apacheScore?: number; sofaScore?: number;
-      ventilatorRequired?: boolean; isolationRequired?: boolean; attendingPhysicianId: string;
-    }) => apiPost<ICUAdmission>('/icu/admissions', data),
+    mutationFn: async (data: Database['public']['Tables']['icu_monitoring']['Insert']) => {
+      const { error } = await supabase.from("icu_monitoring").insert(data);
+      if (error) throw error;
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["active-icu-patients"] });
+      queryClient.invalidateQueries({ queryKey: ["icu-monitoring"] });
+      toast({ title: "Vital signs recorded successfully" });
+    },
+    onError: (error) => {
+      toast({ title: "Error recording vital signs", description: error.message, variant: "destructive" });
+    },
+  });
+}
+
+export function useUpdateICUBed() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ id, ...data }: { id: string } & Database['public']['Tables']['icu_beds']['Update']) => {
+      const { error } = await supabase.from("icu_beds").update(data).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["icu-beds"] });
       queryClient.invalidateQueries({ queryKey: ["icu-statistics"] });
-      toast({ title: "Pasien berhasil dirawat di ICU" });
+      toast({ title: "Bed status updated" });
     },
-    onError: (e: Error) => toast({ title: "Gagal", description: e.message, variant: "destructive" }),
   });
 }
-
-export function useRecordICUVitals() {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ admissionId, ...data }: { admissionId: string } & Record<string, unknown>) =>
-      apiPost<ICUVitalSigns>(`/icu/admissions/${admissionId}/vitals`, data),
-    onSuccess: (_, vars) => {
-      queryClient.invalidateQueries({ queryKey: ["icu-monitoring", vars.admissionId] });
-      queryClient.invalidateQueries({ queryKey: ["icu-vitals-history", vars.admissionId] });
-      toast({ title: "Tanda vital berhasil dicatat" });
-    },
-    onError: (e: Error) => toast({ title: "Gagal mencatat tanda vital", description: e.message, variant: "destructive" }),
-  });
-}
-
-export function useRecordIntakeOutput() {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ admissionId, ...data }: { admissionId: string } & Record<string, unknown>) =>
-      apiPost<ICUIntakeOutput>(`/icu/admissions/${admissionId}/intake-output`, data),
-    onSuccess: (_, vars) => {
-      queryClient.invalidateQueries({ queryKey: ["icu-fluid-balance", vars.admissionId] });
-      toast({ title: "Catatan intake/output berhasil disimpan" });
-    },
-    onError: (e: Error) => toast({ title: "Gagal", description: e.message, variant: "destructive" }),
-  });
-}
-
-export function useRecordVentilator() {
-  const { toast } = useToast();
-
-  return useMutation({
-    mutationFn: ({ admissionId, ...data }: { admissionId: string } & Record<string, unknown>) =>
-      apiPost<ICUVentilator>(`/icu/admissions/${admissionId}/ventilator`, data),
-    onSuccess: () => {
-      toast({ title: "Setting ventilator berhasil disimpan" });
-    },
-    onError: (e: Error) => toast({ title: "Gagal", description: e.message, variant: "destructive" }),
-  });
-}
-
-export function useDischargeICUPatient() {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ id, ...data }: { id: string } & Record<string, unknown>) =>
-      apiPut<ICUAdmission>(`/icu/admissions/${id}/discharge`, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["active-icu-patients"] });
-      queryClient.invalidateQueries({ queryKey: ["icu-beds"] });
-      queryClient.invalidateQueries({ queryKey: ["icu-statistics"] });
-      toast({ title: "Pasien berhasil dipindahkan dari ICU" });
-    },
-    onError: (e: Error) => toast({ title: "Gagal", description: e.message, variant: "destructive" }),
-  });
-}
-
-// Legacy aliases
-export const useICUBedStatus = useICUBeds;
-export const useAddICUMonitoring = useRecordICUVitals;
-export const useUpdateICUBed = useRecordICUVitals;
-export const useVentilatorSettings = (admissionId: string) => useICUVitalsHistory(admissionId);

@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, ArrowUpCircle, ArrowDownCircle, RefreshCw } from "lucide-react";
-import { db } from "@/lib/db";
+import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 
@@ -37,7 +37,7 @@ export default function InventoryTransactions() {
 
   const fetchTransactions = async () => {
     try {
-      const { data, error } = await db
+      const { data, error } = await supabase
         .from("inventory_transactions")
         .select(`
           id,

@@ -1,12 +1,6 @@
-/**
- * WebRTC Signaling — polling-based via REST backend
- * Replaces Supabase Realtime with /telemedicine/sessions/:id/signals endpoints
- */
 import { useEffect, useCallback, useRef } from "react";
-
-const API_BASE = import.meta.env.VITE_API_URL || '/api';
-
-const FETCH_OPTS: RequestInit = { credentials: 'include', headers: { 'Content-Type': 'application/json' } };
+import { supabase } from "@/integrations/supabase/client";
+import { RealtimeChannel } from "@supabase/supabase-js";
 
 interface SignalMessage {
   type: "offer" | "answer" | "ice-candidate";
@@ -26,27 +20,29 @@ export function useWebRTCSignaling({
   onSignalReceived,
   enabled,
 }: UseWebRTCSignalingProps) {
-  // Track the timestamp of the last signal we've seen so we don't re-process
-  const lastSeenRef = useRef<string>(new Date().toISOString());
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const channelRef = useRef<RealtimeChannel | null>(null);
 
+  // Send signal to other participant
   const sendSignal = useCallback(
     async (signal: SignalMessage) => {
       if (!sessionId || !localUserId) {
         console.error("[WebRTC] Missing sessionId or localUserId");
         return;
       }
+
       console.log(`[WebRTC] Sending signal: ${signal.type}`);
+
       try {
-        await fetch(`${API_BASE}/telemedicine/sessions/${sessionId}/signal`, {
-          ...FETCH_OPTS,
-          method: 'POST',
-          body: JSON.stringify({
-            sender_id:   localUserId,
-            signal_type: signal.type,
-            signal_data: signal.data,
-          }),
-        });
+        const { error } = await supabase.from("webrtc_signals").insert({
+          session_id: sessionId,
+          sender_id: localUserId,
+          signal_type: signal.type,
+          signal_data: signal.data as unknown as Record<string, unknown>,
+        } as any);
+
+        if (error) {
+          console.error("[WebRTC] Error sending signal:", error);
+        }
       } catch (err) {
         console.error("[WebRTC] Failed to send signal:", err);
       }
@@ -54,75 +50,110 @@ export function useWebRTCSignaling({
     [sessionId, localUserId]
   );
 
-  // Poll for new signals every 1.5 s
+  // Subscribe to signals from other participants
   useEffect(() => {
-    if (!enabled || !sessionId || !localUserId) return;
+    if (!enabled || !sessionId || !localUserId) {
+      return;
+    }
 
-    const poll = async () => {
-      try {
-        const p = new URLSearchParams({
-          since:          lastSeenRef.current,
-          exclude_sender: localUserId,
-        });
-        const res  = await fetch(`${API_BASE}/telemedicine/sessions/${sessionId}/signals?${p}`, FETCH_OPTS);
-        if (!res.ok) return;
-        const json = await res.json();
-        const signals: Array<{ signal_type: string; signal_data: RTCSessionDescriptionInit | RTCIceCandidateInit; created_at: string }> =
-          json.data ?? [];
+    console.log(`[WebRTC] Subscribing to signals for session: ${sessionId}`);
 
-        for (const sig of signals) {
-          console.log(`[WebRTC] Received signal: ${sig.signal_type}`);
-          onSignalReceived({ type: sig.signal_type as SignalMessage["type"], data: sig.signal_data });
-          if (sig.created_at > lastSeenRef.current) {
-            lastSeenRef.current = sig.created_at;
+    const channel = supabase
+      .channel(`webrtc-${sessionId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "webrtc_signals",
+          filter: `session_id=eq.${sessionId}`,
+        },
+        (payload) => {
+          const newSignal = payload.new as {
+            sender_id: string;
+            signal_type: string;
+            signal_data: RTCSessionDescriptionInit | RTCIceCandidateInit;
+          };
+
+          // Ignore signals from self
+          if (newSignal.sender_id === localUserId) {
+            return;
           }
-        }
-      } catch (err) {
-        console.error("[WebRTC] Poll error:", err);
-      }
-    };
 
-    console.log(`[WebRTC] Starting polling for session: ${sessionId}`);
-    intervalRef.current = setInterval(poll, 1500);
+          console.log(`[WebRTC] Received signal: ${newSignal.signal_type}`);
+
+          onSignalReceived({
+            type: newSignal.signal_type as SignalMessage["type"],
+            data: newSignal.signal_data,
+          });
+        }
+      )
+      .subscribe((status) => {
+        console.log(`[WebRTC] Channel status: ${status}`);
+      });
+
+    channelRef.current = channel;
 
     return () => {
-      console.log("[WebRTC] Stopping polling");
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
+      console.log("[WebRTC] Unsubscribing from signals");
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
       }
     };
   }, [enabled, sessionId, localUserId, onSignalReceived]);
 
+  // Cleanup old signals when component unmounts
+  useEffect(() => {
+    return () => {
+      // Note: Cleanup is handled by the database function cleanup_old_webrtc_signals
+    };
+  }, []);
+
   return { sendSignal };
 }
 
-// ─── RTCPeerConnection helpers (unchanged) ────────────────────────────────────
-
+// Utility to create and manage RTCPeerConnection
 export function createPeerConnection(
   onTrack: (event: RTCTrackEvent) => void,
   onIceCandidate: (candidate: RTCIceCandidate) => void,
   onConnectionStateChange: (state: RTCPeerConnectionState) => void
 ): RTCPeerConnection {
-  const pc = new RTCPeerConnection({
+  const config: RTCConfiguration = {
     iceServers: [
       { urls: "stun:stun.l.google.com:19302" },
       { urls: "stun:stun1.l.google.com:19302" },
       { urls: "stun:stun2.l.google.com:19302" },
     ],
-  });
+  };
+
+  const pc = new RTCPeerConnection(config);
+
   pc.ontrack = onTrack;
-  pc.onicecandidate = (e) => { if (e.candidate) onIceCandidate(e.candidate); };
-  pc.onconnectionstatechange = () => onConnectionStateChange(pc.connectionState);
+
+  pc.onicecandidate = (event) => {
+    if (event.candidate) {
+      onIceCandidate(event.candidate);
+    }
+  };
+
+  pc.onconnectionstatechange = () => {
+    onConnectionStateChange(pc.connectionState);
+  };
+
   return pc;
 }
 
-export async function createOffer(pc: RTCPeerConnection): Promise<RTCSessionDescriptionInit> {
+// Create offer for initiator
+export async function createOffer(
+  pc: RTCPeerConnection
+): Promise<RTCSessionDescriptionInit> {
   const offer = await pc.createOffer();
   await pc.setLocalDescription(offer);
   return offer;
 }
 
+// Create answer for receiver
 export async function createAnswer(
   pc: RTCPeerConnection,
   offer: RTCSessionDescriptionInit
@@ -133,11 +164,19 @@ export async function createAnswer(
   return answer;
 }
 
-export async function setRemoteAnswer(pc: RTCPeerConnection, answer: RTCSessionDescriptionInit): Promise<void> {
+// Set remote answer
+export async function setRemoteAnswer(
+  pc: RTCPeerConnection,
+  answer: RTCSessionDescriptionInit
+): Promise<void> {
   await pc.setRemoteDescription(new RTCSessionDescription(answer));
 }
 
-export async function addIceCandidate(pc: RTCPeerConnection, candidate: RTCIceCandidateInit): Promise<void> {
+// Add ICE candidate
+export async function addIceCandidate(
+  pc: RTCPeerConnection,
+  candidate: RTCIceCandidateInit
+): Promise<void> {
   if (pc.remoteDescription) {
     await pc.addIceCandidate(new RTCIceCandidate(candidate));
   }

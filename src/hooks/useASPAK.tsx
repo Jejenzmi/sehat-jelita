@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { db } from "@/lib/db";
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "./use-toast";
 
 // Medical Equipment
@@ -11,7 +11,7 @@ export function useMedicalEquipment(filters?: {
   return useQuery({
     queryKey: ["medical-equipment", filters],
     queryFn: async () => {
-      let query = db
+      let query = supabase
         .from("medical_equipment")
         .select("*, department:departments(name), vendor:vendors(name)")
         .order("equipment_code");
@@ -41,7 +41,7 @@ export function useEquipmentNeedingCalibration() {
       const thirtyDaysFromNow = new Date();
       thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
       
-      const { data, error } = await db
+      const { data, error } = await supabase
         .from("medical_equipment")
         .select("*, department:departments(name)")
         .eq("calibration_required", true)
@@ -62,7 +62,7 @@ export function useEquipmentNeedingMaintenance() {
       const thirtyDaysFromNow = new Date();
       thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
       
-      const { data, error } = await db
+      const { data, error } = await supabase
         .from("medical_equipment")
         .select("*, department:departments(name)")
         .not("next_maintenance_date", "is", null)
@@ -80,7 +80,7 @@ export function useEquipmentCalibrations(equipmentId?: string) {
   return useQuery({
     queryKey: ["equipment-calibrations", equipmentId],
     queryFn: async () => {
-      let query = db
+      let query = supabase
         .from("equipment_calibrations")
         .select("*, equipment:medical_equipment(equipment_code, equipment_name)")
         .order("calibration_date", { ascending: false });
@@ -101,7 +101,7 @@ export function useEquipmentMaintenance(equipmentId?: string) {
   return useQuery({
     queryKey: ["equipment-maintenance", equipmentId],
     queryFn: async () => {
-      let query = db
+      let query = supabase
         .from("equipment_maintenance")
         .select("*, equipment:medical_equipment(equipment_code, equipment_name)")
         .order("maintenance_date", { ascending: false });
@@ -122,7 +122,7 @@ export function useEquipmentCategories() {
   return useQuery({
     queryKey: ["equipment-categories"],
     queryFn: async () => {
-      const { data, error } = await db
+      const { data, error } = await supabase
         .from("equipment_categories")
         .select("*")
         .eq("is_active", true)
@@ -138,7 +138,7 @@ export function useASPAKSyncLogs() {
   return useQuery({
     queryKey: ["aspak-sync-logs"],
     queryFn: async () => {
-      const { data, error } = await db
+      const { data, error } = await supabase
         .from("aspak_sync_logs")
         .select("*")
         .order("created_at", { ascending: false })
@@ -171,7 +171,7 @@ export function useCreateEquipment() {
       calibration_interval_months?: number;
       maintenance_interval_months?: number;
     }) => {
-      const { data, error } = await db
+      const { data, error } = await supabase
         .from("medical_equipment")
         .insert(equipment)
         .select()
@@ -203,7 +203,7 @@ export function useUpdateEquipment() {
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: { id: string; [key: string]: unknown }) => {
-      const { data, error } = await db
+      const { data, error } = await supabase
         .from("medical_equipment")
         .update(updates)
         .eq("id", id)
@@ -234,7 +234,7 @@ export function useEquipmentStats() {
   return useQuery({
     queryKey: ["equipment-stats"],
     queryFn: async () => {
-      const { data, error } = await db
+      const { data, error } = await supabase
         .from("medical_equipment")
         .select("status, category, risk_class");
       

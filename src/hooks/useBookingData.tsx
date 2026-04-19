@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { db } from "@/lib/db";
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 
@@ -75,7 +75,7 @@ export function useBookingData() {
 
   const fetchAppointments = async (date?: string) => {
     try {
-      let query = db
+      let query = supabase
         .from("appointments")
         .select(`
           *,
@@ -119,7 +119,7 @@ export function useBookingData() {
         return;
       }
 
-      const { data, error } = await db
+      const { data, error } = await supabase
         .from("patients")
         .select("id, full_name, medical_record_number, phone, nik")
         .or(`full_name.ilike.%${searchTerm}%,medical_record_number.ilike.%${searchTerm}%,nik.ilike.%${searchTerm}%`)
@@ -134,7 +134,7 @@ export function useBookingData() {
 
   const fetchDoctors = async () => {
     try {
-      const { data, error } = await db
+      const { data, error } = await supabase
         .from("doctors")
         .select("id, full_name, specialization, department_id, consultation_fee")
         .eq("is_active", true)
@@ -149,7 +149,7 @@ export function useBookingData() {
 
   const fetchSchedules = async () => {
     try {
-      const { data, error } = await db
+      const { data, error } = await supabase
         .from("doctor_schedules")
         .select("*")
         .eq("is_active", true)
@@ -164,7 +164,7 @@ export function useBookingData() {
 
   const createAppointment = async (appointment: any) => {
     try {
-      const { data, error } = await db
+      const { data, error } = await supabase
         .from("appointments")
         .insert([appointment])
         .select()
@@ -187,7 +187,7 @@ export function useBookingData() {
 
   const updateAppointment = async (id: string, updates: Partial<Appointment>) => {
     try {
-      const { error } = await db
+      const { error } = await supabase
         .from("appointments")
         .update(updates)
         .eq("id", id);
@@ -208,7 +208,7 @@ export function useBookingData() {
 
   const cancelAppointment = async (id: string) => {
     try {
-      const { error } = await db
+      const { error } = await supabase
         .from("appointments")
         .update({ status: "cancelled" })
         .eq("id", id);
@@ -228,7 +228,7 @@ export function useBookingData() {
 
   const confirmAppointment = async (id: string) => {
     try {
-      const { error } = await db
+      const { error } = await supabase
         .from("appointments")
         .update({ status: "confirmed" })
         .eq("id", id);
@@ -252,7 +252,7 @@ export function useBookingData() {
       const dateStr = format(date, "yyyy-MM-dd");
 
       // Get doctor schedule for this day
-      const { data: schedule, error: scheduleError } = await db
+      const { data: schedule, error: scheduleError } = await supabase
         .from("doctor_schedules")
         .select("*")
         .eq("doctor_id", doctorId)
@@ -264,7 +264,7 @@ export function useBookingData() {
       if (!schedule) return [];
 
       // Get existing appointments
-      const { data: existingApts, error: aptsError } = await db
+      const { data: existingApts, error: aptsError } = await supabase
         .from("appointments")
         .select("appointment_time")
         .eq("doctor_id", doctorId)

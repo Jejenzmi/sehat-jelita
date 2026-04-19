@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useSystemSettings, IntegrationConfig } from "@/hooks/useSystemSettings";
-import { db } from "@/lib/db";
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 interface SatuSehatConfig extends IntegrationConfig {
@@ -62,7 +62,7 @@ export function SatuSehatSettings() {
     setConnectionStatus("idle");
 
     try {
-      const { data, error } = await db.functions.invoke("satusehat", {
+      const { data, error } = await supabase.functions.invoke("satusehat", {
         body: {
           action: "test-connection",
           config: {

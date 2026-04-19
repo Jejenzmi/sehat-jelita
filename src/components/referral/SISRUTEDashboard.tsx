@@ -14,28 +14,8 @@ import {
   Plus, Edit, Send, ArrowDownLeft, ArrowUpRight, 
   CheckCircle, Clock, XCircle, Truck, RefreshCw 
 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-
-const API_BASE = import.meta.env.VITE_API_URL || '/api';
-const FETCH_OPTS: RequestInit = { credentials: 'include', headers: { 'Content-Type': 'application/json' } };
-async function apiFetch<T>(path: string): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, FETCH_OPTS);
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(json.error || res.statusText);
-  return (json.data ?? json) as T;
-}
-async function apiPost<T>(path: string, body: unknown): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, { ...FETCH_OPTS, method: 'POST', body: JSON.stringify(body) });
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(json.error || res.statusText);
-  return (json.data ?? json) as T;
-}
-async function apiPut<T>(path: string, body: unknown): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, { ...FETCH_OPTS, method: 'PUT', body: JSON.stringify(body) });
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(json.error || res.statusText);
-  return (json.data ?? json) as T;
-}
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 
@@ -98,14 +78,17 @@ export default function SISRUTEDashboard() {
   }, []);
 
   const fetchData = async () => {
-    const [referrals, patients, doctors] = await Promise.all([
-      apiFetch<SISRUTEReferral[]>('/bpjs/rujukan?limit=100').catch(() => []),
-      apiFetch<{ id: string; full_name: string; medical_record_number: string }[]>('/patients?limit=100').catch(() => []),
-      apiFetch<{ id: string; full_name: string }[]>('/admin/doctors?is_active=true').catch(() => []),
+    const [referralsRes, patientsRes, doctorsRes] = await Promise.all([
+      supabase.from("sisrute_referrals")
+        .select("*, patients(full_name, medical_record_number)")
+        .order("created_at", { ascending: false }),
+      supabase.from("patients").select("id, full_name, medical_record_number").limit(100),
+      supabase.from("doctors").select("id, full_name").eq("is_active", true)
     ]);
-    setReferrals(referrals as any);
-    setPatients(patients as any);
-    setDoctors(doctors as any);
+    
+    if (referralsRes.data) setReferrals(referralsRes.data as any);
+    if (patientsRes.data) setPatients(patientsRes.data as any);
+    if (doctorsRes.data) setDoctors(doctorsRes.data as any);
   };
 
   const generateReferralNumber = () => {
@@ -123,10 +106,12 @@ export default function SISRUTEDashboard() {
       };
 
       if (editingReferral) {
-        await apiPut(`/bpjs/rujukan/${editingReferral.id}`, payload);
+        const { error } = await supabase.from("sisrute_referrals").update(payload).eq("id", editingReferral.id);
+        if (error) throw error;
         toast({ title: "Berhasil", description: "Rujukan berhasil diperbarui" });
       } else {
-        await apiPost('/bpjs/rujukan', payload);
+        const { error } = await supabase.from("sisrute_referrals").insert(payload);
+        if (error) throw error;
         toast({ title: "Berhasil", description: "Rujukan berhasil ditambahkan" });
       }
 

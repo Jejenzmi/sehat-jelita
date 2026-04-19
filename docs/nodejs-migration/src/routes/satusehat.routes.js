@@ -19,43 +19,6 @@ router.use(externalApiLimiter);
 const satusehatService = new SatuSehatService();
 
 // ============================================
-// CONFIGURATION
-// ============================================
-
-/**
- * GET /api/satusehat/config
- * Retrieve SATU SEHAT configuration
- */
-router.get('/config', requireRole(['admin']), asyncHandler(async (req, res) => {
-  const config = await satusehatService.getConfiguration();
-
-  res.json({
-    success: true,
-    data: config
-  });
-}));
-
-/**
- * POST /api/satusehat/config
- * Save/Update SATU SEHAT configuration
- */
-router.post('/config', requireRole(['admin']), asyncHandler(async (req, res) => {
-  const { org_id, environment, client_id, client_secret } = req.body;
-
-  if (!org_id || !environment || !client_id || !client_secret) {
-    throw new ApiError(400, 'Semua field wajib diisi: org_id, environment, client_id, client_secret', 'VALIDATION_ERROR');
-  }
-
-  const saved = await satusehatService.saveConfiguration({ org_id, environment, client_id, client_secret });
-
-  res.json({
-    success: true,
-    message: 'Konfigurasi SATU SEHAT berhasil disimpan',
-    data: saved
-  });
-}));
-
-// ============================================
 // AUTHENTICATION
 // ============================================
 

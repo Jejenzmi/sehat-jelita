@@ -1,16 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-const API_BASE = import.meta.env.VITE_API_URL || '/api';
-const FETCH_OPTS: RequestInit = { credentials: 'include', headers: { 'Content-Type': 'application/json' } };
-async function apiPost<T>(path: string, body: unknown): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...FETCH_OPTS, method: 'POST', body: JSON.stringify(body),
-  });
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(json.error || res.statusText);
-  return (json.data ?? json) as T;
-}
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -38,7 +29,11 @@ export default function SystemResetTab() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const resetSystem = useMutation({
-    mutationFn: () => apiPost('/admin/system-reset', {}),
+    mutationFn: async () => {
+      const { data, error } = await supabase.rpc("reset_system_to_initial");
+      if (error) throw error;
+      return data;
+    },
     onSuccess: () => {
       // Invalidate all relevant queries
       queryClient.invalidateQueries({ queryKey: ["setup-completed"] });

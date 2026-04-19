@@ -13,28 +13,8 @@ import {
   Plus, ShoppingCart, Calendar as CalendarIcon, 
   CheckCircle, Clock, XCircle, Send, Package
 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-
-const API_BASE = import.meta.env.VITE_API_URL || '/api';
-const FETCH_OPTS: RequestInit = { credentials: 'include', headers: { 'Content-Type': 'application/json' } };
-async function apiFetch<T>(path: string): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, FETCH_OPTS);
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(json.error || res.statusText);
-  return (json.data ?? json) as T;
-}
-async function apiPost<T>(path: string, body: unknown): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, { ...FETCH_OPTS, method: 'POST', body: JSON.stringify(body) });
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(json.error || res.statusText);
-  return (json.data ?? json) as T;
-}
-async function apiPut<T>(path: string, body: unknown): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, { ...FETCH_OPTS, method: 'PUT', body: JSON.stringify(body) });
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(json.error || res.statusText);
-  return (json.data ?? json) as T;
-}
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -101,15 +81,45 @@ export default function PurchaseOrders({ onOrderUpdate }: PurchaseOrdersProps) {
 
   const fetchData = async () => {
     try {
-      const [ordersData, medicinesData, vendorsData] = await Promise.all([
-        apiFetch<PurchaseOrder[]>('/inventory/purchase-orders'),
-        apiFetch<Medicine[]>('/inventory/medicines'),
-        apiFetch<Vendor[]>('/inventory/vendors'),
+      const [ordersRes, medicinesRes, vendorsRes] = await Promise.all([
+        supabase
+          .from("purchase_orders")
+          .select("id, order_number, supplier_name, order_date, expected_delivery_date, status, total, auto_generated")
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("medicines")
+          .select("id, name, code, unit, price")
+          .eq("is_active", true)
+          .order("name"),
+        supabase
+          .from("vendors")
+          .select("id, vendor_code, vendor_name")
+          .eq("is_active", true)
+          .eq("blacklisted", false)
+          .order("vendor_name")
       ]);
 
-      setOrders(Array.isArray(ordersData) ? ordersData : []);
-      setMedicines(Array.isArray(medicinesData) ? medicinesData : []);
-      setVendors(Array.isArray(vendorsData) ? vendorsData : []);
+      if (ordersRes.error) throw ordersRes.error;
+      if (medicinesRes.error) throw medicinesRes.error;
+      if (vendorsRes.error) throw vendorsRes.error;
+
+      // Fetch items for each order
+      const ordersWithItems = await Promise.all(
+        (ordersRes.data || []).map(async (order) => {
+          const { data: items } = await supabase
+            .from("purchase_order_items")
+            .select(`
+              id, quantity, received_quantity, unit_price,
+              medicine:medicine_id (name, unit)
+            `)
+            .eq("purchase_order_id", order.id);
+          return { ...order, items: items || [] };
+        })
+      );
+
+      setOrders(ordersWithItems);
+      setMedicines(medicinesRes.data || []);
+      setVendors(vendorsRes.data || []);
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
@@ -126,25 +136,45 @@ export default function PurchaseOrders({ onOrderUpdate }: PurchaseOrdersProps) {
     setIsSubmitting(true);
 
     try {
+      // Generate PO number
+      const { data: poNumber } = await supabase.rpc("generate_po_number");
+
+      // Calculate total
       const validItems = orderItems.filter(i => i.medicineId && i.quantity);
       const total = validItems.reduce((sum, item) => {
         return sum + (parseFloat(item.unitPrice) || 0) * parseInt(item.quantity);
       }, 0);
 
-      await apiPost('/inventory/purchase-orders', {
-        supplier_id: supplierId,
-        supplier_name: supplierName,
-        expected_delivery_date: expectedDelivery ? format(expectedDelivery, "yyyy-MM-dd") : null,
-        status: "draft",
-        subtotal: total,
-        total: total,
-        items: validItems.map(item => ({
-          medicine_id: item.medicineId,
-          quantity: parseInt(item.quantity),
-          unit_price: parseFloat(item.unitPrice) || 0,
-          total_price: (parseFloat(item.unitPrice) || 0) * parseInt(item.quantity),
-        })),
-      });
+      // Create order
+      const { data: order, error: orderError } = await supabase
+        .from("purchase_orders")
+        .insert({
+          order_number: poNumber,
+          supplier_name: supplierName,
+          expected_delivery_date: expectedDelivery ? format(expectedDelivery, "yyyy-MM-dd") : null,
+          status: "draft",
+          subtotal: total,
+          total: total,
+        })
+        .select()
+        .single();
+
+      if (orderError) throw orderError;
+
+      // Create order items
+      const itemsToInsert = validItems.map(item => ({
+        purchase_order_id: order.id,
+        medicine_id: item.medicineId,
+        quantity: parseInt(item.quantity),
+        unit_price: parseFloat(item.unitPrice) || 0,
+        total_price: (parseFloat(item.unitPrice) || 0) * parseInt(item.quantity),
+      }));
+
+      const { error: itemsError } = await supabase
+        .from("purchase_order_items")
+        .insert(itemsToInsert);
+
+      if (itemsError) throw itemsError;
 
       toast.success("Pesanan berhasil dibuat");
       setShowCreateDialog(false);
@@ -160,7 +190,13 @@ export default function PurchaseOrders({ onOrderUpdate }: PurchaseOrdersProps) {
 
   const handleUpdateStatus = async (orderId: string, newStatus: string) => {
     try {
-      await apiPut(`/inventory/purchase-orders/${orderId}/${newStatus}`, {});
+      const { error } = await supabase
+        .from("purchase_orders")
+        .update({ status: newStatus })
+        .eq("id", orderId);
+
+      if (error) throw error;
+
       toast.success("Status pesanan diperbarui");
       fetchData();
       onOrderUpdate();
@@ -171,7 +207,55 @@ export default function PurchaseOrders({ onOrderUpdate }: PurchaseOrdersProps) {
 
   const handleReceiveOrder = async (order: PurchaseOrder) => {
     try {
-      await apiPut(`/inventory/purchase-orders/${order.id}/receive`, {});
+      // Update each item's stock
+      for (const item of order.items) {
+        if (item.medicine) {
+          const { data: med } = await supabase
+            .from("medicines")
+            .select("id, stock")
+            .eq("name", item.medicine.name)
+            .single();
+
+          if (med) {
+            const newStock = (med.stock || 0) + item.quantity;
+            
+            await supabase
+              .from("medicines")
+              .update({ stock: newStock })
+              .eq("id", med.id);
+
+            await supabase
+              .from("inventory_transactions")
+              .insert({
+                medicine_id: med.id,
+                transaction_type: "in",
+                quantity: item.quantity,
+                previous_stock: med.stock,
+                new_stock: newStock,
+                reference_type: "purchase_order",
+                reference_id: order.id,
+                unit_price: item.unit_price,
+                notes: `Penerimaan PO ${order.order_number}`,
+              });
+          }
+        }
+
+        // Update received quantity
+        await supabase
+          .from("purchase_order_items")
+          .update({ received_quantity: item.quantity })
+          .eq("id", item.id);
+      }
+
+      // Update order status
+      await supabase
+        .from("purchase_orders")
+        .update({ 
+          status: "received",
+          actual_delivery_date: new Date().toISOString()
+        })
+        .eq("id", order.id);
+
       toast.success("Pesanan diterima dan stok diperbarui");
       fetchData();
       onOrderUpdate();

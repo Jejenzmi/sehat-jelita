@@ -42,15 +42,9 @@ import {
   ArrowRightLeft,
   Home,
   Truck,
-  BarChart,
-  Boxes,
-  AlertTriangle,
-  HeartHandshake,
-  ArrowLeftRight,
-  GraduationCap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import simrsZenLogo from "@/assets/simrs-zen-logo.png";
+import rsudLogo from "@/assets/logo-rsud-moewardi.png";
 import { useMenuAccess } from "@/hooks/useMenuAccess";
 import { useModuleVisibility } from "@/hooks/useModuleVisibility";
 
@@ -122,17 +116,10 @@ const allNavigationGroups: NavGroup[] = [
       { icon: Truck, label: "Ambulance Center", path: "/ambulance-center", badge: "NEW" },
       { icon: Wrench, label: "Penunjang", path: "/penunjang" },
       { icon: Award, label: "Mutu & Akreditasi", path: "/mutu" },
-      { icon: AlertTriangle, label: "Insiden Keselamatan", path: "/insiden-keselamatan", badge: "IKP" },
-      { icon: Boxes, label: "ASPAK Aset RS", path: "/aspak", badge: "NEW" },
-      { icon: HeartHandshake, label: "Tanda Vital", path: "/tanda-vital", badge: "NEW" },
-      { icon: BarChart, label: "Analytics KPI", path: "/analytics", badge: "NEW" },
       { icon: KeyRound, label: "Pendidikan", path: "/pendidikan" },
       { icon: UserCog, label: "SDM / HRD", path: "/sdm" },
-      { icon: GraduationCap, label: "Sertifikasi & Pelatihan", path: "/staff-certifications", badge: "NEW" },
-      { icon: ArrowLeftRight, label: "SISRUTE Rujukan", path: "/sisrute", badge: "NEW" },
       { icon: FileBarChart, label: "Laporan", path: "/laporan" },
       { icon: FileBarChart, label: "Kemenkes", path: "/laporan-kemenkes", badge: "RL" },
-      { icon: FileBarChart, label: "INACBG History", path: "/inacbg-history", badge: "CBG" },
       { icon: Database, label: "Master Data", path: "/master-data" },
       { icon: Shield, label: "Manajemen User", path: "/manajemen-user", badge: "RBAC" },
       { icon: Paintbrush, label: "Form Builder", path: "/form-builder", badge: "NEW" },
@@ -198,36 +185,36 @@ export function Sidebar() {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed lg:static inset-y-0 left-0 z-50 flex flex-col bg-[#1B4332] transition-all duration-300 ease-in-out rounded-r-3xl overflow-hidden shadow-lg",
-          collapsed ? "w-[68px]" : "w-60",
+          "fixed lg:static inset-y-0 left-0 z-50 flex flex-col bg-sidebar border-r border-sidebar-border transition-all duration-300 ease-in-out",
+          collapsed ? "w-20" : "w-72",
           mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
-        style={{}}
+        style={{ background: "var(--gradient-sidebar)" }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between h-14 px-3 border-b border-white/10">
+        <div className="flex items-center justify-between h-16 px-4 border-b border-sidebar-border bg-white/10 backdrop-blur-sm">
           {!collapsed && (
-            <div className="flex items-center gap-2 animate-fade-in">
-              <img src={simrsZenLogo} alt="SIMRS ZEN" className="h-8 bg-white/90 rounded-lg px-1 py-0.5" />
+            <div className="flex items-center gap-3 animate-fade-in">
+              <img src={rsudLogo} alt="RSUD Dr. Moewardi" className="h-10 bg-white/90 rounded-lg px-1.5 py-0.5" />
             </div>
           )}
           {collapsed && (
-            <div className="w-9 h-9 mx-auto rounded-xl bg-white/15 flex items-center justify-center">
-              <HeartPulse className="h-5 w-5 text-white" />
+            <div className="w-10 h-10 mx-auto rounded-xl gradient-primary flex items-center justify-center shadow-glow">
+              <HeartPulse className="h-6 w-6 text-primary-foreground" />
             </div>
           )}
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-4">
+        <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-6">
           {navigationGroups.map((group) => (
             <div key={group.title}>
               {!collapsed && (
-                <h3 className="px-3 mb-1.5 text-[10px] font-bold text-white/35 uppercase tracking-widest">
+                <h3 className="px-4 mb-2 text-xs font-semibold text-sidebar-foreground/40 uppercase tracking-wider">
                   {group.title}
                 </h3>
               )}
-              <ul className="space-y-0.5">
+              <ul className="space-y-1">
                 {group.items.map((item) => {
                   const isActive = location.pathname === item.path;
                   return (
@@ -235,18 +222,15 @@ export function Sidebar() {
                       <Link
                         to={item.path}
                         onClick={() => setMobileOpen(false)}
-                        className={cn(
-                          "flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all duration-150 text-white/60 hover:text-white hover:bg-white/10 text-sm",
-                          isActive && "bg-white/20 text-white font-semibold"
-                        )}
+                        className={cn("nav-item", isActive && "active")}
                         title={collapsed ? item.label : undefined}
                       >
-                        <item.icon className={cn("h-4 w-4 flex-shrink-0", isActive && "text-white")} />
+                        <item.icon className={cn("h-5 w-5 flex-shrink-0", isActive && "text-current")} />
                         {!collapsed && (
                           <>
-                            <span className="flex-1 truncate">{item.label}</span>
+                            <span className="flex-1">{item.label}</span>
                             {item.badge && (
-                              <span className="px-1.5 py-0.5 text-[9px] font-bold rounded-full bg-white/20 text-white">
+                              <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-sidebar-primary/20 text-sidebar-primary">
                                 {item.badge}
                               </span>
                             )}
@@ -262,17 +246,17 @@ export function Sidebar() {
         </nav>
 
         {/* Collapse Button */}
-        <div className="hidden lg:block p-2 border-t border-white/10">
+        <div className="hidden lg:block p-3 border-t border-sidebar-border">
           <button
             onClick={() => setCollapsed(!collapsed)}
-            className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-white/40 hover:text-white hover:bg-white/10 transition-colors text-sm"
+            className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
           >
             {collapsed ? (
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight className="h-5 w-5" />
             ) : (
               <>
-                <ChevronLeft className="h-4 w-4" />
-                <span className="text-xs">Collapse</span>
+                <ChevronLeft className="h-5 w-5" />
+                <span className="text-sm">Collapse</span>
               </>
             )}
           </button>

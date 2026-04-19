@@ -13,7 +13,7 @@ import {
   Menu,
   X
 } from "lucide-react";
-import simrsZenLogo from "@/assets/simrs-zen-logo.png";
+import rsudLogo from "@/assets/logo-rsud-moewardi.png";
 
 // Animation variants
 const easeOut: Easing = [0.22, 1, 0.36, 1];
@@ -79,8 +79,8 @@ const _rawSlides: Slide[] = [
         
         <div className="relative z-10 text-center max-w-4xl">
           <motion.img 
-            src={simrsZenLogo} 
-            alt="SIMRS ZEN" 
+            src={rsudLogo} 
+            alt="RSUD Dr. Moewardi" 
             className="h-12 md:h-16 mx-auto mb-12"
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -127,7 +127,7 @@ const _rawSlides: Slide[] = [
             custom={4}
           >
             <p className="text-xs text-slate-400 mb-2">Diajukan kepada</p>
-            <p className="text-xl font-semibold text-slate-800">SIMRS ZEN</p>
+            <p className="text-xl font-semibold text-slate-800">RSUD Dr. Moewardi Surakarta</p>
             <p className="text-sm text-slate-400 mt-3">Februari 2026</p>
           </motion.div>
         </div>
@@ -149,7 +149,7 @@ const _rawSlides: Slide[] = [
           <motion.div variants={fadeInLeft} initial="hidden" animate="visible">
             <p className="text-xs text-primary tracking-[0.3em] uppercase mb-2 font-semibold">01 — Pendahuluan</p>
             <h2 className="text-3xl md:text-5xl font-bold text-slate-900 mb-4">
-              Tentang <span className="text-primary">SIMRS ZEN</span>
+              Tentang <span className="text-primary">SIMRS</span> RSUD Dr. Moewardi
             </h2>
             <motion.div 
               className="w-20 h-1 bg-gradient-to-r from-primary to-blue-500 rounded-full mb-8"
@@ -167,7 +167,7 @@ const _rawSlides: Slide[] = [
               animate="visible"
             >
               <motion.p variants={fadeInUp} className="text-lg text-slate-600 leading-relaxed mb-6">
-                <strong className="text-slate-900">SIMRS ZEN</strong> adalah sistem informasi manajemen rumah sakit generasi terbaru yang dikembangkan dengan pendekatan <span className="text-primary font-semibold">cloud-native</span> dan <span className="text-primary font-semibold">user-centric design</span>.
+                <strong className="text-slate-900">SIMRS RSUD Dr. Moewardi</strong> adalah sistem informasi manajemen rumah sakit generasi terbaru yang dikembangkan dengan pendekatan <span className="text-primary font-semibold">cloud-native</span> dan <span className="text-primary font-semibold">user-centric design</span>.
               </motion.p>
               <motion.p variants={fadeInUp} className="text-slate-600 leading-relaxed mb-6">
                 Dirancang khusus untuk memenuhi kebutuhan rumah sakit di Indonesia dengan kepatuhan penuh terhadap regulasi Kemenkes RI, standar interoperabilitas SATU SEHAT (HL7 FHIR), dan integrasi BPJS Kesehatan.
@@ -218,7 +218,7 @@ const _rawSlides: Slide[] = [
           <motion.div variants={fadeInUp} initial="hidden" animate="visible" className="text-center mb-12">
             <p className="text-xs text-primary tracking-[0.3em] uppercase mb-2 font-semibold">02 — Value Proposition</p>
             <h2 className="text-3xl md:text-5xl font-bold text-slate-900">
-              Mengapa Memilih <span className="text-primary">SIMRS ZEN</span>?
+              Mengapa Memilih <span className="text-primary">SIMRS RSUD Dr. Moewardi</span>?
             </h2>
           </motion.div>
           
@@ -589,7 +589,7 @@ const _rawSlides: Slide[] = [
           <motion.div variants={fadeInUp} initial="hidden" animate="visible" className="text-center mb-6">
             <p className="text-xs text-primary tracking-[0.3em] uppercase mb-2 font-semibold">14 — Metodologi Migrasi</p>
             <h2 className="text-3xl md:text-4xl font-bold text-slate-900">
-              Migrasi dari SIMRS Existing ke <span className="text-primary">SIMRS ZEN</span>
+              Migrasi dari SIMRS Existing ke <span className="text-primary">SIMRS RSUD Dr. Moewardi</span>
             </h2>
             <p className="text-slate-500 mt-2 text-sm">Pendekatan bertahap 5 bulan untuk transisi mulus dari sistem legacy ke platform cloud modern</p>
           </motion.div>
@@ -607,7 +607,7 @@ const _rawSlides: Slide[] = [
                 <h4 className="font-bold text-slate-900 text-sm mb-1">Skema Migrasi dari SIMRS Existing</h4>
                 <p className="text-xs text-slate-600 leading-relaxed">
                   Proses migrasi dilakukan secara <strong>bertahap dan paralel (parallel run)</strong> — sistem lama tetap berjalan selama masa transisi sehingga operasional RS tidak terganggu. 
-                  Data historis pasien, rekam medis, inventori obat, dan data keuangan akan di-extract, di-cleansing, dan di-mapping ke struktur data SIMRS ZEN yang sudah mengacu standar nasional (NIK, ICD-10, kode obat Kemenkes).
+                  Data historis pasien, rekam medis, inventori obat, dan data keuangan akan di-extract, di-cleansing, dan di-mapping ke struktur data SIMRS RSUD Dr. Moewardi yang sudah mengacu standar nasional (NIK, ICD-10, kode obat Kemenkes).
                 </p>
               </div>
             </div>
@@ -669,7 +669,7 @@ const _rawSlides: Slide[] = [
                 title: "Assessment & Planning", 
                 duration: "Minggu 1-4", 
                 month: "Bulan 1",
-                items: ["Audit SIMRS existing (database, modul, alur kerja)", "Gap analysis: fitur lama vs SIMRS ZEN", "Pemetaan data master (Pasien, Dokter, Obat, Tarif)", "Penyusunan Project Charter & Risk Assessment", "Identifikasi customisasi yang dibutuhkan"],
+                items: ["Audit SIMRS existing (database, modul, alur kerja)", "Gap analysis: fitur lama vs SIMRS RSUD Dr. Moewardi", "Pemetaan data master (Pasien, Dokter, Obat, Tarif)", "Penyusunan Project Charter & Risk Assessment", "Identifikasi customisasi yang dibutuhkan"],
                 color: "from-amber-400 to-orange-500",
                 deliverables: "Dokumen BRD & TRD"
               },
@@ -705,7 +705,7 @@ const _rawSlides: Slide[] = [
                 title: "Go-Live & Hypercare", 
                 duration: "Minggu 17-20", 
                 month: "Bulan 5",
-                items: ["Parallel run: SIMRS lama & baru bersamaan", "Cutover: peralihan penuh ke SIMRS ZEN", "Dukungan on-site 24/7 selama 2 minggu", "Monitoring performa & stabilitas sistem", "Serah terima & dokumentasi final"],
+                items: ["Parallel run: SIMRS lama & baru bersamaan", "Cutover: peralihan penuh ke SIMRS RSUD Dr. Moewardi", "Dukungan on-site 24/7 selama 2 minggu", "Monitoring performa & stabilitas sistem", "Serah terima & dokumentasi final"],
                 color: "from-purple-500 to-pink-500",
                 deliverables: "System Live"
               },
@@ -1284,7 +1284,7 @@ const _rawSlides: Slide[] = [
             transition={{ delay: 0.8 }}
           >
             <p className="text-sm font-medium">
-              🛡️ SIMRS ZEN telah dirancang <strong>compliance-by-design</strong> — seluruh aspek regulasi terintegrasi sejak arsitektur awal, bukan ditambahkan kemudian.
+              🛡️ SIMRS RSUD Dr. Moewardi telah dirancang <strong>compliance-by-design</strong> — seluruh aspek regulasi terintegrasi sejak arsitektur awal, bukan ditambahkan kemudian.
             </p>
           </motion.div>
         </div>
@@ -1435,7 +1435,7 @@ const _rawSlides: Slide[] = [
             12 — Perbandingan Sistem
           </motion.p>
           <motion.h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-5" variants={fadeInUp} initial="hidden" animate="visible" custom={1}>
-            PHP 5 + MySQL <span className="text-slate-400">vs</span> <span className="text-primary">SIMRS ZEN</span>
+            PHP 5 + MySQL <span className="text-slate-400">vs</span> <span className="text-primary">SIMRS RSUD Dr. Moewardi</span>
           </motion.h2>
 
           {/* Comparison Table */}
@@ -1443,7 +1443,7 @@ const _rawSlides: Slide[] = [
             <div className="grid grid-cols-3 text-xs">
               <div className="bg-slate-50 p-3 font-bold text-slate-600 border-b border-slate-100">Aspek</div>
               <div className="bg-red-50 p-3 font-bold text-red-700 border-b border-slate-100 text-center">❌ PHP 5 + MySQL</div>
-              <div className="bg-emerald-50 p-3 font-bold text-emerald-700 border-b border-slate-100 text-center">✅ SIMRS ZEN</div>
+              <div className="bg-emerald-50 p-3 font-bold text-emerald-700 border-b border-slate-100 text-center">✅ SIMRS RSUD Dr. Moewardi</div>
               {[
                 ["Keamanan", "PHP 5 EOL 2018, tanpa patch", "RLS, JWT, audit trail, UU PDP"],
                 ["Database", "MySQL single server, backup manual", "PostgreSQL cloud, auto-backup harian"],
@@ -1563,7 +1563,7 @@ const _rawSlides: Slide[] = [
 
           <motion.div className="rounded-2xl bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-100 p-4" variants={fadeInUp} initial="hidden" animate="visible" custom={5}>
             <p className="text-xs text-indigo-800 text-center font-medium">
-              💡 <strong>Kesimpulan:</strong> Sistem berbasis PHP 5 + MySQL <strong>tidak mampu memenuhi</strong> satupun standar di atas karena keterbatasan arsitektur, keamanan yang sudah kadaluarsa, dan ketidakmampuan integrasi API modern (FHIR R4, REST). SIMRS ZEN dirancang dari awal untuk <strong>memenuhi seluruh regulasi</strong> ini secara native.
+              💡 <strong>Kesimpulan:</strong> Sistem berbasis PHP 5 + MySQL <strong>tidak mampu memenuhi</strong> satupun standar di atas karena keterbatasan arsitektur, keamanan yang sudah kadaluarsa, dan ketidakmampuan integrasi API modern (FHIR R4, REST). SIMRS RSUD Dr. Moewardi dirancang dari awal untuk <strong>memenuhi seluruh regulasi</strong> ini secara native.
             </p>
           </motion.div>
         </div>
@@ -1613,7 +1613,7 @@ const _rawSlides: Slide[] = [
             animate="visible"
             custom={2}
           >
-            Hubungi tim kami untuk presentasi lebih lanjut dan demo langsung SIMRS ZEN
+            Hubungi tim kami untuk presentasi lebih lanjut dan demo langsung SIMRS RSUD Dr. Moewardi
           </motion.p>
           
           {/* QR Code Section */}
@@ -1637,7 +1637,7 @@ const _rawSlides: Slide[] = [
                 </div>
               </motion.div>
               <p className="text-sm font-semibold text-slate-900">Live Demo</p>
-              <p className="text-xs text-slate-500">simrszen.id</p>
+              <p className="text-xs text-slate-500">rsmoewardi.jatengprov.go.id</p>
             </div>
             <div className="text-center">
               <motion.div 
@@ -1664,14 +1664,14 @@ const _rawSlides: Slide[] = [
             custom={4}
           >
             <motion.img 
-              src={simrsZenLogo} 
-              alt="SIMRS ZEN" 
+              src={rsudLogo} 
+              alt="RSUD Dr. Moewardi" 
               className="h-10 mx-auto mb-4"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
             />
             <div className="flex flex-wrap justify-center gap-6 text-sm text-slate-500">
-              <motion.span whileHover={{ scale: 1.05, color: "#0066FF" }} className="cursor-pointer">📧 info@simrszen.id</motion.span>
+              <motion.span whileHover={{ scale: 1.05, color: "#0066FF" }} className="cursor-pointer">📧 rsmoewardi@jatengprov.go.id</motion.span>
               <motion.span whileHover={{ scale: 1.05, color: "#0066FF" }} className="cursor-pointer">📞 (0271) 637415</motion.span>
             </div>
             <p className="text-xs text-slate-400 mt-3">Jl. Kolonel Sutarto No.132, Kec. Jebres, Kota Surakarta, Jawa Tengah 57126</p>
@@ -1692,7 +1692,7 @@ const _rawSlides: Slide[] = [
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          21 Role Pengguna SIMRS ZEN
+          21 Role Pengguna SIMRS RSUD Dr. Moewardi
         </motion.h2>
         <motion.p 
           className="text-slate-500 text-center mb-8"
@@ -2047,7 +2047,7 @@ const _rawSlides: Slide[] = [
                   className="flex flex-col items-center p-5 rounded-xl bg-gradient-to-br from-primary/10 to-blue-50 border-2 border-primary/30 shadow-lg"
                 >
                   <span className="text-3xl mb-2">🏥</span>
-                  <p className="font-bold text-sm text-primary">SIMRS ZEN</p>
+                  <p className="font-bold text-sm text-primary">SIMRS RSUD Dr. Moewardi</p>
                   <p className="text-[10px] text-slate-500 text-center mt-1">Frontend Application</p>
                   <div className="mt-3 space-y-1 w-full">
                     {["Viewer Imaging", "Riwayat Radiologi", "Integrasi Rekam Medis"].map((fn, i) => (

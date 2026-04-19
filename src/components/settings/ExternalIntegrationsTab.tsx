@@ -13,7 +13,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import {
   Building2, Save, RefreshCw, CheckCircle, AlertTriangle, XCircle,
   ExternalLink, Key, Globe, Shield, Info, Network, Wifi, WifiOff,
-  Hospital, Stethoscope, Ambulance, ClipboardList, Server, BookOpen
+  Hospital, Stethoscope, Ambulance, ClipboardList, Server
 } from "lucide-react";
 import { useExternalIntegrations, SatuSehatConfig, BPJSConfig, SISRUTEConfig, BPJSAntreanConfig, EklaimIDRGConfig, PACSConfig } from "@/hooks/useExternalIntegrations";
 import { useToast } from "@/hooks/use-toast";
@@ -30,8 +30,6 @@ export function ExternalIntegrationsTab() {
   const [bpjsAntrean, setBpjsAntrean] = useState<BPJSAntreanConfig>(integrations.bpjs_antrean);
   const [eklaimIdrg, setEklaimIdrg] = useState<EklaimIDRGConfig>(integrations.eklaim_idrg);
   const [pacs, setPacs] = useState<PACSConfig>(integrations.pacs);
-  const [icd11ClientId, setIcd11ClientId] = useState("");
-  const [icd11ClientSecret, setIcd11ClientSecret] = useState("");
 
   // Testing states
   const [testingIntegration, setTestingIntegration] = useState<string | null>(null);
@@ -140,49 +138,6 @@ export function ExternalIntegrationsTab() {
 
     await updateIntegration.mutateAsync({ key, value });
     setConfirmDialog({ open: false, integration: "", action: "save" });
-  };
-
-  const handleTestICD11 = async () => {
-    setTestingIntegration("icd11");
-    setTestResults((prev) => ({ ...prev, icd11: null }));
-    try {
-      const API_BASE = import.meta.env.VITE_API_URL || '/api';
-      const res = await fetch(`${API_BASE}/icd11/test`, {
-        credentials: 'include',
-      });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(json.error || res.statusText);
-      setTestResults((prev) => ({ ...prev, icd11: "success" }));
-      toast({ title: "Koneksi WHO ICD-11 Berhasil", description: json.message || "API berfungsi normal" });
-    } catch (error: any) {
-      setTestResults((prev) => ({ ...prev, icd11: "error" }));
-      toast({ title: "Koneksi Gagal", description: error.message || "Tidak dapat terhubung ke WHO ICD-11", variant: "destructive" });
-    } finally {
-      setTestingIntegration(null);
-    }
-  };
-
-  const handleSaveICD11 = async () => {
-    if (!icd11ClientId || !icd11ClientSecret) {
-      toast({ title: "Lengkapi kredensial", description: "Client ID dan Client Secret wajib diisi", variant: "destructive" });
-      return;
-    }
-    try {
-      const API_BASE = import.meta.env.VITE_API_URL || '/api';
-      const res = await fetch(`${API_BASE}/icd11/save-config`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ client_id: icd11ClientId, client_secret: icd11ClientSecret }),
-      });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(json.error || res.statusText);
-      toast({ title: "Konfigurasi ICD-11 disimpan" });
-      setIcd11ClientId("");
-      setIcd11ClientSecret("");
-    } catch (error: any) {
-      toast({ title: "Gagal menyimpan", description: error.message, variant: "destructive" });
-    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -855,82 +810,6 @@ export function ExternalIntegrationsTab() {
                   >
                     <Save className="h-4 w-4 mr-2" />
                     Simpan
-                  </Button>
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-            {/* WHO ICD-11 */}
-            <AccordionItem value="icd11">
-              <AccordionTrigger>
-                <div className="flex items-center gap-3">
-                  <BookOpen className="h-5 w-5" />
-                  <span>WHO ICD-11 (Kode Diagnosis)</span>
-                  {testResults["icd11"] === "success"
-                    ? getStatusBadge("connected")
-                    : testResults["icd11"] === "error"
-                    ? getStatusBadge("error")
-                    : getStatusBadge("disconnected")}
-                </div>
-              </AccordionTrigger>
-              <AccordionContent className="space-y-4 pt-4">
-                <Alert>
-                  <Info className="h-4 w-4" />
-                  <AlertDescription>
-                    Integrasi dengan WHO ICD-11 API untuk pencarian kode diagnosis standar internasional.
-                    Kredensial saat ini sudah dikonfigurasi di server. Isi form di bawah hanya jika ingin mengganti kredensial.
-                  </AlertDescription>
-                </Alert>
-
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2 md:col-span-2">
-                    <Label>Client ID (opsional — kosongkan jika tidak ingin mengganti)</Label>
-                    <Input
-                      placeholder="677b9deb-7ad6-496a-..."
-                      value={icd11ClientId}
-                      onChange={(e) => setIcd11ClientId(e.target.value)}
-                      autoComplete="off"
-                    />
-                  </div>
-                  <div className="space-y-2 md:col-span-2">
-                    <Label>Client Secret (opsional)</Label>
-                    <Input
-                      type="password"
-                      placeholder="Client Secret dari WHO ICD-11"
-                      value={icd11ClientSecret}
-                      onChange={(e) => setIcd11ClientSecret(e.target.value)}
-                      autoComplete="off"
-                    />
-                  </div>
-                </div>
-
-                {testResults["icd11"] && (
-                  <div className={`p-3 rounded-lg flex items-center gap-2 ${
-                    testResults["icd11"] === "success" ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"
-                  }`}>
-                    {testResults["icd11"] === "success" ? <CheckCircle className="h-4 w-4" /> : <XCircle className="h-4 w-4" />}
-                    {testResults["icd11"] === "success" ? "Koneksi ke WHO ICD-11 berhasil!" : "Koneksi gagal — periksa kredensial"}
-                  </div>
-                )}
-
-                <div className="flex gap-3 justify-end pt-2">
-                  <Button
-                    variant="outline"
-                    onClick={handleTestICD11}
-                    disabled={testingIntegration === "icd11"}
-                  >
-                    {testingIntegration === "icd11" ? (
-                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                    ) : (
-                      <Wifi className="h-4 w-4 mr-2" />
-                    )}
-                    Test Koneksi
-                  </Button>
-                  <Button
-                    onClick={handleSaveICD11}
-                    disabled={!icd11ClientId || !icd11ClientSecret}
-                  >
-                    <Save className="h-4 w-4 mr-2" />
-                    Simpan Kredensial Baru
                   </Button>
                 </div>
               </AccordionContent>
