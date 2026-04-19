@@ -5261,7 +5261,7 @@ const PanduanPenggunaan = () => {
 
   // Auto-play
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: ReturnType<typeof setInterval>;
     if (isPlaying) {
       interval = setInterval(nextSlide, 8000);
     }
